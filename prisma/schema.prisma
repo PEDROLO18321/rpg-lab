@@ -1,0 +1,246 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH (NextAuth v5) ───────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  characters Character[]
+  campaigns  CampaignMember[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ─── SISTEMAS DE RPG ─────────────────────────────────────────────────────────
+
+model System {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  version     String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  characters Character[]
+  campaigns  Campaign[]
+}
+
+// ─── PERSONAGEM (núcleo agnóstico de sistema) ─────────────────────────────────
+
+model Character {
+  id          String   @id @default(cuid())
+  userId      String
+  systemId    String
+  name        String
+  portraitUrl String?
+  notes       String?
+  isPublic    Boolean  @default(false)
+  shareToken  String   @unique @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  system System @relation(fields: [systemId], references: [id])
+
+  dndSheet           DndSheet?
+  campaignCharacters CampaignCharacter[]
+}
+
+// ─── D&D 5e ──────────────────────────────────────────────────────────────────
+
+model DndSheet {
+  id        String    @id
+  character Character @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  race       String?
+  background String?
+  alignment  String?
+  xp         Int     @default(0)
+  level      Int     @default(1)
+
+  str Int @default(10)
+  dex Int @default(10)
+  con Int @default(10)
+  int Int @default(10)
+  wis Int @default(10)
+  cha Int @default(10)
+
+  hpMax             Int     @default(10)
+  hpCurrent         Int     @default(10)
+  hpTemp            Int     @default(0)
+  hitDice           String?
+  hitDiceUsed       Int     @default(0)
+  deathSavesSuccess Int     @default(0)
+  deathSavesFailure Int     @default(0)
+
+  armorClass  Int     @default(10)
+  initiative  Int     @default(0)
+  speed       Int     @default(30)
+  inspiration Boolean @default(false)
+
+  cp Int @default(0)
+  sp Int @default(0)
+  ep Int @default(0)
+  gp Int @default(0)
+  pp Int @default(0)
+
+  classes   DndClass[]
+  skills    DndSkill[]
+  spells    DndSpell[]
+  equipment DndEquipment[]
+  features  DndFeature[]
+}
+
+model DndClass {
+  id        String  @id @default(cuid())
+  sheetId   String
+  className String
+  subclass  String?
+  level     Int
+
+  sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+model DndSkill {
+  id         String  @id @default(cuid())
+  sheetId    String
+  skillName  String
+  proficient Boolean @default(false)
+  expertise  Boolean @default(false)
+
+  sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@unique([sheetId, skillName])
+}
+
+model DndSpell {
+  id          String  @id @default(cuid())
+  sheetId     String
+  spellName   String
+  level       Int     @default(0)
+  school      String?
+  prepared    Boolean @default(false)
+  description String?
+  components  String?
+  castingTime String?
+  duration    String?
+  range       String?
+
+  sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+model DndEquipment {
+  id          String  @id @default(cuid())
+  sheetId     String
+  itemName    String
+  quantity    Int     @default(1)
+  weight      Float?
+  equipped    Boolean @default(false)
+  description String?
+
+  sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+model DndFeature {
+  id          String  @id @default(cuid())
+  sheetId     String
+  name        String
+  source      String?
+  description String?
+
+  sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+// ─── CAMPANHAS (preparado, sem área mestre ativa) ─────────────────────────────
+
+model Campaign {
+  id          String   @id @default(cuid())
+  ownerId     String
+  systemId    String
+  name        String
+  description String?
+  inviteCode  String   @unique @default(cuid())
+  createdAt   DateTime @default(now())
+
+  system     System             @relation(fields: [systemId], references: [id])
+  members    CampaignMember[]
+  characters CampaignCharacter[]
+}
+
+model CampaignMember {
+  id         String       @id @default(cuid())
+  campaignId String
+  userId     String
+  role       CampaignRole @default(PLAYER)
+  joinedAt   DateTime     @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+}
+
+model CampaignCharacter {
+  id          String @id @default(cuid())
+  campaignId  String
+  characterId String
+
+  campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, characterId])
+}
+
+enum CampaignRole {
+  MASTER
+  PLAYER
+}
