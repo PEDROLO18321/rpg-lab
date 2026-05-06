@@ -18,13 +18,6 @@ const SAVE_NAMES: { label: string; key: AbilityKey }[] = [
   { label: "Sabedoria",    key: "wis" },
   { label: "Carisma",      key: "cha" },
 ];
-const PROF_BONUS = 2;
-
-const ALIGNMENT_LABELS: Record<string, string> = {
-  lg: "Leal e Bom", ng: "Neutro e Bom", cg: "Caótico e Bom",
-  ln: "Leal e Neutro", nn: "Neutro", cn: "Caótico e Neutro",
-  le: "Leal e Mau", ne: "Neutro e Mau", ce: "Caótico e Mau",
-};
 const SKILL_MAP: Record<string, AbilityKey> = {
   "Atletismo": "str",
   "Acrobacia": "dex", "Furtividade": "dex", "Prestidigitação": "dex",
@@ -32,25 +25,35 @@ const SKILL_MAP: Record<string, AbilityKey> = {
   "Adestrar Animais": "wis", "Intuição": "wis", "Medicina": "wis", "Percepção": "wis", "Sobrevivência": "wis",
   "Atuação": "cha", "Enganação": "cha", "Intimidação": "cha", "Persuasão": "cha",
 };
+const PROF_BONUS = 2;
+const ALIGNMENT_LABELS: Record<string, string> = {
+  lg: "Leal e Bom", ng: "Neutro e Bom", cg: "Caótico e Bom",
+  ln: "Leal e Neutro", nn: "Neutro", cn: "Caótico e Neutro",
+  le: "Leal e Mau", ne: "Neutro e Mau", ce: "Caótico e Mau",
+};
 
 function mod(score: number) { return Math.floor((score - 10) / 2); }
 function signed(n: number)  { return n >= 0 ? `+${n}` : `${n}`; }
+
+function isLevel1Feature(f: string) {
+  const m = f.match(/\((\d+)°\)/);
+  return !m || parseInt(m[1]) <= 1;
+}
 
 interface Props {
   data: Partial<WizardData>;
 }
 
 export function StepReview({ data }: Props) {
-  const race     = RACES.find((r) => r.id === data.raceId);
-  const subrace  = race?.subraces.find((s) => s.id === data.subraceId);
-  const cls      = CLASSES.find((c) => c.id === data.classId);
-  const subclass = cls?.subclasses?.find((s) => s.id === data.subclassId);
-  const bg       = BACKGROUNDS.find((b) => b.id === data.backgroundId);
+  const race    = RACES.find((r) => r.id === data.raceId);
+  const subrace = race?.subraces.find((s) => s.id === data.subraceId);
+  const cls     = CLASSES.find((c) => c.id === data.classId);
+  const bg      = BACKGROUNDS.find((b) => b.id === data.backgroundId);
 
-  // Compute racial bonus
+  // Racial bonus
   const racialBonus: Partial<Record<AbilityKey, number>> = {};
-  if (race)    for (const [k, v] of Object.entries(race.baseBonus)   as [AbilityKey, number][]) racialBonus[k] = (racialBonus[k] ?? 0) + v;
-  if (subrace) for (const [k, v] of Object.entries(subrace.bonus)    as [AbilityKey, number][]) racialBonus[k] = (racialBonus[k] ?? 0) + v;
+  if (race)    for (const [k, v] of Object.entries(race.baseBonus)  as [AbilityKey, number][]) racialBonus[k] = (racialBonus[k] ?? 0) + v;
+  if (subrace) for (const [k, v] of Object.entries(subrace.bonus)   as [AbilityKey, number][]) racialBonus[k] = (racialBonus[k] ?? 0) + v;
 
   const bases = data.abilityBases ?? {} as Record<AbilityKey, number>;
   const finalScores: Record<AbilityKey, number> = ABILITIES.reduce((acc, k) => ({
@@ -58,17 +61,24 @@ export function StepReview({ data }: Props) {
     [k]: (bases[k] ?? 8) + (racialBonus[k] ?? 0),
   }), {} as Record<AbilityKey, number>);
 
-  const selectedSkills = data.selectedSkills ?? [];
-  const passivePerception = 10 + mod(finalScores.wis) + (selectedSkills.includes("Percepção") ? PROF_BONUS : 0);
+  const classSkills = data.selectedSkills ?? [];
+  const bgSkills    = bg?.skills ?? [];
+  const allSkills   = [...new Set([...bgSkills, ...classSkills])];
 
-  // HP at level 1 = hit die max + CON modifier
-  const conMod  = mod(finalScores.con);
-  const hp      = cls ? (cls.hitDie + conMod) : null;
+  const passivePerception = 10 + mod(finalScores.wis) + (allSkills.includes("Percepção") ? PROF_BONUS : 0);
 
+  const conMod = mod(finalScores.con);
+  const dexMod = mod(finalScores.dex);
+  const hp     = cls ? Math.max(1, cls.hitDie + conMod) : null;
+  const ac     = 10 + dexMod;
+
+  const raceName = race ? (subrace ? `${race.name} (${subrace.name})` : race.name) : "—";
   const desc = data.desc ?? {};
 
+  const level1ClassFeatures = cls?.keyFeatures.filter(isLevel1Feature) ?? [];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       {/* Heading */}
       <div>
         <span className="section-label" style={{ display: "block", marginBottom: 6 }}>
@@ -86,47 +96,31 @@ export function StepReview({ data }: Props) {
           Revisão do <span className="text-gold">Personagem</span>
         </h2>
         <p style={{ marginTop: 8, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Confirme todas as escolhas antes de criar o personagem. Você pode voltar a qualquer etapa para fazer alterações.
+          Resumo completo da ficha de nível 1. Confirme antes de criar o personagem.
         </p>
       </div>
 
-      {/* Identity card */}
+      {/* Identity */}
       <Card accent>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div
             style={{
-              width: 56,
-              height: 56,
+              width: 56, height: 56,
               borderRadius: "var(--radius-xl)",
               background: "var(--accent-dim)",
               border: "1px solid var(--border-accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.8rem",
-              flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.8rem", flexShrink: 0,
             }}
           >
             {cls?.icon ?? "⚔️"}
           </div>
           <div>
-            <p
-              style={{
-                fontFamily: "var(--font-cinzel), serif",
-                fontSize: "1.3rem",
-                fontWeight: 700,
-                color: "var(--text)",
-                lineHeight: 1.1,
-              }}
-            >
+            <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.3rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.1 }}>
               {data.charName || <span style={{ color: "var(--text-subtle)", fontStyle: "italic" }}>Sem nome</span>}
             </p>
             <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>
-              {[
-                race?.name && (subrace ? `${race.name} (${subrace.name})` : race.name),
-                cls?.name && (subclass ? `${cls.name} — ${subclass.name}` : cls.name),
-                bg?.name,
-              ].filter(Boolean).join(" · ")}
+              {[raceName, cls?.name, bg?.name].filter(Boolean).join(" · ")}
             </p>
             {desc.alignment && (
               <p style={{ fontSize: "0.76rem", color: "var(--accent-light)", marginTop: 2 }}>
@@ -137,22 +131,24 @@ export function StepReview({ data }: Props) {
         </div>
       </Card>
 
-      {/* Stats row */}
+      {/* Stats chips */}
       {cls && hp !== null && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
           <StatChip label="PV (Nível 1)" value={String(hp)} accent />
-          <StatChip label="Dado de Vida" value={`d${cls.hitDie}`} />
+          <StatChip label="Dado de Vida" value={`D${cls.hitDie}`} />
+          <StatChip label="Classe de Armadura" value={String(ac)} />
+          <StatChip label="Bônus Prof." value={`+${PROF_BONUS}`} accent />
           <StatChip label="Perc. Passiva" value={String(passivePerception)} />
-          <StatChip label="Velocidade" value={`${race?.speed ?? 30} ft`} />
+          <StatChip label="Velocidade" value={`${race?.speed ?? 9} m`} />
         </div>
       )}
 
-      {/* Abilities */}
+      {/* Ability scores */}
       <Section label="Atributos">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {ABILITIES.map((k) => {
-            const score = finalScores[k];
-            const m     = mod(score);
+            const score  = finalScores[k];
+            const m      = mod(score);
             const racial = racialBonus[k] ?? 0;
             return (
               <div
@@ -188,10 +184,9 @@ export function StepReview({ data }: Props) {
         </div>
       </Section>
 
-      {/* Saving throws + skills */}
+      {/* Saves + Skills */}
       {cls && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          {/* Saves */}
           <div>
             <SubLabel>Testes de Resistência</SubLabel>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -199,50 +194,27 @@ export function StepReview({ data }: Props) {
                 const prof  = cls.savingThrows.includes(label);
                 const bonus = mod(finalScores[key]) + (prof ? PROF_BONUS : 0);
                 return (
-                  <div
-                    key={key}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "7px 12px",
-                      background: prof ? "var(--accent-dim)" : "var(--surface-2)",
-                      border: `1px solid ${prof ? "var(--accent)" : "var(--border)"}`,
-                      borderRadius: "var(--radius)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      {prof && <span style={{ fontSize: "0.55rem", color: "var(--accent)" }}>◆</span>}
-                      <span style={{ fontSize: "0.78rem", color: prof ? "var(--accent-light)" : "var(--text-muted)", fontWeight: prof ? 700 : 400 }}>
-                        {label}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: prof ? "var(--accent-light)" : "var(--text-muted)" }}>
-                      {signed(bonus)}
-                    </span>
-                  </div>
+                  <RowItem key={key} label={label} value={signed(bonus)} highlight={prof} />
                 );
               })}
             </div>
           </div>
 
-          {/* Skills */}
           <div>
             <SubLabel>Perícias com Proficiência</SubLabel>
-            {selectedSkills.length === 0 ? (
+            {allSkills.length === 0 ? (
               <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhuma selecionada</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {selectedSkills.map((skill) => {
+                {allSkills.map((skill) => {
                   const abilityKey = SKILL_MAP[skill] ?? "str";
-                  const bonus = mod(finalScores[abilityKey]) + PROF_BONUS;
+                  const bonus      = mod(finalScores[abilityKey]) + PROF_BONUS;
+                  const fromBg     = bgSkills.includes(skill);
                   return (
                     <div
                       key={skill}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
                         padding: "7px 12px",
                         background: "var(--accent-dim)",
                         border: "1px solid var(--accent)",
@@ -252,6 +224,9 @@ export function StepReview({ data }: Props) {
                       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                         <span style={{ fontSize: "0.55rem", color: "var(--accent)" }}>◆</span>
                         <span style={{ fontSize: "0.78rem", color: "var(--accent-light)", fontWeight: 700 }}>{skill}</span>
+                        {fromBg && (
+                          <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)", fontStyle: "italic" }}>ant.</span>
+                        )}
                       </div>
                       <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--accent-light)" }}>
                         {signed(bonus)}
@@ -267,52 +242,62 @@ export function StepReview({ data }: Props) {
 
       {/* Race traits */}
       {race && (
-        <Section label={`Traços Raciais — ${race.name}${subrace ? ` (${subrace.name})` : ""}`}>
+        <Section label={`Traços Raciais — ${raceName}`}>
           <TraitList traits={[...race.traits, ...(subrace?.traits ?? [])]} />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            <Tag>Velocidade: {race.speed} m</Tag>
+            <Tag>Tamanho: {race.size}</Tag>
+            {race.languages.map((l) => <Tag key={l}>{l}</Tag>)}
+          </div>
         </Section>
       )}
 
-      {/* Class features */}
+      {/* Class features nível 1 */}
       {cls && (
-        <Section label={`Características de Classe — ${cls.name}`}>
-          <TraitList traits={cls.keyFeatures} />
+        <Section label={`Características de Classe · ${cls.name} · Nível 1`}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+            <Tag>Dado de Vida: D{cls.hitDie}</Tag>
+            {cls.savingThrows.map((s) => <Tag key={s}>Save: {s}</Tag>)}
+            {cls.armorProficiencies.length > 0 && <Tag>Armaduras: {cls.armorProficiencies.join(", ")}</Tag>}
+          </div>
+          <TraitList traits={level1ClassFeatures} />
         </Section>
       )}
 
       {/* Background */}
       {bg && (
         <Section label={`Antecedente — ${bg.name}`}>
-          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 10 }}>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
             {bg.description}
           </p>
           <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)", lineHeight: 1.5 }}>
             <strong style={{ color: "var(--text-muted)" }}>Característica:</strong> {bg.feature} — {bg.featureDesc}
           </p>
-          <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {bg.skills.map((s) => (
-              <Tag key={s}>{s}</Tag>
-            ))}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+            {bg.skills.map((s) => <Tag key={s}>{s}</Tag>)}
           </div>
         </Section>
       )}
 
       {/* Description */}
-      {Object.keys(desc).length > 0 && (
+      {Object.keys(desc).some((k) => !!(desc as Record<string, string>)[k]) && (
         <Section label="Descrição">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
-            {desc.age       && <DescChip label="Idade"   value={desc.age} />}
-            {desc.height    && <DescChip label="Altura"  value={desc.height} />}
-            {desc.weight    && <DescChip label="Peso"    value={desc.weight} />}
-            {desc.eyes      && <DescChip label="Olhos"   value={desc.eyes} />}
-            {desc.skin      && <DescChip label="Pele"    value={desc.skin} />}
-            {desc.hair      && <DescChip label="Cabelo"  value={desc.hair} />}
-          </div>
+          {(desc.age || desc.height || desc.weight || desc.eyes || desc.skin || desc.hair) && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8, marginBottom: 12 }}>
+              {desc.age    && <DescChip label="Idade"   value={desc.age} />}
+              {desc.height && <DescChip label="Altura"  value={desc.height} />}
+              {desc.weight && <DescChip label="Peso"    value={desc.weight} />}
+              {desc.eyes   && <DescChip label="Olhos"   value={desc.eyes} />}
+              {desc.skin   && <DescChip label="Pele"    value={desc.skin} />}
+              {desc.hair   && <DescChip label="Cabelo"  value={desc.hair} />}
+            </div>
+          )}
           {desc.personalityTrait && <PersonalityRow label="Traço"    value={desc.personalityTrait} />}
           {desc.ideal            && <PersonalityRow label="Ideal"    value={desc.ideal} />}
           {desc.bond             && <PersonalityRow label="Vínculo"  value={desc.bond} />}
           {desc.flaw             && <PersonalityRow label="Fraqueza" value={desc.flaw} />}
           {desc.backstory && (
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 12, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
               <p style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
                 História
               </p>
@@ -328,12 +313,8 @@ export function StepReview({ data }: Props) {
       {(cls || bg) && (
         <Section label="Equipamento Inicial">
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {cls?.startingEquipment.map((item, i) => (
-              <EquipRow key={`cls-${i}`} item={item} accent />
-            ))}
-            {bg?.startingEquipment.map((item, i) => (
-              <EquipRow key={`bg-${i}`} item={item} />
-            ))}
+            {cls?.startingEquipment.map((item, i) => <EquipRow key={`cls-${i}`} item={item} accent />)}
+            {bg?.startingEquipment.map((item, i)  => <EquipRow key={`bg-${i}`}  item={item} />)}
           </div>
           {cls && (
             <p style={{ marginTop: 12, fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
@@ -343,7 +324,7 @@ export function StepReview({ data }: Props) {
         </Section>
       )}
 
-      {/* Confirmation note */}
+      {/* Confirm */}
       <div
         style={{
           background: "var(--accent-dim)",
@@ -356,7 +337,7 @@ export function StepReview({ data }: Props) {
         }}
       >
         Tudo certo? Clique em{" "}
-        <strong style={{ color: "var(--accent-light)" }}>Criar Personagem ✓</strong> para salvar. Você poderá editar os detalhes na ficha depois.
+        <strong style={{ color: "var(--accent-light)" }}>Criar Personagem ✓</strong> para salvar.
       </div>
     </div>
   );
@@ -366,14 +347,7 @@ export function StepReview({ data }: Props) {
 
 function Card({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`,
-        borderRadius: "var(--radius-xl)",
-        padding: "20px 24px",
-      }}
-    >
+    <div style={{ background: "var(--surface)", border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`, borderRadius: "var(--radius-xl)", padding: "20px 24px" }}>
       {children}
     </div>
   );
@@ -381,26 +355,8 @@ function Card({ children, accent }: { children: React.ReactNode; accent?: boolea
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-xl)",
-        padding: "20px 24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-      }}
-    >
-      <p
-        style={{
-          fontSize: "0.72rem",
-          fontWeight: 700,
-          color: "var(--text-muted)",
-          textTransform: "uppercase",
-          letterSpacing: "0.06em",
-        }}
-      >
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
         {label}
       </p>
       {children}
@@ -410,16 +366,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 function SubLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      style={{
-        fontSize: "0.68rem",
-        fontWeight: 700,
-        color: "var(--text-subtle)",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-        marginBottom: 8,
-      }}
-    >
+    <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
       {children}
     </p>
   );
@@ -427,28 +374,25 @@ function SubLabel({ children }: { children: React.ReactNode }) {
 
 function StatChip({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div
-      style={{
-        background: accent ? "var(--accent-dim)" : "var(--surface)",
-        border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`,
-        borderRadius: "var(--radius-lg)",
-        padding: "12px 10px",
-        textAlign: "center",
-      }}
-    >
+    <div style={{ background: accent ? "var(--accent-dim)" : "var(--surface)", border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`, borderRadius: "var(--radius-lg)", padding: "12px 10px", textAlign: "center" }}>
       <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
         {label}
       </p>
-      <p
-        style={{
-          fontFamily: "var(--font-cinzel), serif",
-          fontSize: "1.2rem",
-          fontWeight: 700,
-          color: accent ? "var(--accent-light)" : "var(--text)",
-        }}
-      >
+      <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: accent ? "var(--accent-light)" : "var(--text)" }}>
         {value}
       </p>
+    </div>
+  );
+}
+
+function RowItem({ label, value, highlight }: { label: string; value: string; highlight: boolean }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 12px", background: highlight ? "var(--accent-dim)" : "var(--surface-2)", border: `1px solid ${highlight ? "var(--accent)" : "var(--border)"}`, borderRadius: "var(--radius)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        {highlight && <span style={{ fontSize: "0.55rem", color: "var(--accent)" }}>◆</span>}
+        <span style={{ fontSize: "0.78rem", color: highlight ? "var(--accent-light)" : "var(--text-muted)", fontWeight: highlight ? 700 : 400 }}>{label}</span>
+      </div>
+      <span style={{ fontSize: "0.85rem", fontWeight: 700, color: highlight ? "var(--accent-light)" : "var(--text-muted)" }}>{value}</span>
     </div>
   );
 }
@@ -468,17 +412,7 @@ function TraitList({ traits }: { traits: string[] }) {
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      style={{
-        fontSize: "0.72rem",
-        fontWeight: 700,
-        color: "var(--accent-light)",
-        background: "var(--accent-dim)",
-        border: "1px solid var(--border-accent)",
-        borderRadius: "var(--radius-xs)",
-        padding: "3px 9px",
-      }}
-    >
+    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--accent-light)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xs)", padding: "3px 9px" }}>
       {children}
     </span>
   );
@@ -486,17 +420,8 @@ function Tag({ children }: { children: React.ReactNode }) {
 
 function DescChip({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "8px 12px",
-      }}
-    >
-      <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>
-        {label}
-      </p>
+    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "8px 12px" }}>
+      <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{label}</p>
       <p style={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: 600 }}>{value}</p>
     </div>
   );
@@ -505,18 +430,7 @@ function DescChip({ label, value }: { label: string; value: string }) {
 function PersonalityRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ marginTop: 8, display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <span
-        style={{
-          fontSize: "0.65rem",
-          fontWeight: 700,
-          color: "var(--text-subtle)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          minWidth: 60,
-          paddingTop: 2,
-          flexShrink: 0,
-        }}
-      >
+      <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", minWidth: 60, paddingTop: 2, flexShrink: 0 }}>
         {label}
       </span>
       <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{value}</p>

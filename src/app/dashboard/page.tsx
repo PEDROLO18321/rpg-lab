@@ -79,6 +79,27 @@ export default function SystemSelectPage() {
         overflow: "hidden",
       }}
     >
+      {/* Home button */}
+      <div style={{ position: "absolute", top: 20, left: 24, zIndex: 10 }}>
+        <a
+          href="/"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: "0.82rem",
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            padding: "6px 12px",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            background: "var(--surface)",
+          }}
+        >
+          ← Início
+        </a>
+      </div>
+
       {/* ambient glow */}
       <div
         aria-hidden

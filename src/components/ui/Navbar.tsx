@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 const LINKS = [
   { label: "Recursos",      href: "#features" },
@@ -9,8 +10,115 @@ const LINKS = [
   { label: "Como funciona", href: "#about"    },
 ];
 
+function ProfileMenu({ name }: { name: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const initial = name.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "5px 12px 5px 6px",
+          background: open ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.04)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-full)",
+          cursor: "pointer",
+          transition: "background 0.15s, border-color 0.15s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+      >
+        {/* Avatar circle */}
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            color: "#06090f",
+            flexShrink: 0,
+          }}
+        >
+          {initial}
+        </div>
+        <span style={{ fontSize: "0.865rem", fontWeight: 600, color: "var(--text)" }}>
+          {name}
+        </span>
+        {/* Chevron */}
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          style={{ color: "var(--text-muted)", transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0)" }}
+        >
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            minWidth: 180,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+            overflow: "hidden",
+            zIndex: 200,
+          }}
+        >
+          <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid var(--border)" }}>
+            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 2 }}>Conectado como</p>
+            <p style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>{name}</p>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "transparent",
+              border: "none",
+              textAlign: "left",
+              fontSize: "0.865rem",
+              color: "#f87171",
+              cursor: "pointer",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            Sair da conta
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { data: session, status } = useSession();
+  const isAuthed = status === "authenticated" && !!session;
+  const userName = session?.user?.name ?? session?.user?.email ?? "Usuário";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -103,51 +211,90 @@ export function Navbar() {
 
         {/* Actions */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <Link
-            href="/login"
-            style={{
-              padding: "7px 16px",
-              fontSize: "0.865rem",
-              fontWeight: 500,
-              color: "var(--text-muted)",
-              textDecoration: "none",
-              borderRadius: "var(--radius)",
-              transition: "color 0.15s",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-muted)"; }}
-          >
-            Entrar
-          </Link>
+          {status === "loading" ? (
+            <div style={{ width: 220, height: 34 }} />
+          ) : isAuthed ? (
+            <>
+              <Link
+                href="/dashboard"
+                style={{
+                  padding: "7px 20px",
+                  fontSize: "0.865rem",
+                  fontWeight: 600,
+                  color: "#06090f",
+                  background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
+                  textDecoration: "none",
+                  borderRadius: "var(--radius)",
+                  boxShadow: "0 0 18px var(--accent-glow)",
+                  transition: "filter 0.2s, box-shadow 0.2s, transform 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.filter = "brightness(1.1)";
+                  el.style.boxShadow = "0 0 30px var(--accent-glow-lg)";
+                  el.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.filter = "brightness(1)";
+                  el.style.boxShadow = "0 0 18px var(--accent-glow)";
+                  el.style.transform = "translateY(0)";
+                }}
+              >
+                Criação de Personagens
+              </Link>
 
-          <Link
-            href="/register"
-            style={{
-              padding: "7px 20px",
-              fontSize: "0.865rem",
-              fontWeight: 600,
-              color: "#06090f",
-              background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
-              textDecoration: "none",
-              borderRadius: "var(--radius)",
-              boxShadow: "0 0 18px var(--accent-glow)",
-              transition: "filter 0.2s, box-shadow 0.2s, transform 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLAnchorElement;
-              el.style.filter = "brightness(1.1)";
-              el.style.boxShadow = "0 0 30px var(--accent-glow-lg)";
-              el.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLAnchorElement;
-              el.style.filter = "brightness(1)";
-              el.style.boxShadow = "0 0 18px var(--accent-glow)";
-              el.style.transform = "translateY(0)";
-            }}
-          >
-            Começar grátis
-          </Link>
+              <ProfileMenu name={userName} />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                style={{
+                  padding: "7px 16px",
+                  fontSize: "0.865rem",
+                  fontWeight: 500,
+                  color: "var(--text-muted)",
+                  textDecoration: "none",
+                  borderRadius: "var(--radius)",
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-muted)"; }}
+              >
+                Entrar
+              </Link>
+
+              <Link
+                href="/register"
+                style={{
+                  padding: "7px 20px",
+                  fontSize: "0.865rem",
+                  fontWeight: 600,
+                  color: "#06090f",
+                  background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
+                  textDecoration: "none",
+                  borderRadius: "var(--radius)",
+                  boxShadow: "0 0 18px var(--accent-glow)",
+                  transition: "filter 0.2s, box-shadow 0.2s, transform 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.filter = "brightness(1.1)";
+                  el.style.boxShadow = "0 0 30px var(--accent-glow-lg)";
+                  el.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLAnchorElement;
+                  el.style.filter = "brightness(1)";
+                  el.style.boxShadow = "0 0 18px var(--accent-glow)";
+                  el.style.transform = "translateY(0)";
+                }}
+              >
+                Começar grátis
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

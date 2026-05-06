@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
+import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
 
@@ -83,12 +84,13 @@ interface Props {
   raceId:         string | null;
   subraceId:      string | null;
   classId:        string | null;
+  backgroundId:   string | null;
   bases:          Partial<Record<AbilityKey, number>>;
   selectedSkills: string[];
   onChange:       (partial: Partial<WizardData>) => void;
 }
 
-export function StepAttrs({ raceId, subraceId, classId, bases, selectedSkills, onChange }: Props) {
+export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, selectedSkills, onChange }: Props) {
   const [method, setMethod] = useState<Method>("pointbuy");
   const [stdAssign, setStdAssign] = useState<Record<number, AbilityKey | "">>(() =>
     STANDARD_ARRAY.reduce((acc, _, i) => ({ ...acc, [i]: "" }), {} as Record<number, AbilityKey | "">)
@@ -97,6 +99,8 @@ export function StepAttrs({ raceId, subraceId, classId, bases, selectedSkills, o
   const race    = RACES.find((r) => r.id === raceId);
   const subrace = race?.subraces.find((s) => s.id === subraceId);
   const cls     = CLASSES.find((c) => c.id === classId);
+  const bg      = BACKGROUNDS.find((b) => b.id === backgroundId);
+  const bgSkills = bg?.skills ?? [];
 
   // Bônus raciais mesclados (raça + sub-raça)
   const racialBonus = useMemo<Partial<Record<AbilityKey, number>>>(() => {
@@ -511,6 +515,76 @@ export function StepAttrs({ raceId, subraceId, classId, bases, selectedSkills, o
         </div>
       )}
 
+      {/* Perícias do Antecedente (travadas) */}
+      {bgSkills.length > 0 && (
+        <div>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+            Perícias do Antecedente — {bg?.name}
+          </p>
+          <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
+            Concedidas automaticamente pelo antecedente. Não podem ser removidas.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {bgSkills.map((skill) => {
+              const abilityKey = SKILL_MAP[skill] ?? "str";
+              const score      = finalScores[abilityKey];
+              const totalBonus = mod(score) + PROF_BONUS;
+              return (
+                <div
+                  key={skill}
+                  style={{
+                    background: "rgba(201,148,31,0.06)",
+                    border: "1px solid rgba(201,148,31,0.25)",
+                    borderRadius: "var(--radius)",
+                    padding: "11px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    opacity: 0.9,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div
+                      style={{
+                        width: 18, height: 18,
+                        borderRadius: 4,
+                        border: "2px solid var(--accent)",
+                        background: "var(--accent)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        flexShrink: 0,
+                        fontSize: "0.65rem", color: "#06090f", fontWeight: 900,
+                      }}
+                    >
+                      ✓
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--accent-light)" }}>
+                        {skill}
+                      </span>
+                      <span style={{ marginLeft: 8, fontSize: "0.68rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
+                        antecedente
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "2px 7px" }}>
+                      {ABILITY_SHORT[abilityKey]}
+                    </span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--accent)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xs)", padding: "1px 5px" }}>
+                      +{PROF_BONUS} prof.
+                    </span>
+                    <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--accent-light)", minWidth: 30, textAlign: "right" }}>
+                      {signed(totalBonus)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Seleção de perícias */}
       {cls && (
         <div>
@@ -528,13 +602,14 @@ export function StepAttrs({ raceId, subraceId, classId, bases, selectedSkills, o
             {cls.skillChoices.map((skill) => {
               const abilityKey  = SKILL_MAP[skill] ?? "str";
               const score       = finalScores[abilityKey];
-              const isSelected  = selectedSkills.includes(skill);
+              const isFromBg    = bgSkills.includes(skill);
+              const isSelected  = selectedSkills.includes(skill) || isFromBg;
               const totalBonus  = mod(score) + (isSelected ? PROF_BONUS : 0);
-              const isDisabled  = !isSelected && selectedSkills.length >= cls.skillCount;
+              const isDisabled  = isFromBg || (!selectedSkills.includes(skill) && selectedSkills.length >= cls.skillCount);
               return (
                 <button
                   key={skill}
-                  onClick={() => toggleSkill(skill)}
+                  onClick={() => !isFromBg && toggleSkill(skill)}
                   disabled={isDisabled}
                   style={{
                     background: isSelected ? "var(--accent-dim)" : "var(--surface)",
@@ -570,6 +645,11 @@ export function StepAttrs({ raceId, subraceId, classId, bases, selectedSkills, o
                       <span style={{ fontSize: "0.85rem", fontWeight: isSelected ? 700 : 400, color: isSelected ? "var(--accent-light)" : "var(--text)" }}>
                         {skill}
                       </span>
+                      {isFromBg && (
+                        <span style={{ marginLeft: 8, fontSize: "0.68rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
+                          antecedente
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>

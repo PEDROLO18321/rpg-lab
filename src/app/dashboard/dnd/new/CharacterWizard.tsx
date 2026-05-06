@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RACES } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
@@ -69,6 +69,10 @@ export function CharacterWizard({ userId, systemId }: Props) {
       ...(partial.desc ? { desc: { ...prev.desc, ...partial.desc } } : {}),
     }));
   }
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [step]);
 
   function next() { setStep((s) => Math.min(s + 1, STEPS.length - 1)); }
   function back() { setStep((s) => Math.max(s - 1, 0)); }
@@ -241,7 +245,6 @@ export function CharacterWizard({ userId, systemId }: Props) {
         {step === 1 && (
           <StepClass
             selected={data.classId ?? null}
-            selectedSubclass={data.subclassId ?? null}
             onChange={patch}
           />
         )}
@@ -256,6 +259,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
             raceId={data.raceId ?? null}
             subraceId={data.subraceId ?? null}
             classId={data.classId ?? null}
+            backgroundId={data.backgroundId ?? null}
             bases={data.abilityBases ?? {}}
             selectedSkills={data.selectedSkills ?? []}
             onChange={patch}
@@ -264,6 +268,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
         {step === 4 && (
           <StepDesc
             backgroundId={data.backgroundId ?? null}
+            raceId={data.raceId ?? null}
             desc={data.desc ?? {}}
             onChange={patch}
           />

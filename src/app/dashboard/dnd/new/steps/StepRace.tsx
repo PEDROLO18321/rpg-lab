@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image, { StaticImageData } from "next/image";
 import { RACES, ABILITY_LABELS, formatBonuses } from "@/lib/dnd/races";
 import type { Race, Subrace } from "@/lib/dnd/races";
@@ -37,6 +37,7 @@ interface Props {
 
 export function StepRace({ selected, selectedSubrace, charName, onChange }: Props) {
   const [hoveredRace, setHoveredRace] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
 
   const race: Race | undefined = RACES.find((r) => r.id === selected);
   const subrace: Subrace | undefined = race?.subraces.find((s) => s.id === selectedSubrace);
@@ -48,6 +49,9 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
       subraceId: r.subraces.length === 1 ? r.subraces[0].id : "",
       charName: charName,
     });
+    setTimeout(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   function pickRandomName() {
@@ -170,6 +174,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
       {/* Detail panel — shown when a race is selected */}
       {race && (
         <div
+          ref={detailRef}
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border-accent)",
@@ -313,7 +318,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                   return (
                     <button
                       key={sub.id}
-                      onClick={() => onChange({ subraceId: isSubSelected ? "" : sub.id })}
+                      onClick={() => onChange({ subraceId: sub.id })}
                       style={{
                         background: isSubSelected ? "var(--accent-dim)" : "var(--surface-2)",
                         border: `1px solid ${isSubSelected ? "var(--accent)" : "var(--border)"}`,

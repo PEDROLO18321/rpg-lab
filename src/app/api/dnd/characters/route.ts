@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
             cha: finalScores.cha,
             hpMax,
             hpCurrent: hpMax,
-            hitDice:   `1d${cls.hitDie}`,
+            hitDice:   `D${cls.hitDie}`,
             speed:     race.speed,
             armorClass: ac,
             initiative: dexMod,

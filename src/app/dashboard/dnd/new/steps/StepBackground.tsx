@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import type { Background } from "@/lib/dnd/backgrounds";
 import type { WizardData } from "../CharacterWizard";
@@ -12,6 +12,7 @@ interface Props {
 
 export function StepBackground({ selected, onChange }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
 
   const bg: Background | undefined = BACKGROUNDS.find((b) => b.id === selected);
 
@@ -51,7 +52,10 @@ export function StepBackground({ selected, onChange }: Props) {
           return (
             <button
               key={b.id}
-              onClick={() => onChange({ backgroundId: isSelected ? "" : b.id })}
+              onClick={() => {
+                  onChange({ backgroundId: isSelected ? "" : b.id });
+                  if (!isSelected) setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                }}
               onMouseEnter={() => setHovered(b.id)}
               onMouseLeave={() => setHovered(null)}
               style={{
@@ -93,6 +97,7 @@ export function StepBackground({ selected, onChange }: Props) {
       {/* Detail panel */}
       {bg && (
         <div
+          ref={detailRef}
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border-accent)",

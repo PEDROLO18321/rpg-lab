@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 /* Decorative character sheet preview */
 function SheetPreview() {
@@ -157,6 +158,9 @@ function SheetPreview() {
 }
 
 export function Hero() {
+  const { data: session, status } = useSession();
+  const isAuthed = status === "authenticated" && !!session;
+
   return (
     <section
       style={{
@@ -264,68 +268,134 @@ export function Hero() {
 
           {/* CTAs */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 4 }}>
-            <Link
-              href="/register"
-              className="pulse-glow"
-              style={{
-                padding: "13px 30px",
-                fontSize: "0.9375rem",
-                fontWeight: 700,
-                color: "#06090f",
-                background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
-                textDecoration: "none",
-                borderRadius: "var(--radius)",
-                boxShadow: "0 0 28px var(--accent-glow), 0 4px 14px rgba(0,0,0,0.35)",
-                transition: "filter 0.2s, transform 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.filter = "brightness(1.1)";
-                el.style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.filter = "brightness(1)";
-                el.style.transform = "translateY(0)";
-              }}
-            >
-              Começar gratuitamente
-            </Link>
-            <a
-              href="#features"
-              style={{
-                padding: "13px 28px",
-                fontSize: "0.9375rem",
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                border: "1px solid var(--border)",
-                background: "rgba(255,255,255,0.025)",
-                textDecoration: "none",
-                borderRadius: "var(--radius)",
-                transition: "color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.color = "var(--text)";
-                el.style.borderColor = "var(--border-hover)";
-                el.style.background = "rgba(255,255,255,0.06)";
-                el.style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLAnchorElement;
-                el.style.color = "var(--text-muted)";
-                el.style.borderColor = "var(--border)";
-                el.style.background = "rgba(255,255,255,0.025)";
-                el.style.transform = "translateY(0)";
-              }}
-            >
-              Ver recursos →
-            </a>
+            {isAuthed ? (
+              <>
+                <Link
+                  href="/dashboard/dnd"
+                  className="pulse-glow"
+                  style={{
+                    padding: "13px 30px",
+                    fontSize: "0.9375rem",
+                    fontWeight: 700,
+                    color: "#06090f",
+                    background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
+                    textDecoration: "none",
+                    borderRadius: "var(--radius)",
+                    boxShadow: "0 0 28px var(--accent-glow), 0 4px 14px rgba(0,0,0,0.35)",
+                    transition: "filter 0.2s, transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.filter = "brightness(1.1)";
+                    el.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.filter = "brightness(1)";
+                    el.style.transform = "translateY(0)";
+                  }}
+                >
+                  Criação de Personagens
+                </Link>
+                <Link
+                  href="/dashboard"
+                  style={{
+                    padding: "13px 28px",
+                    fontSize: "0.9375rem",
+                    fontWeight: 500,
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border)",
+                    background: "rgba(255,255,255,0.025)",
+                    textDecoration: "none",
+                    borderRadius: "var(--radius)",
+                    transition: "color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.color = "var(--text)";
+                    el.style.borderColor = "var(--border-hover)";
+                    el.style.background = "rgba(255,255,255,0.06)";
+                    el.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.color = "var(--text-muted)";
+                    el.style.borderColor = "var(--border)";
+                    el.style.background = "rgba(255,255,255,0.025)";
+                    el.style.transform = "translateY(0)";
+                  }}
+                >
+                  Meu Perfil →
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/register"
+                  className="pulse-glow"
+                  style={{
+                    padding: "13px 30px",
+                    fontSize: "0.9375rem",
+                    fontWeight: 700,
+                    color: "#06090f",
+                    background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
+                    textDecoration: "none",
+                    borderRadius: "var(--radius)",
+                    boxShadow: "0 0 28px var(--accent-glow), 0 4px 14px rgba(0,0,0,0.35)",
+                    transition: "filter 0.2s, transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.filter = "brightness(1.1)";
+                    el.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.filter = "brightness(1)";
+                    el.style.transform = "translateY(0)";
+                  }}
+                >
+                  Começar gratuitamente
+                </Link>
+                <a
+                  href="#features"
+                  style={{
+                    padding: "13px 28px",
+                    fontSize: "0.9375rem",
+                    fontWeight: 500,
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border)",
+                    background: "rgba(255,255,255,0.025)",
+                    textDecoration: "none",
+                    borderRadius: "var(--radius)",
+                    transition: "color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.color = "var(--text)";
+                    el.style.borderColor = "var(--border-hover)";
+                    el.style.background = "rgba(255,255,255,0.06)";
+                    el.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLAnchorElement;
+                    el.style.color = "var(--text-muted)";
+                    el.style.borderColor = "var(--border)";
+                    el.style.background = "rgba(255,255,255,0.025)";
+                    el.style.transform = "translateY(0)";
+                  }}
+                >
+                  Ver recursos →
+                </a>
+              </>
+            )}
           </div>
 
-          <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)" }}>
-            Gratuito para começar · Sem cartão de crédito · Acesso de qualquer dispositivo
-          </p>
+          {!isAuthed && (
+            <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)" }}>
+              Gratuito para começar · Sem cartão de crédito · Acesso de qualquer dispositivo
+            </p>
+          )}
         </div>
 
         {/* Right — preview card */}

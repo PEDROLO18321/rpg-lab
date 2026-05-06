@@ -6,6 +6,7 @@ import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { DeleteCharacterButton } from "@/components/dashboard/DeleteCharacterButton";
 import type { AbilityKey } from "@/lib/dnd/races";
 
 /* ── types ── */
@@ -114,9 +115,7 @@ export default async function CharacterSheetPage({
   const raceName = race
     ? subrace ? `${race.name} (${subrace.name})` : race.name
     : sheet?.race ?? "—";
-  const className = cls
-    ? subclass ? `${cls.name} — ${subclass.name}` : cls.name
-    : clsEntry?.className ?? "—";
+  const className = cls?.name ?? clsEntry?.className ?? "—";
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
@@ -129,7 +128,7 @@ export default async function CharacterSheetPage({
       <main style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 80px" }}>
 
         {/* Breadcrumb */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
+        <div style={{ marginBottom: 28 }}>
           <Link
             href="/dashboard/dnd"
             style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none" }}
@@ -191,7 +190,8 @@ export default async function CharacterSheetPage({
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
             <Chip label="Nível" value={String(level)} accent />
-            <Chip label="Dado de Vida" value={sheet?.hitDice ?? `d${cls?.hitDie ?? "?"}`} />
+            <Chip label="Dado de Vida" value={(sheet?.hitDice ?? `D${cls?.hitDie ?? "?"}`).toUpperCase().replace("1D","D")} />
+            <Chip label="Bônus de Proficiência" value={`+${PROF_BONUS}`} accent />
           </div>
         </div>
 
@@ -208,7 +208,7 @@ export default async function CharacterSheetPage({
             <StatBox label="Pontos de Vida" value={`${sheet.hpCurrent} / ${sheet.hpMax}`} accent />
             <StatBox label="Classe de Armadura" value={String(sheet.armorClass)} />
             <StatBox label="Iniciativa" value={signed(sheet.initiative)} />
-            <StatBox label="Velocidade" value={`${sheet.speed} ft`} />
+            <StatBox label="Velocidade" value={`${sheet.speed} m`} />
             <StatBox label="Perc. Passiva" value={String(passivePerception)} />
             {sheet.inspiration && <StatBox label="Inspiração" value="✦" accent />}
           </div>
@@ -293,7 +293,13 @@ export default async function CharacterSheetPage({
                   />
                 )}
                 {cls && (
-                  <TraitGroup label={`Classe — ${cls.name}`} items={cls.keyFeatures} />
+                  <TraitGroup
+                    label={`Classe — ${cls.name} · Nível 1`}
+                    items={cls.keyFeatures.filter((f) => {
+                      const m = f.match(/\((\d+)°\)/);
+                      return !m || parseInt(m[1]) <= 1;
+                    })}
+                  />
                 )}
                 {bg && (
                   <TraitGroup
@@ -410,6 +416,11 @@ export default async function CharacterSheetPage({
           </div>
         </div>
       </main>
+
+      {/* Delete button — fixed bottom right */}
+      <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 40 }}>
+        <DeleteCharacterButton characterId={character.id} characterName={character.name} />
+      </div>
     </div>
   );
 }

@@ -13,7 +13,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl = params.get("callbackUrl") ?? "/";
 
   const urlError = params.get("error");
   const [form, setForm]   = useState({ email: "", password: "" });

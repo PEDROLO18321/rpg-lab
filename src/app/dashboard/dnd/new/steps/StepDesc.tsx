@@ -1,6 +1,7 @@
 "use client";
 
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
+import { randomPhysical, pick } from "@/lib/dnd/physicalTraits";
 import type { WizardData, DescData } from "../CharacterWizard";
 
 const ALIGNMENTS = [
@@ -17,18 +18,33 @@ const ALIGNMENTS = [
 
 interface Props {
   backgroundId: string | null;
+  raceId:       string | null;
   desc:         Partial<DescData>;
   onChange:     (partial: Partial<WizardData>) => void;
 }
 
-export function StepDesc({ backgroundId, desc, onChange }: Props) {
+export function StepDesc({ backgroundId, raceId, desc, onChange }: Props) {
   const bg = BACKGROUNDS.find((b) => b.id === backgroundId);
 
   function set(key: keyof DescData, value: string) {
     onChange({ desc: { ...desc, [key]: value } } as Partial<WizardData>);
   }
 
-  const canAdvance = !!desc.alignment;
+  function randomizePhysical() {
+    const r = randomPhysical(raceId);
+    if (!r) return;
+    onChange({
+      desc: {
+        ...desc,
+        age:    r.age,
+        height: r.height,
+        weight: r.weight,
+        eyes:   r.eyes,
+        skin:   r.skin,
+        hair:   r.hair,
+      },
+    } as Partial<WizardData>);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
@@ -98,13 +114,75 @@ export function StepDesc({ backgroundId, desc, onChange }: Props) {
 
       {/* Physical appearance */}
       <Section label="Aparência Física">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+          <RandomButton
+            onClick={randomizePhysical}
+            disabled={!raceId}
+            title={raceId ? "Gerar aparência aleatória baseada na raça" : "Selecione uma raça primeiro"}
+            label="🎲 Gerar tudo"
+          />
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
-          <Field label="Idade" placeholder="Ex: 27 anos" value={desc.age ?? ""} onChange={(v) => set("age", v)} />
-          <Field label="Altura" placeholder="Ex: 1,75 m" value={desc.height ?? ""} onChange={(v) => set("height", v)} />
-          <Field label="Peso" placeholder="Ex: 70 kg" value={desc.weight ?? ""} onChange={(v) => set("weight", v)} />
-          <Field label="Olhos" placeholder="Ex: Castanhos" value={desc.eyes ?? ""} onChange={(v) => set("eyes", v)} />
-          <Field label="Pele" placeholder="Ex: Bronzeada" value={desc.skin ?? ""} onChange={(v) => set("skin", v)} />
-          <Field label="Cabelo" placeholder="Ex: Preto longo" value={desc.hair ?? ""} onChange={(v) => set("hair", v)} />
+          <FieldWithRandom
+            label="Idade"
+            placeholder="Ex: 27 anos"
+            value={desc.age ?? ""}
+            onChange={(v) => set("age", v)}
+            onRandom={raceId ? () => {
+              const r = randomPhysical(raceId);
+              if (r) set("age", r.age);
+            } : undefined}
+          />
+          <FieldWithRandom
+            label="Altura"
+            placeholder="Ex: 1,75 m"
+            value={desc.height ?? ""}
+            onChange={(v) => set("height", v)}
+            onRandom={raceId ? () => {
+              const r = randomPhysical(raceId);
+              if (r) set("height", r.height);
+            } : undefined}
+          />
+          <FieldWithRandom
+            label="Peso"
+            placeholder="Ex: 70 kg"
+            value={desc.weight ?? ""}
+            onChange={(v) => set("weight", v)}
+            onRandom={raceId ? () => {
+              const r = randomPhysical(raceId);
+              if (r) set("weight", r.weight);
+            } : undefined}
+          />
+          <FieldWithRandom
+            label="Olhos"
+            placeholder="Ex: Castanhos"
+            value={desc.eyes ?? ""}
+            onChange={(v) => set("eyes", v)}
+            onRandom={raceId ? () => {
+              const r = randomPhysical(raceId);
+              if (r) set("eyes", r.eyes);
+            } : undefined}
+          />
+          <FieldWithRandom
+            label="Pele"
+            placeholder="Ex: Bronzeada"
+            value={desc.skin ?? ""}
+            onChange={(v) => set("skin", v)}
+            onRandom={raceId ? () => {
+              const r = randomPhysical(raceId);
+              if (r) set("skin", r.skin);
+            } : undefined}
+          />
+          <FieldWithRandom
+            label="Cabelo"
+            placeholder="Ex: Preto longo"
+            value={desc.hair ?? ""}
+            onChange={(v) => set("hair", v)}
+            onRandom={raceId ? () => {
+              const r = randomPhysical(raceId);
+              if (r) set("hair", r.hair);
+            } : undefined}
+          />
         </div>
       </Section>
 
@@ -198,22 +276,86 @@ function Section({ label, required, children }: { label: string; required?: bool
   );
 }
 
-function Field({
+function RandomButton({ onClick, disabled, title, label }: {
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{
+        padding: "6px 12px",
+        background: "var(--surface-2)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius)",
+        color: disabled ? "var(--text-subtle)" : "var(--text-muted)",
+        fontSize: "0.76rem",
+        cursor: disabled ? "not-allowed" : "pointer",
+        whiteSpace: "nowrap",
+        transition: "border-color 0.2s, color 0.2s",
+        opacity: disabled ? 0.5 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.borderColor = "var(--border-accent)";
+          e.currentTarget.style.color = "var(--accent-light)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border)";
+        e.currentTarget.style.color = disabled ? "var(--text-subtle)" : "var(--text-muted)";
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FieldWithRandom({
   label,
   placeholder,
   value,
   onChange,
+  onRandom,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (v: string) => void;
+  onRandom?: () => void;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <label style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        {label}
-      </label>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <label style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          {label}
+        </label>
+        {onRandom && (
+          <button
+            type="button"
+            onClick={onRandom}
+            title={`Gerar ${label} aleatório`}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-subtle)",
+              fontSize: "0.7rem",
+              cursor: "pointer",
+              padding: "0 2px",
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-light)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-subtle)")}
+          >
+            🎲
+          </button>
+        )}
+      </div>
       <input
         type="text"
         value={value}
@@ -249,9 +391,34 @@ function PersonalityField({
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <label style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        {label}
-      </label>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <label style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          {label}
+        </label>
+        {suggestions.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange(pick(suggestions))}
+            title={`Gerar ${label} aleatório`}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-subtle)",
+              fontSize: "0.7rem",
+              cursor: "pointer",
+              padding: "0 2px",
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-light)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-subtle)")}
+          >
+            🎲 aleatório
+          </button>
+        )}
+      </div>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}

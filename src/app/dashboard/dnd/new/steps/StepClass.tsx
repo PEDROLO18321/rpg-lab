@@ -1,24 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CLASSES } from "@/lib/dnd/classes";
 import type { DndClass } from "@/lib/dnd/classes";
 import type { WizardData } from "../CharacterWizard";
 
 interface Props {
-  selected:         string | null;
-  selectedSubclass: string | null;
-  onChange:         (partial: Partial<WizardData>) => void;
+  selected: string | null;
+  onChange: (partial: Partial<WizardData>) => void;
 }
 
-export function StepClass({ selected, selectedSubclass, onChange }: Props) {
+export function StepClass({ selected, onChange }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
 
   const cls: DndClass | undefined = CLASSES.find((c) => c.id === selected);
 
   function selectClass(classId: string) {
-    // reset subclass AND skills — skills are class-specific
     onChange({ classId, subclassId: "", selectedSkills: [] });
+    setTimeout(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   return (
@@ -102,7 +104,7 @@ export function StepClass({ selected, selectedSubclass, onChange }: Props) {
                   padding: "2px 6px",
                 }}
               >
-                d{c.hitDie}
+                D{c.hitDie}
               </span>
             </button>
           );
@@ -112,6 +114,7 @@ export function StepClass({ selected, selectedSubclass, onChange }: Props) {
       {/* Detail panel */}
       {cls && (
         <div
+          ref={detailRef}
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border-accent)",
@@ -179,7 +182,7 @@ export function StepClass({ selected, selectedSubclass, onChange }: Props) {
               gap: 10,
             }}
           >
-            <StatChip label="Dado de Vida" value={`d${cls.hitDie}`} accent />
+            <StatChip label="Dado de Vida" value={`D${cls.hitDie}`} accent />
             <StatChip label="Atributos Primários" value={cls.primaryAbilities.join(", ")} />
             <StatChip label="Saves" value={cls.savingThrows.join(", ")} />
             {cls.spellcasting && cls.spellcastingAbility && (
@@ -218,13 +221,16 @@ export function StepClass({ selected, selectedSubclass, onChange }: Props) {
             </div>
           </div>
 
-          {/* Key features */}
+          {/* Key features — level 1 only */}
           <div>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
-              Habilidades de Classe
+              Habilidades de Classe · Nível 1
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {cls.keyFeatures.map((f) => {
+              {cls.keyFeatures.filter((f) => {
+                const m = f.match(/\((\d+)°\)/);
+                return !m || parseInt(m[1]) <= 1;
+              }).map((f) => {
                 const [title, ...rest] = f.split(" — ");
                 return (
                   <div
@@ -261,61 +267,6 @@ export function StepClass({ selected, selectedSubclass, onChange }: Props) {
             </div>
           </div>
 
-          {/* Subclass picker */}
-          {cls.subclasses.length > 0 && (
-            <div>
-              <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
-                Subclasse <span style={{ fontWeight: 400, textTransform: "none", fontSize: "0.7rem" }}>(opcional — escolhida no nível 3)</span>
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {cls.subclasses.map((sc) => {
-                  const isSubSelected = selectedSubclass === sc.id;
-                  return (
-                    <button
-                      key={sc.id}
-                      onClick={() => onChange({ subclassId: isSubSelected ? "" : sc.id })}
-                      style={{
-                        background: isSubSelected ? "var(--accent-dim)" : "var(--surface-2)",
-                        border: `1px solid ${isSubSelected ? "var(--accent)" : "var(--border)"}`,
-                        borderRadius: "var(--radius-lg)",
-                        padding: "14px 16px",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "border-color 0.2s, background 0.2s",
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontWeight: 700,
-                          fontSize: "0.85rem",
-                          color: isSubSelected ? "var(--accent-light)" : "var(--text)",
-                          marginBottom: 4,
-                        }}
-                      >
-                        {sc.name}
-                      </p>
-                      <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: isSubSelected && sc.features.length > 0 ? 10 : 0 }}>
-                        {sc.description}
-                      </p>
-                      {isSubSelected && sc.features.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
-                          {sc.features.map((feat) => {
-                            const [t, ...rest] = feat.split(" — ");
-                            return (
-                              <div key={feat} style={{ fontSize: "0.76rem", color: "var(--text-muted)", display: "flex", gap: 6 }}>
-                                <span style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>{t}</span>
-                                {rest.length > 0 && <span>— {rest.join(" — ")}</span>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
