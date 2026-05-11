@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { RACES } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
+import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
+import { resolveEquipment } from "@/lib/dnd/equipmentParser";
 import type { AbilityKey } from "@/lib/dnd/races";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
@@ -26,6 +28,7 @@ export async function POST(req: NextRequest) {
       abilityBases,
       selectedSkills,
       desc,
+      equipmentChoices,
     } = body;
 
     // Validate required fields
@@ -74,6 +77,16 @@ export async function POST(req: NextRequest) {
 
     const subclassObj = cls.subclasses?.find((s: { id: string }) => s.id === subclassId);
 
+    // Resolve equipment list
+    const bg = BACKGROUNDS.find((b) => b.id === backgroundId);
+    const ec: Record<string, string> = equipmentChoices ?? {};
+    const useGold = ec["useGold"] === "true";
+    const goldAmount = useGold && ec["rolledGold"] ? parseInt(ec["rolledGold"]) : null;
+
+    const resolvedItems = useGold
+      ? []
+      : resolveEquipment(cls.startingEquipment, bg?.startingEquipment ?? [], ec);
+
     const character = await prisma.character.create({
       data: {
         userId,
@@ -98,6 +111,7 @@ export async function POST(req: NextRequest) {
             speed:     race.speed,
             armorClass: ac,
             initiative: dexMod,
+            gp: goldAmount ?? 0,
             classes: {
               create: {
                 className: classId,
@@ -111,6 +125,12 @@ export async function POST(req: NextRequest) {
                 proficient: true,
               })),
             },
+            equipment: resolvedItems.length > 0 ? {
+              create: resolvedItems.map((itemName: string) => ({
+                itemName,
+                quantity: 1,
+              })),
+            } : undefined,
           },
         },
       },

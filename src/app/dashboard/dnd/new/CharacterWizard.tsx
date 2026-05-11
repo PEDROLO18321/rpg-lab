@@ -39,15 +39,16 @@ export interface DescData {
 }
 
 export interface WizardData {
-  raceId:         string;
-  subraceId:      string;
-  charName:       string;
-  classId:        string;
-  subclassId:     string;
-  backgroundId:   string;
-  abilityBases:   Record<AbilityKey, number>;
-  selectedSkills: string[];
-  desc:           Partial<DescData>;
+  raceId:           string;
+  subraceId:        string;
+  charName:         string;
+  classId:          string;
+  subclassId:       string;
+  backgroundId:     string;
+  abilityBases:     Record<AbilityKey, number>;
+  selectedSkills:   string[];
+  desc:             Partial<DescData>;
+  equipmentChoices: Record<string, string>;
 }
 
 interface Props {
@@ -65,8 +66,9 @@ export function CharacterWizard({ userId, systemId }: Props) {
     setData((prev) => ({
       ...prev,
       ...partial,
-      // deep-merge the nested desc object so individual fields don't reset
-      ...(partial.desc ? { desc: { ...prev.desc, ...partial.desc } } : {}),
+      // deep-merge nested objects so individual fields don't reset
+      ...(partial.desc             ? { desc:             { ...prev.desc,             ...partial.desc             } } : {}),
+      ...(partial.equipmentChoices ? { equipmentChoices: { ...prev.equipmentChoices, ...partial.equipmentChoices } } : {}),
     }));
   }
 
@@ -277,6 +279,8 @@ export function CharacterWizard({ userId, systemId }: Props) {
           <StepEquipment
             classId={data.classId ?? null}
             backgroundId={data.backgroundId ?? null}
+            equipmentChoices={data.equipmentChoices ?? {}}
+            onChange={patch}
           />
         )}
         {step === 6 && (

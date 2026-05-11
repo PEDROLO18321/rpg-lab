@@ -3,6 +3,7 @@
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
+import { resolveEquipment } from "@/lib/dnd/equipmentParser";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
 
@@ -310,19 +311,39 @@ export function StepReview({ data }: Props) {
       )}
 
       {/* Equipment */}
-      {(cls || bg) && (
-        <Section label="Equipamento Inicial">
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {cls?.startingEquipment.map((item, i) => <EquipRow key={`cls-${i}`} item={item} accent />)}
-            {bg?.startingEquipment.map((item, i)  => <EquipRow key={`bg-${i}`}  item={item} />)}
-          </div>
-          {cls && (
-            <p style={{ marginTop: 12, fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
-              Alternativa: {cls.startingGold} para comprar equipamento próprio.
-            </p>
-          )}
-        </Section>
-      )}
+      {(cls || bg) && (() => {
+        const ec = data.equipmentChoices ?? {};
+        const useGold = ec["useGold"] === "true";
+        const goldAmt = ec["rolledGold"];
+        const resolved = resolveEquipment(
+          cls?.startingEquipment ?? [],
+          bg?.startingEquipment  ?? [],
+          ec,
+        );
+        return (
+          <Section label="Equipamento Inicial">
+            {useGold ? (
+              <div>
+                <p style={{ fontSize: "0.84rem", color: "var(--accent-light)", fontWeight: 700, marginBottom: 4 }}>
+                  🪙 Riqueza inicial: {goldAmt ? `${goldAmt} po` : cls?.startingGold}
+                </p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)" }}>
+                  Equipamento a ser comprado com as moedas de ouro.
+                </p>
+              </div>
+            ) : resolved.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {resolved.map((item, i) => <EquipRow key={i} item={item} accent={i < (cls?.startingEquipment.length ?? 0)} />)}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {cls?.startingEquipment.map((item, i) => <EquipRow key={`cls-${i}`} item={item} accent />)}
+                {bg?.startingEquipment.map((item, i)  => <EquipRow key={`bg-${i}`}  item={item} />)}
+              </div>
+            )}
+          </Section>
+        );
+      })()}
 
       {/* Confirm */}
       <div
