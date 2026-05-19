@@ -92,6 +92,7 @@ model Character {
   system System @relation(fields: [systemId], references: [id])
 
   dndSheet           DndSheet?
+  tormentaSheet      TormentaSheet?
   campaignCharacters CampaignCharacter[]
 }
 
@@ -198,6 +199,77 @@ model DndFeature {
   description String?
 
   sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+// ─── tormenta20 ──────────────────────────────────────────────────────────────────
+model TormentaSheet {
+  id String @id
+  character Character @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  race        String?
+  origin      String?
+  background  String?
+  xp          Int         @default(0)
+  level       Int         @default(1)
+  mana        Int         @default(1)
+
+  str Int @default(10)
+  dex Int @default(10)
+  con Int @default(10)
+  int Int @default(10)
+  wis Int @default(10)
+  cha Int @default(10)
+
+  pvMax     Int @default(10)
+  pvCurrent Int @default(10)
+  peMax     Int @default(10)
+  peCurrent Int @default(10)
+
+  armor     Int @default(10)
+  movement  Int @default(6)
+
+  classes   TormentaClass[]
+  equipment TormentaEquipment[]
+  powerG    TormentaPowerG[]
+  spells    TormentaSpell[]
+}
+
+model TormentaClass {
+  id        String       @id @default(cuid())
+  sheetId   String
+  className String
+  level     Int
+
+  sheet TormentaSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+model TormentaEquipment {
+  id          String       @id @default(cuid())
+  sheetId     String
+  itemName    String
+  quantity    Int     @default(1)
+  description String?
+
+  sheet TormentaSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+model TormentaPowerG {
+  id          String       @id @default(cuid())
+  sheetId     String
+  name        String
+  description String?
+
+  sheet TormentaSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+model TormentaSpell {
+  id          String       @id @default(cuid())
+  sheetId     String
+  name        String
+  level       Int     @default(0)
+  description String?
+
+  sheet TormentaSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
 }
 
 // ─── CAMPANHAS (preparado, sem área mestre ativa) ─────────────────────────────

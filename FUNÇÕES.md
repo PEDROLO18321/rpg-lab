@@ -1,0 +1,1 @@
+Quando eu der uma mudança n banco eu tenho que rodar um npx prisma generate
