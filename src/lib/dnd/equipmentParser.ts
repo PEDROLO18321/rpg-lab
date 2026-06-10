@@ -89,6 +89,38 @@ export function parseEquipmentLine(text: string): EquipmentLine {
   return { type: "choice", choices };
 }
 
+const CURRENCY_RE = /^(bolsa\s+com\s+)?(\d+)\s*(po|pp|pc|pe|pl)$/i;
+const PT_TO_KEY: Record<string, "gp" | "sp" | "cp" | "ep" | "pp"> = {
+  po: "gp", pp: "sp", pc: "cp", pe: "ep", pl: "pp",
+};
+
+export function isCurrencyItem(text: string): boolean {
+  return CURRENCY_RE.test(text.trim());
+}
+
+export function parseCurrencyItem(text: string): Partial<Record<"gp"|"sp"|"cp"|"ep"|"pp", number>> | null {
+  const m = text.trim().match(CURRENCY_RE);
+  if (!m) return null;
+  const key = PT_TO_KEY[m[3].toLowerCase()];
+  return { [key]: parseInt(m[2]) };
+}
+
+/** Extract starting currency from fixed equipment items in both lists */
+export function extractStartingCurrency(
+  clsItems: string[],
+  bgItems:  string[],
+): Partial<Record<"gp"|"sp"|"cp"|"ep"|"pp", number>> {
+  const totals: Record<string, number> = {};
+  [...clsItems, ...bgItems].forEach((raw) => {
+    if (raw.trimStart().startsWith("(a)")) return; // skip choice lines
+    const parsed = parseCurrencyItem(raw);
+    if (parsed) {
+      Object.entries(parsed).forEach(([k, v]) => { totals[k] = (totals[k] ?? 0) + v; });
+    }
+  });
+  return totals;
+}
+
 /** Resolve all equipment choices into a flat list of item strings */
 export function resolveEquipment(
   clsItems: string[],
@@ -100,7 +132,7 @@ export function resolveEquipment(
   function resolve(raw: string, prefix: string, idx: number) {
     const line = parseEquipmentLine(raw);
     if (line.type === "fixed") {
-      result.push(line.text);
+      if (!isCurrencyItem(line.text)) result.push(line.text);
       return;
     }
     const letter = choices[`${prefix}_${idx}`];

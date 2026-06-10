@@ -123,6 +123,74 @@ body {
   background-clip: text;
 }
 
+/* ── Home page animations ──────────────────────────────────────────────── */
+@keyframes orb-a {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%     { transform: translate(6%,4%) scale(1.08); }
+  66%     { transform: translate(-4%,7%) scale(0.95); }
+}
+@keyframes orb-b {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(-9%,5%) scale(1.1); }
+}
+@keyframes orb-c {
+  0%,100% { transform: translate(0,0); }
+  50%     { transform: translate(7%,-6%); }
+}
+@keyframes particle-rise {
+  0%   { transform: translateY(0) rotate(0deg)   scale(0.8); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 0.6; }
+  100% { transform: translateY(-88vh) rotate(360deg) scale(1.1); opacity: 0; }
+}
+@keyframes class-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes class-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes shimmer-text {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.anim-fade-up  { animation: fade-in-up 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-scale-in { animation: scale-in  0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.text-shimmer  {
+  background: linear-gradient(90deg, var(--accent-light) 0%, #fff8e1 40%, var(--accent) 60%, var(--accent-light) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-text 4s linear infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes dice-shake {
+  0%, 100% { transform: rotate(0deg)   scale(1.05); }
+  25%       { transform: rotate(-12deg) scale(1.1);  }
+  75%       { transform: rotate(12deg)  scale(1.1);  }
+}
+@keyframes result-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  65%  { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.dice-rolling     { animation: dice-shake 0.08s linear infinite; }
+.dice-result-pop  { animation: result-pop 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+
 /* ── Section separator ─────────────────────────────────────────────────── */
 .section-label {
   font-size: 0.72rem;

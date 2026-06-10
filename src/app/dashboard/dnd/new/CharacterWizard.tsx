@@ -11,7 +11,9 @@ import { StepBackground } from "./steps/StepBackground";
 import { StepAttrs } from "./steps/StepAttrs";
 import { StepDesc } from "./steps/StepDesc";
 import { StepEquipment } from "./steps/StepEquipment";
+import { StepSpells } from "./steps/StepSpells";
 import { StepReview } from "./steps/StepReview";
+import { SPELLCASTING } from "@/lib/dnd/spells";
 
 const STEPS = [
   { id: "race",       label: "Raça"        },
@@ -20,6 +22,7 @@ const STEPS = [
   { id: "attrs",      label: "Atributos"   },
   { id: "desc",       label: "Descrição"   },
   { id: "equipment",  label: "Equipamento" },
+  { id: "spells",     label: "Magias"      },
   { id: "review",     label: "Revisão"     },
 ];
 
@@ -39,16 +42,19 @@ export interface DescData {
 }
 
 export interface WizardData {
-  raceId:           string;
-  subraceId:        string;
-  charName:         string;
-  classId:          string;
-  subclassId:       string;
-  backgroundId:     string;
-  abilityBases:     Record<AbilityKey, number>;
-  selectedSkills:   string[];
-  desc:             Partial<DescData>;
-  equipmentChoices: Record<string, string>;
+  raceId:            string;
+  subraceId:         string;
+  charName:          string;
+  classId:           string;
+  subclassId:        string;
+  backgroundId:      string;
+  abilityBases:      Record<AbilityKey, number>;
+  selectedSkills:    string[];
+  desc:              Partial<DescData>;
+  equipmentChoices:  Record<string, string>;
+  selectedCantrips:  string[];
+  selectedSpells:    string[];
+  selectedLanguages: string[];
 }
 
 interface Props {
@@ -96,6 +102,13 @@ export function CharacterWizard({ userId, systemId }: Props) {
       return skillsDone && attrsDone;
     }
     if (step === 4) return !!data.desc?.alignment;
+    if (step === 6) {
+      const config = data.classId ? SPELLCASTING[data.classId] : null;
+      if (!config) return true; // non-caster, skip
+      const cantripsDone = (data.selectedCantrips?.length ?? 0) >= config.cantripsKnown;
+      const spellsDone   = (data.selectedSpells?.length   ?? 0) >= config.spellsKnown;
+      return cantripsDone && spellsDone;
+    }
     return true;
   }, [step, data]);
 
@@ -247,6 +260,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
         {step === 1 && (
           <StepClass
             selected={data.classId ?? null}
+            subclassId={data.subclassId}
             onChange={patch}
           />
         )}
@@ -272,6 +286,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
             backgroundId={data.backgroundId ?? null}
             raceId={data.raceId ?? null}
             desc={data.desc ?? {}}
+            selectedLanguages={data.selectedLanguages ?? []}
             onChange={patch}
           />
         )}
@@ -284,9 +299,17 @@ export function CharacterWizard({ userId, systemId }: Props) {
           />
         )}
         {step === 6 && (
+          <StepSpells
+            classId={data.classId ?? null}
+            selectedCantrips={data.selectedCantrips ?? []}
+            selectedSpells={data.selectedSpells ?? []}
+            onChange={patch}
+          />
+        )}
+        {step === 7 && (
           <StepReview data={data} />
         )}
-        {step > 6 && (
+        {step > 7 && (
           <div
             style={{
               display: "flex",
@@ -298,7 +321,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
               fontSize: "0.9rem",
             }}
           >
-            <span style={{ fontSize: "2rem" }}>🚧</span>
+            <span style={{ fontSize: "1.4rem", color: "var(--text-subtle)" }}>—</span>
             Em construção — {STEPS[step].label}
           </div>
         )}
@@ -374,7 +397,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
               boxShadow: "0 0 20px var(--accent-glow)",
             }}
           >
-            {saving ? "Salvando…" : "Criar Personagem ✓"}
+            {saving ? "Salvando…" : "Criar Personagem"}
           </button>
         )}
       </div>

@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { RACES } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
-import { resolveEquipment } from "@/lib/dnd/equipmentParser";
+import { resolveEquipment, extractStartingCurrency } from "@/lib/dnd/equipmentParser";
+import { SPELLS } from "@/lib/dnd/spells";
 import type { AbilityKey } from "@/lib/dnd/races";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
       selectedSkills,
       desc,
       equipmentChoices,
+      selectedCantrips,
+      selectedSpells,
+      selectedLanguages,
     } = body;
 
     // Validate required fields
@@ -72,20 +76,28 @@ export async function POST(req: NextRequest) {
     const hpMax = cls.hitDie + conMod;
     const ac    = 10 + dexMod;
 
-    // Serialize description extras into Character.notes
-    const notes = desc && Object.keys(desc).length > 0 ? JSON.stringify(desc) : null;
+    // Serialize description + languages into Character.notes
+    const notesData = {
+      ...(desc ?? {}),
+      languages: selectedLanguages ?? [],
+    };
+    const notes = JSON.stringify(notesData);
 
-    const subclassObj = cls.subclasses?.find((s: { id: string }) => s.id === subclassId);
+    const subclassObj = subclassId
+      ? cls.subclasses?.find((s: { id: string }) => s.id === subclassId)
+      : null;
+
+    // Resolve selected spells to their data
+    const allSelectedSpellIds = [...(selectedCantrips ?? []), ...(selectedSpells ?? [])];
+    const resolvedSpells = allSelectedSpellIds
+      .map((id: string) => SPELLS.find((s) => s.id === id))
+      .filter(Boolean);
 
     // Resolve equipment list
     const bg = BACKGROUNDS.find((b) => b.id === backgroundId);
     const ec: Record<string, string> = equipmentChoices ?? {};
-    const useGold = ec["useGold"] === "true";
-    const goldAmount = useGold && ec["rolledGold"] ? parseInt(ec["rolledGold"]) : null;
-
-    const resolvedItems = useGold
-      ? []
-      : resolveEquipment(cls.startingEquipment, bg?.startingEquipment ?? [], ec);
+    const resolvedItems = resolveEquipment(cls.startingEquipment, bg?.startingEquipment ?? [], ec);
+    const startingCurrency = extractStartingCurrency(cls.startingEquipment, bg?.startingEquipment ?? []);
 
     const character = await prisma.character.create({
       data: {
@@ -111,7 +123,11 @@ export async function POST(req: NextRequest) {
             speed:     race.speed,
             armorClass: ac,
             initiative: dexMod,
-            gp: goldAmount ?? 0,
+            gp: startingCurrency.gp ?? 0,
+            sp: startingCurrency.sp ?? 0,
+            cp: startingCurrency.cp ?? 0,
+            ep: startingCurrency.ep ?? 0,
+            pp: startingCurrency.pp ?? 0,
             classes: {
               create: {
                 className: classId,
@@ -129,6 +145,18 @@ export async function POST(req: NextRequest) {
               create: resolvedItems.map((itemName: string) => ({
                 itemName,
                 quantity: 1,
+              })),
+            } : undefined,
+            spells: resolvedSpells.length > 0 ? {
+              create: resolvedSpells.map((spell) => ({
+                spellName:   spell!.name,
+                level:       spell!.level,
+                school:      spell!.school,
+                prepared:    spell!.level === 0,
+                castingTime: spell!.castingTime,
+                range:       spell!.range,
+                duration:    spell!.duration,
+                components:  "",
               })),
             } : undefined,
           },
