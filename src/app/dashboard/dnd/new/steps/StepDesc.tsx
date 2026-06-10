@@ -4,6 +4,13 @@ import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import { randomPhysical, pick } from "@/lib/dnd/physicalTraits";
 import type { WizardData, DescData } from "../CharacterWizard";
 
+const STANDARD_LANGUAGES = [
+  "Anão", "Elfico", "Gnômico", "Halfling", "Orchídeo", "Goblinoid", "Gigante",
+];
+const EXOTIC_LANGUAGES = [
+  "Abissal", "Celestial", "Dracônico", "Infernal", "Língua Profunda", "Primordial", "Silvano", "Sub-Comum",
+];
+
 const ALIGNMENTS = [
   { id: "lg", label: "Leal e Bom",      abbr: "LB" },
   { id: "ng", label: "Neutro e Bom",    abbr: "NB" },
@@ -17,13 +24,14 @@ const ALIGNMENTS = [
 ];
 
 interface Props {
-  backgroundId: string | null;
-  raceId:       string | null;
-  desc:         Partial<DescData>;
-  onChange:     (partial: Partial<WizardData>) => void;
+  backgroundId:      string | null;
+  raceId:            string | null;
+  desc:              Partial<DescData>;
+  selectedLanguages: string[];
+  onChange:          (partial: Partial<WizardData>) => void;
 }
 
-export function StepDesc({ backgroundId, raceId, desc, onChange }: Props) {
+export function StepDesc({ backgroundId, raceId, desc, selectedLanguages, onChange }: Props) {
   const bg = BACKGROUNDS.find((b) => b.id === backgroundId);
 
   function set(key: keyof DescData, value: string) {
@@ -119,7 +127,7 @@ export function StepDesc({ backgroundId, raceId, desc, onChange }: Props) {
             onClick={randomizePhysical}
             disabled={!raceId}
             title={raceId ? "Gerar aparência aleatória baseada na raça" : "Selecione uma raça primeiro"}
-            label="🎲 Gerar tudo"
+            label="Gerar tudo"
           />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
@@ -225,6 +233,32 @@ export function StepDesc({ backgroundId, raceId, desc, onChange }: Props) {
           />
         </div>
       </Section>
+
+      {/* Languages */}
+      {bg && bg.languages > 0 && (
+        <Section label={`Línguas Adicionais — escolha ${bg.languages}`}>
+          <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
+            Seu antecedente <strong style={{ color: "var(--accent-light)" }}>{bg.name}</strong> concede{" "}
+            {bg.languages} língua{bg.languages > 1 ? "s" : ""} adiciona{bg.languages > 1 ? "is" : "l"} além das da raça.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <LangGroup
+              label="Línguas Padrão"
+              langs={STANDARD_LANGUAGES}
+              selected={selectedLanguages}
+              max={bg.languages}
+              onChange={(l) => onChange({ selectedLanguages: l })}
+            />
+            <LangGroup
+              label="Línguas Exóticas"
+              langs={EXOTIC_LANGUAGES}
+              selected={selectedLanguages}
+              max={bg.languages}
+              onChange={(l) => onChange({ selectedLanguages: l })}
+            />
+          </div>
+        </Section>
+      )}
 
       {/* Backstory */}
       <Section label="História do Personagem">
@@ -352,7 +386,7 @@ function FieldWithRandom({
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-light)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-subtle)")}
           >
-            🎲
+            Gerar
           </button>
         )}
       </div>
@@ -372,6 +406,58 @@ function FieldWithRandom({
           fontFamily: "inherit",
         }}
       />
+    </div>
+  );
+}
+
+function LangGroup({
+  label, langs, selected, max, onChange,
+}: {
+  label:    string;
+  langs:    string[];
+  selected: string[];
+  max:      number;
+  onChange: (l: string[]) => void;
+}) {
+  function toggle(lang: string) {
+    if (selected.includes(lang)) {
+      onChange(selected.filter((x) => x !== lang));
+    } else if (selected.length < max) {
+      onChange([...selected, lang]);
+    }
+  }
+  return (
+    <div>
+      <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        {label}
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {langs.map((lang) => {
+          const sel = selected.includes(lang);
+          const disabled = !sel && selected.length >= max;
+          return (
+            <button
+              key={lang}
+              onClick={() => toggle(lang)}
+              disabled={disabled}
+              style={{
+                padding: "5px 12px",
+                background: sel ? "var(--accent-dim)" : "var(--surface-2)",
+                border: `1px solid ${sel ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: "var(--radius)",
+                color: sel ? "var(--accent-light)" : disabled ? "var(--text-subtle)" : "var(--text-muted)",
+                fontSize: "0.78rem",
+                fontWeight: sel ? 700 : 400,
+                cursor: disabled ? "not-allowed" : "pointer",
+                opacity: disabled ? 0.4 : 1,
+                transition: "all 0.15s",
+              }}
+            >
+              {lang}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -415,7 +501,7 @@ function PersonalityField({
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-light)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-subtle)")}
           >
-            🎲 aleatório
+            Aleatório
           </button>
         )}
       </div>

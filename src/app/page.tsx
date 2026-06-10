@@ -1,23 +1,7 @@
-import { Navbar }   from "@/components/ui/Navbar";
-import { Footer }   from "@/components/ui/Footer";
-import { Hero }     from "@/components/home/Hero";
-import { Features } from "@/components/home/Features";
-import { Systems }  from "@/components/home/Systems";
-import { About }    from "@/components/home/About";
-import { Cta }      from "@/components/home/Cta";
+import { auth } from "@/lib/auth";
+import { HomeClient } from "@/components/home/HomeClient";
 
-export default function HomePage() {
-  return (
-    <>
-      <Navbar />
-      <main>
-        <Hero />
-        <Features />
-        <Systems />
-        <About />
-        <Cta />
-      </main>
-      <Footer />
-    </>
-  );
+export default async function HomePage() {
+  const session = await auth();
+  return <HomeClient session={session} />;
 }

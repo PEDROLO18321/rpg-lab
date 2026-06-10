@@ -4,6 +4,7 @@ import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import { resolveEquipment } from "@/lib/dnd/equipmentParser";
+import { SPELLS, SPELLCASTING } from "@/lib/dnd/spells";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
 
@@ -83,7 +84,7 @@ export function StepReview({ data }: Props) {
       {/* Heading */}
       <div>
         <span className="section-label" style={{ display: "block", marginBottom: 6 }}>
-          Passo 7 · Revisão
+          Passo 8 · Revisão
         </span>
         <h2
           style={{
@@ -114,7 +115,7 @@ export function StepReview({ data }: Props) {
               fontSize: "1.8rem", flexShrink: 0,
             }}
           >
-            {cls?.icon ?? "⚔️"}
+            {cls?.name?.slice(0, 2).toUpperCase() ?? "—"}
           </div>
           <div>
             <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.3rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.1 }}>
@@ -310,6 +311,58 @@ export function StepReview({ data }: Props) {
         </Section>
       )}
 
+      {/* Subclass */}
+      {cls && data.subclassId && (() => {
+        const sub = cls.subclasses?.find((s) => s.id === data.subclassId);
+        if (!sub) return null;
+        return (
+          <Section label={`Subclasse — ${cls.name}`}>
+            <p style={{ fontSize: "0.88rem", fontWeight: 700, color: "var(--accent-light)" }}>{sub.name}</p>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{sub.description}</p>
+          </Section>
+        );
+      })()}
+
+      {/* Languages */}
+      {(() => {
+        const langs = data.selectedLanguages ?? [];
+        if (langs.length === 0) return null;
+        return (
+          <Section label="Idiomas Adicionais">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {langs.map((l) => <Tag key={l}>{l}</Tag>)}
+            </div>
+          </Section>
+        );
+      })()}
+
+      {/* Spells */}
+      {data.classId && SPELLCASTING[data.classId] && (() => {
+        const cantrips = (data.selectedCantrips ?? []).map((id) => SPELLS.find((s) => s.id === id)).filter(Boolean);
+        const spells1  = (data.selectedSpells ?? []).map((id) => SPELLS.find((s) => s.id === id)).filter(Boolean);
+        if (cantrips.length === 0 && spells1.length === 0) return null;
+        return (
+          <Section label="Magias">
+            {cantrips.length > 0 && (
+              <div style={{ marginBottom: 6 }}>
+                <SubLabel>Truques</SubLabel>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {cantrips.map((s) => <Tag key={s!.id}>{s!.name}</Tag>)}
+                </div>
+              </div>
+            )}
+            {spells1.length > 0 && (
+              <div>
+                <SubLabel>Magias de 1° Nível</SubLabel>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {spells1.map((s) => <Tag key={s!.id}>{s!.name}</Tag>)}
+                </div>
+              </div>
+            )}
+          </Section>
+        );
+      })()}
+
       {/* Equipment */}
       {(cls || bg) && (() => {
         const ec = data.equipmentChoices ?? {};
@@ -325,7 +378,7 @@ export function StepReview({ data }: Props) {
             {useGold ? (
               <div>
                 <p style={{ fontSize: "0.84rem", color: "var(--accent-light)", fontWeight: 700, marginBottom: 4 }}>
-                  🪙 Riqueza inicial: {goldAmt ? `${goldAmt} po` : cls?.startingGold}
+                  Riqueza inicial: {goldAmt ? `${goldAmt} po` : cls?.startingGold}
                 </p>
                 <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)" }}>
                   Equipamento a ser comprado com as moedas de ouro.
@@ -358,7 +411,7 @@ export function StepReview({ data }: Props) {
         }}
       >
         Tudo certo? Clique em{" "}
-        <strong style={{ color: "var(--accent-light)" }}>Criar Personagem ✓</strong> para salvar.
+        <strong style={{ color: "var(--accent-light)" }}>Criar Personagem</strong> para salvar.
       </div>
     </div>
   );

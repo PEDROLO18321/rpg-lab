@@ -6,14 +6,16 @@ import type { DndClass } from "@/lib/dnd/classes";
 import type { WizardData } from "../CharacterWizard";
 
 interface Props {
-  selected: string | null;
-  onChange: (partial: Partial<WizardData>) => void;
+  selected:    string | null;
+  subclassId?: string;
+  onChange:    (partial: Partial<WizardData>) => void;
 }
 
-export function StepClass({ selected, onChange }: Props) {
+export function StepClass({ selected, subclassId, onChange }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
 
+  const selectedSubclassId = subclassId ?? "";
   const cls: DndClass | undefined = CLASSES.find((c) => c.id === selected);
 
   function selectClass(classId: string) {
@@ -267,6 +269,15 @@ export function StepClass({ selected, onChange }: Props) {
             </div>
           </div>
 
+          {/* Subclass selection */}
+          {cls.subclasses && cls.subclasses.length > 0 && (
+            <SubclassSelector
+              subclasses={cls.subclasses}
+              selectedId={selectedSubclassId}
+              onSelect={(id) => onChange({ subclassId: id })}
+            />
+          )}
+
         </div>
       )}
     </div>
@@ -322,6 +333,80 @@ function ProfRow({ label, items }: { label: string; items: string[] }) {
           ))
         }
       </div>
+    </div>
+  );
+}
+
+function SubclassSelector({
+  subclasses, selectedId, onSelect,
+}: {
+  subclasses: DndClass["subclasses"];
+  selectedId: string;
+  onSelect:   (id: string) => void;
+}) {
+  const selectedSub = subclasses.find((s) => s.id === selectedId);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+        Subclasse <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", fontSize: "0.7rem" }}>(opcional — pode ser escolhida depois)</span>
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
+        {subclasses.map((sub) => {
+          const isSelected = selectedId === sub.id;
+          return (
+            <button
+              key={sub.id}
+              onClick={() => onSelect(isSelected ? "" : sub.id)}
+              style={{
+                padding: "12px 14px",
+                background: isSelected ? "var(--accent-dim)" : "var(--surface-2)",
+                border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: "var(--radius-lg)",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.15s",
+                boxShadow: isSelected ? "0 0 16px var(--accent-glow)" : "none",
+              }}
+            >
+              <p style={{ fontSize: "0.82rem", fontWeight: 700, color: isSelected ? "var(--accent-light)" : "var(--text)", marginBottom: 4 }}>
+                {sub.name}
+              </p>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                {sub.description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedSub && (
+        <div
+          style={{
+            background: "rgba(201,148,31,0.04)",
+            border: "1px solid var(--border-accent)",
+            borderRadius: "var(--radius-lg)",
+            padding: "14px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}
+        >
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Habilidades de {selectedSub.name}
+          </p>
+          {selectedSub.features.map((f) => {
+            const [title, ...rest] = f.split(" — ");
+            return (
+              <p key={f} style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                <span style={{ fontWeight: 700, color: "var(--text)" }}>{title}</span>
+                {rest.length > 0 && <span> — {rest.join(" — ")}</span>}
+              </p>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -141,7 +141,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                     sizes="72px"
                   />
                 ) : (
-                  <span style={{ fontSize: "1.8rem", lineHeight: "72px", display: "block", textAlign: "center" }}>{r.icon}</span>
+                  <span style={{ fontSize: "0.7rem", fontWeight: 700, lineHeight: "72px", display: "block", textAlign: "center", color: "var(--accent-light)" }}>{r.name.slice(0, 3).toUpperCase()}</span>
                 )}
               </div>
               <span
@@ -207,7 +207,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                   sizes="64px"
                 />
               ) : (
-                <span style={{ fontSize: "1.6rem", lineHeight: "64px", display: "block", textAlign: "center", background: "var(--accent-dim)" }}>{race.icon}</span>
+                <span style={{ fontSize: "0.7rem", fontWeight: 700, lineHeight: "64px", display: "block", textAlign: "center", background: "var(--accent-dim)", color: "var(--accent-light)" }}>{race.name.slice(0, 3).toUpperCase()}</span>
               )}
             </div>
             <div>
@@ -418,7 +418,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                   e.currentTarget.style.color = "var(--text-muted)";
                 }}
               >
-                🎲 Aleatório
+                Aleatório
               </button>
             </div>
 

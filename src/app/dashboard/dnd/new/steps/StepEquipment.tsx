@@ -2,10 +2,13 @@
 
 import { CLASSES }     from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
-import { parseEquipmentLine } from "@/lib/dnd/equipmentParser";
+import { parseEquipmentLine, isCurrencyItem, parseCurrencyItem } from "@/lib/dnd/equipmentParser";
 import type { EquipmentChoice } from "@/lib/dnd/equipmentParser";
-import { getWeaponList, getCategoryLabel, rollGold } from "@/lib/dnd/equipmentData";
+import { getWeaponList, getCategoryLabel } from "@/lib/dnd/equipmentData";
 import type { WizardData } from "../CharacterWizard";
+
+const CURRENCY_LABEL: Record<string, string> = { gp: "PO", sp: "PP", cp: "PC", ep: "PE", pp: "PL" };
+const CURRENCY_COLOR: Record<string, string> = { gp: "#c9941f", sp: "#d1d5db", cp: "#b45309", ep: "#7dd3fc", pp: "#b0c4de" };
 
 interface Props {
   classId:          string | null;
@@ -18,23 +21,8 @@ export function StepEquipment({ classId, backgroundId, equipmentChoices, onChang
   const cls = CLASSES.find((c) => c.id === classId);
   const bg  = BACKGROUNDS.find((b) => b.id === backgroundId);
 
-  const useGold  = equipmentChoices["useGold"] === "true";
-  const goldRoll = equipmentChoices["rolledGold"] ? parseInt(equipmentChoices["rolledGold"]) : null;
-
   function patch(key: string, value: string) {
     onChange({ equipmentChoices: { ...equipmentChoices, [key]: value } });
-  }
-
-  function handleRollGold() {
-    if (!cls) return;
-    const rolled = rollGold(cls.startingGold);
-    onChange({
-      equipmentChoices: {
-        ...equipmentChoices,
-        useGold: "true",
-        rolledGold: String(rolled),
-      },
-    });
   }
 
   return (
@@ -54,220 +42,36 @@ export function StepEquipment({ classId, backgroundId, equipmentChoices, onChang
           Equipamento <span className="text-gold">Inicial</span>
         </h2>
         <p style={{ marginTop: 8, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Escolha o equipamento de partida ou comece com moedas de ouro para comprar seus próprios itens.
+          Selecione o equipamento de partida. Moedas incluídas aparecem automaticamente na ficha.
         </p>
       </div>
 
-      {/* Mode toggle */}
-      {cls && (
-        <div style={{ display: "flex", gap: 8 }}>
-          <ModeBtn active={!useGold} onClick={() => patch("useGold", "false")}>
-            🎒 Equipamento pré-definido
-          </ModeBtn>
-          <ModeBtn active={useGold} onClick={() => patch("useGold", "true")}>
-            🪙 Riqueza inicial (ouro)
-          </ModeBtn>
-        </div>
-      )}
-
-      {useGold ? (
-        /* ── Gold mode ── */
-        <GoldBlock
-          cls={cls}
-          goldRoll={goldRoll}
-          onRoll={handleRollGold}
+      {cls ? (
+        <EquipmentBlock
+          icon={cls.icon}
+          title={`Equipamento da Classe — ${cls.name}`}
+          items={cls.startingEquipment}
+          prefix="cls"
+          choices={equipmentChoices}
+          onPatch={patch}
+          accent
         />
       ) : (
-        /* ── Equipment mode ── */
-        <>
-          {cls ? (
-            <EquipmentBlock
-              icon={cls.icon}
-              title={`Equipamento da Classe — ${cls.name}`}
-              items={cls.startingEquipment}
-              prefix="cls"
-              choices={equipmentChoices}
-              onPatch={patch}
-              accent
-            />
-          ) : (
-            <EmptyBlock label="Nenhuma classe selecionada" />
-          )}
-
-          {bg ? (
-            <EquipmentBlock
-              icon={bg.icon}
-              title={`Equipamento do Antecedente — ${bg.name}`}
-              items={bg.startingEquipment}
-              prefix="bg"
-              choices={equipmentChoices}
-              onPatch={patch}
-            />
-          ) : (
-            <EmptyBlock label="Nenhum antecedente selecionado" />
-          )}
-        </>
+        <EmptyBlock label="Nenhuma classe selecionada" />
       )}
 
-      {/* Gold alternative hint (when in equipment mode) */}
-      {!useGold && cls && (
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-xl)",
-            padding: "18px 22px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-            Alternativa: um {cls.name} pode começar com{" "}
-            <span style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 700, color: "var(--accent-light)", fontSize: "0.9rem" }}>
-              {cls.startingGold}
-            </span>{" "}
-            para comprar seu próprio equipamento.
-          </p>
-          <button
-            onClick={() => patch("useGold", "true")}
-            style={{
-              padding: "7px 16px",
-              background: "var(--surface-2)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              color: "var(--text-muted)",
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            Usar ouro
-          </button>
-        </div>
+      {bg ? (
+        <EquipmentBlock
+          icon={bg.icon}
+          title={`Equipamento do Antecedente — ${bg.name}`}
+          items={bg.startingEquipment}
+          prefix="bg"
+          choices={equipmentChoices}
+          onPatch={patch}
+        />
+      ) : (
+        <EmptyBlock label="Nenhum antecedente selecionado" />
       )}
-    </div>
-  );
-}
-
-/* ── Mode toggle button ── */
-function ModeBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "9px 20px",
-        background: active ? "var(--accent-dim)" : "var(--surface)",
-        border: `1px solid ${active ? "var(--border-accent)" : "var(--border)"}`,
-        borderRadius: "var(--radius)",
-        color: active ? "var(--accent-light)" : "var(--text-muted)",
-        fontSize: "0.84rem",
-        fontWeight: active ? 700 : 500,
-        cursor: "pointer",
-        transition: "all 0.15s",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ── Gold block ── */
-function GoldBlock({
-  cls, goldRoll, onRoll,
-}: {
-  cls?: ReturnType<typeof CLASSES.find>;
-  goldRoll: number | null;
-  onRoll: () => void;
-}) {
-  if (!cls) return <EmptyBlock label="Nenhuma classe selecionada" />;
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border-accent)",
-        borderRadius: "var(--radius-xl)",
-        padding: "28px 28px 24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 20,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ fontSize: "1.8rem" }}>🪙</div>
-        <div>
-          <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--accent-light)" }}>
-            Riqueza Inicial
-          </p>
-          <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 2 }}>
-            Role os dados para determinar suas moedas de ouro iniciais
-          </p>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div
-          style={{
-            background: "var(--accent-dim)",
-            border: "1px solid var(--border-accent)",
-            borderRadius: "var(--radius-lg)",
-            padding: "12px 20px",
-            fontFamily: "var(--font-cinzel), serif",
-            fontSize: "1.1rem",
-            fontWeight: 700,
-            color: "var(--accent-light)",
-          }}
-        >
-          {cls.startingGold}
-        </div>
-        <button
-          onClick={onRoll}
-          style={{
-            padding: "10px 22px",
-            background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
-            border: "none",
-            borderRadius: "var(--radius)",
-            color: "#06090f",
-            fontSize: "0.86rem",
-            fontWeight: 700,
-            cursor: "pointer",
-            boxShadow: "0 0 16px var(--accent-glow)",
-          }}
-        >
-          🎲 {goldRoll !== null ? "Rolar novamente" : "Rolar dados"}
-        </button>
-      </div>
-
-      {goldRoll !== null && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            background: "rgba(201,148,31,0.06)",
-            border: "1px solid var(--border-accent)",
-            borderRadius: "var(--radius-lg)",
-            padding: "16px 20px",
-          }}
-        >
-          <div style={{ fontSize: "1.6rem" }}>✨</div>
-          <div>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-              Resultado
-            </p>
-            <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.6rem", fontWeight: 700, color: "var(--accent-light)" }}>
-              {goldRoll} <span style={{ fontSize: "0.9rem" }}>peças de ouro</span>
-            </p>
-          </div>
-        </div>
-      )}
-
-      <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)", lineHeight: 1.6 }}>
-        Use esse valor para comprar equipamentos a partir das listas do livro do jogador. O ouro ficará registrado na ficha após a criação.
-      </p>
     </div>
   );
 }
@@ -321,11 +125,33 @@ function EquipmentBlock({
         </p>
       </div>
 
+      {/* Currency badges */}
+      {(() => {
+        const coins = items
+          .filter((r) => !r.trimStart().startsWith("(a)") && isCurrencyItem(r))
+          .map((r) => parseCurrencyItem(r))
+          .filter(Boolean) as Partial<Record<string, number>>[];
+        if (coins.length === 0) return null;
+        const merged: Record<string, number> = {};
+        coins.forEach((c) => Object.entries(c).forEach(([k, v]) => { merged[k] = (merged[k] ?? 0) + (v ?? 0); }));
+        return (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Moedas iniciais:</span>
+            {Object.entries(merged).map(([key, val]) => (
+              <span key={key} style={{ padding: "3px 10px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: `1px solid ${CURRENCY_COLOR[key]}55`, fontSize: "0.78rem", fontWeight: 700, color: CURRENCY_COLOR[key] }}>
+                {val} {CURRENCY_LABEL[key]}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Items */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {items.map((raw, idx) => {
           const line = parseEquipmentLine(raw);
           if (line.type === "fixed") {
+            if (isCurrencyItem(raw)) return null;
             return (
               <FixedRow key={idx} text={raw} accent={accent} />
             );

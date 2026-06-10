@@ -134,6 +134,9 @@ model DndSheet {
   gp Int @default(0)
   pp Int @default(0)
 
+  conditions     String? // JSON: string[]
+  spellSlotsUsed String? // JSON: {"1": 0, "2": 0, ...} slots used per level
+
   classes   DndClass[]
   skills    DndSkill[]
   spells    DndSpell[]
