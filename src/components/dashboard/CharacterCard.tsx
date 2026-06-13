@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   id: string;
@@ -12,7 +12,12 @@ interface Props {
 }
 
 export function CharacterCard({ id, name, race, className, level }: Props) {
+  const router = useRouter();
   const [hovered, setHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [busy, setBusy] = useState<null | "duplicar" | "excluir">(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const initials = name
     .split(" ")
@@ -20,112 +25,258 @@ export function CharacterCard({ id, name, race, className, level }: Props) {
     .map((w) => w.charAt(0).toUpperCase())
     .join("");
 
+  // Fecha o menu ao clicar fora
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpen]);
+
+  function openSheet() {
+    router.push(`/dashboard/dnd/${id}`);
+  }
+
+  async function duplicate() {
+    if (busy) return;
+    setBusy("duplicar");
+    try {
+      const res = await fetch(`/api/dnd/characters/${id}/duplicate`, { method: "POST" });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(null);
+      setMenuOpen(false);
+    }
+  }
+
+  async function remove() {
+    if (busy) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setBusy("excluir");
+    try {
+      const res = await fetch(`/api/dnd/characters/${id}`, { method: "DELETE" });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(null);
+      setMenuOpen(false);
+      setConfirmDelete(false);
+    }
+  }
+
   return (
-    <Link
-      href={`/dashboard/dnd/${id}`}
-      style={{ textDecoration: "none" }}
+    <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={openSheet}
+      role="link"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") openSheet(); }}
+      style={{
+        position: "relative",
+        background: "var(--surface)",
+        border: `1px solid ${hovered ? "rgba(201,148,31,0.35)" : "rgba(255,255,255,0.07)"}`,
+        borderRadius: "var(--radius-xl)",
+        padding: "22px 20px",
+        cursor: "pointer",
+        transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+        transform: hovered ? "translateY(-3px)" : "translateY(0)",
+        boxShadow: hovered
+          ? "0 12px 40px rgba(201,148,31,0.12)"
+          : "0 2px 10px rgba(0,0,0,0.2)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 14,
+      }}
     >
+      {/* Botão de 3 bolinhas — aparece no hover */}
       <div
-        style={{
-          background: "var(--surface)",
-          border: `1px solid ${hovered ? "rgba(201,148,31,0.35)" : "rgba(255,255,255,0.07)"}`,
-          borderRadius: "var(--radius-xl)",
-          padding: "22px 20px",
-          cursor: "pointer",
-          transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
-          transform: hovered ? "translateY(-3px)" : "translateY(0)",
-          boxShadow: hovered
-            ? "0 12px 40px rgba(201,148,31,0.12)"
-            : "0 2px 10px rgba(0,0,0,0.2)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 14,
-        }}
+        ref={menuRef}
+        style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Avatar + nome */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "var(--radius)",
-              background: "var(--accent-dim)",
-              border: "1px solid var(--border-accent)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-cinzel), serif",
-              fontSize: "0.9rem",
-              fontWeight: 700,
-              color: "var(--accent-light)",
-              flexShrink: 0,
-            }}
-          >
-            {initials}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <p
-              style={{
-                fontFamily: "var(--font-cinzel), serif",
-                fontSize: "0.95rem",
-                fontWeight: 700,
-                color: "var(--text)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {name}
-            </p>
-            <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: 2 }}>
-              {[race, className].filter(Boolean).join(" · ") || "Sem ficha ainda"}
-            </p>
-          </div>
-        </div>
-
-        {/* Nível + seta */}
-        <div
+        <button
+          aria-label="Opções do personagem"
+          onClick={() => { setMenuOpen((o) => !o); setConfirmDelete(false); }}
           style={{
+            width: 30,
+            height: 30,
+            borderRadius: "50%",
+            background: menuOpen ? "var(--accent-dim)" : "var(--surface-2)",
+            border: `1px solid ${menuOpen ? "var(--accent)" : "var(--border)"}`,
+            color: menuOpen ? "var(--accent-light)" : "var(--text-muted)",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            borderTop: "1px solid var(--border)",
-            paddingTop: 12,
+            justifyContent: "center",
+            gap: 2.5,
+            opacity: hovered || menuOpen ? 1 : 0,
+            transition: "opacity 0.15s, background 0.15s, border-color 0.15s",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Nível
-            </span>
-            <span
-              style={{
-                background: "var(--accent-dim)",
-                border: "1px solid var(--border-accent)",
-                borderRadius: "var(--radius-xs)",
-                padding: "1px 8px",
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                color: "var(--accent-light)",
-              }}
-            >
-              {level}
-            </span>
-          </div>
-          <span
+          {[0, 1, 2].map((i) => (
+            <span key={i} style={{ width: 3.5, height: 3.5, borderRadius: "50%", background: "currentColor" }} />
+          ))}
+        </button>
+
+        {/* Dropdown */}
+        {menuOpen && (
+          <div
             style={{
-              fontSize: "0.82rem",
-              color: hovered ? "var(--accent-light)" : "var(--text-subtle)",
-              transition: "color 0.2s, transform 0.2s",
-              display: "inline-block",
-              transform: hovered ? "translateX(3px)" : "translateX(0)",
+              position: "absolute",
+              top: 36,
+              right: 0,
+              minWidth: 150,
+              background: "var(--surface-2)",
+              border: "1px solid var(--border-accent)",
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            →
-          </span>
+            <MenuItem label="Visualizar" onClick={openSheet} />
+            <MenuItem
+              label={busy === "duplicar" ? "Duplicando…" : "Duplicar"}
+              onClick={duplicate}
+              disabled={busy !== null}
+            />
+            <MenuItem
+              label={busy === "excluir" ? "Excluindo…" : confirmDelete ? "Confirmar exclusão?" : "Excluir"}
+              onClick={remove}
+              disabled={busy !== null}
+              danger
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Avatar + nome */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "var(--radius)",
+            background: "var(--accent-dim)",
+            border: "1px solid var(--border-accent)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "var(--font-cinzel), serif",
+            fontSize: "0.9rem",
+            fontWeight: 700,
+            color: "var(--accent-light)",
+            flexShrink: 0,
+          }}
+        >
+          {initials}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <p
+            style={{
+              fontFamily: "var(--font-cinzel), serif",
+              fontSize: "0.95rem",
+              fontWeight: 700,
+              color: "var(--text)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {name}
+          </p>
+          <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: 2 }}>
+            {[race, className].filter(Boolean).join(" · ") || "Sem ficha ainda"}
+          </p>
         </div>
       </div>
-    </Link>
+
+      {/* Nível + seta */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderTop: "1px solid var(--border)",
+          paddingTop: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            Nível
+          </span>
+          <span
+            style={{
+              background: "var(--accent-dim)",
+              border: "1px solid var(--border-accent)",
+              borderRadius: "var(--radius-xs)",
+              padding: "1px 8px",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "var(--accent-light)",
+            }}
+          >
+            {level}
+          </span>
+        </div>
+        <span
+          style={{
+            fontSize: "0.82rem",
+            color: hovered ? "var(--accent-light)" : "var(--text-subtle)",
+            transition: "color 0.2s, transform 0.2s",
+            display: "inline-block",
+            transform: hovered ? "translateX(3px)" : "translateX(0)",
+          }}
+        >
+          →
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MenuItem({
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        padding: "9px 14px",
+        background: hover && !disabled ? (danger ? "rgba(220,60,60,0.12)" : "var(--accent-dim)") : "transparent",
+        border: "none",
+        textAlign: "left",
+        fontSize: "0.8rem",
+        fontWeight: 600,
+        fontFamily: "inherit",
+        color: danger ? "#e06c6c" : hover ? "var(--accent-light)" : "var(--text)",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.55 : 1,
+        transition: "background 0.12s, color 0.12s",
+      }}
+    >
+      {label}
+    </button>
   );
 }

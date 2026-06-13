@@ -276,7 +276,7 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {ABILITIES.map((key) => {
               const base   = effectiveBases[key];
               const racial = racialBonus[key] ?? 0;
@@ -285,13 +285,12 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
               const canInc = base < 15 && remaining >= nextCost;
               const canDec = base > 8;
               return (
-                <AbilityRow
+                <AbilityCard
                   key={key}
                   abilityKey={key}
                   base={base}
                   racial={racial}
                   final={base + racial}
-                  pointCost={cost}
                   onInc={canInc ? () => setBase(key, base + 1) : undefined}
                   onDec={canDec ? () => setBase(key, base - 1) : undefined}
                 />
@@ -351,12 +350,12 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
             })}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {ABILITIES.map((key) => {
               const base   = displayBases[key];
               const racial = racialBonus[key] ?? 0;
               return (
-                <AbilityRow
+                <AbilityCard
                   key={key}
                   abilityKey={key}
                   base={base}
@@ -368,71 +367,6 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
           </div>
         </div>
       )}
-
-      {/* Valores finais — painel de resumo */}
-      <div>
-        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
-          Resumo dos Atributos
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {ABILITIES.map((key) => {
-            const score  = finalScores[key];
-            const m      = mod(score);
-            const racial = racialBonus[key] ?? 0;
-            return (
-              <div
-                key={key}
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border-accent)",
-                  borderRadius: "var(--radius-lg)",
-                  padding: "14px 12px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <div style={{ textAlign: "center", minWidth: 44, flexShrink: 0 }}>
-                  <div style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    {ABILITY_SHORT[key]}
-                  </div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 700, fontFamily: "var(--font-cinzel), serif", color: "var(--text)", lineHeight: 1.1 }}>
-                    {score}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      color: m >= 0 ? "var(--accent-light)" : "var(--text-muted)",
-                      background: "var(--surface-2)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-xs)",
-                      padding: "1px 6px",
-                      display: "inline-block",
-                      marginTop: 2,
-                    }}
-                  >
-                    {signed(m)}
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>
-                    {ABILITY_LABELS[key]}
-                  </p>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", lineHeight: 1.4 }}>
-                    {ABILITY_DESC[key]}
-                  </p>
-                  {racial > 0 && (
-                    <span style={{ fontSize: "0.65rem", color: "var(--accent-light)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xs)", padding: "1px 5px", display: "inline-block", marginTop: 4 }}>
-                      +{racial} racial
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Testes de resistência e Percepção Passiva */}
       {cls && (
@@ -689,62 +623,75 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
   );
 }
 
-/* ── AbilityRow ─────────────────────────────────────────────────────── */
+/* ── AbilityCard ────────────────────────────────────────────────────── */
 
-function AbilityRow({
-  abilityKey, base, racial, final, pointCost, onInc, onDec,
+function AbilityCard({
+  abilityKey, base, racial, final, onInc, onDec,
 }: {
   abilityKey: AbilityKey;
   base:       number;
   racial:     number;
   final:      number;
-  pointCost?: number;
   onInc?:     () => void;
   onDec?:     () => void;
 }) {
   const showControls = onInc !== undefined || onDec !== undefined;
   const m = Math.floor((final - 10) / 2);
+  const isHigh = base >= 14;
+
   return (
     <div
       style={{
         background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "10px 16px",
+        border: `1px solid ${isHigh && showControls ? "var(--border-accent)" : "var(--border)"}`,
+        borderRadius: "var(--radius-lg)",
+        padding: "14px 10px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        gap: 12,
+        gap: 8,
+        transition: "border-color 0.2s",
       }}
     >
-      {/* Rótulo */}
-      <div style={{ width: 130, flexShrink: 0 }}>
-        <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text)" }}>
+      {/* Header: abbrev + full name */}
+      <div style={{ textAlign: "center" }}>
+        <p style={{ fontSize: "0.64rem", fontWeight: 900, color: isHigh && showControls ? "var(--accent)" : "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+          {ABILITY_SHORT[abilityKey]}
+        </p>
+        <p style={{ fontSize: "0.65rem", color: "var(--text-subtle)", marginTop: 1, lineHeight: 1.2 }}>
           {ABILITY_LABELS[abilityKey]}
-        </span>
-        <span style={{ marginLeft: 6, fontSize: "0.66rem", color: "var(--text-subtle)", fontWeight: 600 }}>
-          {({ str:"FOR", dex:"DES", con:"CON", int:"INT", wis:"SAB", cha:"CAR" })[abilityKey]}
-        </span>
+        </p>
       </div>
 
-      {/* Controles (apenas compra de pontos) */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, justifyContent: "center" }}>
+      {/* Base value + controls */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {showControls && (
           <button
             onClick={onDec}
             disabled={!onDec}
             style={{
-              width: 28, height: 28,
-              borderRadius: "var(--radius-xs)",
+              width: 24, height: 24, borderRadius: "var(--radius-xs)",
               background: onDec ? "var(--surface-2)" : "transparent",
               border: "1px solid var(--border)",
               color: onDec ? "var(--text)" : "var(--text-subtle)",
               fontSize: "1rem", fontWeight: 700,
               cursor: onDec ? "pointer" : "default",
               display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
             }}
           >−</button>
         )}
-        <span style={{ fontSize: "1.2rem", fontWeight: 700, fontFamily: "var(--font-cinzel), serif", color: "var(--text)", minWidth: 28, textAlign: "center" }}>
+        <span
+          style={{
+            fontFamily: "var(--font-cinzel), serif",
+            fontSize: "1.8rem",
+            fontWeight: 900,
+            color: isHigh && showControls ? "var(--accent-light)" : "var(--text)",
+            minWidth: 36, textAlign: "center",
+            lineHeight: 1,
+            transition: "color 0.2s",
+          }}
+        >
           {base}
         </span>
         {showControls && (
@@ -752,54 +699,55 @@ function AbilityRow({
             onClick={onInc}
             disabled={!onInc}
             style={{
-              width: 28, height: 28,
-              borderRadius: "var(--radius-xs)",
+              width: 24, height: 24, borderRadius: "var(--radius-xs)",
               background: onInc ? "var(--surface-2)" : "transparent",
               border: "1px solid var(--border)",
               color: onInc ? "var(--text)" : "var(--text-subtle)",
               fontSize: "1rem", fontWeight: 700,
               cursor: onInc ? "pointer" : "default",
               display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
             }}
           >+</button>
         )}
       </div>
 
-      {/* Custo em pontos (só compra de pontos) */}
-      {showControls && pointCost !== undefined && (
-        <div style={{ width: 52, textAlign: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
-            {pointCost} pts
-          </span>
-        </div>
-      )}
+      {/* Racial bonus */}
+      {racial > 0 ? (
+        <span style={{
+          fontSize: "0.6rem", fontWeight: 700, color: "var(--accent-light)",
+          background: "var(--accent-dim)", border: "1px solid var(--border-accent)",
+          borderRadius: "var(--radius-xs)", padding: "1px 5px",
+        }}>
+          +{racial} racial
+        </span>
+      ) : <span style={{ height: 16 }} />}
 
-      {/* Bônus racial */}
-      <div style={{ width: 64, textAlign: "center", flexShrink: 0 }}>
-        {racial > 0 && (
-          <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--accent-light)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xs)", padding: "2px 7px" }}>
-            +{racial} racial
-          </span>
-        )}
-      </div>
+      {/* Divider */}
+      <div style={{ width: "100%", height: 1, background: "var(--border)" }} />
 
-      {/* Valor final + modificador */}
-      <div
-        style={{
-          minWidth: 64,
-          textAlign: "center",
-          flexShrink: 0,
-          background: "var(--surface-2)",
-          border: "1px solid var(--border-accent)",
-          borderRadius: "var(--radius)",
-          padding: "6px 10px",
-        }}
-      >
-        <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--accent-light)" }}>
+      {/* Final value + modifier */}
+      <div style={{ textAlign: "center", lineHeight: 1 }}>
+        <span style={{
+          fontFamily: "var(--font-cinzel), serif",
+          fontSize: "1.1rem",
+          fontWeight: 700,
+          color: "var(--text)",
+        }}>
           {final}
         </span>
-        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginLeft: 4 }}>
-          ({m >= 0 ? `+${m}` : m})
+        <span style={{
+          marginLeft: 5,
+          fontSize: "0.8rem",
+          fontWeight: 700,
+          color: m >= 0 ? "var(--accent-light)" : "#ef4444",
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-xs)",
+          padding: "1px 5px",
+          display: "inline-block",
+        }}>
+          {m >= 0 ? `+${m}` : `${m}`}
         </span>
       </div>
     </div>

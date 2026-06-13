@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import type { Background } from "@/lib/dnd/backgrounds";
 import type { WizardData } from "../CharacterWizard";
+import { BackgroundIcon3D, BackgroundIconsStage } from "@/components/three/BackgroundIcon";
+import { smoothScrollTo } from "@/lib/smoothScroll";
 
 interface Props {
   selected: string | null;
@@ -18,6 +20,8 @@ export function StepBackground({ selected, onChange }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      {/* Canvas WebGL único compartilhado por todos os ícones da grade */}
+      <BackgroundIconsStage />
       <div>
         <span className="section-label" style={{ display: "block", marginBottom: 6 }}>
           Passo 3 · Antecedente
@@ -54,7 +58,7 @@ export function StepBackground({ selected, onChange }: Props) {
               key={b.id}
               onClick={() => {
                   onChange({ backgroundId: isSelected ? "" : b.id });
-                  if (!isSelected) setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+                  if (!isSelected) setTimeout(() => { if (detailRef.current) smoothScrollTo(detailRef.current); }, 50);
                 }}
               onMouseEnter={() => setHovered(b.id)}
               onMouseLeave={() => setHovered(null)}
@@ -78,7 +82,13 @@ export function StepBackground({ selected, onChange }: Props) {
                   : "0 2px 8px rgba(0,0,0,0.15)",
               }}
             >
-              <span style={{ fontSize: "1.8rem", lineHeight: 1 }}>{b.icon}</span>
+              {/* Ícone 3D simbólico sempre visível; emoji 2D em mobile/fallback */}
+              <BackgroundIcon3D
+                backgroundId={b.id}
+                size={64}
+                hovered={isHovered}
+                fallback={<span style={{ fontSize: "1.8rem", lineHeight: 1 }}>{b.icon}</span>}
+              />
               <span
                 style={{
                   fontFamily: "var(--font-cinzel), serif",

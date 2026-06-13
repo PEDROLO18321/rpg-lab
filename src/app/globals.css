@@ -199,3 +199,48 @@ body {
   text-transform: uppercase;
   color: var(--accent);
 }
+
+/* ── Page transitions (template.tsx) ───────────────────────────────────── */
+@keyframes page-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+/* Sem fill-mode: ao terminar, nenhum estilo residual (evita containing block). */
+.page-enter { animation: page-enter 0.35s ease-out; }
+
+/* ── Feedback global de botões ─────────────────────────────────────────── */
+/* Press: afunda levemente. Só atinge botões sem transform inline próprio. */
+button:not(:disabled):active { transform: translateY(1px) scale(0.985); }
+button:disabled { cursor: not-allowed; }
+
+/* ── Tilt 3D em cards de escolha ───────────────────────────────────────── */
+.tilt-wrap {
+  perspective: 700px;
+}
+.tilt-wrap > * {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Rolagem de dado (overlay de teste de perícia) ─────────────────────── */
+@keyframes roll-overlay-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(14px) scale(0.92); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)    scale(1); }
+}
+@keyframes roll-overlay-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.roll-overlay-enter { animation: roll-overlay-in 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+.roll-overlay-exit  { animation: roll-overlay-out 0.35s ease-out both; }
+
+/* ── Acessibilidade: usuário pediu menos movimento ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

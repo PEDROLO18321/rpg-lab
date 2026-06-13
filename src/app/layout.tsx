@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Cinzel } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { ImmersiveBackground } from "@/components/three/ImmersiveBackground";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,7 +27,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${cinzel.variable}`}>
-      <body suppressHydrationWarning><Providers>{children}</Providers></body>
+      <body suppressHydrationWarning>
+        <ImmersiveBackground />
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

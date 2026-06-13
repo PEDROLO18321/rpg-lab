@@ -133,7 +133,7 @@ export function HomeClient({ session }: Props) {
   }, []);
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", overflowX:"hidden" }}>
+    <div style={{ minHeight:"100vh", background:"transparent", overflowX:"hidden" }}>
       <TopNav isAuthed={isAuthed} userName={userName} />
 
       <section style={{ position:"relative", minHeight:"100vh", display:"flex", alignItems:"center", overflow:"hidden" }}>

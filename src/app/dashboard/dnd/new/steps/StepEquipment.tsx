@@ -102,18 +102,6 @@ function EquipmentBlock({
     >
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 44, height: 44,
-            borderRadius: "var(--radius-lg)",
-            background: accent ? "var(--accent-dim)" : "var(--surface-2)",
-            border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.4rem", flexShrink: 0,
-          }}
-        >
-          {icon}
-        </div>
         <p
           style={{
             fontFamily: "var(--font-cinzel), serif",

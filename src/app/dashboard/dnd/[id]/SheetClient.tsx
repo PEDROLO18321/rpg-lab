@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
@@ -12,6 +12,10 @@ import { DeleteCharacterButton } from "@/components/dashboard/DeleteCharacterBut
 import type { AbilityKey } from "@/lib/dnd/races";
 import { WEAPONS, ALL_PHB_ITEMS, PICKER_GROUPS } from "@/lib/dnd/items";
 import type { PickerGroup } from "@/lib/dnd/items";
+import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
+import { proficiencyBonus, getMaxSlots } from "@/lib/dnd/leveling";
+import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
+import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -45,7 +49,11 @@ const CONDITION_COLOR: Record<string, string> = {
 };
 const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100] as const;
 type DiceType = typeof DICE_TYPES[number];
-const PROF_BONUS = 2;
+// Habilidade de conjuração dos meio-conjuradores (magias a partir do 2° nível)
+const HALF_CASTER_ABILITY: Record<string, string> = {
+  paladino: "Carisma",
+  patrulheiro: "Sabedoria",
+};
 const ALIGNMENT_LABELS: Record<string, string> = {
   lg: "Leal e Bom", ng: "Neutro e Bom", cg: "Caótico e Bom",
   ln: "Leal e Neutro", nn: "Neutro", cn: "Caótico e Neutro",
@@ -77,10 +85,12 @@ export type SheetRow = {
   cp: number; sp: number; ep: number; gp: number; pp: number;
   conditions: string | null;
   spellSlotsUsed: string | null;
+  spellAbility: string | null;
   classes: { id: string; className: string; subclass: string | null; level: number }[];
   skills: { id: string; skillName: string; proficient: boolean; expertise: boolean }[];
-  spells: { id: string; spellName: string; level: number; school: string | null; prepared: boolean; castingTime: string | null; range: string | null; duration: string | null }[];
+  spells: { id: string; spellName: string; level: number; school: string | null; prepared: boolean; castingTime: string | null; range: string | null; duration: string | null; description: string | null }[];
   equipment: { id: string; itemName: string; quantity: number; equipped: boolean; weight: number | null; description: string | null }[];
+  features: { id: string; name: string; source: string | null; description: string | null }[];
 };
 
 type RollEntry = {
@@ -95,6 +105,8 @@ type RollEntry = {
   isFumble?: boolean;
   advantageMode?: "advantage" | "disadvantage";
   allRolls?: number[];
+  advantagePickIdx?: number;
+  pickMode?: "sum" | "max";
 };
 
 // per-slot boolean array: true = slot used
@@ -155,6 +167,16 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
   const [ep, setEp] = useState(initial.ep);
   const [pp, setPp] = useState(initial.pp);
   const [equipment, setEquipment] = useState(initial.equipment);
+  const [spells, setSpells] = useState(initial.spells);
+
+  // Após subir de nível, router.refresh() traz `initial` novo do servidor;
+  // re-sincroniza os estados que o level-up altera (magias novas no grimório,
+  // PV ganho) sem precisar de F5. patchSheet persiste cada mudança local
+  // antes, então o servidor é a fonte de verdade.
+  useEffect(() => {
+    setSpells(initial.spells);
+    setHpCurrent(initial.hpCurrent);
+  }, [initial]);
 
   // Lib data
   const [raceId, subraceId] = (initial.race ?? "").split("/");
@@ -174,9 +196,29 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
   const proficientSkills = new Set(initial.skills.filter((s) => s.proficient).map((s) => s.skillName));
   const expertiseSkills  = new Set(initial.skills.filter((s) => s.expertise).map((s) => s.skillName));
 
-  const spellConfig = clsEntry?.className ? SPELLCASTING[clsEntry.className] : null;
+  // Slots pela tabela de progressão da classe (full/meio-conjurador/bruxo)
+  const maxSlots: Record<string, number> = clsEntry?.className
+    ? getMaxSlots(clsEntry.className, initial.level)
+    : {};
+  // Meio-conjuradores (paladino/patrulheiro) entram na conjuração no 2° nível
+  const spellConfig: SpellcastingConfig | null = clsEntry?.className
+    ? SPELLCASTING[clsEntry.className] ??
+      (Object.keys(maxSlots).length > 0
+        ? {
+            cantripsKnown: 0,
+            spellsKnown: 0,
+            spellSlots1st: maxSlots["1"] ?? 0,
+            ability: HALF_CASTER_ABILITY[clsEntry.className] ?? "Sabedoria",
+            type: "prepare",
+          }
+        : null)
+    : null;
   const isCaster = !!spellConfig;
-  const maxSlots: Record<string, number> = isCaster ? { "1": spellConfig.spellSlots1st } : {};
+
+  // Atributo de conjuração: escolha salva na ficha sobrepõe o padrão da classe
+  const [spellAbility, setSpellAbility] = useState<string>(
+    initial.spellAbility ?? spellConfig?.ability ?? "Inteligência"
+  );
 
   // Slot state: must be init after maxSlots is computed
   const [slotsUsed, setSlotsUsed] = useState<SlotState>(() => parseSlots(initial.spellSlotsUsed, maxSlots));
@@ -190,7 +232,7 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", background: "transparent" }}>
       <DashboardNav
         userName={userName}
         systemName="D&D 5e"
@@ -216,8 +258,10 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
             flexWrap: "wrap",
           }}
         >
-          <div style={{ width: 52, height: 52, borderRadius: "var(--radius-xl)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem", flexShrink: 0 }}>
-            {cls?.icon ?? "⚔️"}
+          <div style={{ width: 52, height: 52, borderRadius: "var(--radius-xl)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: "var(--accent-light)", letterSpacing: "0.04em" }}>
+              {cls ? cls.id.slice(0, 3).toUpperCase() : "D&D"}
+            </span>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.1 }}>
@@ -228,9 +272,20 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>📋 Ficha</ModeBtn>
-            <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>⚔️ Jogar</ModeBtn>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
+            {cls && clsEntry && (
+              <LevelUpButton
+                characterId={characterId}
+                classId={cls.id}
+                hitDie={cls.hitDie}
+                raceKey={initial.race ?? ""}
+                currentLevel={initial.level}
+                scores={scores}
+                knownSpellNames={spells.map((s) => s.spellName)}
+              />
+            )}
+            <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
+            <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>Jogar</ModeBtn>
           </div>
         </div>
 
@@ -264,6 +319,8 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
             isCaster={isCaster}
             spellConfig={spellConfig}
             maxSlots={maxSlots}
+            spells={spells}            setSpells={setSpells}
+            spellAbility={spellAbility} setSpellAbility={setSpellAbility}
             hpCurrent={hpCurrent}    setHpCurrent={setHpCurrent}
             hpTemp={hpTemp}          setHpTemp={setHpTemp}
             hitDiceUsed={hitDiceUsed} setHitDiceUsed={setHitDiceUsed}
@@ -335,6 +392,7 @@ interface ViewProps {
 }
 
 function ViewMode({ sheet, scores, raceName, race, subrace, cls, bg, proficientSaves, proficientSkills, hpCurrent, hpTemp, gp, equipment }: ViewProps) {
+  const PROF_BONUS = proficiencyBonus(sheet.level);
   const passivePerception = 10 + mod(scores.wis) + (proficientSkills.has("Percepção") ? PROF_BONUS : 0);
   const subclassEntry = cls?.subclasses?.find((s) => s.id === sheet.classes[0]?.subclass || s.name === sheet.classes[0]?.subclass);
   const cantrips = sheet.spells.filter((s) => s.level === 0);
@@ -396,7 +454,13 @@ function ViewMode({ sheet, scores, raceName, race, subrace, cls, bg, proficientS
           {(race || cls || bg) && (
             <ViewSection label="Traços & Características">
               {race && <TraitGroup label={`Raça — ${raceName}`} items={[...(race as { traits: string[] }).traits, ...((subrace as { traits: string[] } | undefined)?.traits ?? [])]} />}
-              {cls && <TraitGroup label={`Classe — ${cls.name}`} items={cls.keyFeatures.filter((f) => { const m = f.match(/\((\d+)°\)/); return !m || parseInt(m[1]) <= 1; })} />}
+              {cls && <TraitGroup label={`Classe — ${cls.name}`} items={cls.keyFeatures.filter((f) => { const m = f.match(/\((\d+)°\)/); return !m || parseInt(m[1]) <= sheet.level; })} />}
+              {sheet.features.length > 0 && (
+                <TraitGroup
+                  label="Adquiridas ao subir de nível"
+                  items={sheet.features.map((f) => `${f.name}${f.source ? ` (${f.source})` : ""} — ${f.description ?? ""}`)}
+                />
+              )}
               {subclassEntry && <TraitGroup label={`Subclasse — ${subclassEntry.name}`} items={subclassEntry.features} />}
               {bg && <TraitGroup label={`Antecedente — ${bg.name}`} items={[`${bg.feature}: ${bg.featureDesc}`]} />}
             </ViewSection>
@@ -474,6 +538,8 @@ interface PlayProps {
   isCaster: boolean;
   spellConfig: SpellcastingConfig | null;
   maxSlots: Record<string, number>;
+  spells: SheetRow["spells"];        setSpells: (v: SheetRow["spells"]) => void;
+  spellAbility: string;              setSpellAbility: (v: string) => void;
   hpCurrent: number;    setHpCurrent: (v: number) => void;
   hpTemp: number;       setHpTemp: (v: number) => void;
   hitDiceUsed: number;  setHitDiceUsed: (v: number) => void;
@@ -494,6 +560,7 @@ interface PlayProps {
 function PlayMode({
   characterId, sheet, scores, cls, proficientSaves, proficientSkills, expertiseSkills,
   isCaster, spellConfig, maxSlots,
+  spells, setSpells, spellAbility, setSpellAbility,
   hpCurrent, setHpCurrent, hpTemp, setHpTemp,
   hitDiceUsed, setHitDiceUsed, dsSuccess, setDsSuccess, dsFailure, setDsFailure,
   inspiration, setInspiration, conditions, setConditions,
@@ -505,14 +572,38 @@ function PlayMode({
   const [selectedDie, setSelectedDie] = useState<DiceType>(20);
   const [diceCount, setDiceCount] = useState(1);
   const [diceModifier, setDiceModifier] = useState(0);
+  const [pickMode, setPickMode] = useState<"sum" | "max">("max");
   const [advantage, setAdvantage] = useState<"normal" | "advantage" | "disadvantage">("normal");
+  const [advExtraDice, setAdvExtraDice] = useState(1); // dados extras de vantagem/desvantagem
   const [lastRoll, setLastRoll] = useState<RollEntry | null>(null);
   const [rollHistory, setRollHistory] = useState<RollEntry[]>([]);
+  // Rolagem disparada fora do painel de dados (perícias, ataques, saves) →
+  // alimenta o toast 3D flutuante.
+  const [fxRoll, setFxRoll] = useState<RollEntry | null>(null);
   const rollId = useRef(0);
 
   // HP panel state
   const [hpInput, setHpInput] = useState("");
   const [hpMode, setHpMode] = useState<"none" | "damage" | "heal" | "temp">("none");
+  const [confirmRestore, setConfirmRestore] = useState(false);
+
+  // Restaura a ficha por completo: PV no máximo, dados de vida, espaços de
+  // magia e testes contra a morte zerados.
+  function restoreSheet() {
+    setHpCurrent(sheet.hpMax);
+    setHitDiceUsed(0);
+    setDsSuccess(0);
+    setDsFailure(0);
+    setSlotsUsed({});
+    setConfirmRestore(false);
+    patchSheet({
+      hpCurrent: sheet.hpMax,
+      hitDiceUsed: 0,
+      deathSavesSuccess: 0,
+      deathSavesFailure: 0,
+      spellSlotsUsed: JSON.stringify({}),
+    });
+  }
 
   // Rest state
   const [restMode, setRestMode] = useState<"none" | "short" | "confirm-long">("none");
@@ -538,6 +629,12 @@ function PlayMode({
   const [itemQty, setItemQty] = useState(1);
   const [addingItem, setAddingItem] = useState(false);
 
+  // Inventory expansion + per-item attack attribute + quick actions
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [itemAtkAttr, setItemAtkAttr] = useState<Record<string, AbilityKey>>({});
+  const [quickActionItemIds, setQuickActionItemIds] = useState<Set<string>>(new Set());
+
+  const PROF_BONUS = proficiencyBonus(sheet.level);
   const hitDie = parseInt((sheet.hitDice ?? "d8").replace(/\d*d/, "")) || 8;
   const totalHitDice = sheet.level;
   const availableHitDice = totalHitDice - hitDiceUsed;
@@ -550,7 +647,8 @@ function PlayMode({
   const spellAbilityMap: Record<string, AbilityKey> = {
     "Carisma": "cha", "Sabedoria": "wis", "Inteligência": "int",
   };
-  const spellAbilityKey: AbilityKey = spellConfig ? (spellAbilityMap[spellConfig.ability] ?? "int") : "int";
+  // Atributo escolhido pelo jogador (persistido na ficha) > padrão da classe
+  const spellAbilityKey: AbilityKey = spellAbilityMap[spellAbility] ?? "int";
   const spellAttackBonus = isCaster ? mod(scores[spellAbilityKey]) + PROF_BONUS : 0;
   const spellSaveDC = isCaster ? 8 + PROF_BONUS + mod(scores[spellAbilityKey]) : 0;
 
@@ -581,21 +679,29 @@ function PlayMode({
     const mode = adv ?? advantage;
     let rolls: number[];
     let allRolls: number[] | undefined;
+    const effectiveBonus = bonus;
+
+    let advantagePickIdx: number | undefined;
     if (die === 20 && mode !== "normal") {
-      const r1 = rollDie(die);
-      const r2 = rollDie(die);
-      allRolls = [r1, r2];
-      rolls = [mode === "advantage" ? Math.max(r1, r2) : Math.min(r1, r2)];
+      const totalDice = count + advExtraDice;
+      const rs = Array.from({ length: totalDice }, () => rollDie(die));
+      allRolls = rs;
+      const sorted = [...rs].sort((a, b) => b - a); // desc
+      advantagePickIdx = mode === "advantage" ? 0 : advExtraDice;
+      rolls = [sorted[Math.min(advantagePickIdx, sorted.length - 1)]];
     } else {
       rolls = Array.from({ length: count }, () => rollDie(die));
     }
-    const rawTotal = rolls.reduce((a, b) => a + b, 0);
-    const total = rawTotal + bonus;
+
+    const useMax = pickMode === "max" && !allRolls && rolls.length > 1;
+    const rawTotal = useMax ? Math.max(...rolls) : rolls.reduce((a, b) => a + b, 0);
+    const total = rawTotal + effectiveBonus;
     const isCrit   = die === 20 && rolls[0] === 20;
     const isFumble = die === 20 && rolls[0] === 1;
     const entry: RollEntry = {
-      id: ++rollId.current, label, dice: die, count, modifier: bonus, rolls, total, isCrit, isFumble,
-      ...(allRolls ? { allRolls, advantageMode: mode as "advantage" | "disadvantage" } : {}),
+      id: ++rollId.current, label, dice: die, count, modifier: effectiveBonus, rolls, total, isCrit, isFumble,
+      ...(allRolls ? { allRolls, advantageMode: mode as "advantage" | "disadvantage", advantagePickIdx } : {}),
+      ...(useMax ? { pickMode: "max" } : {}),
     };
     setLastRoll(entry);
     setRollHistory((prev) => [entry, ...prev].slice(0, 5));
@@ -603,7 +709,7 @@ function PlayMode({
   }
 
   function quickRoll(label: string, bonus: number) {
-    doRoll(label, 20, 1, bonus, "normal");
+    setFxRoll(doRoll(label, 20, 1, bonus, "normal"));
   }
 
   function rollWeaponDamage(name: string, damage: string, dmgMod: number) {
@@ -618,7 +724,7 @@ function PlayMode({
     }
     const dieCount = parseInt(countStr) || 1;
     const dieSides = parseInt(sidesStr) as DiceType;
-    doRoll(`${name} — Dano`, dieSides, dieCount, dmgMod, "normal");
+    setFxRoll(doRoll(`${name} — Dano`, dieSides, dieCount, dmgMod, "normal"));
   }
 
   // ── HP ────────────────────────────────────────────────────────────────────
@@ -649,8 +755,10 @@ function PlayMode({
   }
 
   function rollDeathSave() {
-    const roll = rollDie(20);
-    doRoll("Resistência à Morte", 20, 1, 0, "normal");
+    // Usa o MESMO resultado exibido (antes rolava dois números distintos).
+    const entry = doRoll("Resistência à Morte", 20, 1, 0, "normal");
+    setFxRoll(entry);
+    const roll = entry.rolls[0];
     if (roll === 20) { applyHeal(1); return; }
     if (roll === 1) {
       const newFail = Math.min(3, dsFailure + 2);
@@ -773,6 +881,9 @@ function PlayMode({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
+      {/* Toast 3D de rolagem (perícias, ataques, saves) */}
+      <RollToast roll={fxRoll} />
+
       {/* HP Bar + Core stats */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
         {/* HP header */}
@@ -826,6 +937,40 @@ function PlayMode({
               {m === "damage" ? "⚔️ Dano" : m === "heal" ? "💚 Curar" : "🔷 PV Temp"}
             </button>
           ))}
+
+          {/* Restaurar tudo: PV, dados de vida, espaços de magia */}
+          {confirmRestore ? (
+            <>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", alignSelf: "center" }}>Restaurar tudo?</span>
+              <button
+                onClick={restoreSheet}
+                style={{
+                  padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  background: "rgba(95,191,127,0.25)", border: "1px solid #5fbf7f", color: "#5fbf7f",
+                }}
+              >Sim</button>
+              <button
+                onClick={() => setConfirmRestore(false)}
+                style={{
+                  padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)",
+                }}
+              >Não</button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmRestore(true)}
+              title="Restaura PV, dados de vida e espaços de magia ao máximo"
+              style={{
+                padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)",
+                transition: "all 0.15s",
+              }}
+            >
+              ✨ Restaurar Ficha
+            </button>
+          )}
 
           {hpMode !== "none" && (
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -930,7 +1075,7 @@ function PlayMode({
                 return (
                   <button
                     key={k}
-                    onClick={() => doRoll(`Teste de ${ABILITY_LABELS[k]}`, 20, 1, m, "normal")}
+                    onClick={() => quickRoll(`Teste de ${ABILITY_LABELS[k]}`, m)}
                     style={{
                       display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
                       background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
@@ -1016,6 +1161,32 @@ function PlayMode({
                 </div>
               ))}
 
+              {/* Items adicionados às ações rápidas */}
+              {equipment
+                .filter((e) => quickActionItemIds.has(e.id))
+                .map((e) => {
+                  const w = WEAPONS.find((w) => w.name.toLowerCase() === e.itemName.toLowerCase());
+                  const atkAttr: AbilityKey = itemAtkAttr[e.id] ?? (w?.finesse ? (scores.str >= scores.dex ? "str" : "dex") : w?.ranged ? "dex" : "str");
+                  const atkBonus = mod(scores[atkAttr]) + PROF_BONUS;
+                  return (
+                    <div key={e.id} style={{ display: "flex", gap: 4 }}>
+                      <QuickActionBtn
+                        label={`⚡ ${e.itemName} (${signed(atkBonus)})`}
+                        onClick={() => quickRoll(`Ataque — ${e.itemName}`, atkBonus)}
+                      />
+                      {w && (
+                        <button
+                          onClick={() => rollWeaponDamage(e.itemName, w.damage, mod(scores[atkAttr]))}
+                          title={`Dano: ${w.damage}+${mod(scores[atkAttr])} ${w.damageType}`}
+                          style={{ padding: "6px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-subtle)", fontSize: "0.72rem", cursor: "pointer", fontFamily: "inherit" }}
+                        >
+                          {w.damage}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+
               {/* Spell attack if caster */}
               {isCaster && (
                 <QuickActionBtn
@@ -1045,26 +1216,90 @@ function PlayMode({
           <PlayCard accent>
             <p style={labelStyle}>Rolagem de Dados</p>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+            {/* Die type selector — SVG shapes */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginBottom: 10 }}>
               {DICE_TYPES.map((d) => (
                 <button
                   key={d}
                   onClick={() => setSelectedDie(d)}
+                  title={`d${d}`}
                   style={{
-                    padding: "5px 9px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                    background: selectedDie === d ? "var(--accent-dim)" : "var(--surface-2)",
-                    border: `1px solid ${selectedDie === d ? "var(--accent)" : "var(--border)"}`,
-                    color: selectedDie === d ? "var(--accent-light)" : "var(--text-muted)",
-                    boxShadow: selectedDie === d ? "0 0 10px var(--accent-glow)" : "none",
-                    minWidth: 40, textAlign: "center",
+                    background: "none", border: "none", padding: 0, cursor: "pointer",
+                    opacity: selectedDie === d ? 1 : 0.4,
+                    transition: "opacity 0.15s, transform 0.15s",
+                    transform: selectedDie === d ? "scale(1.18) translateY(-2px)" : "scale(1)",
+                    filter: selectedDie === d ? "drop-shadow(0 0 5px var(--accent))" : "none",
                   }}
                 >
-                  d{d}
+                  <DieSvg sides={d} active={selectedDie === d} size={42} />
                 </button>
               ))}
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+            {/* Central die display — 3D quando o dispositivo aguenta */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+              <RollResultDie
+                sides={selectedDie}
+                size={110}
+                roll={lastRoll && lastRoll.dice === selectedDie ? lastRoll : null}
+                fallback={
+                  <DieSvg
+                    sides={selectedDie}
+                    active
+                    size={110}
+                    result={lastRoll && lastRoll.dice === selectedDie ? lastRoll.total : null}
+                  />
+                }
+              />
+            </div>
+
+            {/* Advantage/disadvantage (d20 only) */}
+            {selectedDie === 20 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: advantage !== "normal" ? 8 : 0 }}>
+                  {(["normal", "advantage", "disadvantage"] as const).map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setAdvantage(a)}
+                      style={{
+                        padding: "4px 10px", borderRadius: "var(--radius-xs)", fontSize: "0.66rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                        background: advantage === a ? "var(--accent-dim)" : "var(--surface-2)",
+                        border: `1px solid ${advantage === a ? "var(--accent)" : "var(--border)"}`,
+                        color: advantage === a ? "var(--accent-light)" : "var(--text-subtle)",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {a === "normal" ? "Normal" : a === "advantage" ? "Vantagem" : "Desv."}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Dados extras de vantagem/desvantagem */}
+                {advantage !== "normal" && (
+                  <div style={{
+                    background: "var(--surface-2)", border: "1px solid var(--border-accent)",
+                    borderRadius: "var(--radius-lg)", padding: "8px 14px",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  }}>
+                    <button
+                      onClick={() => setAdvExtraDice(Math.max(1, advExtraDice - 1))}
+                      style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >−</button>
+                    <span style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 700, fontSize: "0.88rem", color: "var(--accent-light)", minWidth: 18, textAlign: "center" }}>+{advExtraDice}</span>
+                    <button
+                      onClick={() => setAdvExtraDice(Math.min(5, advExtraDice + 1))}
+                      style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >+</button>
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+                      dado{advExtraDice !== 1 ? "s" : ""} de {advantage === "advantage" ? "vantagem" : "desvantagem"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Qty + Modifier + Soma/Maior */}
+            <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "center", marginBottom: 10, flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Qtd</span>
                 <select
@@ -1084,96 +1319,145 @@ function PlayMode({
                   style={{ width: 60, padding: "5px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.82rem", fontFamily: "inherit" }}
                 />
               </div>
-              {selectedDie === 20 && (
-                <div style={{ display: "flex", gap: 4 }}>
-                  {(["normal", "advantage", "disadvantage"] as const).map((a) => (
-                    <button
-                      key={a}
-                      onClick={() => setAdvantage(a)}
-                      style={{
-                        padding: "4px 8px", borderRadius: "var(--radius-xs)", fontSize: "0.66rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                        background: advantage === a ? "var(--accent-dim)" : "var(--surface-2)",
-                        border: `1px solid ${advantage === a ? "var(--accent)" : "var(--border)"}`,
-                        color: advantage === a ? "var(--accent-light)" : "var(--text-subtle)",
-                      }}
-                    >
-                      {a === "normal" ? "Normal" : a === "advantage" ? "Vantagem" : "Desvantagem"}
-                    </button>
-                  ))}
+              {/* Bolinhas Soma / Maior — oculto em modo vantagem (tem lógica própria) */}
+              {advantage === "normal" && (
+                <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                  {(["sum", "max"] as const).map((m) => {
+                    const active = pickMode === m;
+                    const disabled = diceCount <= 1;
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => setPickMode(m)}
+                        title={m === "sum" ? "Somar todos os dados" : "Usar o maior dado"}
+                        disabled={disabled}
+                        style={{
+                          width: 42, height: 42, borderRadius: "50%",
+                          background: active ? "var(--accent-dim)" : "var(--surface-2)",
+                          border: `2px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                          color: active ? "var(--accent-light)" : disabled ? "var(--text-subtle)" : "var(--text-muted)",
+                          fontFamily: "var(--font-cinzel), serif",
+                          fontSize: "0.6rem", fontWeight: 700, cursor: disabled ? "default" : "pointer",
+                          opacity: disabled ? 0.4 : 1,
+                          boxShadow: active ? "0 0 10px var(--accent-glow)" : "none",
+                          transition: "all 0.15s",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          letterSpacing: "0.02em",
+                        }}
+                      >
+                        {m === "sum" ? "Soma" : "Maior"}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
+            {/* Roll button */}
             <button
               onClick={() => doRoll(`${diceCount}d${selectedDie}${diceModifier !== 0 ? (diceModifier > 0 ? `+${diceModifier}` : diceModifier) : ""}`)}
               style={{
-                width: "100%", padding: "8px", borderRadius: "var(--radius-lg)",
+                width: "100%", padding: "10px", borderRadius: "var(--radius-lg)",
                 background: "var(--accent-dim)", border: "1px solid var(--accent)",
                 color: "var(--accent-light)", fontFamily: "var(--font-cinzel), serif",
-                fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.05em",
+                fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em",
                 boxShadow: "0 0 16px var(--accent-glow)",
                 transition: "all 0.15s",
                 marginBottom: 8,
               }}
             >
-              🎲 ROLAR {diceCount}d{selectedDie}{diceModifier !== 0 ? (diceModifier > 0 ? `+${diceModifier}` : diceModifier) : ""}
+              ROLAR {diceCount}d{selectedDie}{diceModifier !== 0 ? (diceModifier > 0 ? `+${diceModifier}` : diceModifier) : ""}
             </button>
 
+            {/* Last roll detail */}
             {lastRoll && (
-              <div
-                style={{
-                  padding: "12px 16px", borderRadius: "var(--radius-lg)", textAlign: "center",
-                  background: lastRoll.isCrit ? "rgba(201,148,31,0.15)" : lastRoll.isFumble ? "rgba(139,0,0,0.15)" : "var(--surface-2)",
-                  border: `1px solid ${lastRoll.isCrit ? "var(--accent)" : lastRoll.isFumble ? "#8b0000" : "var(--border)"}`,
-                  marginBottom: 8,
-                }}
-              >
-                {lastRoll.isCrit && <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 3 }}>✦ ACERTO CRÍTICO ✦</p>}
-                {lastRoll.isFumble && <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "#ff4444", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 3 }}>💀 FALHA CRÍTICA</p>}
+              <div style={{ textAlign: "center", marginBottom: 6 }}>
+                {lastRoll.isCrit    && <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>✦ ACERTO CRITICO ✦</p>}
+                {lastRoll.isFumble  && <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "#ff4444", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>FALHA CRITICA</p>}
+
+                {/* Dados de vantagem: mostra sorted desc, destaca o escolhido */}
                 {lastRoll.advantageMode && lastRoll.allRolls && (() => {
-                  const [r1, r2] = lastRoll.allRolls;
-                  const pickedIdx = lastRoll.advantageMode === "advantage" ? (r1 >= r2 ? 0 : 1) : (r1 <= r2 ? 0 : 1);
+                  const sorted = [...lastRoll.allRolls].sort((a, b) => b - a);
+                  const pickIdx = lastRoll.advantagePickIdx ?? (lastRoll.advantageMode === "advantage" ? 0 : 1);
                   return (
-                    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 6 }}>
-                      {lastRoll.allRolls.map((r, i) => (
-                        <span
-                          key={i}
-                          style={{
-                            fontSize: i === pickedIdx ? "1rem" : "0.82rem", fontWeight: i === pickedIdx ? 900 : 400,
-                            color: i === pickedIdx ? "var(--accent-light)" : "var(--text-subtle)",
-                            background: i === pickedIdx ? "var(--accent-dim)" : "var(--surface)",
-                            border: `1px solid ${i === pickedIdx ? "var(--accent)" : "var(--border)"}`,
-                            borderRadius: "var(--radius)", padding: "3px 10px",
-                          }}
-                        >
-                          {r}{i === pickedIdx ? " ✓" : ""}
-                        </span>
-                      ))}
-                      <span style={{ fontSize: "0.64rem", color: "var(--text-subtle)", alignSelf: "center" }}>
-                        {lastRoll.advantageMode === "advantage" ? "↑ vantagem" : "↓ desvantagem"}
-                      </span>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      {sorted.map((r, i) => {
+                        const isPicked = i === pickIdx;
+                        return (
+                          <span
+                            key={i}
+                            style={{
+                              fontSize: isPicked ? "0.95rem" : "0.78rem", fontWeight: isPicked ? 900 : 400,
+                              color: isPicked ? "var(--accent-light)" : "var(--text-subtle)",
+                              background: isPicked ? "var(--accent-dim)" : "var(--surface)",
+                              border: `1px solid ${isPicked ? "var(--accent)" : "var(--border)"}`,
+                              borderRadius: "var(--radius)", padding: "2px 9px",
+                            }}
+                          >
+                            {r}{isPicked ? " ✓" : ""}
+                          </span>
+                        );
+                      })}
                     </div>
                   );
                 })()}
-                <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "2.2rem", fontWeight: 900, color: lastRoll.isCrit ? "var(--accent-light)" : lastRoll.isFumble ? "#ff6b6b" : "var(--text)", lineHeight: 1 }}>
-                  {lastRoll.total}
-                </p>
-                <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 3 }}>
+
+                {/* Multi-dado modo Maior: destaca o maior */}
+                {lastRoll.pickMode === "max" && lastRoll.rolls.length > 1 && (() => {
+                  const maxVal = Math.max(...lastRoll.rolls);
+                  let markedMax = false;
+                  return (
+                    <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
+                      {lastRoll.rolls.map((r, i) => {
+                        const isMax = r === maxVal && !markedMax;
+                        if (isMax) markedMax = true;
+                        return (
+                          <span
+                            key={i}
+                            style={{
+                              fontSize: isMax ? "0.95rem" : "0.78rem", fontWeight: isMax ? 900 : 400,
+                              color: isMax ? "var(--accent-light)" : "var(--text-subtle)",
+                              background: isMax ? "var(--accent-dim)" : "var(--surface)",
+                              border: `1px solid ${isMax ? "var(--accent)" : "var(--border)"}`,
+                              borderRadius: "var(--radius)", padding: "2px 9px",
+                            }}
+                          >
+                            {r}{isMax ? " ↑" : ""}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
                   {lastRoll.label} · [{lastRoll.rolls.join(", ")}]{lastRoll.modifier !== 0 ? ` ${lastRoll.modifier >= 0 ? "+" : ""}${lastRoll.modifier}` : ""}
+                  {lastRoll.pickMode === "max" ? " · Maior" : ""}
                 </p>
               </div>
             )}
 
+            {/* History */}
             {rollHistory.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <p style={{ ...labelStyle, marginBottom: 3 }}>Histórico</p>
-                {rollHistory.slice(0, 5).map((r) => (
-                  <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", background: "var(--surface-2)", borderRadius: "var(--radius-xs)" }}>
-                    <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: r.isCrit ? "var(--accent-light)" : r.isFumble ? "#ff6b6b" : "var(--text)", minWidth: 26 }}>{r.total}</span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", flex: 1 }}>{r.label}</span>
-                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>{r.dice === 20 && r.isCrit ? "🏆" : r.dice === 20 && r.isFumble ? "💀" : `d${r.dice}`}</span>
-                  </div>
-                ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <p style={{ ...labelStyle, marginBottom: 2 }}>Histórico</p>
+                {rollHistory.slice(0, 5).map((r) => {
+                  const dieResult = r.total - r.modifier;
+                  return (
+                    <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", background: "var(--surface-2)", borderRadius: "var(--radius-xs)" }}>
+                      <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: r.isCrit ? "var(--accent-light)" : r.isFumble ? "#ff6b6b" : "var(--text)", minWidth: 26 }}>{r.total}</span>
+                      <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", flex: 1 }}>{r.label}</span>
+                      {r.modifier !== 0 && (
+                        <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)" }}>
+                          {dieResult}{r.modifier > 0 ? `+${r.modifier}` : r.modifier}
+                        </span>
+                      )}
+                      <span style={{ fontSize: "0.62rem", color: r.isCrit ? "var(--accent)" : r.isFumble ? "#ff6b6b" : "var(--text-subtle)", fontWeight: r.isCrit || r.isFumble ? 700 : 400 }}>
+                        {r.isCrit ? "CRIT" : r.isFumble ? "FAIL" : `d${r.dice}`}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </PlayCard>
@@ -1183,10 +1467,36 @@ function PlayMode({
             <PlayCard>
               <p style={labelStyle}>Espaços de Magia</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* Atributo de conjuração (escolhível) + valores derivados */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Habilidade:</span>
+                  <select
+                    value={spellAbility}
+                    onChange={(e) => {
+                      setSpellAbility(e.target.value);
+                      patchSheet({ spellAbility: e.target.value });
+                    }}
+                    style={{
+                      padding: "4px 8px", borderRadius: "var(--radius)",
+                      background: "var(--surface-2)", border: "1px solid var(--border-accent)",
+                      color: "var(--accent-light)", fontSize: "0.76rem", fontWeight: 700,
+                      fontFamily: "inherit", cursor: "pointer",
+                    }}
+                  >
+                    {["Inteligência", "Sabedoria", "Carisma"].map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                  {spellAbility !== spellConfig.ability && (
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+                      (padrão da classe: {spellConfig.ability})
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>
-                  Habilidade: <strong style={{ color: "var(--accent-light)" }}>{spellConfig.ability}</strong>
-                  {" · "}CD: <strong style={{ color: "var(--accent-light)" }}>{spellSaveDC}</strong>
-                  {" · "}Ataque: <strong style={{ color: "var(--accent-light)" }}>{signed(spellAttackBonus)}</strong>
+                  CD da Magia: <strong style={{ color: "var(--accent-light)" }}>{spellSaveDC}</strong>
+                  {" · "}Bônus de Ataque: <strong style={{ color: "var(--accent-light)" }}>{signed(spellAttackBonus)}</strong>
+                  {" · "}Mod.: <strong style={{ color: "var(--accent-light)" }}>{signed(mod(scores[spellAbilityKey]))}</strong>
                 </div>
                 {Object.entries(maxSlots).map(([level, max]) => {
                   const slots = slotsUsed[level] ?? Array.from({ length: max }, () => false);
@@ -1219,22 +1529,6 @@ function PlayMode({
                   );
                 })}
 
-                {/* Spell list */}
-                <div style={{ marginTop: 8, borderTop: "1px solid var(--border)", paddingTop: 8 }}>
-                  {[
-                    { label: "Truques", spells: sheet.spells.filter((s) => s.level === 0) },
-                    { label: "1° Nível", spells: sheet.spells.filter((s) => s.level > 0) },
-                  ].map(({ label, spells }) =>
-                    spells.length > 0 ? (
-                      <div key={label} style={{ marginBottom: 8 }}>
-                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", marginBottom: 4 }}>{label}</p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {spells.map((s) => <SpellTag key={s.id} name={s.spellName} school={s.school} />)}
-                        </div>
-                      </div>
-                    ) : null
-                  )}
-                </div>
               </div>
             </PlayCard>
           )}
@@ -1260,54 +1554,169 @@ function PlayMode({
                 Inventário vazio. Adicione itens clicando no botão acima.
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 7 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 {equipment.map((item) => {
                   const w = WEAPONS.find((w) => w.name.toLowerCase() === item.itemName.toLowerCase());
+                  const catalogItem = ALL_PHB_ITEMS.find((i) => i.name.toLowerCase() === item.itemName.toLowerCase());
+                  const isExpanded = expandedItemId === item.id;
+                  const isQuick = quickActionItemIds.has(item.id);
+                  const defaultAtk: AbilityKey = w?.finesse
+                    ? (scores.str >= scores.dex ? "str" : "dex")
+                    : w?.ranged ? "dex" : "str";
+                  const atkAttr: AbilityKey = itemAtkAttr[item.id] ?? defaultAtk;
+                  const atkBonus = mod(scores[atkAttr]) + PROF_BONUS;
+
                   return (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8, padding: "9px 12px",
-                        background: item.equipped ? "var(--accent-dim)" : "var(--surface-2)",
-                        border: `1px solid ${item.equipped ? "var(--border-accent)" : "var(--border)"}`,
-                        borderRadius: "var(--radius-lg)", transition: "all 0.15s",
-                      }}
-                    >
-                      <button
-                        onClick={() => toggleEquipped(item)}
-                        title={item.equipped ? "Equipado — clique para desequipar" : "Clique para equipar"}
+                    <div key={item.id}>
+                      {/* Item row */}
+                      <div
                         style={{
-                          width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
-                          background: item.equipped ? "var(--accent)" : "var(--surface)",
-                          border: `2px solid ${item.equipped ? "var(--accent)" : "var(--border)"}`,
-                          cursor: "pointer",
-                          boxShadow: item.equipped ? "0 0 6px var(--accent-glow)" : "none",
+                          display: "flex", alignItems: "center", gap: 8, padding: "9px 12px",
+                          background: isExpanded ? "var(--surface-2)" : item.equipped ? "var(--accent-dim)" : "var(--surface-2)",
+                          border: `1px solid ${isExpanded ? "var(--border-accent)" : item.equipped ? "var(--border-accent)" : "var(--border)"}`,
+                          borderRadius: isExpanded ? "var(--radius-lg) var(--radius-lg) 0 0" : "var(--radius-lg)",
+                          transition: "all 0.15s", cursor: "pointer",
                         }}
-                      />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: "0.8rem", fontWeight: item.equipped ? 700 : 400, color: item.equipped ? "var(--accent-light)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {item.itemName}
-                        </p>
-                        {w && (
-                          <p style={{ fontSize: "0.64rem", color: "var(--text-subtle)", marginTop: 1 }}>
-                            {w.damage} {w.damageType} · {w.category.includes("dist") ? "Dist." : "CAC"}
-                            {w.finesse ? " · Acuidade" : ""}
-                            {w.range ? ` · ${w.range}m` : ""}
-                          </p>
-                        )}
-                      </div>
-                      {item.quantity > 1 && (
-                        <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "1px 5px", flexShrink: 0 }}>
-                          ×{item.quantity}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        style={{ fontSize: "0.7rem", color: "var(--text-subtle)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px", lineHeight: 1, flexShrink: 0 }}
-                        title="Remover item"
+                        onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
                       >
-                        ✕
-                      </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleEquipped(item); }}
+                          title={item.equipped ? "Equipado — clique para desequipar" : "Clique para equipar"}
+                          style={{
+                            width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                            background: item.equipped ? "var(--accent)" : "var(--surface)",
+                            border: `2px solid ${item.equipped ? "var(--accent)" : "var(--border)"}`,
+                            cursor: "pointer",
+                            boxShadow: item.equipped ? "0 0 6px var(--accent-glow)" : "none",
+                          }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "0.8rem", fontWeight: item.equipped ? 700 : 400, color: item.equipped ? "var(--accent-light)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.itemName}
+                            {isQuick && <span style={{ marginLeft: 6, fontSize: "0.6rem", color: "#5fbf7f" }}>⚡</span>}
+                          </p>
+                          {w && (
+                            <p style={{ fontSize: "0.64rem", color: "var(--text-subtle)", marginTop: 1 }}>
+                              {w.damage} {w.damageType} · {w.category.includes("dist") ? "Dist." : "CAC"}
+                              {w.finesse ? " · Acuidade" : ""}
+                              {w.range ? ` · ${w.range}m` : ""}
+                            </p>
+                          )}
+                        </div>
+                        {item.quantity > 1 && (
+                          <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "1px 5px", flexShrink: 0 }}>
+                            ×{item.quantity}
+                          </span>
+                        )}
+                        <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", marginLeft: 4 }}>{isExpanded ? "▲" : "▼"}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                          style={{ fontSize: "0.7rem", color: "var(--text-subtle)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px", lineHeight: 1, flexShrink: 0 }}
+                          title="Remover item"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Detail balloon */}
+                      {isExpanded && (
+                        <div style={{
+                          background: "var(--surface-2)", border: "1px solid var(--border-accent)",
+                          borderTop: "none", borderRadius: "0 0 var(--radius-lg) var(--radius-lg)",
+                          padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10,
+                        }}>
+                          {/* Stats chips */}
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {catalogItem?.group && (
+                              <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                <strong>Tipo:</strong> {catalogItem.group}
+                              </span>
+                            )}
+                            {w && (
+                              <>
+                                <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                  <strong>Dano:</strong> {w.damage} {w.damageType}
+                                </span>
+                                <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                  <strong>Categoria:</strong> {w.category}
+                                </span>
+                                {w.range && (
+                                  <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                    <strong>Alcance:</strong> {w.range}m
+                                  </span>
+                                )}
+                                {w.finesse && (
+                                  <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--accent-light)" }}>
+                                    Acuidade
+                                  </span>
+                                )}
+                              </>
+                            )}
+                            {catalogItem?.cost && (
+                              <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--accent-light)" }}>
+                                {catalogItem.cost}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Description */}
+                          {item.description ? (
+                            <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.55 }}>{item.description}</p>
+                          ) : (
+                            <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
+                              Sem descrição — consulte o Livro do Jogador.
+                            </p>
+                          )}
+
+                          {/* Attack attribute selector */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: "0.66rem", color: "var(--text-muted)", fontWeight: 700 }}>Atributo de ataque:</span>
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                              {ABILITIES.map((k) => {
+                                const isSelected = atkAttr === k;
+                                return (
+                                  <button
+                                    key={k}
+                                    onClick={() => setItemAtkAttr((prev) => ({ ...prev, [item.id]: k }))}
+                                    style={{
+                                      padding: "3px 8px", borderRadius: "var(--radius-xs)", fontSize: "0.6rem", fontWeight: 700,
+                                      cursor: "pointer", fontFamily: "inherit",
+                                      background: isSelected ? "var(--accent-dim)" : "var(--surface)",
+                                      border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
+                                      color: isSelected ? "var(--accent-light)" : "var(--text-subtle)",
+                                    }}
+                                  >
+                                    {ABILITY_SHORT[k]}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+                              Bônus: {signed(atkBonus)}
+                            </span>
+                          </div>
+
+                          {/* Quick action toggle */}
+                          <button
+                            onClick={() => {
+                              const next = new Set(quickActionItemIds);
+                              if (next.has(item.id)) next.delete(item.id);
+                              else next.add(item.id);
+                              setQuickActionItemIds(next);
+                            }}
+                            style={{
+                              alignSelf: "flex-start", padding: "5px 12px", borderRadius: "var(--radius)",
+                              fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                              background: isQuick ? "rgba(95,191,127,0.15)" : "var(--surface)",
+                              border: `1px solid ${isQuick ? "#5fbf7f" : "var(--border)"}`,
+                              color: isQuick ? "#5fbf7f" : "var(--text-muted)",
+                              transition: "all 0.12s",
+                            }}
+                          >
+                            {isQuick ? "⚡ Remover das ações rápidas" : "⚡ Adicionar às ações rápidas"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1554,6 +1963,18 @@ function PlayMode({
               </div>
             )}
           </PlayCard>
+
+          {/* Grimório — magias por nível, expansível, abaixo do Descanso */}
+          {isCaster && (
+            <PlayCard>
+              <SpellbookPanel
+                characterId={characterId}
+                classId={cls?.id ?? null}
+                spells={spells}
+                onSpellAdded={(spell) => setSpells([...spells, spell])}
+              />
+            </PlayCard>
+          )}
         </div>
       </div>
 
@@ -1701,6 +2122,51 @@ const smallBtn: React.CSSProperties = {
   border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem",
   cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center",
 };
+
+// ── DieSvg ────────────────────────────────────────────────────────────────────
+
+function DieSvg({ sides, size = 44, active = false, result }: {
+  sides: number;
+  size?: number;
+  active?: boolean;
+  result?: number | null;
+}) {
+  const strokeColor = active ? "var(--accent)" : "var(--border)";
+  const fillColor   = active ? "var(--accent-dim)" : "var(--surface-2)";
+  const labelColor  = active ? "var(--accent-light)" : "var(--text-muted)";
+
+  const centerY = sides === 4 ? 65 : 56;
+  const fontSize = result != null
+    ? (result >= 100 ? 20 : result >= 10 ? 24 : 28)
+    : (sides === 100 ? 16 : 18);
+  const displayText = result != null ? String(result) : (sides === 100 ? "d%" : `d${sides}`);
+  const textFill = result != null
+    ? (result === sides ? "var(--accent-light)" : result === 1 && sides === 20 ? "#ff6b6b" : "var(--text)")
+    : labelColor;
+
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: "block", overflow: "visible" }}>
+      {sides === 4  && <polygon points="50,8 92,87 8,87"                           fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
+      {sides === 6  && <rect x="10" y="10" width="80" height="80" rx="12"          fill={fillColor} stroke={strokeColor} strokeWidth="3" />}
+      {sides === 8  && <polygon points="50,5 95,50 50,95 5,50"                      fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
+      {sides === 10 && <polygon points="50,5 93,40 76,90 24,90 7,40"               fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
+      {sides === 12 && <polygon points="50,5 93,32 78,88 22,88 7,32"               fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
+      {sides === 20 && <polygon points="50,5 93,27 93,73 50,95 7,73 7,27"          fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
+      {sides === 100 && <circle cx="50" cy="50" r="44"                             fill={fillColor} stroke={strokeColor} strokeWidth="3" />}
+      <text
+        x="50" y={centerY}
+        textAnchor="middle"
+        fontSize={fontSize}
+        fontWeight="900"
+        fill={textFill}
+        fontFamily="var(--font-cinzel), serif"
+        style={{ userSelect: "none" }}
+      >
+        {displayText}
+      </text>
+    </svg>
+  );
+}
 
 function PlayCard({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (
