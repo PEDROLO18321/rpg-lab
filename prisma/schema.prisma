@@ -136,6 +136,7 @@ model DndSheet {
 
   conditions     String? // JSON: string[]
   spellSlotsUsed String? // JSON: {"1": 0, "2": 0, ...} slots used per level
+  spellAbility   String? // atributo de conjuração escolhido (sobrepõe o padrão da classe)
 
   classes   DndClass[]
   skills    DndSkill[]

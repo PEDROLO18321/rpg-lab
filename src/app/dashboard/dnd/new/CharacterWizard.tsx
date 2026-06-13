@@ -82,6 +82,14 @@ export function CharacterWizard({ userId, systemId }: Props) {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [step]);
 
+  // Pré-carrega todos os bundles Three.js assim que o wizard monta,
+  // antes de qualquer navegação entre steps, eliminando o flash de carregamento.
+  useEffect(() => {
+    import("@/components/three/RaceMorphScene");
+    import("@/components/three/ClassOrbViews");
+    import("@/components/three/BackgroundIconViews");
+  }, []);
+
   function next() { setStep((s) => Math.min(s + 1, STEPS.length - 1)); }
   function back() { setStep((s) => Math.max(s - 1, 0)); }
 
@@ -131,7 +139,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
       {/* Top bar */}
       <header
         style={{

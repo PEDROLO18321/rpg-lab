@@ -69,7 +69,7 @@ export default function SystemSelectPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "var(--bg)",
+        background: "transparent",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

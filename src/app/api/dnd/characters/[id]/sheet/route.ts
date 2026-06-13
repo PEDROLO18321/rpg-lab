@@ -26,6 +26,7 @@ export async function PATCH(
     "gp", "cp", "sp", "ep", "pp",
     "str", "dex", "con", "int", "wis", "cha",
     "armorClass", "speed", "hpMax", "xp", "level",
+    "spellAbility",
   ] as const;
 
   const data: Record<string, unknown> = {};

@@ -4,6 +4,40 @@ import { useState, useRef } from "react";
 import { CLASSES } from "@/lib/dnd/classes";
 import type { DndClass } from "@/lib/dnd/classes";
 import type { WizardData } from "../CharacterWizard";
+import { Tilt3D } from "@/components/ui/Tilt3D";
+import { HitDie3D } from "@/components/three/HitDie3D";
+import { ClassOrb, ClassOrbsStage } from "@/components/three/ClassOrb";
+import { smoothScrollTo } from "@/lib/smoothScroll";
+
+const CLASS_ABBREV: Record<string, string> = {
+  barbaro: "BAR", bardo: "BRD", bruxo: "BRX",
+  clerigo: "CLR", druida: "DRU", feiticeiro: "FTC",
+  guerreiro: "GUE", ladino: "LAD", mago: "MAG",
+  monge: "MON", paladino: "PAL", ranger: "RNG",
+};
+
+function ClassBadge({ id, size = 40 }: { id: string; size?: number }) {
+  const abbrev = CLASS_ABBREV[id] ?? id.slice(0, 3).toUpperCase();
+  return (
+    <div
+      style={{
+        width: size, height: size,
+        borderRadius: size > 44 ? "var(--radius-lg)" : "var(--radius)",
+        background: "var(--accent-dim)",
+        border: "1px solid var(--border-accent)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexShrink: 0,
+        fontSize: size > 44 ? "0.75rem" : "0.62rem",
+        fontWeight: 900,
+        fontFamily: "var(--font-cinzel), serif",
+        color: "var(--accent-light)",
+        letterSpacing: "0.04em",
+      }}
+    >
+      {abbrev}
+    </div>
+  );
+}
 
 interface Props {
   selected:    string | null;
@@ -21,12 +55,14 @@ export function StepClass({ selected, subclassId, onChange }: Props) {
   function selectClass(classId: string) {
     onChange({ classId, subclassId: "", selectedSkills: [] });
     setTimeout(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (detailRef.current) smoothScrollTo(detailRef.current);
     }, 50);
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      {/* Canvas WebGL único compartilhado por todos os orbes da grade */}
+      <ClassOrbsStage />
       {/* Heading */}
       <div>
         <span className="section-label" style={{ display: "block", marginBottom: 6 }}>
@@ -60,12 +96,14 @@ export function StepClass({ selected, subclassId, onChange }: Props) {
           const isSelected = selected === c.id;
           const isHovered  = hovered === c.id;
           return (
+            <Tilt3D key={c.id}>
             <button
-              key={c.id}
               onClick={() => selectClass(c.id)}
               onMouseEnter={() => setHovered(c.id)}
               onMouseLeave={() => setHovered(null)}
               style={{
+                width: "100%",
+                height: "100%",
                 background: isSelected ? "var(--accent-dim)" : "var(--surface)",
                 border: `1px solid ${isSelected ? "var(--accent)" : isHovered ? "rgba(201,148,31,0.3)" : "var(--border)"}`,
                 borderRadius: "var(--radius-xl)",
@@ -85,7 +123,15 @@ export function StepClass({ selected, subclassId, onChange }: Props) {
                   : "0 2px 8px rgba(0,0,0,0.15)",
               }}
             >
-              <span style={{ fontSize: "1.8rem", lineHeight: 1 }}>{c.icon}</span>
+              {/* Esfera 3D em idle; ao selecionar vira o dado de vida */}
+              <ClassOrb
+                classId={c.id}
+                sides={c.hitDie}
+                size={48}
+                selected={isSelected}
+                hovered={isHovered}
+                fallback={<ClassBadge id={c.id} size={40} />}
+              />
               <span
                 style={{
                   fontFamily: "var(--font-cinzel), serif",
@@ -109,6 +155,7 @@ export function StepClass({ selected, subclassId, onChange }: Props) {
                 D{c.hitDie}
               </span>
             </button>
+            </Tilt3D>
           );
         })}
       </div>
@@ -129,22 +176,7 @@ export function StepClass({ selected, subclassId, onChange }: Props) {
         >
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "var(--radius-lg)",
-                background: "var(--accent-dim)",
-                border: "1px solid var(--border-accent)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "1.6rem",
-                flexShrink: 0,
-              }}
-            >
-              {cls.icon}
-            </div>
+            <HitDie3D sides={cls.hitDie} size={64} fallback={<ClassBadge id={cls.id} size={56} />} />
             <div>
               <h3
                 style={{

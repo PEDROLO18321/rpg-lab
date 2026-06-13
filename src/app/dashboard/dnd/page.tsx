@@ -36,7 +36,7 @@ export default async function DndDashboardPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", background: "transparent" }}>
       <DashboardNav
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="D&D 5e"

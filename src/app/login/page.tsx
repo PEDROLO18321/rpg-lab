@@ -56,7 +56,7 @@ function LoginForm() {
         alignItems: "center",
         justifyContent: "center",
         padding: "24px",
-        background: "var(--bg)",
+        background: "transparent",
         position: "relative",
         overflow: "hidden",
       }}

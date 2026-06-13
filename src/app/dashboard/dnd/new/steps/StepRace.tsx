@@ -5,6 +5,9 @@ import Image, { StaticImageData } from "next/image";
 import { RACES, ABILITY_LABELS, formatBonuses } from "@/lib/dnd/races";
 import type { Race, Subrace } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
+import { Tilt3D } from "@/components/ui/Tilt3D";
+import { RaceMorphSlot } from "@/components/three/RaceMorph";
+import { smoothScrollTo } from "@/lib/smoothScroll";
 
 import imgAnao       from "@/assets/D&D-Racas/Anoes.png";
 import imgElfo       from "@/assets/D&D-Racas/Elfos.png";
@@ -15,6 +18,43 @@ import imgGnomo      from "@/assets/D&D-Racas/Gnomos.png";
 import imgMeioElfo   from "@/assets/D&D-Racas/Meio-Elfos.png";
 import imgMeioOrc    from "@/assets/D&D-Racas/Meio-Orcs.png";
 import imgTiefling   from "@/assets/D&D-Racas/Tiefling.png";
+
+// Fora do componente: handler de evento usa aleatoriedade sem violar a
+// regra de pureza de render do React Compiler.
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** Retrato 2D padrão do card de raça (e fallback do avatar 3D). */
+function RaceImageBox({ id, name, size, selected }: { id: string; name: string; size: number; selected: boolean }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "var(--radius-lg)",
+        overflow: "hidden",
+        position: "relative",
+        flexShrink: 0,
+        border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
+      }}
+    >
+      {RACE_IMAGES[id] ? (
+        <Image
+          src={RACE_IMAGES[id]}
+          alt={name}
+          fill
+          style={{ objectFit: "cover" }}
+          sizes={`${size}px`}
+        />
+      ) : (
+        <span style={{ fontSize: "0.7rem", fontWeight: 700, lineHeight: `${size}px`, display: "block", textAlign: "center", color: "var(--accent-light)" }}>
+          {name.slice(0, 3).toUpperCase()}
+        </span>
+      )}
+    </div>
+  );
+}
 
 const RACE_IMAGES: Record<string, StaticImageData> = {
   "anao":      imgAnao,
@@ -50,14 +90,13 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
       charName: charName,
     });
     setTimeout(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (detailRef.current) smoothScrollTo(detailRef.current);
     }, 50);
   }
 
   function pickRandomName() {
     if (!race) return;
-    const allNames = [...race.names.male, ...race.names.female];
-    const pick = allNames[Math.floor(Math.random() * allNames.length)];
+    const pick = pickRandom([...race.names.male, ...race.names.female]);
     onChange({ charName: pick });
   }
 
@@ -96,12 +135,14 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
           const isSelected = selected === r.id;
           const isHovered  = hoveredRace === r.id;
           return (
+            <Tilt3D key={r.id}>
             <button
-              key={r.id}
               onClick={() => selectRace(r.id)}
               onMouseEnter={() => setHoveredRace(r.id)}
               onMouseLeave={() => setHoveredRace(null)}
               style={{
+                width: "100%",
+                height: "100%",
                 background: isSelected ? "var(--accent-dim)" : "var(--surface)",
                 border: `1px solid ${isSelected ? "var(--accent)" : isHovered ? "rgba(201,148,31,0.3)" : "var(--border)"}`,
                 borderRadius: "var(--radius-xl)",
@@ -121,29 +162,14 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                   : "0 2px 8px rgba(0,0,0,0.15)",
               }}
             >
-              <div
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: "var(--radius-lg)",
-                  overflow: "hidden",
-                  position: "relative",
-                  flexShrink: 0,
-                  border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
-                }}
-              >
-                {RACE_IMAGES[r.id] ? (
-                  <Image
-                    src={RACE_IMAGES[r.id]}
-                    alt={r.name}
-                    fill
-                    style={{ objectFit: "cover" }}
-                    sizes="72px"
-                  />
-                ) : (
-                  <span style={{ fontSize: "0.7rem", fontWeight: 700, lineHeight: "72px", display: "block", textAlign: "center", color: "var(--accent-light)" }}>{r.name.slice(0, 3).toUpperCase()}</span>
-                )}
-              </div>
+              {/* Blob 3D em mutação (todos os cards); imagem 2D em mobile/fallback */}
+              <RaceMorphSlot
+                raceId={r.id}
+                size={72}
+                selected={isSelected}
+                hovered={isHovered}
+                fallback={<RaceImageBox id={r.id} name={r.name} size={72} selected={isSelected} />}
+              />
               <span
                 style={{
                   fontFamily: "var(--font-cinzel), serif",
@@ -167,6 +193,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                 {formatBonuses(r.baseBonus)}
               </span>
             </button>
+            </Tilt3D>
           );
         })}
       </div>
@@ -185,31 +212,9 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
             gap: 24,
           }}
         >
-          {/* Race header */}
+          {/* Race header — retrato 2D (blobs ficam no grid) */}
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "var(--radius-lg)",
-                overflow: "hidden",
-                position: "relative",
-                flexShrink: 0,
-                border: "1px solid var(--border-accent)",
-              }}
-            >
-              {RACE_IMAGES[race.id] ? (
-                <Image
-                  src={RACE_IMAGES[race.id]}
-                  alt={race.name}
-                  fill
-                  style={{ objectFit: "cover" }}
-                  sizes="64px"
-                />
-              ) : (
-                <span style={{ fontSize: "0.7rem", fontWeight: 700, lineHeight: "64px", display: "block", textAlign: "center", background: "var(--accent-dim)", color: "var(--accent-light)" }}>{race.name.slice(0, 3).toUpperCase()}</span>
-              )}
-            </div>
+            <RaceImageBox id={race.id} name={race.name} size={64} selected />
             <div>
               <h3
                 style={{
