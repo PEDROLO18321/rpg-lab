@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
       selectedCantrips,
       selectedSpells,
       selectedLanguages,
+      racialAbilityBonuses,
+      selectedRacialSkills,
     } = body;
 
     // Validate required fields
@@ -63,6 +65,11 @@ export async function POST(req: NextRequest) {
         racialBonus[k] = (racialBonus[k] ?? 0) + v;
       }
     }
+    if (racialAbilityBonuses) {
+      for (const [k, v] of Object.entries(racialAbilityBonuses) as [AbilityKey, number][]) {
+        racialBonus[k] = (racialBonus[k] ?? 0) + v;
+      }
+    }
 
     // Final ability scores
     const finalScores = ABILITIES.reduce((acc, k) => ({
@@ -72,9 +79,17 @@ export async function POST(req: NextRequest) {
 
     const conMod = mod(finalScores.con);
     const dexMod = mod(finalScores.dex);
+    const wisMod = mod(finalScores.wis);
 
-    const hpMax = cls.hitDie + conMod;
-    const ac    = 10 + dexMod;
+    const isAnaoDaColina = subraceId === "anao-colina";
+    const hpMax = cls.hitDie + conMod + (isAnaoDaColina ? 1 : 0);
+
+    // Base unarmored AC: class unarmored defense overrides standard base
+    const baseAC           = 10 + dexMod;
+    const unarmoredDefense = classId === "barbaro"  ? 10 + dexMod + conMod
+                           : classId === "monge"    ? 10 + dexMod + wisMod
+                           : 10 + dexMod;
+    const ac = Math.max(baseAC, unarmoredDefense);
 
     // Serialize description + languages into Character.notes
     const notesData = {
@@ -120,9 +135,10 @@ export async function POST(req: NextRequest) {
             hpMax,
             hpCurrent: hpMax,
             hitDice:   `D${cls.hitDie}`,
-            speed:     race.speed,
-            armorClass: ac,
-            initiative: dexMod,
+            speed:     subrace?.speed ?? race.speed,
+            armorClass:   ac,
+            initiative:   dexMod,
+            spellAbility: cls.spellcastingAbility ?? null,
             gp: startingCurrency.gp ?? 0,
             sp: startingCurrency.sp ?? 0,
             cp: startingCurrency.cp ?? 0,
@@ -136,7 +152,11 @@ export async function POST(req: NextRequest) {
               },
             },
             skills: {
-              create: (selectedSkills ?? []).map((skillName: string) => ({
+              create: Array.from(new Set([
+                ...(selectedSkills ?? []),
+                ...(selectedRacialSkills ?? []),
+                ...(raceId === "meio-orc" ? ["Intimidação"] : []),
+              ])).map((skillName: string) => ({
                 skillName,
                 proficient: true,
               })),

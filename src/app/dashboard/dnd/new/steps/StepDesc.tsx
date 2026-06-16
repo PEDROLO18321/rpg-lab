@@ -1,14 +1,15 @@
 "use client";
 
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
+import { RACES } from "@/lib/dnd/races";
 import { randomPhysical, pick } from "@/lib/dnd/physicalTraits";
 import type { WizardData, DescData } from "../CharacterWizard";
 
 const STANDARD_LANGUAGES = [
-  "Anão", "Elfico", "Gnômico", "Halfling", "Orchídeo", "Goblinoid", "Gigante",
+  "Anão", "Élfico", "Gnômico", "Halfling", "Orc", "Goblin", "Gigante",
 ];
 const EXOTIC_LANGUAGES = [
-  "Abissal", "Celestial", "Dracônico", "Infernal", "Língua Profunda", "Primordial", "Silvano", "Sub-Comum",
+  "Abissal", "Celestial", "Dracônico", "Infernal", "Dialeto Subterrâneo", "Primordial", "Silvestre", "Subcomum",
 ];
 
 const ALIGNMENTS = [
@@ -26,13 +27,17 @@ const ALIGNMENTS = [
 interface Props {
   backgroundId:      string | null;
   raceId:            string | null;
+  subraceId:         string | null;
   desc:              Partial<DescData>;
   selectedLanguages: string[];
   onChange:          (partial: Partial<WizardData>) => void;
 }
 
-export function StepDesc({ backgroundId, raceId, desc, selectedLanguages, onChange }: Props) {
-  const bg = BACKGROUNDS.find((b) => b.id === backgroundId);
+export function StepDesc({ backgroundId, raceId, subraceId, desc, selectedLanguages, onChange }: Props) {
+  const bg      = BACKGROUNDS.find((b) => b.id === backgroundId);
+  const race    = raceId ? RACES.find((r) => r.id === raceId) : null;
+  const subrace = subraceId ? race?.subraces.find((s) => s.id === subraceId) : null;
+  const totalLanguages = (bg?.languages ?? 0) + (subrace?.languages ?? 0) + (race?.languageBonus ?? 0);
 
   function set(key: keyof DescData, value: string) {
     onChange({ desc: { ...desc, [key]: value } } as Partial<WizardData>);
@@ -235,25 +240,32 @@ export function StepDesc({ backgroundId, raceId, desc, selectedLanguages, onChan
       </Section>
 
       {/* Languages */}
-      {bg && bg.languages > 0 && (
-        <Section label={`Línguas Adicionais — escolha ${bg.languages}`}>
+      {totalLanguages > 0 && (
+        <Section label={`Línguas Adicionais — escolha ${totalLanguages}`}>
           <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: 12, lineHeight: 1.5 }}>
-            Seu antecedente <strong style={{ color: "var(--accent-light)" }}>{bg.name}</strong> concede{" "}
-            {bg.languages} língua{bg.languages > 1 ? "s" : ""} adiciona{bg.languages > 1 ? "is" : "l"} além das da raça.
+            {bg && (bg.languages ?? 0) > 0 && (
+              <>Antecedente <strong style={{ color: "var(--accent-light)" }}>{bg.name}</strong>: {bg.languages} língua{bg.languages > 1 ? "s" : ""}.{" "}</>
+            )}
+            {(subrace?.languages ?? 0) > 0 && (
+              <>Sub-raça <strong style={{ color: "var(--accent-light)" }}>{subrace!.name}</strong>: {subrace!.languages} língua adicional.{" "}</>
+            )}
+            {(race?.languageBonus ?? 0) > 0 && (
+              <>Raça <strong style={{ color: "var(--accent-light)" }}>{race!.name}</strong>: {race!.languageBonus} língua adicional.</>
+            )}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <LangGroup
               label="Línguas Padrão"
               langs={STANDARD_LANGUAGES}
               selected={selectedLanguages}
-              max={bg.languages}
+              max={totalLanguages}
               onChange={(l) => onChange({ selectedLanguages: l })}
             />
             <LangGroup
               label="Línguas Exóticas"
               langs={EXOTIC_LANGUAGES}
               selected={selectedLanguages}
-              max={bg.languages}
+              max={totalLanguages}
               onChange={(l) => onChange({ selectedLanguages: l })}
             />
           </div>

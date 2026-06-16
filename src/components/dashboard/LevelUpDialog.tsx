@@ -7,16 +7,19 @@ import {
   ABILITY_MAX,
   spellChoicesOnLevelUp,
   maxSpellLevelAt,
+  MULTICLASS_PROFICIENCIES,
+  checkMulticlassPrereqs,
 } from "@/lib/dnd/leveling";
 import type { LevelFeature } from "@/lib/dnd/leveling";
-import { SPELLS, SCHOOL_COLORS, spellClassKey } from "@/lib/dnd/spells";
+import { SPELLS, SCHOOL_COLORS, spellClassKey, SPELLCASTING } from "@/lib/dnd/spells";
+import { CLASSES } from "@/lib/dnd/classes";
 import { ABILITY_LABELS } from "@/lib/dnd/races";
 import type { AbilityKey } from "@/lib/dnd/races";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 
-const GREEN = "#5fbf7f";
-const GREEN_DIM = "rgba(95,191,127,0.12)";
+const GREEN        = "#5fbf7f";
+const GREEN_DIM    = "rgba(95,191,127,0.12)";
 const GREEN_BORDER = "rgba(95,191,127,0.45)";
 
 interface Summary {
@@ -37,40 +40,31 @@ interface Summary {
   spellsKnownBefore: number;
   spellsKnownAfter: number;
   spellsLearned: string[];
+  newClassName?: string;
 }
 
-/**
- * Botão verde "Subir de Nível" + modal com as regras do Livro do Jogador:
- * escolha de PV (média ou rolagem), ASI quando aplicável, preview das
- * características do novo nível e resumo do que mudou após confirmar.
- */
+type ClassEntry = { id: string; className: string; level: number };
+
 export function LevelUpButton({
   characterId,
-  classId,
-  hitDie,
+  classes,
   raceKey,
   currentLevel,
   scores,
   knownSpellNames,
 }: {
   characterId: string;
-  classId: string;
-  hitDie: number;
+  classes: ClassEntry[];
   raceKey: string;
   currentLevel: number;
   scores: Record<AbilityKey, number>;
   knownSpellNames: string[];
 }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const router   = useRouter();
+  const [open,    setOpen]    = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  const plan = useMemo(
-    () => buildLevelUpPlan(classId, raceKey, currentLevel, hitDie),
-    [classId, raceKey, currentLevel, hitDie]
-  );
-
-  if (!plan) return null; // nível 20 — sem botão
+  if (currentLevel >= 20 || classes.length === 0) return null;
 
   return (
     <>
@@ -99,8 +93,9 @@ export function LevelUpButton({
       {open && (
         <LevelUpModal
           characterId={characterId}
-          classId={classId}
-          plan={plan}
+          classes={classes}
+          raceKey={raceKey}
+          currentLevel={currentLevel}
           scores={scores}
           knownSpellNames={knownSpellNames}
           onClose={(changed) => {
@@ -115,81 +110,147 @@ export function LevelUpButton({
 
 function LevelUpModal({
   characterId,
-  classId,
-  plan,
+  classes,
+  raceKey,
+  currentLevel,
   scores,
   knownSpellNames,
   onClose,
 }: {
   characterId: string;
-  classId: string;
-  plan: NonNullable<ReturnType<typeof buildLevelUpPlan>>;
+  classes: ClassEntry[];
+  raceKey: string;
+  currentLevel: number;
   scores: Record<AbilityKey, number>;
   knownSpellNames: string[];
   onClose: (changed: boolean) => void;
 }) {
-  const [hpMode, setHpMode] = useState<"average" | "roll">("average");
-  const [hpRoll, setHpRoll] = useState<number | null>(null);
-  // ASI: modo +2 único ou +1/+1
-  const [asiMode, setAsiMode] = useState<"two" | "oneone">("two");
-  const [asiPick, setAsiPick] = useState<AbilityKey | null>(null);
+  // Null = "adicionar nova classe"; string = id do DndClass a subir de nível
+  const [targetClassEntryId, setTargetClassEntryId] = useState<string | null>(classes[0]?.id ?? null);
+  const [newClassId,    setNewClassId]    = useState<string | null>(null);
+
+  const [hpMode,   setHpMode]   = useState<"average" | "roll">("average");
+  const [hpRoll,   setHpRoll]   = useState<number | null>(null);
+  const [asiMode,  setAsiMode]  = useState<"two" | "oneone">("two");
+  const [asiPick,  setAsiPick]  = useState<AbilityKey | null>(null);
   const [asiPick2, setAsiPick2] = useState<AbilityKey | null>(null);
-  // Magias novas escolhidas (ids do catálogo)
   const [pickedCantrips, setPickedCantrips] = useState<Set<string>>(new Set());
-  const [pickedSpells, setPickedSpells] = useState<Set<string>>(new Set());
+  const [pickedSpells,   setPickedSpells]   = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [error,      setError]      = useState<string | null>(null);
+  const [summary,    setSummary]    = useState<Summary | null>(null);
+
+  const isMulticlassMode = targetClassEntryId === null;
+
+  // Classe/plano para o caminho de subida de nível
+  const targetEntry = useMemo(
+    () => classes.find((c) => c.id === targetClassEntryId) ?? null,
+    [classes, targetClassEntryId]
+  );
+  const targetCls = useMemo(
+    () => (targetEntry ? CLASSES.find((c) => c.id === targetEntry.className) : null),
+    [targetEntry]
+  );
+  const plan = useMemo(() => {
+    if (!targetEntry || !targetCls) return null;
+    return buildLevelUpPlan(targetCls.id, raceKey, targetEntry.level, targetCls.hitDie, currentLevel);
+  }, [targetEntry, targetCls, raceKey, currentLevel]);
+
+  // Nova classe (multiclasse)
+  const newCls = useMemo(
+    () => (newClassId ? CLASSES.find((c) => c.id === newClassId) : null),
+    [newClassId]
+  );
+  const prereqError = useMemo(
+    () => (newClassId ? checkMulticlassPrereqs(newClassId, scores) : null),
+    [newClassId, scores]
+  );
+  const newClsSpellCfg = newClassId ? SPELLCASTING[newClassId] : null;
 
   const conMod = Math.floor((scores.con - 10) / 2);
 
-  // ── Escolha de magias (Livro do Jogador: seção Conjuração da classe) ──────
-  const choices = useMemo(() => spellChoicesOnLevelUp(classId, plan.newLevel), [classId, plan.newLevel]);
-  const known = useMemo(() => new Set(knownSpellNames.map((n) => n.toLowerCase())), [knownSpellNames]);
-  const classKey = spellClassKey(classId);
-  const maxSpellLv = maxSpellLevelAt(classId, plan.newLevel);
+  // Magias da nova classe (multiclasse "known")
+  const known = useMemo(
+    () => new Set(knownSpellNames.map((n) => n.toLowerCase())),
+    [knownSpellNames]
+  );
+  const newCantripOptions = useMemo(() => {
+    if (!newClassId || !newClsSpellCfg) return [];
+    const ck = spellClassKey(newClassId);
+    return SPELLS.filter((s) => s.level === 0 && s.classes.includes(ck) && !known.has(s.name.toLowerCase()));
+  }, [newClassId, newClsSpellCfg, known]);
+  const newSpellOptions = useMemo(() => {
+    if (!newClassId || !newClsSpellCfg || newClsSpellCfg.type !== "known") return [];
+    const ck = spellClassKey(newClassId);
+    return SPELLS.filter(
+      (s) => s.level >= 1 && s.level <= 1 && s.classes.includes(ck) && !known.has(s.name.toLowerCase())
+    ).sort((a, b) => a.name.localeCompare(b.name));
+  }, [newClassId, newClsSpellCfg, known]);
+
+  // Magias da classe existente (subida normal)
+  const choices = useMemo(
+    () => (plan && targetCls ? spellChoicesOnLevelUp(targetCls.id, plan.newLevel) : { cantrips: 0, spells: 0 }),
+    [plan, targetCls]
+  );
+  const existingClassKey = targetCls ? spellClassKey(targetCls.id) : "";
+  const maxSpellLv = plan && targetCls ? maxSpellLevelAt(targetCls.id, plan.newLevel) : 0;
   const cantripOptions = useMemo(
-    () => SPELLS.filter((s) => s.level === 0 && s.classes.includes(classKey) && !known.has(s.name.toLowerCase())),
-    [classKey, known]
+    () => SPELLS.filter((s) => s.level === 0 && s.classes.includes(existingClassKey) && !known.has(s.name.toLowerCase())),
+    [existingClassKey, known]
   );
   const spellOptions = useMemo(
     () =>
       SPELLS.filter(
-        (s) => s.level >= 1 && s.level <= maxSpellLv && s.classes.includes(classKey) && !known.has(s.name.toLowerCase())
+        (s) => s.level >= 1 && s.level <= maxSpellLv && s.classes.includes(existingClassKey) && !known.has(s.name.toLowerCase())
       ).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)),
-    [classKey, known, maxSpellLv]
+    [existingClassKey, known, maxSpellLv]
   );
 
   function rollHitDie() {
-    setHpRoll(Math.floor(Math.random() * plan.hitDie) + 1);
+    const die = isMulticlassMode ? (newCls?.hitDie ?? 8) : (targetCls?.hitDie ?? 8);
+    setHpRoll(Math.floor(Math.random() * die) + 1);
   }
 
   const asiIncreases: Partial<Record<AbilityKey, number>> = {};
-  if (plan.asi) {
+  if (plan?.asi) {
     if (asiMode === "two" && asiPick) asiIncreases[asiPick] = 2;
     if (asiMode === "oneone" && asiPick && asiPick2 && asiPick !== asiPick2) {
       asiIncreases[asiPick] = 1;
       asiIncreases[asiPick2] = 1;
     }
   }
-  const asiReady = !plan.asi || Object.keys(asiIncreases).length > 0;
-  const hpReady = hpMode === "average" || hpRoll !== null;
-  const canConfirm = asiReady && hpReady && !submitting;
+
+  const asiReady    = !plan?.asi || Object.keys(asiIncreases).length > 0;
+  const hpReady     = hpMode === "average" || hpRoll !== null;
+  const spellsReady = pickedCantrips.size >= choices.cantrips && pickedSpells.size >= choices.spells;
+  const multiReady  = isMulticlassMode
+    ? (!!newClassId && !prereqError &&
+       pickedCantrips.size === (newClsSpellCfg?.type === "known" ? (newClsSpellCfg.cantripsKnown ?? 0) : 0) &&
+       pickedSpells.size   === (newClsSpellCfg?.type === "known" ? (newClsSpellCfg.spellsKnown ?? 0) : 0))
+    : (asiReady && spellsReady);
+  const canConfirm  = multiReady && hpReady && !submitting;
 
   async function confirm() {
     if (!canConfirm) return;
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dnd/characters/${characterId}/levelup`, {
+      const bodyData: Record<string, unknown> = {
+        hpMode,
+        ...(hpMode === "roll" ? { hpRoll } : {}),
+      };
+      if (isMulticlassMode) {
+        bodyData.newClassId = newClassId;
+        bodyData.newSpells  = [...pickedCantrips, ...pickedSpells];
+      } else {
+        bodyData.targetClassId = targetEntry?.id;
+        if (plan?.asi) bodyData.asi = asiIncreases;
+        bodyData.newSpells = [...pickedCantrips, ...pickedSpells];
+      }
+      const res  = await fetch(`/api/dnd/characters/${characterId}/levelup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          hpMode,
-          ...(hpMode === "roll" ? { hpRoll } : {}),
-          ...(plan.asi ? { asi: asiIncreases } : {}),
-          newSpells: [...pickedCantrips, ...pickedSpells],
-        }),
+        body: JSON.stringify(bodyData),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -210,25 +271,30 @@ function LevelUpModal({
     display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
   };
   const panel: React.CSSProperties = {
-    width: "100%", maxWidth: 520, maxHeight: "86vh", overflowY: "auto",
+    width: "100%", maxWidth: 700, maxHeight: "88vh", overflowY: "auto",
     background: "var(--surface)", border: `1px solid ${GREEN_BORDER}`,
     borderRadius: "var(--radius-xl)", padding: "26px 26px 22px",
     boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 40px rgba(95,191,127,0.08)",
     display: "flex", flexDirection: "column", gap: 18,
   };
 
-  // ── Tela de resumo (após confirmar) ────────────────────────────────────────
+  // ── Tela de resumo ─────────────────────────────────────────────────────────
   if (summary) {
     return (
       <div style={overlay} onClick={() => onClose(true)}>
         <div style={panel} onClick={(e) => e.stopPropagation()}>
           <div style={{ textAlign: "center" }}>
             <p style={{ fontSize: "0.7rem", fontWeight: 700, color: GREEN, textTransform: "uppercase", letterSpacing: "0.14em" }}>
-              ✦ Nível alcançado ✦
+              {summary.newClassName ? `✦ Nova Classe ✦` : `✦ Nível alcançado ✦`}
             </p>
             <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "2.2rem", fontWeight: 900, color: GREEN, lineHeight: 1.1, marginTop: 4 }}>
-              Nível {summary.newLevel}
+              {summary.newClassName ? summary.newClassName : `Nível ${summary.newLevel}`}
             </h2>
+            {summary.newClassName && (
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 4 }}>
+                Nível total: {summary.newLevel}
+              </p>
+            )}
           </div>
 
           <SummaryRow label="Pontos de Vida" value={`+${summary.hpGain} (novo máximo: ${summary.newHpMax})${summary.conRetroactive > 0 ? ` · inclui +${summary.conRetroactive} retroativo de CON` : ""}`} />
@@ -247,9 +313,7 @@ function LevelUpModal({
           {Object.keys(summary.slotsGained).length > 0 && (
             <SummaryRow
               label="Espaços de Magia"
-              value={Object.entries(summary.slotsGained)
-                .map(([lvl, n]) => `+${n} de ${lvl}° nível`)
-                .join(" · ")}
+              value={Object.entries(summary.slotsGained).map(([lvl, n]) => `+${n} de ${lvl}° nível`).join(" · ")}
             />
           )}
           {summary.cantripsAfter > summary.cantripsBefore && (
@@ -261,16 +325,13 @@ function LevelUpModal({
           {summary.spellsLearned.length > 0 && (
             <SummaryRow label="Magias Aprendidas" value={summary.spellsLearned.join(" · ")} highlight />
           )}
-
           {summary.features.length > 0 && (
             <div>
               <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
                 Novas Características
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {summary.features.map((f, i) => (
-                  <FeatureCard key={i} feature={f} />
-                ))}
+                {summary.features.map((f, i) => <FeatureCard key={i} feature={f} />)}
               </div>
             </div>
           )}
@@ -283,171 +344,319 @@ function LevelUpModal({
     );
   }
 
+  const effectiveHitDie = isMulticlassMode ? (newCls?.hitDie ?? 8) : (targetCls?.hitDie ?? 8);
+
   // ── Tela de configuração ───────────────────────────────────────────────────
   return (
     <div style={overlay} onClick={() => onClose(false)}>
       <div style={panel} onClick={(e) => e.stopPropagation()}>
-        <div>
-          <p style={{ fontSize: "0.68rem", fontWeight: 700, color: GREEN, textTransform: "uppercase", letterSpacing: "0.12em" }}>
-            Subir de Nível
-          </p>
-          <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.4rem", fontWeight: 700, color: "var(--text)", marginTop: 2 }}>
-            Nível {plan.fromLevel} → <span style={{ color: GREEN }}>{plan.newLevel}</span>
-          </h2>
-          {plan.profBonusAfter !== plan.profBonusBefore && (
-            <p style={{ fontSize: "0.78rem", color: GREEN, marginTop: 4, fontWeight: 600 }}>
-              Bônus de proficiência sobe para +{plan.profBonusAfter}
-            </p>
-          )}
-        </div>
 
-        {/* PV */}
+        {/* Seletor de classe alvo */}
         <div>
-          <p style={sectionLabel}>Pontos de Vida (d{plan.hitDie} {conMod !== 0 ? `${conMod > 0 ? "+" : ""}${conMod} CON` : ""})</p>
-          <div style={{ display: "flex", gap: 8 }}>
+          <p style={sectionLabel}>Subir em qual classe?</p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {classes.map((c) => {
+              const cl = CLASSES.find((x) => x.id === c.className);
+              const active = targetClassEntryId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setTargetClassEntryId(c.id);
+                    setNewClassId(null);
+                    setHpRoll(null);
+                    setAsiPick(null); setAsiPick2(null);
+                    setPickedCantrips(new Set()); setPickedSpells(new Set());
+                  }}
+                  style={choiceBtn(active, false)}
+                >
+                  {cl?.name ?? c.className} {c.level}
+                </button>
+              );
+            })}
             <button
-              onClick={() => { setHpMode("average"); }}
-              style={choiceBtn(hpMode === "average")}
+              onClick={() => {
+                setTargetClassEntryId(null);
+                setNewClassId(null);
+                setHpRoll(null);
+                setPickedCantrips(new Set()); setPickedSpells(new Set());
+              }}
+              style={choiceBtn(isMulticlassMode, false)}
             >
-              Média fixa
-              <span style={{ display: "block", fontSize: "1.05rem", fontWeight: 900, marginTop: 2 }}>
-                +{Math.max(1, plan.averageRoll + conMod)}
-              </span>
-            </button>
-            <button
-              onClick={() => { setHpMode("roll"); if (hpRoll === null) rollHitDie(); }}
-              style={choiceBtn(hpMode === "roll")}
-            >
-              Rolar d{plan.hitDie}
-              <span style={{ display: "block", fontSize: "1.05rem", fontWeight: 900, marginTop: 2 }}>
-                {hpMode === "roll" && hpRoll !== null ? `🎲 ${hpRoll} → +${Math.max(1, hpRoll + conMod)}` : "🎲"}
-              </span>
+              + Nova Classe
             </button>
           </div>
-          {hpMode === "roll" && hpRoll !== null && (
-            <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 6 }}>
-              A rolagem é definitiva — como na mesa.
-            </p>
-          )}
         </div>
 
-        {/* ASI */}
-        {plan.asi && (
-          <div>
-            <p style={sectionLabel}>Melhoria de Valor de Habilidade</p>
-            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-              <button onClick={() => { setAsiMode("two"); setAsiPick(null); setAsiPick2(null); }} style={choiceBtn(asiMode === "two")}>
-                +2 em um atributo
-              </button>
-              <button onClick={() => { setAsiMode("oneone"); setAsiPick(null); setAsiPick2(null); }} style={choiceBtn(asiMode === "oneone")}>
-                +1 em dois atributos
-              </button>
+        {/* ── Modo: adicionar nova classe ── */}
+        {isMulticlassMode && (
+          <>
+            <div>
+              <p style={sectionLabel}>Escolha a nova classe</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                {CLASSES.map((cl) => {
+                  const prereq  = checkMulticlassPrereqs(cl.id, scores);
+                  const already = classes.some((c) => c.className === cl.id);
+                  const sel     = newClassId === cl.id;
+                  const disabled = !!prereq || already;
+                  return (
+                    <button
+                      key={cl.id}
+                      disabled={disabled}
+                      title={prereq ?? (already ? "Você já possui esta classe" : undefined)}
+                      onClick={() => {
+                        if (!disabled) {
+                          setNewClassId(sel ? null : cl.id);
+                          setPickedCantrips(new Set());
+                          setPickedSpells(new Set());
+                          setHpRoll(null);
+                        }
+                      }}
+                      style={{
+                        padding: "8px 4px",
+                        borderRadius: "var(--radius)",
+                        background: sel ? GREEN_DIM : "var(--surface-2)",
+                        border: `1px solid ${sel ? GREEN_BORDER : "var(--border)"}`,
+                        color: disabled ? "var(--text-subtle)" : sel ? GREEN : "var(--text)",
+                        fontSize: "0.72rem", fontWeight: 700,
+                        cursor: disabled ? "default" : "pointer",
+                        opacity: disabled ? 0.4 : 1,
+                        transition: "all 0.12s", fontFamily: "inherit",
+                      }}
+                    >
+                      {cl.name}
+                      {prereq && (
+                        <span style={{ display: "block", fontSize: "0.58rem", color: "#e06c6c", marginTop: 2, fontWeight: 500 }}>
+                          Não elegível
+                        </span>
+                      )}
+                      {already && (
+                        <span style={{ display: "block", fontSize: "0.58rem", color: "var(--text-subtle)", marginTop: 2, fontWeight: 500 }}>
+                          Já possui
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-              {ABILITIES.map((k) => {
-                const inc = asiMode === "two" ? 2 : 1;
-                const capped = scores[k] + inc > ABILITY_MAX;
-                const isPicked = asiPick === k || asiPick2 === k;
-                return (
-                  <button
-                    key={k}
-                    disabled={capped && !isPicked}
-                    onClick={() => {
-                      if (asiMode === "two") {
-                        setAsiPick(asiPick === k ? null : k);
-                      } else if (asiPick === k) {
-                        setAsiPick(asiPick2); setAsiPick2(null);
-                      } else if (asiPick2 === k) {
-                        setAsiPick2(null);
-                      } else if (!asiPick) {
-                        setAsiPick(k);
-                      } else if (!asiPick2) {
-                        setAsiPick2(k);
-                      }
+
+            {newClassId && (
+              <div
+                style={{
+                  background: GREEN_DIM,
+                  border: `1px solid ${GREEN_BORDER}`,
+                  borderRadius: "var(--radius)",
+                  padding: "10px 14px",
+                }}
+              >
+                <p style={{ fontSize: "0.65rem", fontWeight: 700, color: GREEN, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Proficiências ganhas ao multiclassear
+                </p>
+                <p style={{ fontSize: "0.8rem", color: "var(--text)", marginTop: 4 }}>
+                  {MULTICLASS_PROFICIENCIES[newClassId] ?? "—"}
+                </p>
+              </div>
+            )}
+
+            {/* Seleção de magias da nova classe (só "known") */}
+            {newClassId && newClsSpellCfg?.type === "known" && (
+              <>
+                {newClsSpellCfg.cantripsKnown > 0 && (
+                  <SpellPickSection
+                    title={`Truques de ${newCls?.name} (escolha ${newClsSpellCfg.cantripsKnown})`}
+                    options={newCantripOptions}
+                    picked={pickedCantrips}
+                    max={newClsSpellCfg.cantripsKnown}
+                    onToggle={(sid) => {
+                      const next = new Set(pickedCantrips);
+                      if (next.has(sid)) next.delete(sid);
+                      else if (next.size < newClsSpellCfg.cantripsKnown) next.add(sid);
+                      setPickedCantrips(next);
                     }}
-                    style={{
-                      padding: "8px 4px",
-                      borderRadius: "var(--radius)",
-                      background: isPicked ? GREEN_DIM : "var(--surface-2)",
-                      border: `1px solid ${isPicked ? GREEN_BORDER : "var(--border)"}`,
-                      color: capped && !isPicked ? "var(--text-subtle)" : isPicked ? GREEN : "var(--text)",
-                      fontSize: "0.72rem",
-                      fontWeight: 700,
-                      cursor: capped && !isPicked ? "default" : "pointer",
-                      opacity: capped && !isPicked ? 0.45 : 1,
-                      fontFamily: "inherit",
-                      transition: "all 0.12s",
+                  />
+                )}
+                {newClsSpellCfg.spellsKnown > 0 && (
+                  <SpellPickSection
+                    title={`Magias de ${newCls?.name} (escolha ${newClsSpellCfg.spellsKnown})`}
+                    options={newSpellOptions}
+                    picked={pickedSpells}
+                    max={newClsSpellCfg.spellsKnown}
+                    onToggle={(sid) => {
+                      const next = new Set(pickedSpells);
+                      if (next.has(sid)) next.delete(sid);
+                      else if (next.size < newClsSpellCfg.spellsKnown) next.add(sid);
+                      setPickedSpells(next);
                     }}
-                  >
-                    {ABILITY_LABELS[k]}
-                    <span style={{ display: "block", fontSize: "0.82rem", marginTop: 2 }}>
-                      {scores[k]}{isPicked ? ` → ${scores[k] + inc}` : capped ? " (máx)" : ""}
-                    </span>
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── Modo: subir de nível em classe existente ── */}
+        {!isMulticlassMode && plan && (
+          <>
+            <div>
+              <p style={{ fontSize: "0.68rem", fontWeight: 700, color: GREEN, textTransform: "uppercase", letterSpacing: "0.12em" }}>
+                {targetCls?.name} · Subir de Nível
+              </p>
+              <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.4rem", fontWeight: 700, color: "var(--text)", marginTop: 2 }}>
+                {plan.fromLevel} → <span style={{ color: GREEN }}>{plan.newLevel}</span>
+                {plan.totalLevelBefore !== plan.fromLevel && (
+                  <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontWeight: 500, marginLeft: 8 }}>
+                    (total: {plan.totalLevelBefore} → {plan.totalLevelAfter})
+                  </span>
+                )}
+              </h2>
+              {plan.profBonusAfter !== plan.profBonusBefore && (
+                <p style={{ fontSize: "0.78rem", color: GREEN, marginTop: 4, fontWeight: 600 }}>
+                  Bônus de proficiência sobe para +{plan.profBonusAfter}
+                </p>
+              )}
+            </div>
+
+            {/* ASI */}
+            {plan.asi && (
+              <div>
+                <p style={sectionLabel}>Melhoria de Valor de Habilidade</p>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <button onClick={() => { setAsiMode("two"); setAsiPick(null); setAsiPick2(null); }} style={choiceBtn(asiMode === "two", false)}>
+                    +2 em um atributo
                   </button>
-                );
-              })}
-            </div>
-          </div>
+                  <button onClick={() => { setAsiMode("oneone"); setAsiPick(null); setAsiPick2(null); }} style={choiceBtn(asiMode === "oneone", false)}>
+                    +1 em dois atributos
+                  </button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                  {ABILITIES.map((k) => {
+                    const inc     = asiMode === "two" ? 2 : 1;
+                    const capped  = scores[k] + inc > ABILITY_MAX;
+                    const isPicked = asiPick === k || asiPick2 === k;
+                    return (
+                      <button
+                        key={k}
+                        disabled={capped && !isPicked}
+                        onClick={() => {
+                          if (asiMode === "two") {
+                            setAsiPick(asiPick === k ? null : k);
+                          } else if (asiPick === k) {
+                            setAsiPick(asiPick2); setAsiPick2(null);
+                          } else if (asiPick2 === k) {
+                            setAsiPick2(null);
+                          } else if (!asiPick) {
+                            setAsiPick(k);
+                          } else if (!asiPick2) {
+                            setAsiPick2(k);
+                          }
+                        }}
+                        style={{
+                          padding: "8px 4px",
+                          borderRadius: "var(--radius)",
+                          background: isPicked ? GREEN_DIM : "var(--surface-2)",
+                          border: `1px solid ${isPicked ? GREEN_BORDER : "var(--border)"}`,
+                          color: capped && !isPicked ? "var(--text-subtle)" : isPicked ? GREEN : "var(--text)",
+                          fontSize: "0.72rem", fontWeight: 700,
+                          cursor: capped && !isPicked ? "default" : "pointer",
+                          opacity: capped && !isPicked ? 0.45 : 1,
+                          fontFamily: "inherit", transition: "all 0.12s",
+                        }}
+                      >
+                        {ABILITY_LABELS[k]}
+                        <span style={{ display: "block", fontSize: "0.82rem", marginTop: 2 }}>
+                          {scores[k]}{isPicked ? ` → ${scores[k] + inc}` : capped ? " (máx)" : ""}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Truques novos */}
+            {choices.cantrips > 0 && (
+              <SpellPickSection
+                title={`Novos Truques (escolha ${choices.cantrips})`}
+                options={cantripOptions}
+                picked={pickedCantrips}
+                max={choices.cantrips}
+                onToggle={(sid) => {
+                  const next = new Set(pickedCantrips);
+                  if (next.has(sid)) next.delete(sid);
+                  else if (next.size < choices.cantrips) next.add(sid);
+                  setPickedCantrips(next);
+                }}
+              />
+            )}
+
+            {/* Magias novas */}
+            {choices.spells > 0 && (
+              <SpellPickSection
+                title={targetCls?.id === "mago" ? `Grimório — novas magias (escolha ${choices.spells})` : `Novas Magias (escolha ${choices.spells})`}
+                options={spellOptions}
+                picked={pickedSpells}
+                max={choices.spells}
+                onToggle={(sid) => {
+                  const next = new Set(pickedSpells);
+                  if (next.has(sid)) next.delete(sid);
+                  else if (next.size < choices.spells) next.add(sid);
+                  setPickedSpells(next);
+                }}
+              />
+            )}
+
+            {/* Preview características */}
+            {(plan.classFeatures.length > 0 || plan.raceFeatures.length > 0) && (
+              <div>
+                <p style={sectionLabel}>Você ganhará</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[...plan.classFeatures, ...plan.raceFeatures].map((f, i) => (
+                    <FeatureCard key={i} feature={f} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {Object.keys(plan.slotsGained).length > 0 && (
+              <SummaryRow
+                label="Espaços de Magia"
+                value={Object.entries(plan.slotsGained).map(([lvl, n]) => `+${n} de ${lvl}° nível`).join(" · ")}
+              />
+            )}
+            {plan.cantripsAfter > plan.cantripsBefore && (
+              <SummaryRow label="Truques" value={`${plan.cantripsBefore} → ${plan.cantripsAfter} conhecidos`} />
+            )}
+            {plan.spellsKnownAfter > plan.spellsKnownBefore && (
+              <SummaryRow label="Magias Conhecidas" value={`${plan.spellsKnownBefore} → ${plan.spellsKnownAfter}`} />
+            )}
+          </>
         )}
 
-        {/* Escolha de truques novos */}
-        {choices.cantrips > 0 && (
-          <SpellPickSection
-            title={`Novos Truques (escolha ${choices.cantrips})`}
-            options={cantripOptions}
-            picked={pickedCantrips}
-            max={choices.cantrips}
-            onToggle={(id) => {
-              const next = new Set(pickedCantrips);
-              if (next.has(id)) next.delete(id);
-              else if (next.size < choices.cantrips) next.add(id);
-              setPickedCantrips(next);
-            }}
-          />
-        )}
-
-        {/* Escolha de magias novas (conhecidas/grimório) */}
-        {choices.spells > 0 && (
-          <SpellPickSection
-            title={
-              classId === "mago"
-                ? `Grimório — novas magias (escolha ${choices.spells})`
-                : `Novas Magias (escolha ${choices.spells})`
-            }
-            options={spellOptions}
-            picked={pickedSpells}
-            max={choices.spells}
-            onToggle={(id) => {
-              const next = new Set(pickedSpells);
-              if (next.has(id)) next.delete(id);
-              else if (next.size < choices.spells) next.add(id);
-              setPickedSpells(next);
-            }}
-          />
-        )}
-
-        {/* Preview do que vem */}
-        {(plan.classFeatures.length > 0 || plan.raceFeatures.length > 0) && (
+        {/* PV (sempre visível) */}
+        {(!isMulticlassMode || newClassId) && (
           <div>
-            <p style={sectionLabel}>Você ganhará</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[...plan.classFeatures, ...plan.raceFeatures].map((f, i) => (
-                <FeatureCard key={i} feature={f} />
-              ))}
+            <p style={sectionLabel}>
+              Pontos de Vida (d{effectiveHitDie}
+              {conMod !== 0 ? ` ${conMod > 0 ? "+" : ""}${conMod} CON` : ""})
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setHpMode("average")} style={choiceBtn(hpMode === "average", false)}>
+                Média fixa
+                <span style={{ display: "block", fontSize: "1.05rem", fontWeight: 900, marginTop: 2 }}>
+                  +{Math.max(1, Math.floor(effectiveHitDie / 2) + 1 + conMod)}
+                </span>
+              </button>
+              <button
+                onClick={() => { setHpMode("roll"); if (hpRoll === null) rollHitDie(); }}
+                style={choiceBtn(hpMode === "roll", false)}
+              >
+                Rolar d{effectiveHitDie}
+                <span style={{ display: "block", fontSize: "1.05rem", fontWeight: 900, marginTop: 2 }}>
+                  {hpMode === "roll" && hpRoll !== null ? `🎲 ${hpRoll} → +${Math.max(1, hpRoll + conMod)}` : "🎲"}
+                </span>
+              </button>
             </div>
           </div>
-        )}
-        {Object.keys(plan.slotsGained).length > 0 && (
-          <SummaryRow
-            label="Espaços de Magia"
-            value={Object.entries(plan.slotsGained).map(([lvl, n]) => `+${n} de ${lvl}° nível`).join(" · ")}
-          />
-        )}
-        {plan.cantripsAfter > plan.cantripsBefore && (
-          <SummaryRow label="Truques" value={`${plan.cantripsBefore} → ${plan.cantripsAfter} conhecidos`} />
-        )}
-        {plan.spellsKnownAfter > plan.spellsKnownBefore && (
-          <SummaryRow label="Magias Conhecidas" value={`${plan.spellsKnownBefore} → ${plan.spellsKnownAfter}`} />
         )}
 
         {error && (
@@ -467,7 +676,11 @@ function LevelUpModal({
             Cancelar
           </button>
           <button onClick={confirm} disabled={!canConfirm} style={confirmBtnStyle(canConfirm)}>
-            {submitting ? "Aplicando…" : `Confirmar Nível ${plan.newLevel}`}
+            {submitting
+              ? "Aplicando…"
+              : isMulticlassMode
+                ? `Adicionar ${newCls?.name ?? "Nova Classe"}`
+                : `Confirmar Nível ${plan?.totalLevelAfter ?? currentLevel + 1}`}
           </button>
         </div>
       </div>
@@ -480,7 +693,7 @@ const sectionLabel: React.CSSProperties = {
   textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8,
 };
 
-function choiceBtn(active: boolean): React.CSSProperties {
+function choiceBtn(active: boolean, _disabled: boolean): React.CSSProperties {
   return {
     flex: 1, padding: "9px 8px", borderRadius: "var(--radius-lg)",
     background: active ? GREEN_DIM : "var(--surface-2)",
@@ -507,14 +720,11 @@ function confirmBtnStyle(enabled: boolean): React.CSSProperties {
 
 function SummaryRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div
-      style={{
-        background: highlight ? GREEN_DIM : "var(--surface-2)",
-        border: `1px solid ${highlight ? GREEN_BORDER : "var(--border)"}`,
-        borderRadius: "var(--radius)",
-        padding: "8px 12px",
-      }}
-    >
+    <div style={{
+      background: highlight ? GREEN_DIM : "var(--surface-2)",
+      border: `1px solid ${highlight ? GREEN_BORDER : "var(--border)"}`,
+      borderRadius: "var(--radius)", padding: "8px 12px",
+    }}>
       <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
         {label}
       </span>
@@ -526,11 +736,7 @@ function SummaryRow({ label, value, highlight }: { label: string; value: string;
 }
 
 function SpellPickSection({
-  title,
-  options,
-  picked,
-  max,
-  onToggle,
+  title, options, picked, max, onToggle,
 }: {
   title: string;
   options: typeof SPELLS;
@@ -551,7 +757,7 @@ function SpellPickSection({
         <div style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
           {options.map((s) => {
             const isPicked = picked.has(s.id);
-            const full = picked.size >= max && !isPicked;
+            const full     = picked.size >= max && !isPicked;
             return (
               <button
                 key={s.id}
@@ -592,15 +798,10 @@ function SpellPickSection({
 
 function FeatureCard({ feature }: { feature: LevelFeature }) {
   return (
-    <div
-      style={{
-        background: "var(--surface-2)",
-        border: "1px solid var(--border)",
-        borderLeft: `3px solid ${GREEN}`,
-        borderRadius: "var(--radius)",
-        padding: "8px 12px",
-      }}
-    >
+    <div style={{
+      background: "var(--surface-2)", border: "1px solid var(--border)",
+      borderLeft: `3px solid ${GREEN}`, borderRadius: "var(--radius)", padding: "8px 12px",
+    }}>
       <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text)" }}>{feature.name}</p>
       <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.5, marginTop: 2 }}>
         {feature.description}

@@ -511,8 +511,10 @@ export const RACE_LEVEL_FEATURES: Record<string, Record<number, LevelFeature[]>>
 // ── Plano de Subida de Nível ──────────────────────────────────────────────────
 
 export interface LevelUpPlan {
-  fromLevel: number;
-  newLevel: number;
+  fromLevel: number;        // nível da classe antes
+  newLevel: number;         // nível da classe depois
+  totalLevelBefore: number; // nível total do personagem antes
+  totalLevelAfter: number;  // nível total do personagem depois
   hitDie: number;
   /** PV fixo (média do dado arredondada para cima), sem mod. CON. */
   averageRoll: number;
@@ -533,45 +535,156 @@ export interface LevelUpPlan {
   xpThreshold: number;
 }
 
+/**
+ * Calcula o plano de subida de nível para uma classe específica.
+ * @param classLevel - nível atual NESSA classe (pode diferir do total em multiclasse)
+ * @param totalLevel - nível total do personagem; omita em personagens de classe única
+ */
 export function buildLevelUpPlan(
   classId: string,
   raceKey: string,
-  currentLevel: number,
-  hitDie: number
+  classLevel: number,
+  hitDie: number,
+  totalLevel?: number
 ): LevelUpPlan | null {
-  if (currentLevel >= MAX_LEVEL) return null;
-  const newLevel = currentLevel + 1;
+  const totalLv = totalLevel ?? classLevel;
+  if (totalLv >= MAX_LEVEL) return null;
+  const newClassLevel = classLevel + 1;
+  const newTotalLevel = totalLv + 1;
 
-  const prevSlots = getMaxSlots(classId, currentLevel);
-  const newSlots = getMaxSlots(classId, newLevel);
+  const prevSlots = getMaxSlots(classId, classLevel);
+  const newSlots  = getMaxSlots(classId, newClassLevel);
   const slotsGained: Record<string, number> = {};
   for (const [lvl, n] of Object.entries(newSlots)) {
     const gain = n - (prevSlots[lvl] ?? 0);
     if (gain > 0) slotsGained[lvl] = gain;
   }
   const raceFeatures: LevelFeature[] = [
-    ...(RACE_LEVEL_FEATURES[raceKey]?.[newLevel] ?? []),
-    ...(raceKey.includes("/") ? RACE_LEVEL_FEATURES[raceKey.split("/")[0]]?.[newLevel] ?? [] : []),
+    ...(RACE_LEVEL_FEATURES[raceKey]?.[newClassLevel] ?? []),
+    ...(raceKey.includes("/") ? RACE_LEVEL_FEATURES[raceKey.split("/")[0]]?.[newClassLevel] ?? [] : []),
   ];
 
   return {
-    fromLevel: currentLevel,
-    newLevel,
+    fromLevel:        classLevel,
+    newLevel:         newClassLevel,
+    totalLevelBefore: totalLv,
+    totalLevelAfter:  newTotalLevel,
     hitDie,
     averageRoll: averageHpGain(hitDie),
-    profBonusBefore: proficiencyBonus(currentLevel),
-    profBonusAfter: proficiencyBonus(newLevel),
-    asi: hasAsiAt(classId, newLevel),
-    classFeatures: CLASS_FEATURES[classId]?.[newLevel] ?? [],
+    profBonusBefore:  proficiencyBonus(totalLv),
+    profBonusAfter:   proficiencyBonus(newTotalLevel),
+    asi:              hasAsiAt(classId, newClassLevel),
+    classFeatures:    CLASS_FEATURES[classId]?.[newClassLevel] ?? [],
     raceFeatures,
-    newMaxSlots: newSlots,
+    newMaxSlots:      newSlots,
     slotsGained,
-    cantripsBefore: cantripsKnownAt(classId, currentLevel),
-    cantripsAfter: cantripsKnownAt(classId, newLevel),
-    spellsKnownBefore: spellsKnownAt(classId, currentLevel),
-    spellsKnownAfter: spellsKnownAt(classId, newLevel),
-    xpThreshold: XP_THRESHOLDS[newLevel],
+    cantripsBefore:      cantripsKnownAt(classId, classLevel),
+    cantripsAfter:       cantripsKnownAt(classId, newClassLevel),
+    spellsKnownBefore:   spellsKnownAt(classId, classLevel),
+    spellsKnownAfter:    spellsKnownAt(classId, newClassLevel),
+    xpThreshold: XP_THRESHOLDS[newTotalLevel],
   };
+}
+
+// ── Multiclasse ───────────────────────────────────────────────────────────────
+
+/** Pré-requisitos de atributo para multiclassear (PHB p.163). */
+export const MULTICLASS_PREREQS: Record<string, Partial<Record<AbilityKey, number>>> = {
+  barbaro:     { str: 13 },
+  bardo:       { cha: 13 },
+  bruxo:       { cha: 13 },
+  clerigo:     { wis: 13 },
+  druida:      { wis: 13 },
+  feiticeiro:  { cha: 13 },
+  guerreiro:   { str: 13 }, // OU des 13 — tratado especialmente em checkMulticlassPrereqs
+  ladino:      { dex: 13 },
+  mago:        { int: 13 },
+  monge:       { dex: 13, wis: 13 },
+  paladino:    { str: 13, cha: 13 },
+  patrulheiro: { dex: 13, wis: 13 },
+};
+
+/** Proficiências ganhas ao multiclassear (PHB p.164, tabela Multiclasse). */
+export const MULTICLASS_PROFICIENCIES: Record<string, string> = {
+  barbaro:     "Armaduras leves e médias, escudos, armas simples e marciais",
+  bardo:       "Armaduras leves, 1 perícia à sua escolha, 1 instrumento musical",
+  bruxo:       "Armaduras leves, armas simples",
+  clerigo:     "Armaduras leves e médias, escudos",
+  druida:      "Armaduras leves e médias, escudos",
+  feiticeiro:  "Nenhuma proficiência adicional",
+  guerreiro:   "Armaduras leves e médias, escudos, armas simples e marciais",
+  ladino:      "Armaduras leves, 1 perícia à sua escolha, ferramentas de ladrão",
+  mago:        "Nenhuma proficiência adicional",
+  monge:       "Armas simples, espadas curtas",
+  paladino:    "Armaduras leves e médias, escudos, armas simples e marciais",
+  patrulheiro: "Armaduras leves e médias, escudos, armas simples e marciais",
+};
+
+// Tipo de conjurador para cálculo de espaços multiclasse (PHB p.165)
+const MULTICLASS_CASTER: Record<string, "full" | "half" | "pact" | "none"> = {
+  bardo:       "full",
+  clerigo:     "full",
+  druida:      "full",
+  feiticeiro:  "full",
+  mago:        "full",
+  paladino:    "half",
+  patrulheiro: "half",
+  bruxo:       "pact",
+  barbaro:     "none",
+  guerreiro:   "none",
+  ladino:      "none",
+  monge:       "none",
+};
+
+/**
+ * Espaços de magia combinados para personagem multiclassado (PHB p.165).
+ * Conjuradores completos contribuem com o nível inteiro.
+ * Meio-conjuradores contribuem com metade do nível (arredondado para baixo).
+ * Bruxo (Magia de Pacto): slots separados no PHB, mas tratados como conjurador
+ * completo aqui por simplicidade de implementação.
+ * Para personagem de classe única, delega para getMaxSlots.
+ */
+export function getMulticlassSlots(
+  classes: { classId: string; level: number }[]
+): Record<string, number> {
+  if (classes.length <= 1) {
+    const c = classes[0];
+    return c ? getMaxSlots(c.classId, c.level) : {};
+  }
+  let effectiveCasterLevel = 0;
+  for (const { classId, level } of classes) {
+    const type = MULTICLASS_CASTER[classId] ?? "none";
+    if (type === "full" || type === "pact") effectiveCasterLevel += level;
+    else if (type === "half")              effectiveCasterLevel += Math.floor(level / 2);
+  }
+  if (effectiveCasterLevel === 0) return {};
+  const table = FULL_CASTER_SLOTS[Math.min(effectiveCasterLevel, 20) - 1];
+  if (!table) return {};
+  const out: Record<string, number> = {};
+  table.forEach((n, i) => { if (n > 0) out[String(i + 1)] = n; });
+  return out;
+}
+
+/** Verifica pré-requisitos de atributo para multiclassear. Retorna mensagem de erro ou null. */
+export function checkMulticlassPrereqs(
+  newClassId: string,
+  scores: Record<AbilityKey, number>
+): string | null {
+  const LABELS: Record<AbilityKey, string> = {
+    str: "Força", dex: "Destreza", con: "Constituição",
+    int: "Inteligência", wis: "Sabedoria", cha: "Carisma",
+  };
+  if (newClassId === "guerreiro") {
+    if ((scores.str ?? 0) < 13 && (scores.dex ?? 0) < 13)
+      return "Guerreiro exige Força 13 ou Destreza 13.";
+    return null;
+  }
+  const reqs = MULTICLASS_PREREQS[newClassId] ?? {};
+  for (const [k, min] of Object.entries(reqs) as [AbilityKey, number][]) {
+    if ((scores[k] ?? 0) < min)
+      return `Requer ${LABELS[k]} ${min}.`;
+  }
+  return null;
 }
 
 // ── Validação de ASI ──────────────────────────────────────────────────────────

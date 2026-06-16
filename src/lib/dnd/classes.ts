@@ -110,7 +110,12 @@ export const CLASSES: DndClass[] = [
     armorProficiencies: ["Armaduras leves"],
     weaponProficiencies: ["Armas simples", "Bestas de mão", "Espadas longas", "Rapieiras", "Espadas curtas"],
     toolProficiencies: ["Três instrumentos musicais (à sua escolha)"],
-    skillChoices: ["Qualquer perícia"],
+    skillChoices: [
+      "Acrobacia", "Adestrar Animais", "Arcanismo", "Atletismo", "Atuação",
+      "Enganação", "Furtividade", "História", "Intimidação", "Intuição",
+      "Investigação", "Medicina", "Natureza", "Percepção", "Persuasão",
+      "Prestidigitação", "Religião", "Sobrevivência",
+    ],
     skillCount: 3,
     startingEquipment: [
       "(a) uma rapieira, (b) uma espada longa ou (c) qualquer arma simples",

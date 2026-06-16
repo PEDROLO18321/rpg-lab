@@ -8,9 +8,10 @@ interface Props {
   userName: string;
   systemName: string;
   systemHref: string;
+  backLabel?: string;
 }
 
-export function DashboardNav({ userName, systemName, systemHref }: Props) {
+export function DashboardNav({ userName, systemName, systemHref, backLabel }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -39,7 +40,7 @@ export function DashboardNav({ userName, systemName, systemHref }: Props) {
         {/* Left — breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Link
-            href="/dashboard"
+            href={systemHref}
             style={{
               fontSize: "0.82rem",
               color: "var(--text-muted)",
@@ -52,7 +53,7 @@ export function DashboardNav({ userName, systemName, systemHref }: Props) {
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
           >
-            ← Sistemas
+            ← {backLabel ?? "Sistemas"}
           </Link>
           <span style={{ color: "var(--text-subtle)", fontSize: "0.8rem" }}>/</span>
           <span

@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import Image, { StaticImageData } from "next/image";
 import { RACES, ABILITY_LABELS, formatBonuses } from "@/lib/dnd/races";
-import type { Race, Subrace } from "@/lib/dnd/races";
+import type { Race, Subrace, AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
 import { Tilt3D } from "@/components/ui/Tilt3D";
 import { RaceMorphSlot } from "@/components/three/RaceMorph";
@@ -18,6 +18,16 @@ import imgGnomo      from "@/assets/D&D-Racas/Gnomos.png";
 import imgMeioElfo   from "@/assets/D&D-Racas/Meio-Elfos.png";
 import imgMeioOrc    from "@/assets/D&D-Racas/Meio-Orcs.png";
 import imgTiefling   from "@/assets/D&D-Racas/Tiefling.png";
+
+const ABILITY_KEYS: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
+
+const ALL_SKILLS = [
+  "Acrobacia","Adestrar Animais","Arcanismo","Atletismo",
+  "Enganação","História","Intuição","Intimidação",
+  "Investigação","Medicina","Natureza","Percepção",
+  "Atuação","Persuasão","Furtividade","Prestidigitação",
+  "Religião","Sobrevivência",
+];
 
 // Fora do componente: handler de evento usa aleatoriedade sem violar a
 // regra de pureza de render do React Compiler.
@@ -69,13 +79,15 @@ const RACE_IMAGES: Record<string, StaticImageData> = {
 };
 
 interface Props {
-  selected:        string | null;
-  selectedSubrace: string | null;
-  charName:        string;
-  onChange:        (partial: Partial<WizardData>) => void;
+  selected:              string | null;
+  selectedSubrace:       string | null;
+  charName:              string;
+  racialAbilityBonuses:  Partial<Record<AbilityKey, number>>;
+  selectedRacialSkills:  string[];
+  onChange:              (partial: Partial<WizardData>) => void;
 }
 
-export function StepRace({ selected, selectedSubrace, charName, onChange }: Props) {
+export function StepRace({ selected, selectedSubrace, charName, racialAbilityBonuses, selectedRacialSkills, onChange }: Props) {
   const [hoveredRace, setHoveredRace] = useState<string | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +100,8 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
       raceId,
       subraceId: r.subraces.length === 1 ? r.subraces[0].id : "",
       charName: charName,
+      racialAbilityBonuses: {},
+      selectedRacialSkills: [],
     });
     setTimeout(() => {
       if (detailRef.current) smoothScrollTo(detailRef.current);
@@ -374,10 +388,107 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
             </div>
           )}
 
+          {/* Racial ability bonus choices (e.g., Meio-Elfo +1 em dois atributos) */}
+          {race.abilityBonusChoices && (
+            <div>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                Bônus de Atributo à Escolha
+              </p>
+              <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: 10 }}>
+                Escolha {race.abilityBonusChoices.count} atributos para receber +{race.abilityBonusChoices.amount} cada ({Object.keys(racialAbilityBonuses).length}/{race.abilityBonusChoices.count} escolhidos).
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                {ABILITY_KEYS
+                  .filter((k) => !(race.abilityBonusChoices!.exclude ?? []).includes(k))
+                  .map((k) => {
+                    const chosen = !!racialAbilityBonuses[k];
+                    const maxed = !chosen && Object.keys(racialAbilityBonuses).length >= race.abilityBonusChoices!.count;
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => {
+                          if (chosen) {
+                            const next = { ...racialAbilityBonuses };
+                            delete next[k];
+                            onChange({ racialAbilityBonuses: next });
+                          } else if (!maxed) {
+                            onChange({ racialAbilityBonuses: { ...racialAbilityBonuses, [k]: race.abilityBonusChoices!.amount } });
+                          }
+                        }}
+                        disabled={maxed}
+                        style={{
+                          background: chosen ? "var(--accent-dim)" : "var(--surface-2)",
+                          border: `1px solid ${chosen ? "var(--accent)" : "var(--border)"}`,
+                          borderRadius: "var(--radius)",
+                          padding: "10px 8px",
+                          cursor: maxed ? "not-allowed" : "pointer",
+                          textAlign: "center",
+                          opacity: maxed ? 0.4 : 1,
+                          transition: "border-color 0.2s, background 0.2s",
+                        }}
+                      >
+                        <p style={{ fontSize: "0.82rem", fontWeight: 700, color: chosen ? "var(--accent-light)" : "var(--text)" }}>
+                          {ABILITY_LABELS[k]}
+                        </p>
+                        <p style={{ fontSize: "0.7rem", color: chosen ? "var(--accent)" : "var(--text-muted)" }}>
+                          {chosen ? `+${race.abilityBonusChoices!.amount}` : "—"}
+                        </p>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Racial skill choices (e.g., Meio-Elfo Versatilidade em Perícia) */}
+          {race.racialSkills && (
+            <div>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                Perícias Raciais
+              </p>
+              <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: 10 }}>
+                Escolha {race.racialSkills.count} perícias quaisquer ({selectedRacialSkills.length}/{race.racialSkills.count} escolhidas).
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {ALL_SKILLS.map((skill) => {
+                  const sel = selectedRacialSkills.includes(skill);
+                  const maxed = !sel && selectedRacialSkills.length >= race.racialSkills!.count;
+                  return (
+                    <button
+                      key={skill}
+                      onClick={() => {
+                        if (sel) {
+                          onChange({ selectedRacialSkills: selectedRacialSkills.filter((s) => s !== skill) });
+                        } else if (!maxed) {
+                          onChange({ selectedRacialSkills: [...selectedRacialSkills, skill] });
+                        }
+                      }}
+                      disabled={maxed}
+                      style={{
+                        padding: "5px 12px",
+                        background: sel ? "var(--accent-dim)" : "var(--surface-2)",
+                        border: `1px solid ${sel ? "var(--accent)" : "var(--border)"}`,
+                        borderRadius: "var(--radius)",
+                        color: sel ? "var(--accent-light)" : maxed ? "var(--text-subtle)" : "var(--text-muted)",
+                        fontSize: "0.78rem",
+                        fontWeight: sel ? 700 : 400,
+                        cursor: maxed ? "not-allowed" : "pointer",
+                        opacity: maxed ? 0.4 : 1,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {skill}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Name field */}
           <div>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
-              Nome do Personagem
+              Nome do Personagem <span style={{ color: "var(--accent)", fontWeight: 700 }}>*</span>
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <input
@@ -397,7 +508,7 @@ export function StepRace({ selected, selectedSubrace, charName, onChange }: Prop
                   outline: "none",
                 }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = charName.trim() ? "var(--border)" : "#f87171")}
               />
               <button
                 type="button"

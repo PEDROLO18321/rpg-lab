@@ -176,8 +176,6 @@ export function HomeClient({ session }: Props) {
         </>
       )}
 
-      {isAuthed && <QuestBoard />}
-
       <SiteFooter isAuthed={isAuthed} />
     </div>
   );
@@ -244,8 +242,8 @@ function AuthedHero({ name, classText, classVisible, statuses, flavor, timeData 
       </div>
 
       <div className="anim-fade-up" style={{ animationDelay:"1s", display:"flex", flexWrap:"wrap", gap:12 }}>
-        <GoldBtn href="/dashboard/dnd/new">Nova Ficha</GoldBtn>
-        <GhostBtn href="/dashboard/dnd">Meus Personagens</GhostBtn>
+        <GoldBtn href="/dashboard">Laboratório</GoldBtn>
+        <GhostBtn href="/dashboard/dnd/jogador">Meus Personagens</GhostBtn>
       </div>
     </>
   );
@@ -635,11 +633,11 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
         <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
           {isAuthed ? (
             <>
-              <Link href="/dashboard/dnd/new"
+              <Link href="/dashboard"
                 style={{ padding:"7px 18px", fontSize:"0.865rem", fontWeight:600, color:"#06090f", background:"linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)", textDecoration:"none", borderRadius:"var(--radius)", boxShadow:"0 0 18px var(--accent-glow)", transition:"filter 0.2s, transform 0.2s" }}
                 onMouseEnter={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.filter="brightness(1.1)"; el.style.transform="translateY(-1px)"; }}
                 onMouseLeave={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.filter=""; el.style.transform=""; }}>
-                Nova Ficha
+                Laboratório
               </Link>
 
               <div ref={ref} style={{ position:"relative" }}>
@@ -655,7 +653,7 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
                       <p style={{ fontSize:"0.7rem", color:"var(--text-muted)", marginBottom:2 }}>Aventureiro</p>
                       <p style={{ fontSize:"0.86rem", fontWeight:700, color:"var(--text)" }}>{userName}</p>
                     </div>
-                    {[{ href:"/dashboard", label:"Dashboard" },{ href:"/dashboard/dnd", label:"Meus Personagens" }].map(({ href, label }) => (
+                    {[{ href:"/dashboard", label:"Dashboard" },{ href:"/dashboard/dnd/jogador", label:"Meus Personagens" }].map(({ href, label }) => (
                       <Link key={href} href={href} onClick={() => setMenuOpen(false)}
                         style={{ display:"block", padding:"10px 14px", fontSize:"0.86rem", color:"var(--text-muted)", textDecoration:"none", borderBottom:"1px solid var(--border)", transition:"color 0.15s, background 0.15s" }}
                         onMouseEnter={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.color="var(--text)"; el.style.background="rgba(255,255,255,0.04)"; }}

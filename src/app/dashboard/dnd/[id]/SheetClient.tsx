@@ -13,7 +13,7 @@ import type { AbilityKey } from "@/lib/dnd/races";
 import { WEAPONS, ALL_PHB_ITEMS, PICKER_GROUPS } from "@/lib/dnd/items";
 import type { PickerGroup } from "@/lib/dnd/items";
 import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
-import { proficiencyBonus, getMaxSlots } from "@/lib/dnd/leveling";
+import { proficiencyBonus, getMaxSlots, getMulticlassSlots } from "@/lib/dnd/leveling";
 import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
 
@@ -187,6 +187,16 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
   const bg  = BACKGROUNDS.find((b) => b.id === initial.background);
   const raceName = race ? (subrace ? `${race.name} (${subrace.name})` : race.name) : (initial.race ?? "—");
 
+  // Exibição de classe(s): "Guerreiro 3 / Mago 2" para multiclasse, "Guerreiro" para única
+  const classDisplay = initial.classes.length > 1
+    ? initial.classes
+        .map((c) => {
+          const cl = CLASSES.find((x) => x.id === c.className);
+          return `${cl?.name ?? c.className} ${c.level}`;
+        })
+        .join(" / ")
+    : (cls?.name ?? clsEntry?.className ?? "—");
+
   const scores: Record<AbilityKey, number> = {
     str: initial.str, dex: initial.dex, con: initial.con,
     int: initial.int, wis: initial.wis, cha: initial.cha,
@@ -196,24 +206,28 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
   const proficientSkills = new Set(initial.skills.filter((s) => s.proficient).map((s) => s.skillName));
   const expertiseSkills  = new Set(initial.skills.filter((s) => s.expertise).map((s) => s.skillName));
 
-  // Slots pela tabela de progressão da classe (full/meio-conjurador/bruxo)
-  const maxSlots: Record<string, number> = clsEntry?.className
-    ? getMaxSlots(clsEntry.className, initial.level)
-    : {};
-  // Meio-conjuradores (paladino/patrulheiro) entram na conjuração no 2° nível
-  const spellConfig: SpellcastingConfig | null = clsEntry?.className
-    ? SPELLCASTING[clsEntry.className] ??
+  // Espaços de magia: multiclasse usa tabela combinada (PHB p.165)
+  const maxSlots: Record<string, number> = initial.classes.length > 1
+    ? getMulticlassSlots(initial.classes.map((c) => ({ classId: c.className, level: c.level })))
+    : (clsEntry?.className ? getMaxSlots(clsEntry.className, initial.level) : {});
+
+  // Para spellConfig: encontra a primeira classe conjuradora
+  const casterEntry = initial.classes.find((c) => {
+    return SPELLCASTING[c.className] || Object.keys(getMaxSlots(c.className, c.level)).length > 0;
+  });
+  const spellConfig: SpellcastingConfig | null = casterEntry?.className
+    ? SPELLCASTING[casterEntry.className] ??
       (Object.keys(maxSlots).length > 0
         ? {
             cantripsKnown: 0,
             spellsKnown: 0,
             spellSlots1st: maxSlots["1"] ?? 0,
-            ability: HALF_CASTER_ABILITY[clsEntry.className] ?? "Sabedoria",
+            ability: HALF_CASTER_ABILITY[casterEntry.className] ?? "Sabedoria",
             type: "prepare",
           }
         : null)
     : null;
-  const isCaster = !!spellConfig;
+  const isCaster = !!spellConfig || Object.keys(maxSlots).length > 0;
 
   // Atributo de conjuração: escolha salva na ficha sobrepõe o padrão da classe
   const [spellAbility, setSpellAbility] = useState<string>(
@@ -236,11 +250,12 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
       <DashboardNav
         userName={userName}
         systemName="D&D 5e"
-        systemHref="/dashboard/dnd"
+        systemHref="/dashboard/dnd/jogador"
+        backLabel="Meus Personagens"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
-        <Link href="/dashboard/dnd" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
+        <Link href="/dashboard/dnd/jogador" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
           ← Meus Personagens
         </Link>
 
@@ -268,16 +283,15 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
               {characterName}
             </h1>
             <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>
-              {[raceName, cls?.name, bg?.name].filter(Boolean).join(" · ")} · Nível {initial.level}
+              {[raceName, classDisplay, bg?.name].filter(Boolean).join(" · ")} · Nível {initial.level}
             </p>
           </div>
 
           <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
-            {cls && clsEntry && (
+            {initial.classes.length > 0 && (
               <LevelUpButton
                 characterId={characterId}
-                classId={cls.id}
-                hitDie={cls.hitDie}
+                classes={initial.classes}
                 raceKey={initial.race ?? ""}
                 currentLevel={initial.level}
                 scores={scores}
@@ -451,18 +465,32 @@ function ViewMode({ sheet, scores, raceName, race, subrace, cls, bg, proficientS
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Traits */}
-          {(race || cls || bg) && (
+          {(race || sheet.classes.length > 0 || bg) && (
             <ViewSection label="Traços & Características">
-              {race && <TraitGroup label={`Raça — ${raceName}`} items={[...(race as { traits: string[] }).traits, ...((subrace as { traits: string[] } | undefined)?.traits ?? [])]} />}
-              {cls && <TraitGroup label={`Classe — ${cls.name}`} items={cls.keyFeatures.filter((f) => { const m = f.match(/\((\d+)°\)/); return !m || parseInt(m[1]) <= sheet.level; })} />}
+              {race && <TraitGroup label={`Raça — ${raceName}`} color="#7ec8e3" items={[...(race as { traits: string[] }).traits, ...((subrace as { traits: string[] } | undefined)?.traits ?? [])]} />}
+              {sheet.classes.map((ce: { id: string; className: string; level: number }) => {
+                const cl = CLASSES.find((c) => c.id === ce.className);
+                if (!cl) return null;
+                return (
+                  <TraitGroup
+                    key={ce.id}
+                    label={sheet.classes.length > 1 ? `${cl.name} — Nível ${ce.level}` : cl.name}
+                    color="#c9941f"
+                    items={cl.keyFeatures.filter((f: string) => {
+                      const m = f.match(/\((\d+)°\)/);
+                      return !m || parseInt(m[1]) <= ce.level;
+                    })}
+                  />
+                );
+              })}
               {sheet.features.length > 0 && (
                 <TraitGroup
                   label="Adquiridas ao subir de nível"
+                  color="#5fbf7f"
                   items={sheet.features.map((f) => `${f.name}${f.source ? ` (${f.source})` : ""} — ${f.description ?? ""}`)}
                 />
               )}
-              {subclassEntry && <TraitGroup label={`Subclasse — ${subclassEntry.name}`} items={subclassEntry.features} />}
-              {bg && <TraitGroup label={`Antecedente — ${bg.name}`} items={[`${bg.feature}: ${bg.featureDesc}`]} />}
+              {bg && <TraitGroup label={`Antecedente — ${bg.name}`} color="#e09c5b" items={[`${bg.feature}: ${bg.featureDesc}`]} />}
             </ViewSection>
           )}
 
@@ -2211,7 +2239,7 @@ function StatBox({ label, value, accent }: { label: string; value: string; accen
 
 function ViewSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
       <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
       {children}
     </div>
@@ -2230,14 +2258,14 @@ function ViewSaveRow({ label, bonus, prof }: { label: string; bonus: number; pro
   );
 }
 
-function TraitGroup({ label, items }: { label: string; items: string[] }) {
+function TraitGroup({ label, items, color = "var(--text-subtle)" }: { label: string; items: string[]; color?: string }) {
   return (
-    <div style={{ marginBottom: 10 }}>
-      <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>{label}</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <div style={{ borderLeft: `3px solid ${color}`, paddingLeft: 12, paddingTop: 2, paddingBottom: 2 }}>
+      <p style={{ fontSize: "0.64rem", fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 7 }}>{label}</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {items.map((t, i) => (
           <div key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-            <span style={{ color: "var(--accent)", fontSize: "0.68rem", flexShrink: 0, marginTop: 2 }}>•</span>
+            <span style={{ color, fontSize: "0.65rem", flexShrink: 0, marginTop: 3 }}>▸</span>
             <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{t}</p>
           </div>
         ))}
