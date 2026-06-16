@@ -49,9 +49,7 @@ const STATUS_POOL = [
 ];
 
 const QUESTS = [
-  { type:"MISSÃO PRINCIPAL", title:"Criar Novo Herói",    desc:"Forje um personagem de nível 1 usando o assistente completo de criação.", reward:"Novo aventureiro",   href:"/dashboard/dnd/new", diff:3, accent:true  },
-  { type:"MISSÃO DIÁRIA",    title:"Meus Personagens",    desc:"Revise suas fichas, jogue com elas no modo interativo ou edite atributos.", reward:"Heroísmo garantido", href:"/dashboard/dnd",     diff:1, accent:false },
-  { type:"TAVERNA",          title:"Área do Aventureiro", desc:"Painel geral da sua conta. Veja sua atividade e configurações de perfil.",  reward:"Descanso merecido",  href:"/dashboard",         diff:1, accent:false },
+  { type:"MISSÃO PRINCIPAL", title:"Escolher Campanha", desc:"Selecione o sistema de RPG, escolha seu papel e inicie sua aventura criando um novo personagem.", reward:"A jornada começa aqui", href:"/dashboard", diff:3, accent:true },
 ];
 
 const FEATURES = [
@@ -166,6 +164,8 @@ export function HomeClient({ session }: Props) {
 
         <div aria-hidden style={{ position:"absolute", bottom:0, left:0, right:0, height:160, pointerEvents:"none", background:"linear-gradient(to bottom, transparent, var(--bg))" }} />
       </section>
+
+      {isAuthed && <QuestBoard />}
 
       {!isAuthed && (
         <>
@@ -413,7 +413,7 @@ function QuestBoard() {
         <div style={{ flex:1, height:1, background:"linear-gradient(to left, transparent, var(--border))" }} />
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(290px, 1fr))", gap:20 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"minmax(290px, 520px)", gap:20, justifyContent:"center" }}>
         {QUESTS.map((q) => <QuestCard key={q.title} quest={q} />)}
       </div>
 

@@ -205,8 +205,9 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-/* Sem fill-mode: ao terminar, nenhum estilo residual (evita containing block). */
-.page-enter { animation: page-enter 0.35s ease-out; }
+/* 120ms delay: partículas aparecem primeiro. `both` mantém opacity:0 durante o delay. */
+/* Sem transform: não cria containing block — fixed/sticky não se deslocam. */
+.page-enter { animation: page-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) 160ms both; }
 
 /* ── Feedback global de botões ─────────────────────────────────────────── */
 /* Press: afunda levemente. Só atinge botões sem transform inline próprio. */
