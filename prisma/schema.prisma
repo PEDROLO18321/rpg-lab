@@ -93,6 +93,7 @@ model Character {
 
   dndSheet           DndSheet?
   tormentaSheet      TormentaSheet?
+  cthulhuSheet       CthulhuSheet?
   campaignCharacters CampaignCharacter[]
 }
 
@@ -274,6 +275,51 @@ model TormentaSpell {
   description String?
 
   sheet TormentaSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+}
+
+// ─── CALL OF CTHULHU 7ª ED. ──────────────────────────────────────────────────
+
+model CthulhuSheet {
+  id        String    @id
+  character Character @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  occupation String?
+  era        String?  // "1920s" | "modern"
+  age        Int?
+
+  // 8 Atributos (valores percentuais, 15–99 típico)
+  atribFor  Int @default(50)
+  atribCon  Int @default(50)
+  atribTam  Int @default(65)
+  atribDes  Int @default(50)
+  atribApa  Int @default(50)
+  atribInt  Int @default(65)
+  atribPod  Int @default(50)
+  atribEdu  Int @default(65)
+
+  // Atributos derivados
+  sanCurrent  Int @default(50)
+  sanMax      Int @default(99)
+  pvMax       Int @default(12)
+  pvCurrent   Int @default(12)
+  luck        Int @default(50)
+  mov         Int @default(8)
+  pmCurrent   Int @default(10)
+
+  // Pontos temporários (estilo D&D: absorvem dano antes do valor atual)
+  pvTemp   Int @default(0)
+  sanTemp  Int @default(0)
+  pmTemp   Int @default(0)
+
+  // Desenvolvimento: ids de perícias marcadas como usadas com sucesso (JSON string[])
+  skillChecks String?
+
+  // Dados complexos como JSON
+  skills     String? // JSON: Record<string, number>
+  background String? // JSON: { ideology?, people?, places?, items?, traits?, keyConn? }
+  weapons    String? // JSON: weapon list
+  equipment  String? // JSON: item list
+  notes      String?
 }
 
 // ─── CAMPANHAS (preparado, sem área mestre ativa) ─────────────────────────────

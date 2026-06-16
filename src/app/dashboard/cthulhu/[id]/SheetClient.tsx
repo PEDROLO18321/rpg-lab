@@ -1,0 +1,728 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import Link from "next/link";
+import {
+  SKILLS, ATTR_ABBR, ATTR_LABELS, OCCUPATIONS, WEAPONS,
+  getSkillBase, half, fifth, calcDamageBonus, calcCorpo,
+  resolveCheck, rollWeaponDamage, rollExpr, rollImprovement, CHECK_LABELS,
+  type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon,
+} from "@/lib/cthulhu/data";
+
+const ACCENT       = "#7d9c3e";
+const ACCENT_LIGHT  = "#a3b86c";
+const ACCENT_DIM   = "rgba(125,156,62,0.12)";
+const ACCENT_BORD  = "rgba(125,156,62,0.28)";
+
+const ATTR_KEYS: AttrKey[] = ["for", "con", "tam", "des", "apa", "int", "pod", "edu"];
+
+type Sheet = {
+  occupation:   string | null;
+  era:          string | null;
+  age:          number | null;
+  atribFor:     number; atribCon: number; atribTam: number;
+  atribDes:     number; atribApa: number; atribInt: number;
+  atribPod:     number; atribEdu: number;
+  sanCurrent:   number; sanMax:   number;
+  pvMax:        number; pvCurrent: number;
+  luck:         number; mov:      number; pmCurrent: number;
+  pvTemp:       number; sanTemp:  number; pmTemp: number;
+  skills:       string | null;
+  skillChecks:  string | null;
+  background:   string | null;
+  weapons:      string | null;
+  equipment:    string | null;
+  notes:        string | null;
+};
+
+type DevResult = { id: string; name: string; from: number; roll: number; improved: boolean; gain: number; to: number };
+
+const LEVEL_COLOR: Record<string, string> = {
+  critico:  "#d4af37",
+  extremo:  "#7d9c3e",
+  dificil:  "#a3b86c",
+  normal:   "#6f8f4f",
+  falha:    "#9aa0a6",
+  desastre: "#c03030",
+};
+
+type RollEntry =
+  | { kind: "check"; label: string; check: SkillCheck }
+  | { kind: "damage"; label: string; segments: { label?: string; total: number; expr: string; rolls: number[] }[] }
+  | { kind: "raw"; label: string; total: number; expr: string; rolls: number[] };
+
+type Character = { id: string; name: string; cthulhuSheet: Sheet; system: { name: string } };
+
+interface Props { character: Character; }
+
+export function SheetClient({ character }: Props) {
+  const s = character.cthulhuSheet;
+
+  // ── Editable state ──
+  const [name,       setName]       = useState(character.name);
+  const [occupation, setOccupation] = useState(s.occupation ?? "");
+  const [age,        setAge]        = useState(s.age ?? 25);
+  const [era,        setEra]        = useState<"1920s" | "modern">(s.era === "modern" ? "modern" : "1920s");
+  const [attrs, setAttrs] = useState<Record<AttrKey, number>>({
+    for: s.atribFor, con: s.atribCon, tam: s.atribTam, des: s.atribDes,
+    apa: s.atribApa, int: s.atribInt, pod: s.atribPod, edu: s.atribEdu,
+  });
+  const [pvMax,  setPvMax]  = useState(s.pvMax);
+  const [sanMax, setSanMax] = useState(s.sanMax);
+  const [mov,    setMov]    = useState(s.mov);
+
+  const [pvCurrent,  setPvCurrent]  = useState(s.pvCurrent);
+  const [sanCurrent, setSanCurrent] = useState(s.sanCurrent);
+  const [pmCurrent,  setPmCurrent]  = useState(s.pmCurrent);
+  const [luck,       setLuck]       = useState(s.luck);
+  const [pvTemp,  setPvTemp]  = useState(s.pvTemp  ?? 0);
+  const [sanTemp, setSanTemp] = useState(s.sanTemp ?? 0);
+  const [pmTemp,  setPmTemp]  = useState(s.pmTemp  ?? 0);
+
+  const [skillPoints, setSkillPoints] = useState<Record<string, number>>(s.skills ? JSON.parse(s.skills) : {});
+  const [marked, setMarked] = useState<string[]>(s.skillChecks ? JSON.parse(s.skillChecks) : []);
+
+  const [editMode, setEditMode] = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [devOpen,  setDevOpen]  = useState(false);
+  const [devResults, setDevResults] = useState<DevResult[] | null>(null);
+
+  const background:  Record<string, string> = s.background ? JSON.parse(s.background) : {};
+  const weaponIds:   string[] = s.weapons ? JSON.parse(s.weapons) : [];
+  const equipped: Weapon[] = WEAPONS.filter((w) => weaponIds.includes(w.id));
+
+  const attrsFull: CthulhuAttrs = { ...attrs, sorte: luck };
+  const pmMax = Math.floor(attrs.pod / 5);
+
+  const [log, setLog] = useState<RollEntry[]>([]);
+  function pushLog(entry: RollEntry) {
+    setLog((prev) => [entry, ...prev].slice(0, 12));
+  }
+  function rollCheck(label: string, target: number) {
+    pushLog({ kind: "check", label, check: resolveCheck(target) });
+  }
+  function rollDamage(weapon: Weapon) {
+    const segs = rollWeaponDamage(weapon, attrsFull);
+    pushLog({
+      kind: "damage",
+      label: `Dano · ${weapon.name}`,
+      segments: segs.map((sg) => ({ label: sg.label, total: sg.result.total, expr: sg.result.expr, rolls: sg.result.rolls })),
+    });
+  }
+
+  const occ  = OCCUPATIONS.find((o) => o.id === occupation);
+  const eraLabel = era === "modern" ? "Moderno" : "Anos 1920";
+
+  const allSkills = SKILLS
+    .filter((sk) => sk.id !== "nivel_credito")
+    .map((sk) => ({
+      ...sk,
+      base:  getSkillBase(sk, attrs.edu, attrs.des),
+      total: getSkillBase(sk, attrs.edu, attrs.des) + (skillPoints[sk.id] ?? 0),
+      added: skillPoints[sk.id] ?? 0,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt"));
+
+  const patchSheet = useCallback(async (updates: Record<string, unknown>) => {
+    setSaving(true);
+    await fetch(`/api/cthulhu/characters/${character.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).finally(() => setSaving(false));
+  }, [character.id]);
+
+  // ── Vital changes (temp absorbs damage first, D&D-style) ──
+  function changeVital(
+    delta: number,
+    cur: number, setCur: (n: number) => void, curKey: string,
+    temp: number, setTemp: (n: number) => void, tempKey: string,
+    max: number,
+  ) {
+    if (delta < 0) {
+      let dmg = -delta;
+      let t = temp;
+      if (t > 0) { const absorbed = Math.min(t, dmg); t -= absorbed; dmg -= absorbed; }
+      const nc = Math.max(0, cur - dmg);
+      setTemp(t); setCur(nc);
+      patchSheet({ [curKey]: nc, [tempKey]: t });
+    } else {
+      const nc = Math.min(max, cur + delta);
+      setCur(nc);
+      patchSheet({ [curKey]: nc });
+    }
+  }
+  function changeTemp(delta: number, temp: number, setTemp: (n: number) => void, key: string) {
+    const nt = Math.max(0, temp + delta);
+    setTemp(nt);
+    patchSheet({ [key]: nt });
+  }
+  function adjustLuck(delta: number) {
+    const next = Math.max(0, Math.min(99, luck + delta));
+    setLuck(next);
+    patchSheet({ luck: next });
+  }
+
+  // ── Development phase ──
+  function toggleMark(id: string) {
+    const next = marked.includes(id) ? marked.filter((m) => m !== id) : [...marked, id];
+    setMarked(next);
+    patchSheet({ skillChecks: next });
+  }
+
+  function runDevelopment() {
+    const results: DevResult[] = [];
+    const nextPoints = { ...skillPoints };
+    for (const id of marked) {
+      const sk = SKILLS.find((x) => x.id === id);
+      if (!sk) continue;
+      const base = getSkillBase(sk, attrs.edu, attrs.des);
+      const from = base + (skillPoints[id] ?? 0);
+      const imp  = rollImprovement(from);
+      results.push({ id, name: sk.name, from, roll: imp.roll, improved: imp.improved, gain: imp.gain, to: imp.newValue });
+      if (imp.improved) nextPoints[id] = Math.max(0, imp.newValue - base);
+    }
+    setSkillPoints(nextPoints);
+    setMarked([]);
+    setDevResults(results);
+    patchSheet({ skills: nextPoints, skillChecks: [] });
+  }
+
+  // ── Save edits ──
+  function saveEdits() {
+    patchSheet({
+      name,
+      occupation: occupation || null,
+      age,
+      era,
+      atribFor: attrs.for, atribCon: attrs.con, atribTam: attrs.tam, atribDes: attrs.des,
+      atribApa: attrs.apa, atribInt: attrs.int, atribPod: attrs.pod, atribEdu: attrs.edu,
+      pvMax, sanMax, mov,
+      skills: skillPoints,
+    });
+    // clamp currents to new maxes
+    setPvCurrent((c) => Math.min(c, pvMax));
+    setSanCurrent((c) => Math.min(c, sanMax));
+    setPmCurrent((c) => Math.min(c, pmMax));
+    setEditMode(false);
+  }
+
+  function setAttr(k: AttrKey, v: number) {
+    setAttrs((p) => ({ ...p, [k]: Math.max(0, Math.min(99, v || 0)) }));
+  }
+  function setSkillTotal(id: string, base: number, total: number) {
+    setSkillPoints((p) => ({ ...p, [id]: Math.max(0, (total || 0) - base) }));
+  }
+
+  const sanPct = Math.max(0, Math.min(100, (sanCurrent / sanMax) * 100));
+  const pvPct  = Math.max(0, Math.min(100, (pvCurrent  / pvMax)  * 100));
+
+  const sanColor = sanPct > 60 ? ACCENT : sanPct > 30 ? "#c9941f" : "#c03030";
+  const pvColor  = pvPct  > 60 ? ACCENT : pvPct  > 30 ? "#c9941f" : "#c03030";
+
+  const bgLabels: Record<string, string> = {
+    personalDescription:  "Descrição Pessoal",
+    ideology:             "Ideologia / Crenças",
+    significantPeople:    "Pessoas Significativas",
+    meaningfulLocations:  "Locais Importantes",
+    treasuredPossessions: "Pertences Queridos",
+    traits:               "Características",
+    backstory:            "História",
+    injuries:             "Ferimentos e Cicatrizes",
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "transparent" }}>
+      {/* Nav */}
+      <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(9,11,17,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "12px 24px" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Link href="/dashboard/cthulhu/jogador" style={{ fontSize: "0.78rem", color: "var(--text-muted)", textDecoration: "none" }}>
+              ← Investigadores
+            </Link>
+            <span style={{ color: "var(--border)" }}>|</span>
+            <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)" }}>
+              {name}
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
+            <button
+              onClick={() => { setDevOpen(true); setDevResults(null); }}
+              style={{ ...pillBtn, background: "var(--surface-2)" }}
+              title="Fase de Desenvolvimento"
+            >
+              📈 Desenvolvimento
+            </button>
+            {editMode ? (
+              <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
+                ✓ Salvar
+              </button>
+            ) : (
+              <button onClick={() => setEditMode(true)} style={{ ...pillBtn, background: "var(--surface-2)" }}>
+                ✎ Editar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>
+              Call of Cthulhu 7ª Edição · {eraLabel}
+            </span>
+            {editMode ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 460 }}>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" style={editInput} />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <select value={occupation} onChange={(e) => setOccupation(e.target.value)} style={{ ...editInput, flex: 1 }}>
+                    <option value="">Sem ocupação</option>
+                    {OCCUPATIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </select>
+                  <select value={era} onChange={(e) => setEra(e.target.value as "1920s" | "modern")} style={{ ...editInput, width: 130 }}>
+                    <option value="1920s">Anos 1920</option>
+                    <option value="modern">Moderno</option>
+                  </select>
+                  <input type="number" min={15} max={90} value={age} onChange={(e) => setAge(Math.max(0, parseInt(e.target.value) || 0))} style={{ ...editInput, width: 80 }} />
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", fontWeight: 700, color: "var(--text)" }}>
+                  {name}
+                </h1>
+                <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
+                  {occ?.name ?? occupation ?? "Sem ocupação"} · {age ? `${age} anos` : "Idade desconhecida"}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Vitals trackers */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
+          <Tracker
+            label="Pontos de Vida"
+            current={pvCurrent} temp={pvTemp} max={pvMax} pct={pvPct} barColor={pvColor}
+            onDelta={(d) => changeVital(d, pvCurrent, setPvCurrent, "pvCurrent", pvTemp, setPvTemp, "pvTemp", pvMax)}
+            onTemp={(d) => changeTemp(d, pvTemp, setPvTemp, "pvTemp")}
+          />
+          <Tracker
+            label="Sanidade"
+            current={sanCurrent} temp={sanTemp} max={sanMax} pct={sanPct} barColor={sanColor}
+            onDelta={(d) => changeVital(d, sanCurrent, setSanCurrent, "sanCurrent", sanTemp, setSanTemp, "sanTemp", sanMax)}
+            onTemp={(d) => changeTemp(d, sanTemp, setSanTemp, "sanTemp")}
+            onRoll={() => rollCheck(`Teste de Sanidade (${sanCurrent}%)`, sanCurrent)}
+          />
+          <Tracker
+            label="Pontos de Magia"
+            current={pmCurrent} temp={pmTemp} max={pmMax} pct={pmMax ? Math.max(0, (pmCurrent / pmMax) * 100) : 0} barColor={ACCENT}
+            onDelta={(d) => changeVital(d, pmCurrent, setPmCurrent, "pmCurrent", pmTemp, setPmTemp, "pmTemp", pmMax)}
+            onTemp={(d) => changeTemp(d, pmTemp, setPmTemp, "pmTemp")}
+          />
+          <Tracker
+            label="Sorte"
+            current={luck} max={99} pct={luck} barColor="var(--text-subtle)"
+            onDelta={(d) => adjustLuck(d > 0 ? 5 : -5)}
+            stepLabel="±5"
+            onRoll={() => rollCheck(`Sorte (${luck}%)`, luck)}
+          />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* Attributes */}
+          <Section title="Atributos">
+            {ATTR_KEYS.map((k) => {
+              const v = attrs[k];
+              if (editMode) {
+                return (
+                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 6px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
+                    <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
+                    <input type="number" min={0} max={99} value={v} onChange={(e) => setAttr(k, parseInt(e.target.value))} style={{ ...editInput, width: 70, textAlign: "center" }} />
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={k}
+                  onClick={() => rollCheck(`${ATTR_LABELS[k]} (${v}%)`, v)}
+                  title={`Rolar teste de ${ATTR_LABELS[k]}`}
+                  style={{
+                    width: "100%", textAlign: "left", cursor: "pointer", background: "transparent",
+                    display: "flex", alignItems: "center", gap: 10, padding: "8px 6px",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)", borderTop: "none", borderLeft: "none", borderRight: "none",
+                    borderRadius: 4,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = ACCENT_DIM)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
+                  <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
+                  <span style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "var(--font-cinzel), serif", color: "var(--text)", minWidth: 32, textAlign: "right" }}>{v}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 40, textAlign: "right" }}>½ {half(v)}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 36, textAlign: "right" }}>⅕ {fifth(v)}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)" }}>🎲</span>
+                </button>
+              );
+            })}
+          </Section>
+
+          {/* Derived stats */}
+          <Section title="Dados Secundários">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Dano Extra</span>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcDamageBonus(attrsFull)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Corpo</span>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcCorpo(attrsFull)}</span>
+            </div>
+            <EditableStat label="MOV"        value={mov}    editMode={editMode} onChange={(n) => setMov(Math.max(0, n))} />
+            <EditableStat label="PV Máximo"  value={pvMax}  editMode={editMode} onChange={(n) => setPvMax(Math.max(1, n))} />
+            <EditableStat label="SAN Máximo" value={sanMax} editMode={editMode} onChange={(n) => setSanMax(Math.max(0, Math.min(99, n)))} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>PM Máximo</span>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{pmMax}</span>
+            </div>
+          </Section>
+        </div>
+
+        {/* Skills */}
+        <Section title="Perícias">
+          <div style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 10, lineHeight: 1.5 }}>
+            {editMode
+              ? "Modo edição: ajuste o valor total de cada perícia."
+              : <>Clique para rolar. Marque <b style={{ color: ACCENT_LIGHT }}>◼</b> a perícia ao ter sucesso — na Fase de Desenvolvimento elas podem subir 1D10. {marked.length > 0 && <span style={{ color: ACCENT_LIGHT }}>({marked.length} marcada{marked.length > 1 ? "s" : ""})</span>}</>}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 4 }}>
+            {allSkills.map((sk) => {
+              const isMarked = marked.includes(sk.id);
+              if (editMode) {
+                return (
+                  <div key={sk.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px" }}>
+                    <span style={{ flex: 1, fontSize: "0.78rem", color: "var(--text-muted)" }}>{sk.name}</span>
+                    <input
+                      type="number" min={0} max={99} value={sk.total}
+                      onChange={(e) => setSkillTotal(sk.id, sk.base, parseInt(e.target.value))}
+                      style={{ ...editInput, width: 64, textAlign: "center" }}
+                    />
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>base {sk.base}</span>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={sk.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6, padding: "5px 8px",
+                    background: sk.added > 0 ? ACCENT_DIM : "transparent",
+                    border: `1px solid ${isMarked ? ACCENT_BORD : sk.added > 0 ? "rgba(125,156,62,0.15)" : "transparent"}`,
+                    borderRadius: "var(--radius-xs)",
+                  }}
+                >
+                  <button
+                    onClick={() => toggleMark(sk.id)}
+                    title={isMarked ? "Desmarcar" : "Marcar como usada com sucesso"}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.78rem", color: isMarked ? ACCENT_LIGHT : "var(--text-subtle)", padding: "0 2px" }}
+                  >
+                    {isMarked ? "◼" : "◻"}
+                  </button>
+                  <button
+                    onClick={() => rollCheck(`${sk.name} (${sk.total}%)`, sk.total)}
+                    title={`Rolar teste de ${sk.name}`}
+                    style={{ flex: 1, textAlign: "left", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}
+                  >
+                    <span style={{ flex: 1, fontSize: "0.78rem", color: sk.added > 0 ? "var(--text)" : "var(--text-muted)" }}>{sk.name}</span>
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: sk.added > 0 ? ACCENT_LIGHT : "var(--text-subtle)" }}>{sk.total}%</span>
+                    <span style={{ fontSize: "0.67rem", color: "var(--text-subtle)", minWidth: 30, textAlign: "right" }}>½ {half(sk.total)}</span>
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>🎲</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* Weapons */}
+        {equipped.length > 0 && (
+          <Section title="Armas">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {equipped.map((w) => {
+                const skillTotal = getSkillBase(SKILLS.find((sk) => sk.id === w.skillId)!, attrs.edu, attrs.des) + (skillPoints[w.skillId] ?? 0);
+                return (
+                  <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text)" }}>{w.name}</div>
+                      <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
+                        {w.skillName} {skillTotal}% · dano {w.damage}{w.addDB ? "+DX" : ""}{w.halfDB ? "+½DX" : ""} · {w.range}
+                      </div>
+                    </div>
+                    <button onClick={() => rollCheck(`Ataque · ${w.name} (${skillTotal}%)`, skillTotal)} style={pillBtn}>
+                      🎯 Atacar
+                    </button>
+                    <button onClick={() => rollDamage(w)} style={{ ...pillBtn, color: "#e0b94e", borderColor: "rgba(224,185,78,0.4)" }}>
+                      🎲 Dano
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+        )}
+
+        {/* Equipment / notes */}
+        {(s.equipment?.trim() || s.notes?.trim()) && (
+          <Section title="Equipamento e Posses">
+            <pre style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.7, margin: 0, fontFamily: "inherit", whiteSpace: "pre-wrap" }}>
+              {(s.equipment ?? s.notes ?? "").trim()}
+            </pre>
+          </Section>
+        )}
+
+        {/* Background */}
+        {Object.keys(background).length > 0 && (
+          <Section title="Antecedentes">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              {Object.entries(background).filter(([, v]) => v).map(([k, v]) => (
+                <div key={k}>
+                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                    {bgLabels[k] ?? k}
+                  </div>
+                  <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.7, margin: 0 }}>{v}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+      </main>
+
+      {devOpen && (
+        <div
+          onClick={() => setDevOpen(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 460, maxWidth: "100%", maxHeight: "85vh", overflowY: "auto", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)" }}
+          >
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.95rem", fontWeight: 700, color: "var(--text)" }}>Fase de Desenvolvimento</span>
+              <button onClick={() => setDevOpen(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "1.1rem" }}>×</button>
+            </div>
+            <div style={{ padding: "16px 20px" }}>
+              {devResults === null ? (
+                <>
+                  <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6, marginTop: 0 }}>
+                    Para cada perícia marcada como usada, rola-se 1D100. Se o resultado for <b>maior</b> que o valor atual, ela sobe <b>1D10</b> pontos (máx. 99).
+                  </p>
+                  {marked.length === 0 ? (
+                    <p style={{ fontSize: "0.82rem", color: "var(--text-subtle)" }}>Nenhuma perícia marcada. Marque ◻ as perícias usadas com sucesso durante o jogo.</p>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                      {marked.map((id) => {
+                        const sk = SKILLS.find((x) => x.id === id);
+                        return <span key={id} style={{ fontSize: "0.74rem", padding: "3px 10px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-full)", color: ACCENT_LIGHT }}>{sk?.name ?? id}</span>;
+                      })}
+                    </div>
+                  )}
+                  <button
+                    onClick={runDevelopment}
+                    disabled={marked.length === 0}
+                    style={{ ...pillBtn, width: "100%", padding: "10px", background: marked.length ? ACCENT : "var(--surface-2)", color: marked.length ? "#06090f" : "var(--text-subtle)", border: "none", cursor: marked.length ? "pointer" : "default" }}
+                  >
+                    🎲 Rolar Desenvolvimento
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+                    {devResults.map((r) => (
+                      <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px 10px", background: r.improved ? ACCENT_DIM : "var(--surface-2)", border: `1px solid ${r.improved ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)" }}>
+                        <span style={{ fontSize: "0.8rem", color: "var(--text)" }}>{r.name}</span>
+                        <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
+                          rolou {r.roll} vs {r.from}% · {r.improved ? <b style={{ color: ACCENT_LIGHT }}>+{r.gain} → {r.to}%</b> : <span style={{ color: "var(--text-subtle)" }}>sem ganho</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setDevOpen(false)} style={{ ...pillBtn, width: "100%", padding: "10px", background: ACCENT, color: "#06090f", border: "none" }}>
+                    Concluir
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <RollPanel log={log} onClear={() => setLog([])} />
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function Tracker({
+  label, current, temp = 0, max, pct, barColor, onDelta, onTemp, stepLabel, onRoll,
+}: {
+  label: string; current: number; temp?: number; max: number; pct: number;
+  barColor: string; onDelta: (d: number) => void; onTemp?: (d: number) => void;
+  stepLabel?: string; onRoll?: () => void;
+}) {
+  const step = stepLabel === "±5" ? 5 : 1;
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "14px 16px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          {label}
+        </span>
+        {onRoll && (
+          <button onClick={onRoll} title={`Rolar teste de ${label}`} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.8rem", padding: 0 }}>🎲</button>
+        )}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <button onClick={() => onDelta(-step)} style={btnStyle}>−</button>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.6rem", fontWeight: 800, color: "var(--text)" }}>{current}</span>
+          {temp > 0 && <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "#5aa9e6" }}> +{temp}</span>}
+          <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}> / {max}</span>
+        </div>
+        <button onClick={() => onDelta(step)} style={btnStyle}>+</button>
+      </div>
+      <div style={{ height: 5, borderRadius: 3, background: "var(--surface-2)", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3, transition: "width 0.25s ease" }} />
+      </div>
+      {onTemp ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8 }}>
+          <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Temp.</span>
+          <button onClick={() => onTemp(-1)} style={miniBtn}>−</button>
+          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: temp > 0 ? "#5aa9e6" : "var(--text-subtle)", minWidth: 16, textAlign: "center" }}>{temp}</span>
+          <button onClick={() => onTemp(1)} style={miniBtn}>+</button>
+        </div>
+      ) : (
+        stepLabel && <div style={{ fontSize: "0.66rem", color: "var(--text-subtle)", textAlign: "center", marginTop: 6 }}>{stepLabel}</div>
+      )}
+    </div>
+  );
+}
+
+function EditableStat({ label, value, editMode, onChange }: { label: string; value: number; editMode: boolean; onChange: (n: number) => void }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{label}</span>
+      {editMode ? (
+        <input type="number" value={value} onChange={(e) => onChange(parseInt(e.target.value) || 0)} style={{ ...editInput, width: 70, textAlign: "center" }} />
+      ) : (
+        <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{value}</span>
+      )}
+    </div>
+  );
+}
+
+const editInput: React.CSSProperties = {
+  background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
+  padding: "7px 10px", color: "var(--text)", fontSize: "0.86rem", outline: "none",
+};
+
+const miniBtn: React.CSSProperties = {
+  width: 22, height: 22, borderRadius: 5, background: "var(--surface-2)", border: "1px solid var(--border)",
+  color: "var(--text-muted)", cursor: "pointer", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center",
+};
+
+const btnStyle: React.CSSProperties = {
+  width: 30, height: 30, borderRadius: "50%",
+  background: "var(--surface-2)", border: "1px solid var(--border)",
+  color: "var(--text-muted)", cursor: "pointer",
+  fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
+};
+
+const pillBtn: React.CSSProperties = {
+  flexShrink: 0, padding: "5px 12px", borderRadius: "var(--radius-full)",
+  background: "var(--surface)", border: "1px solid var(--border)",
+  color: "var(--text)", cursor: "pointer", fontSize: "0.74rem", fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+function RollPanel({ log, onClear }: { log: RollEntry[]; onClear: () => void }) {
+  if (!log.length) return null;
+  return (
+    <div style={{
+      position: "fixed", right: 18, bottom: 18, zIndex: 60,
+      width: 320, maxWidth: "calc(100vw - 36px)",
+      background: "rgba(12,14,20,0.97)", backdropFilter: "blur(14px)",
+      border: "1px solid var(--border)", borderRadius: "var(--radius-xl)",
+      boxShadow: "0 12px 40px rgba(0,0,0,0.5)", overflow: "hidden",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Rolagens</span>
+        <button onClick={onClear} style={{ background: "none", border: "none", color: "var(--text-subtle)", cursor: "pointer", fontSize: "0.72rem" }}>limpar</button>
+      </div>
+      <div style={{ maxHeight: 340, overflowY: "auto", padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+        {log.map((e, i) => <RollRow key={i} entry={e} latest={i === 0} />)}
+      </div>
+    </div>
+  );
+}
+
+function RollRow({ entry, latest }: { entry: RollEntry; latest: boolean }) {
+  const base: React.CSSProperties = {
+    padding: "8px 10px", borderRadius: "var(--radius)",
+    background: latest ? "rgba(125,156,62,0.08)" : "var(--surface)",
+    border: `1px solid ${latest ? "rgba(125,156,62,0.25)" : "rgba(255,255,255,0.05)"}`,
+  };
+  if (entry.kind === "check") {
+    const c = entry.check;
+    const color = LEVEL_COLOR[c.level];
+    return (
+      <div style={base}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontSize: "0.76rem", color: "var(--text)", flex: 1 }}>{entry.label}</span>
+          <span style={{ fontSize: "1.15rem", fontWeight: 800, fontFamily: "var(--font-cinzel), serif", color }}>{c.roll}</span>
+        </div>
+        <div style={{ fontSize: "0.7rem", fontWeight: 700, color, marginTop: 2 }}>
+          {CHECK_LABELS[c.level]} {c.success ? "✓" : "✗"}
+        </div>
+      </div>
+    );
+  }
+  if (entry.kind === "damage") {
+    return (
+      <div style={base}>
+        <div style={{ fontSize: "0.76rem", color: "var(--text)", marginBottom: 4 }}>{entry.label}</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {entry.segments.map((sg, i) => (
+            <span key={i} style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
+              {sg.label ? `${sg.label}: ` : ""}
+              <b style={{ color: "#e0b94e", fontSize: "0.95rem" }}>{sg.total}</b>
+              <span style={{ color: "var(--text-subtle)" }}> ({sg.expr})</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={base}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontSize: "0.76rem", color: "var(--text)" }}>{entry.label}</span>
+        <span style={{ fontSize: "1.05rem", fontWeight: 800, color: "#e0b94e" }}>{entry.total}</span>
+      </div>
+      <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>{entry.expr} → [{entry.rolls.join(", ")}]</div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+      <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
+        <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{title}</span>
+      </div>
+      <div style={{ padding: "16px 20px" }}>{children}</div>
+    </div>
+  );
+}

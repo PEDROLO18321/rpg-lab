@@ -21,7 +21,7 @@ async function main() {
   await prisma.system.upsert({
     where:  { slug: "cthulhu7" },
     update: {},
-    create: { slug: "cthulhu7", name: "Call of Cthulhu", version: "7ª Edição", active: false },
+    create: { slug: "cthulhu7", name: "Call of Cthulhu", version: "7ª Edição", active: true },
   });
 
   console.log("Sistemas inseridos com sucesso.");

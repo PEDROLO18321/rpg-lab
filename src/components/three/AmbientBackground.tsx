@@ -5,27 +5,26 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PerfTier } from "./usePerformanceTier";
 
-/**
- * Fundo 3D ambiente: brasas/partículas douradas subindo lentamente,
- * com leve parallax de mouse. Renderizado atrás de todo o conteúdo
- * (fixed, zIndex -1, pointer-events none).
- *
- * Carregado via next/dynamic { ssr: false } — nunca importe direto.
- */
+export type ParticleSystem = "dnd" | "tormenta" | "cthulhu" | null;
 
-const GOLD = new THREE.Color("#e8b84b");
-const EMBER = new THREE.Color("#c9941f");
+const SYSTEM_PALETTE: Record<NonNullable<ParticleSystem>, string[]> = {
+  dnd:      ["#e8b84b", "#c9941f", "#f5d07a"],
+  tormenta: ["#c0191a", "#8b0000", "#e03030"],
+  cthulhu:  ["#7d9c3e", "#4a5828", "#a3b86c"],
+};
 
-/** Textura radial suave gerada em runtime (evita asset externo). */
+// Páginas genéricas: partículas multicor (fantasia)
+const GENERIC_PALETTE = ["#8b5cf6", "#3b82f6", "#14b8a6", "#e8b84b", "#f472b6", "#6b7a3a"];
+
 function makeGlowTexture(): THREE.Texture {
   const size = 64;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d")!;
   const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  grad.addColorStop(0, "rgba(255, 244, 214, 1)");
-  grad.addColorStop(0.35, "rgba(232, 184, 75, 0.8)");
-  grad.addColorStop(1, "rgba(201, 148, 31, 0)");
+  grad.addColorStop(0,    "rgba(255,255,255,1)");
+  grad.addColorStop(0.35, "rgba(255,255,255,0.7)");
+  grad.addColorStop(1,    "rgba(255,255,255,0)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
   const tex = new THREE.CanvasTexture(canvas);
@@ -35,11 +34,6 @@ function makeGlowTexture(): THREE.Texture {
 
 const BOUNDS = { x: 22, y: 14, z: 8 };
 
-/**
- * PRNG determinístico (mulberry32). Render precisa ser puro (regra
- * react-hooks/purity): mesma seed → mesma nuvem de partículas em
- * qualquer re-render.
- */
 function mulberry32(seed: number) {
   return function () {
     seed |= 0;
@@ -50,25 +44,25 @@ function mulberry32(seed: number) {
   };
 }
 
-function Embers({ count }: { count: number }) {
-  const pointsRef = useRef<THREE.Points>(null);
-  const texture = useMemo(() => makeGlowTexture(), []);
-  // PRNG para respawn em runtime (useFrame — fora do render)
+function Embers({ count, system }: { count: number; system: ParticleSystem }) {
+  const pointsRef   = useRef<THREE.Points>(null);
+  const texture     = useMemo(() => makeGlowTexture(), []);
   const respawnRand = useRef(mulberry32(0xbeef));
 
-  // posição + velocidade + fase de cintilação por partícula
+  const palette = system ? SYSTEM_PALETTE[system] : GENERIC_PALETTE;
+
   const { positions, colors, speeds, phases } = useMemo(() => {
-    const rand = mulberry32(0xd20);
+    const rand      = mulberry32(0xd20);
     const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    const speeds = new Float32Array(count);
-    const phases = new Float32Array(count);
-    const c = new THREE.Color();
+    const colors    = new Float32Array(count * 3);
+    const speeds    = new Float32Array(count);
+    const phases    = new Float32Array(count);
+    const c         = new THREE.Color();
     for (let i = 0; i < count; i++) {
       positions[i * 3 + 0] = (rand() - 0.5) * BOUNDS.x * 2;
       positions[i * 3 + 1] = (rand() - 0.5) * BOUNDS.y * 2;
       positions[i * 3 + 2] = (rand() - 0.5) * BOUNDS.z * 2;
-      c.copy(rand() > 0.6 ? GOLD : EMBER);
+      c.set(palette[Math.floor(rand() * palette.length)]);
       c.multiplyScalar(0.55 + rand() * 0.45);
       colors[i * 3 + 0] = c.r;
       colors[i * 3 + 1] = c.g;
@@ -77,23 +71,22 @@ function Embers({ count }: { count: number }) {
       phases[i] = rand() * Math.PI * 2;
     }
     return { positions, colors, speeds, phases };
-  }, [count]);
+  }, [count, palette]);
 
   useEffect(() => () => texture.dispose(), [texture]);
 
   useFrame((state, delta) => {
     const points = pointsRef.current;
     if (!points) return;
-    const dt = Math.min(delta, 0.05); // evita salto após tab inativa
+    const dt  = Math.min(delta, 0.05);
     const pos = points.geometry.attributes.position.array as Float32Array;
-    const t = state.clock.elapsedTime;
+    const t   = state.clock.elapsedTime;
     for (let i = 0; i < count; i++) {
-      // sobe devagar + deriva lateral senoidal
       pos[i * 3 + 1] += speeds[i] * dt;
       pos[i * 3 + 0] += Math.sin(t * 0.3 + phases[i]) * dt * 0.18;
       if (pos[i * 3 + 1] > BOUNDS.y) {
-        pos[i * 3 + 1] = -BOUNDS.y;
-        pos[i * 3 + 0] = (respawnRand.current() - 0.5) * BOUNDS.x * 2;
+        pos[i * 3 + 1]  = -BOUNDS.y;
+        pos[i * 3 + 0]  = (respawnRand.current() - 0.5) * BOUNDS.x * 2;
       }
     }
     points.geometry.attributes.position.needsUpdate = true;
@@ -103,7 +96,7 @@ function Embers({ count }: { count: number }) {
     <points ref={pointsRef}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+        <bufferAttribute attach="attributes-color"    args={[colors,    3]} />
       </bufferGeometry>
       <pointsMaterial
         map={texture}
@@ -119,14 +112,15 @@ function Embers({ count }: { count: number }) {
   );
 }
 
-/** Parallax sutil do grupo inteiro seguindo o mouse. */
+/*
+// Parallax sutil do grupo inteiro seguindo o mouse — desativado.
 function ParallaxRig({ children }: { children: React.ReactNode }) {
-  const group = useRef<THREE.Group>(null);
+  const group  = useRef<THREE.Group>(null);
   const target = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     function onMove(e: PointerEvent) {
-      target.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      target.current.x = (e.clientX / window.innerWidth  - 0.5) * 2;
       target.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
     }
     window.addEventListener("pointermove", onMove, { passive: true });
@@ -136,26 +130,28 @@ function ParallaxRig({ children }: { children: React.ReactNode }) {
   useFrame((_, delta) => {
     const g = group.current;
     if (!g) return;
-    const k = 1 - Math.pow(0.001, delta); // lerp suave independente de fps
+    const k = 1 - Math.pow(0.001, delta);
     g.rotation.y += (target.current.x * 0.06 - g.rotation.y) * k;
     g.rotation.x += (target.current.y * 0.04 - g.rotation.x) * k;
   });
 
   return <group ref={group}>{children}</group>;
 }
+*/
 
-export default function AmbientBackground({ tier }: { tier: Exclude<PerfTier, "off"> }) {
+export default function AmbientBackground({
+  tier,
+  system,
+}: {
+  tier: Exclude<PerfTier, "off">;
+  system: ParticleSystem;
+}) {
   const count = tier === "high" ? 150 : 60;
 
   return (
     <div
       aria-hidden
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: -1,
-        pointerEvents: "none",
-      }}
+      style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none" }}
     >
       <Canvas
         dpr={tier === "high" ? [1, 1.5] : 1}
@@ -169,9 +165,7 @@ export default function AmbientBackground({ tier }: { tier: Exclude<PerfTier, "o
         }}
         style={{ background: "transparent" }}
       >
-        <ParallaxRig>
-          <Embers count={count} />
-        </ParallaxRig>
+        <Embers count={count} system={system} />
       </Canvas>
     </div>
   );
