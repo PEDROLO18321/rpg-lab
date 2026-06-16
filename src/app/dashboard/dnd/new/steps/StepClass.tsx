@@ -379,33 +379,44 @@ function SubclassSelector({
   const selectedSub = subclasses.find((s) => s.id === selectedId);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-        Subclasse <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", fontSize: "0.7rem" }}>(opcional — pode ser escolhida depois)</span>
+        Subclasse <span style={{ color: "var(--accent)", marginLeft: 4 }}>*</span>
+        <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", fontSize: "0.68rem", marginLeft: 6 }}>obrigatória</span>
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 10 }}>
         {subclasses.map((sub) => {
           const isSelected = selectedId === sub.id;
           return (
             <button
               key={sub.id}
-              onClick={() => onSelect(isSelected ? "" : sub.id)}
+              onClick={() => onSelect(sub.id)}
               style={{
-                padding: "12px 14px",
+                padding: "14px 16px",
                 background: isSelected ? "var(--accent-dim)" : "var(--surface-2)",
                 border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
-                borderRadius: "var(--radius-lg)",
+                borderRadius: "var(--radius-xl)",
                 cursor: "pointer",
                 textAlign: "left",
                 transition: "all 0.15s",
-                boxShadow: isSelected ? "0 0 16px var(--accent-glow)" : "none",
+                boxShadow: isSelected ? "0 0 20px var(--accent-glow)" : "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
               }}
             >
-              <p style={{ fontSize: "0.82rem", fontWeight: 700, color: isSelected ? "var(--accent-light)" : "var(--text)", marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {isSelected && (
+                  <span style={{ fontSize: "0.6rem", color: "var(--accent)", background: "var(--accent-dim)", border: "1px solid var(--accent)", borderRadius: 99, padding: "1px 7px", fontWeight: 700, letterSpacing: "0.04em", flexShrink: 0 }}>
+                    ✓ Escolhida
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: "0.84rem", fontWeight: 700, color: isSelected ? "var(--accent-light)" : "var(--text)" }}>
                 {sub.name}
               </p>
-              <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+              <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
                 {sub.description}
               </p>
             </button>
@@ -416,27 +427,54 @@ function SubclassSelector({
       {selectedSub && (
         <div
           style={{
-            background: "rgba(201,148,31,0.04)",
+            background: "rgba(201,148,31,0.05)",
             border: "1px solid var(--border-accent)",
-            borderRadius: "var(--radius-lg)",
-            padding: "14px 16px",
+            borderRadius: "var(--radius-xl)",
+            padding: "20px 22px",
             display: "flex",
             flexDirection: "column",
-            gap: 6,
+            gap: 16,
           }}
         >
-          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Habilidades de {selectedSub.name}
-          </p>
-          {selectedSub.features.map((f) => {
-            const [title, ...rest] = f.split(" — ");
-            return (
-              <p key={f} style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                <span style={{ fontWeight: 700, color: "var(--text)" }}>{title}</span>
-                {rest.length > 0 && <span> — {rest.join(" — ")}</span>}
-              </p>
-            );
-          })}
+          <div>
+            <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+              {selectedSub.name}
+            </p>
+            <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.65 }}>
+              {selectedSub.description}
+            </p>
+          </div>
+          <div>
+            <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
+              Habilidades
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {selectedSub.features.map((f) => {
+                const [title, ...rest] = f.split(" — ");
+                return (
+                  <div
+                    key={f}
+                    style={{
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      borderLeft: "3px solid var(--accent)",
+                      borderRadius: "var(--radius-lg)",
+                      padding: "10px 14px",
+                    }}
+                  >
+                    <p style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--accent-light)", marginBottom: rest.length > 0 ? 4 : 0 }}>
+                      {title}
+                    </p>
+                    {rest.length > 0 && (
+                      <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                        {rest.join(" — ")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

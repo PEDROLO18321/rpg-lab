@@ -7,6 +7,14 @@ export interface Subrace {
   description: string;
   bonus: AbilityBonus;
   traits: string[];
+  speed?: number;
+  languages?: number;
+}
+
+export interface RaceAbilityBonusChoice {
+  count: number;
+  amount: number;
+  exclude?: AbilityKey[];
 }
 
 export interface RaceNames {
@@ -31,6 +39,9 @@ export interface Race {
   languages: string[];
   subraces: Subrace[];
   names: RaceNames;
+  languageBonus?: number;
+  abilityBonusChoices?: RaceAbilityBonusChoice;
+  racialSkills?: { count: number };
 }
 
 export const RACES: Race[] = [
@@ -85,6 +96,7 @@ export const RACES: Race[] = [
         description: "Mente afiada e domínio básico da magia arcana.",
         bonus: { int: 1 },
         traits: ["Conhece 1 truque de mago", "Idioma adicional", "Treinamento com armas élficas"],
+        languages: 1,
       },
       {
         id: "elfo-floresta",
@@ -92,6 +104,7 @@ export const RACES: Race[] = [
         description: "Sentidos aguçados, pés ágeis e furtividade natural.",
         bonus: { wis: 1 },
         traits: ["Deslocamento 10,5m", "Máscara da Natureza", "Treinamento com armas élficas"],
+        speed: 10.5,
       },
       {
         id: "drow",
@@ -152,6 +165,7 @@ export const RACES: Race[] = [
     rarity: "comum",
     traits: ["Versatilidade (+1 em todos os atributos)", "Idioma adicional"],
     languages: ["Comum", "+ 1 idioma à escolha"],
+    languageBonus: 1,
     subraces: [],
     names: {
       male: ["Darvin","Dorn","Evendur","Gorstag","Helm","Malark","Morn","Randal","Stedd","Ander","Blath","Bran","Lander","Stor","Taman","Anton","Diero","Marcon","Pieron","Romero","Aoth","Ramas","Urhur","Borivik","Jandar","Shaumar"],
@@ -218,6 +232,9 @@ export const RACES: Race[] = [
     icon: "✨",
     description: "Entre dois mundos, os meio-elfos combinam a ambição humana com a graça élfica. Carismáticos e versáteis.",
     baseBonus: { cha: 2 },
+    abilityBonusChoices: { count: 2, amount: 1, exclude: ["cha"] },
+    racialSkills: { count: 2 },
+    languageBonus: 1,
     speed: 9,
     size: "Médio",
     rarity: "incomum",

@@ -42,19 +42,21 @@ export interface DescData {
 }
 
 export interface WizardData {
-  raceId:            string;
-  subraceId:         string;
-  charName:          string;
-  classId:           string;
-  subclassId:        string;
-  backgroundId:      string;
-  abilityBases:      Record<AbilityKey, number>;
-  selectedSkills:    string[];
-  desc:              Partial<DescData>;
-  equipmentChoices:  Record<string, string>;
-  selectedCantrips:  string[];
-  selectedSpells:    string[];
-  selectedLanguages: string[];
+  raceId:               string;
+  subraceId:            string;
+  charName:             string;
+  classId:              string;
+  subclassId:           string;
+  backgroundId:         string;
+  abilityBases:         Record<AbilityKey, number>;
+  selectedSkills:       string[];
+  racialAbilityBonuses: Partial<Record<AbilityKey, number>>;
+  selectedRacialSkills: string[];
+  desc:                 Partial<DescData>;
+  equipmentChoices:     Record<string, string>;
+  selectedCantrips:     string[];
+  selectedSpells:       string[];
+  selectedLanguages:    string[];
 }
 
 interface Props {
@@ -67,6 +69,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
   const [step,  setStep]  = useState(0);
   const [data,  setData]  = useState<Partial<WizardData>>({});
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   function patch(partial: Partial<WizardData>) {
     setData((prev) => ({
@@ -95,13 +98,25 @@ export function CharacterWizard({ userId, systemId }: Props) {
 
   const canAdvance = useMemo(() => {
     if (step === 0) {
+      if (!data.charName?.trim()) return false;
       if (!data.raceId) return false;
       const race = RACES.find((r) => r.id === data.raceId);
-      // races with multiple subraces require the user to pick one
       if ((race?.subraces.length ?? 0) > 1 && !data.subraceId) return false;
+      if (race?.abilityBonusChoices) {
+        const chosen = Object.keys(data.racialAbilityBonuses ?? {}).length;
+        if (chosen < race.abilityBonusChoices.count) return false;
+      }
+      if (race?.racialSkills) {
+        if ((data.selectedRacialSkills?.length ?? 0) < race.racialSkills.count) return false;
+      }
       return true;
     }
-    if (step === 1) return !!data.classId;
+    if (step === 1) {
+      if (!data.classId) return false;
+      const cls = CLASSES.find((c) => c.id === data.classId);
+      if ((cls?.subclasses?.length ?? 0) > 0 && !data.subclassId) return false;
+      return true;
+    }
     if (step === 2) return !!data.backgroundId;
     if (step === 3) {
       const cls = CLASSES.find((c) => c.id === data.classId);
@@ -122,16 +137,18 @@ export function CharacterWizard({ userId, systemId }: Props) {
 
   async function finish() {
     setSaving(true);
+    setSaveError(null);
     try {
       const res = await fetch("/api/dnd/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, userId, systemId }),
       });
-      if (!res.ok) throw new Error("Erro ao salvar");
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erro ao salvar");
       router.push(`/dashboard/dnd/${json.id}`);
-    } catch {
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao salvar");
       setSaving(false);
     }
   }
@@ -262,6 +279,8 @@ export function CharacterWizard({ userId, systemId }: Props) {
             selected={data.raceId ?? null}
             selectedSubrace={data.subraceId ?? null}
             charName={data.charName ?? ""}
+            racialAbilityBonuses={data.racialAbilityBonuses ?? {}}
+            selectedRacialSkills={data.selectedRacialSkills ?? []}
             onChange={patch}
           />
         )}
@@ -293,6 +312,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
           <StepDesc
             backgroundId={data.backgroundId ?? null}
             raceId={data.raceId ?? null}
+            subraceId={data.subraceId ?? null}
             desc={data.desc ?? {}}
             selectedLanguages={data.selectedLanguages ?? []}
             onChange={patch}
@@ -390,23 +410,28 @@ export function CharacterWizard({ userId, systemId }: Props) {
             Próximo →
           </button>
         ) : (
-          <button
-            onClick={finish}
-            disabled={saving}
-            style={{
-              padding: "10px 28px",
-              background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
-              border: "none",
-              borderRadius: "var(--radius)",
-              color: "#06090f",
-              fontSize: "0.86rem",
-              fontWeight: 700,
-              cursor: saving ? "wait" : "pointer",
-              boxShadow: "0 0 20px var(--accent-glow)",
-            }}
-          >
-            {saving ? "Salvando…" : "Criar Personagem"}
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            {saveError && (
+              <p style={{ fontSize: "0.75rem", color: "#f87171", margin: 0 }}>{saveError}</p>
+            )}
+            <button
+              onClick={finish}
+              disabled={saving}
+              style={{
+                padding: "10px 28px",
+                background: "linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)",
+                border: "none",
+                borderRadius: "var(--radius)",
+                color: "#06090f",
+                fontSize: "0.86rem",
+                fontWeight: 700,
+                cursor: saving ? "wait" : "pointer",
+                boxShadow: "0 0 20px var(--accent-glow)",
+              }}
+            >
+              {saving ? "Salvando…" : "Criar Personagem"}
+            </button>
+          </div>
         )}
       </div>
     </div>
