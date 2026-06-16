@@ -31,9 +31,9 @@ const ROLES = [
     subtitle: "Dungeon Master",
     desc: "Comande a aventura. Gerencie campanhas, crie NPCs, organize encontros e conduza histórias épicas.",
     href: "/dashboard/dnd/mestre",
-    accentColor: "#a78bfa",
-    accentGlow: "rgba(167,139,250,0.22)",
-    borderAccent: "rgba(167,139,250,0.4)",
+    accentColor: "#c9941f",
+    accentGlow: "rgba(201,148,31,0.22)",
+    borderAccent: "rgba(201,148,31,0.4)",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
@@ -77,7 +77,7 @@ export function RoleSelectGrid() {
                 display: "flex",
                 flexDirection: "column",
                 background: isHovered
-                  ? `linear-gradient(135deg, rgba(${role.id === "jogador" ? "201,148,31" : "167,139,250"},0.1) 0%, rgba(${role.id === "jogador" ? "201,148,31" : "167,139,250"},0.03) 100%)`
+                  ? `linear-gradient(135deg, rgba(201,148,31,0.1) 0%, rgba(201,148,31,0.03) 100%)`
                   : "var(--surface)",
                 border: `1px solid ${isHovered ? role.borderAccent : "rgba(255,255,255,0.07)"}`,
                 borderRadius: "var(--radius-xl)",
