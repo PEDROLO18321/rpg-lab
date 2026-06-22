@@ -16,7 +16,9 @@ import { makeDiceGeometry } from "./diceGeometry";
  * Carregue via next/dynamic { ssr: false }.
  */
 
-function DieMesh({ sides, rollToken }: { sides: number; rollToken: number }) {
+function DieMesh({
+  sides, rollToken, color, edgeColor, emissive,
+}: { sides: number; rollToken: number; color: string; edgeColor: string; emissive: string }) {
   const mesh = useRef<THREE.Mesh>(null);
   const geometry = useMemo(() => makeDiceGeometry(sides), [sides]);
   // Inicia em 0 (nenhuma rolagem): montar já com rollToken > 0 (ex.: toast
@@ -56,13 +58,13 @@ function DieMesh({ sides, rollToken }: { sides: number; rollToken: number }) {
   return (
     <mesh ref={mesh} geometry={geometry}>
       <meshStandardMaterial
-        color="#c9941f"
+        color={color}
         metalness={0.45}
         roughness={0.32}
-        emissive="#2a1d06"
+        emissive={emissive}
         flatShading
       />
-      <Edges threshold={10} color="#e8b84b" />
+      <Edges threshold={10} color={edgeColor} />
     </mesh>
   );
 }
@@ -72,9 +74,15 @@ interface Dice3DProps {
   size: number;          // px (largura = altura)
   rollToken?: number;    // incremente para disparar o tumble
   className?: string;
+  color?: string;        // cor do corpo do dado
+  edgeColor?: string;    // cor das arestas + luz de realce
+  emissive?: string;     // brilho interno
 }
 
-export default function Dice3D({ sides, size, rollToken = 0, className }: Dice3DProps) {
+export default function Dice3D({
+  sides, size, rollToken = 0, className,
+  color = "#c9941f", edgeColor = "#e8b84b", emissive = "#2a1d06",
+}: Dice3DProps) {
   return (
     <div
       aria-hidden
@@ -89,8 +97,8 @@ export default function Dice3D({ sides, size, rollToken = 0, className }: Dice3D
       >
         <ambientLight intensity={0.7} />
         <directionalLight position={[3, 5, 4]} intensity={1.4} />
-        <pointLight position={[-3, -2, 2]} intensity={0.5} color="#e8b84b" />
-        <DieMesh sides={sides} rollToken={rollToken} />
+        <pointLight position={[-3, -2, 2]} intensity={0.5} color={edgeColor} />
+        <DieMesh sides={sides} rollToken={rollToken} color={color} edgeColor={edgeColor} emissive={emissive} />
       </Canvas>
     </div>
   );

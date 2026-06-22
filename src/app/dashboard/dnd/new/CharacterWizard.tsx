@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RACES } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
+import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
+import { parseEquipmentLine, isCurrencyItem } from "@/lib/dnd/equipmentParser";
 import type { AbilityKey } from "@/lib/dnd/races";
 import { StepRace } from "./steps/StepRace";
 import { StepClass } from "./steps/StepClass";
@@ -125,6 +127,32 @@ export function CharacterWizard({ userId, systemId }: Props) {
       return skillsDone && attrsDone;
     }
     if (step === 4) return !!data.desc?.alignment;
+    if (step === 5) {
+      // Equipamento inicial obrigatório: toda escolha (e sub-escolha) preenchida
+      const choices = data.equipmentChoices ?? {};
+      const cls = CLASSES.find((c) => c.id === data.classId);
+      const bg  = BACKGROUNDS.find((b) => b.id === data.backgroundId);
+      const sources: [string, string[]][] = [
+        ["cls", cls?.startingEquipment ?? []],
+        ["bg",  bg?.startingEquipment ?? []],
+      ];
+      for (const [prefix, items] of sources) {
+        for (let idx = 0; idx < items.length; idx++) {
+          const line = parseEquipmentLine(items[idx]);
+          if (line.type !== "choice") continue;
+          if (isCurrencyItem(items[idx])) continue;
+          const selected = choices[`${prefix}_${idx}`];
+          if (!selected) return false;
+          const opt = line.choices.find((c) => c.letter === selected);
+          if (opt?.sub) {
+            for (let k = 0; k < opt.sub.count; k++) {
+              if (!choices[`${prefix}_${idx}_${selected}_${k}`]) return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
     if (step === 6) {
       const config = data.classId ? SPELLCASTING[data.classId] : null;
       if (!config) return true; // non-caster, skip

@@ -10,6 +10,7 @@ async function fetchCharacter(id: string, userId: string) {
       id: true,
       name: true,
       notes: true,
+      portraitUrl: true,
       dndSheet: {
         select: {
           id: true,
@@ -56,6 +57,8 @@ export default async function CharacterSheetPage({
       characterId={character.id}
       characterName={character.name}
       sheet={character.dndSheet}
+      notes={character.notes}
+      portraitUrl={character.portraitUrl}
       userName={session.user.name ?? session.user.email ?? "Usuário"}
     />
   );

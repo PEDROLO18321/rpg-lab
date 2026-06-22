@@ -94,6 +94,7 @@ model Character {
   dndSheet           DndSheet?
   tormentaSheet      TormentaSheet?
   cthulhuSheet       CthulhuSheet?
+  ordemSheet         OrdemSheet?
   campaignCharacters CampaignCharacter[]
 }
 
@@ -318,7 +319,56 @@ model CthulhuSheet {
   skills     String? // JSON: Record<string, number>
   background String? // JSON: { ideology?, people?, places?, items?, traits?, keyConn? }
   weapons    String? // JSON: weapon list
-  equipment  String? // JSON: item list
+  equipment     String? // JSON: item list
+  notes         String?
+  insanityData  String? // JSON: { sessionLoss, status, phobias, manias, notes }
+  spellsData    String? // JSON: CthulhuSpell[]
+}
+
+// ─── ORDEM PARANORMAL RPG ────────────────────────────────────────────────────
+
+model OrdemSheet {
+  id        String    @id
+  character Character @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  origin     String? // origem (slug)
+  className  String? // "combatente" | "especialista" | "ocultista"
+  trail      String? // trilha da classe (slug)
+  nex        Int     @default(5)         // 5..99 (%)
+  patente    String  @default("recruta") // recruta | operador | agente | oficial | elite
+
+  // 5 Atributos (0–5; inicial 1)
+  agi Int @default(1)
+  forca Int @default(1) // "for" é palavra reservada em vários contextos → forca
+  int Int @default(1)
+  pre Int @default(1)
+  vig Int @default(1)
+
+  // Derivados de vida/esforço/sanidade
+  pvMax      Int @default(0)
+  pvCurrent  Int @default(0)
+  pvTemp     Int @default(0)
+  peMax      Int @default(0)
+  peCurrent  Int @default(0)
+  peTemp     Int @default(0)
+  sanMax     Int @default(0)
+  sanCurrent Int @default(0)
+  sanTemp    Int @default(0)
+
+  defense   Int @default(10) // 10 + AGI
+  movement  Int @default(9)  // metros
+  prestige  Int @default(0)  // pontos de prestígio (patente)
+  affinity  String?          // elemento de afinidade (NEX 50%+)
+
+  // Dados complexos como JSON (espelha CthulhuSheet)
+  skills     String? // JSON: Record<skillId, "treinado"|"veterano"|"expert">
+  abilities  String? // JSON: Ability[] (poderes de classe/origem/trilha)
+  rituals    String? // JSON: Ritual[]
+  inventory  String? // JSON: Item[]
+  weapons    String? // JSON: Weapon[]
+  background String? // JSON: { name, gender, age, appearance, personality, history, objective }
+  conditions String? // JSON: string[]
+  insanity   String? // JSON: { traumas, phobias, manias, notes }
   notes      String?
 }
 

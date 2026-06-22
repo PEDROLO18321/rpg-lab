@@ -30,11 +30,19 @@ export function RollResultDie({
   size,
   roll,
   fallback,
+  color,
+  edgeColor,
+  emissive,
+  resultColor,
 }: {
   sides: number;
   size: number;
   roll: DiceFxRoll | null;
   fallback: React.ReactNode;
+  color?: string;
+  edgeColor?: string;
+  emissive?: string;
+  resultColor?: string;
 }) {
   const tier = usePerformanceTier();
   // Derivado por id (sem setState síncrono em effect): rolagem nova fica
@@ -54,7 +62,7 @@ export function RollResultDie({
   const showResult = roll != null && settled;
   return (
     <div style={{ position: "relative", width: size, height: size }}>
-      <Dice3D sides={sides} size={size} rollToken={roll?.id ?? 0} />
+      <Dice3D sides={sides} size={size} rollToken={roll?.id ?? 0} color={color} edgeColor={edgeColor} emissive={emissive} />
       <div
         aria-live="polite"
         style={{
@@ -68,8 +76,8 @@ export function RollResultDie({
             className="dice-result-pop"
             style={{
               fontFamily: cinzel, fontWeight: 900, fontSize: size * 0.3,
-              color: roll.isCrit ? "var(--accent-light)" : roll.isFumble ? "#ff6b6b" : "#fff",
-              textShadow: "0 2px 12px rgba(0,0,0,0.85), 0 0 24px rgba(0,0,0,0.6)",
+              color: resultColor ?? (roll.isCrit ? "var(--accent-light)" : roll.isFumble ? "#ff6b6b" : "#fff"),
+              textShadow: resultColor ? "0 1px 4px rgba(255,255,255,0.3)" : "0 2px 12px rgba(0,0,0,0.85), 0 0 24px rgba(0,0,0,0.6)",
             }}
           >
             {roll.total}
@@ -78,7 +86,7 @@ export function RollResultDie({
           <span
             style={{
               fontFamily: cinzel, fontWeight: 700, fontSize: size * 0.17,
-              color: "var(--accent-light)", opacity: 0.9,
+              color: color ?? "var(--accent-light)", opacity: 0.9,
               textShadow: "0 1px 8px rgba(0,0,0,0.8)",
             }}
           >

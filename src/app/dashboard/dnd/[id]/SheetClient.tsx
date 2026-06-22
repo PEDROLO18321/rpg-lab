@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
@@ -112,10 +113,30 @@ type RollEntry = {
 // per-slot boolean array: true = slot used
 type SlotState = Record<string, boolean[]>;
 
+// Descrição/personalidade serializada em Character.notes (ver StepDesc + POST de criação)
+type DescData = {
+  alignment?: string;
+  age?: string; height?: string; weight?: string;
+  eyes?: string; skin?: string; hair?: string;
+  personalityTrait?: string; ideal?: string; bond?: string; flaw?: string;
+  backstory?: string;
+  languages?: string[];
+};
+
+function parseDesc(raw: string | null): DescData {
+  if (!raw) return {};
+  try {
+    const d = JSON.parse(raw);
+    return (d && typeof d === "object") ? d : {};
+  } catch { return {}; }
+}
+
 interface Props {
   characterId: string;
   characterName: string;
   sheet: SheetRow;
+  notes: string | null;
+  portraitUrl: string | null;
   userName: string;
 }
 
@@ -124,6 +145,19 @@ interface Props {
 function mod(score: number) { return Math.floor((score - 10) / 2); }
 function signed(n: number)  { return n >= 0 ? `+${n}` : `${n}`; }
 function rollDie(sides: number) { return Math.floor(Math.random() * sides) + 1; }
+
+const dndVBtn: React.CSSProperties = {
+  width: 32, height: 32, borderRadius: "50%",
+  background: "var(--surface-2)", border: "1px solid var(--border)",
+  color: "var(--text)", fontSize: "1.15rem", fontWeight: 700, cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+};
+const dndVBtnTemp: React.CSSProperties = {
+  width: 26, height: 26, borderRadius: "4px",
+  background: "rgba(79,195,247,0.1)", border: "1px dashed rgba(79,195,247,0.45)",
+  color: "#4fc3f7", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+};
 
 function parseConditions(raw: string | null): string[] {
   if (!raw) return [];
@@ -150,8 +184,9 @@ function parseSlots(raw: string | null, maxPerLevel: Record<string, number>): Sl
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export function SheetClient({ characterId, characterName, sheet: initial, userName }: Props) {
-  const [mode, setMode] = useState<"ficha" | "jogar">("ficha");
+export function SheetClient({ characterId, characterName, sheet: initial, notes, portraitUrl, userName }: Props) {
+  const [mode, setMode] = useState<"ficha" | "jogar" | "editar">("ficha");
+  const desc = parseDesc(notes);
 
   // Mutable play-state
   const [hpCurrent, setHpCurrent] = useState(initial.hpCurrent);
@@ -298,14 +333,34 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
                 knownSpellNames={spells.map((s) => s.spellName)}
               />
             )}
+            <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
             <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
             <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>Jogar</ModeBtn>
           </div>
         </div>
 
-        {mode === "ficha" ? (
+        {mode === "editar" ? (
+          <EditMode
+            characterId={characterId}
+            characterName={characterName}
+            sheet={initial}
+            desc={desc}
+            portraitUrl={portraitUrl}
+            equipment={equipment}    setEquipment={setEquipment}
+            spells={spells}          setSpells={setSpells}
+            gp={gp} setGp={setGp}
+            cp={cp} setCp={setCp}
+            sp={sp} setSp={setSp}
+            ep={ep} setEp={setEp}
+            pp={pp} setPp={setPp}
+            isCaster={isCaster}
+            classId={cls?.id ?? null}
+            patchSheet={patchSheet}
+          />
+        ) : mode === "ficha" ? (
           <ViewMode
             characterId={characterId}
+            characterName={characterName}
             sheet={initial}
             scores={scores}
             raceName={raceName}
@@ -313,6 +368,8 @@ export function SheetClient({ characterId, characterName, sheet: initial, userNa
             subrace={subrace}
             cls={cls}
             bg={bg}
+            desc={desc}
+            portraitUrl={portraitUrl}
             proficientSaves={proficientSaves}
             proficientSkills={proficientSkills}
             hpCurrent={hpCurrent}
@@ -390,6 +447,7 @@ function ModeBtn({ children, active, onClick }: { children: React.ReactNode; act
 
 interface ViewProps {
   characterId: string;
+  characterName: string;
   sheet: SheetRow;
   scores: Record<AbilityKey, number>;
   raceName: string;
@@ -397,6 +455,8 @@ interface ViewProps {
   subrace: ReturnType<typeof RACES.find> extends undefined ? undefined : unknown;
   cls: ReturnType<typeof CLASSES.find>;
   bg: ReturnType<typeof BACKGROUNDS.find>;
+  desc: DescData;
+  portraitUrl: string | null;
   proficientSaves: string[];
   proficientSkills: Set<string>;
   hpCurrent: number;
@@ -405,15 +465,69 @@ interface ViewProps {
   equipment: SheetRow["equipment"];
 }
 
-function ViewMode({ sheet, scores, raceName, race, subrace, cls, bg, proficientSaves, proficientSkills, hpCurrent, hpTemp, gp, equipment }: ViewProps) {
+function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, bg, desc, portraitUrl, proficientSaves, proficientSkills, hpCurrent, hpTemp, gp, equipment }: ViewProps) {
   const PROF_BONUS = proficiencyBonus(sheet.level);
   const passivePerception = 10 + mod(scores.wis) + (proficientSkills.has("Percepção") ? PROF_BONUS : 0);
   const subclassEntry = cls?.subclasses?.find((s) => s.id === sheet.classes[0]?.subclass || s.name === sheet.classes[0]?.subclass);
   const cantrips = sheet.spells.filter((s) => s.level === 0);
   const spells1  = sheet.spells.filter((s) => s.level > 0);
 
+  const physical = [
+    desc.age    && { l: "Idade",  v: desc.age },
+    desc.height && { l: "Altura", v: desc.height },
+    desc.weight && { l: "Peso",   v: desc.weight },
+    desc.eyes   && { l: "Olhos",  v: desc.eyes },
+    desc.skin   && { l: "Pele",   v: desc.skin },
+    desc.hair   && { l: "Cabelo", v: desc.hair },
+  ].filter(Boolean) as { l: string; v: string }[];
+  const personality = [
+    desc.personalityTrait && { l: "Traço de Personalidade", v: desc.personalityTrait },
+    desc.ideal            && { l: "Ideal",                  v: desc.ideal },
+    desc.bond             && { l: "Vínculo",                v: desc.bond },
+    desc.flaw             && { l: "Fraqueza",               v: desc.flaw },
+  ].filter(Boolean) as { l: string; v: string }[];
+  const hasIdentity = !!portraitUrl || physical.length > 0 || (desc.languages?.length ?? 0) > 0;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Retrato + aparência física */}
+      {hasIdentity && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
+          {portraitUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={portraitUrl} alt="Retrato" style={{ width: 110, height: 110, objectFit: "cover", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-accent)", flexShrink: 0 }} />
+          )}
+          <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, minHeight: portraitUrl ? 110 : undefined }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.05rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>{characterName}</p>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>
+                {[raceName, cls?.name, bg?.name].filter(Boolean).join(" · ")} · Nível {sheet.level}
+              </p>
+            </div>
+            {physical.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
+                {physical.map(({ l, v }) => (
+                  <div key={l} style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "7px 10px" }}>
+                    <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{l}</p>
+                    <p style={{ fontSize: "0.84rem", color: "var(--text)", marginTop: 2 }}>{v}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(desc.languages?.length ?? 0) > 0 && (
+              <div>
+                <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Idiomas</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {desc.languages!.map((lang) => (
+                    <span key={lang} style={{ fontSize: "0.72rem", color: "var(--text-muted)", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>{lang}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Core stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 10 }}>
         <StatBox label="Pontos de Vida" value={`${hpCurrent}${hpTemp > 0 ? `+${hpTemp}` : ""} / ${sheet.hpMax}`} accent />
@@ -548,6 +662,532 @@ function ViewMode({ sheet, scores, raceName, race, subrace, cls, bg, proficientS
           </ViewSection>
         </div>
       </div>
+
+      {/* Personalidade */}
+      {personality.length > 0 && (
+        <ViewSection label="Personalidade">
+          {personality.map(({ l, v }) => (
+            <div key={l} style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 12 }}>
+              <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{l}</p>
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{v}</p>
+            </div>
+          ))}
+        </ViewSection>
+      )}
+
+      {/* História */}
+      {desc.backstory?.trim() && (
+        <ViewSection label="História do Personagem">
+          <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{desc.backstory}</p>
+        </ViewSection>
+      )}
+    </div>
+  );
+}
+
+// ── EDIT MODE (sandbox) ───────────────────────────────────────────────────────
+
+const ALIGN_OPTIONS: { id: string; label: string }[] = Object.entries(ALIGNMENT_LABELS).map(([id, label]) => ({ id, label }));
+
+interface EditProps {
+  characterId: string;
+  characterName: string;
+  sheet: SheetRow;
+  desc: DescData;
+  portraitUrl: string | null;
+  equipment: SheetRow["equipment"]; setEquipment: (v: SheetRow["equipment"]) => void;
+  spells: SheetRow["spells"];       setSpells: (v: SheetRow["spells"]) => void;
+  gp: number; setGp: (v: number) => void;
+  cp: number; setCp: (v: number) => void;
+  sp: number; setSp: (v: number) => void;
+  ep: number; setEp: (v: number) => void;
+  pp: number; setPp: (v: number) => void;
+  isCaster: boolean;
+  classId: string | null;
+  patchSheet: (data: Record<string, unknown>) => Promise<void>;
+}
+
+function EditMode({
+  characterId, characterName, sheet, desc: initialDesc, portraitUrl: initialPortrait,
+  equipment, setEquipment, spells, setSpells,
+  gp, setGp, cp, setCp, sp, setSp, ep, setEp, pp, setPp,
+  isCaster, classId, patchSheet,
+}: EditProps) {
+  const router = useRouter();
+
+  const [name, setName] = useState(characterName);
+  const [scores, setScores] = useState<Record<AbilityKey, number>>({
+    str: sheet.str, dex: sheet.dex, con: sheet.con, int: sheet.int, wis: sheet.wis, cha: sheet.cha,
+  });
+  const [combat, setCombat] = useState({
+    hpMax: sheet.hpMax, hpCurrent: sheet.hpCurrent,
+    armorClass: sheet.armorClass, initiative: sheet.initiative,
+    speed: sheet.speed, level: sheet.level, xp: sheet.xp,
+  });
+  const [desc, setDesc] = useState<DescData>(initialDesc);
+  const [portrait, setPortrait] = useState<string | null>(initialPortrait);
+
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // ── Item picker state ────────────────────────────────────────────────────
+  const [showItemPicker, setShowItemPicker] = useState(false);
+  const [itemSearch, setItemSearch] = useState("");
+  const [itemPickerGroup, setItemPickerGroup] = useState<PickerGroup>("Tudo");
+  const [itemQty, setItemQty] = useState(1);
+  const [addingItem, setAddingItem] = useState(false);
+
+  // ── Currency state ───────────────────────────────────────────────────────
+  const [goldInput, setGoldInput] = useState("");
+  const [goldCurrency, setGoldCurrency] = useState<"gp"|"cp"|"sp"|"ep"|"pp">("gp");
+  const [showConvert, setShowConvert] = useState(false);
+  const [convertFrom, setConvertFrom] = useState<"cp"|"sp"|"ep"|"gp"|"pp">("gp");
+  const [convertTo, setConvertTo]     = useState<"cp"|"sp"|"ep"|"gp"|"pp">("cp");
+  const [convertAmt, setConvertAmt]   = useState(1);
+
+  const currencySetters: Record<string, [number, (v: number) => void]> = {
+    gp: [gp, setGp], cp: [cp, setCp], sp: [sp, setSp], ep: [ep, setEp], pp: [pp, setPp],
+  };
+
+  async function addItemByName(itemName: string, quantity: number) {
+    if (!itemName.trim() || addingItem) return;
+    setAddingItem(true);
+    try {
+      const res = await fetch(`/api/dnd/characters/${characterId}/equipment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemName: itemName.trim(), quantity }),
+      });
+      if (res.ok) {
+        const item = await res.json();
+        setEquipment([...equipment, item]);
+      }
+    } finally {
+      setAddingItem(false);
+    }
+  }
+
+  async function removeItem(id: string) {
+    await fetch(`/api/dnd/characters/${characterId}/equipment/${id}`, { method: "DELETE" });
+    setEquipment(equipment.filter((e) => e.id !== id));
+  }
+
+  async function toggleEquipped(item: SheetRow["equipment"][number]) {
+    const updated = { ...item, equipped: !item.equipped };
+    await fetch(`/api/dnd/characters/${characterId}/equipment/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ equipped: updated.equipped }),
+    });
+    setEquipment(equipment.map((e) => e.id === item.id ? updated : e));
+  }
+
+  function adjustCurrency() {
+    const amount = parseInt(goldInput) || 0;
+    if (amount === 0) return;
+    const [current, setter] = currencySetters[goldCurrency];
+    const newVal = Math.max(0, current + amount);
+    setter(newVal);
+    patchSheet({ [goldCurrency]: newVal });
+    setGoldInput("");
+  }
+
+  function convertCurrency() {
+    const [fromCurrent, fromSetter] = currencySetters[convertFrom];
+    if (fromCurrent < convertAmt) return;
+    const cpTotal = convertAmt * CP_VALUE[convertFrom];
+    const toAmt = Math.floor(cpTotal / CP_VALUE[convertTo]);
+    if (toAmt === 0) return;
+    const [toCurrent, toSetter] = currencySetters[convertTo];
+    const newFrom = fromCurrent - convertAmt;
+    const newTo = toCurrent + toAmt;
+    fromSetter(newFrom);
+    toSetter(newTo);
+    patchSheet({ [convertFrom]: newFrom, [convertTo]: newTo });
+  }
+
+  const filteredItems = ALL_PHB_ITEMS.filter((item) => {
+    const matchGroup = itemPickerGroup === "Tudo" || item.group === itemPickerGroup;
+    const matchSearch = itemSearch === "" || item.name.toLowerCase().includes(itemSearch.toLowerCase());
+    return matchGroup && matchSearch;
+  });
+
+  function setScore(k: AbilityKey, v: number) {
+    setScores((s) => ({ ...s, [k]: v }));
+    setSaved(false);
+  }
+  function setCombatField(k: keyof typeof combat, v: number) {
+    setCombat((c) => ({ ...c, [k]: v }));
+    setSaved(false);
+  }
+  function setDescField(k: keyof DescData, v: string) {
+    setDesc((d) => ({ ...d, [k]: v }));
+    setSaved(false);
+  }
+
+  // Redimensiona a imagem escolhida (máx. 400px) e guarda como data URL — sem
+  // depender de storage externo; cabe na coluna portraitUrl.
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onload = () => {
+        const max = 400;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, w, h);
+        setPortrait(canvas.toDataURL("image/jpeg", 0.85));
+        setSaved(false);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const sheetRes = await fetch(`/api/dnd/characters/${characterId}/sheet`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...scores, ...combat }),
+      });
+      // Preserva languages e quaisquer campos extras do notes original
+      const notes = JSON.stringify({ ...initialDesc, ...desc });
+      const charRes = await fetch(`/api/dnd/characters/${characterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, notes, portraitUrl: portrait }),
+      });
+      if (!sheetRes.ok || !charRes.ok) throw new Error("Falha ao salvar.");
+      setSaved(true);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div style={{ background: "rgba(201,148,31,0.08)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-lg)", padding: "12px 16px" }}>
+        <p style={{ fontSize: "0.78rem", color: "var(--accent-light)", fontWeight: 700, marginBottom: 2 }}>⚠️ Atenção: edição manual da ficha</p>
+        <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+          Ao salvar, as informações antigas serão substituídas pelos valores atuais desta tela. Revise com cuidado antes de confirmar, especialmente ajustes manuais, itens, bônus e recursos do personagem.
+        </p>
+      </div>
+
+      {/* Identidade + retrato */}
+      <EditSection label="Identidade">
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 110, height: 110, borderRadius: "var(--radius-lg)", border: "1px solid var(--border-accent)", background: "var(--surface-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {portrait
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={portrait} alt="Retrato" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: "0.66rem", color: "var(--text-subtle)", textAlign: "center", padding: 8 }}>Sem foto</span>}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: "none" }} />
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => fileRef.current?.click()} style={miniBtn}>Trocar foto</button>
+              {portrait && <button onClick={() => { setPortrait(null); setSaved(false); }} style={miniBtn}>Remover</button>}
+            </div>
+            <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textAlign: "center", lineHeight: 1.4, maxWidth: 130 }}>
+              Ideal: imagem quadrada (1:1), ~400×400px. Redimensionada automaticamente.
+            </p>
+          </div>
+          <div style={{ flex: 1, minWidth: 220, display: "flex", flexDirection: "column", gap: 12 }}>
+            <EditText label="Nome" value={name} onChange={(v) => { setName(v); setSaved(false); }} />
+            <div>
+              <p style={editLabelStyle}>Alinhamento</p>
+              <select
+                value={desc.alignment ?? ""}
+                onChange={(e) => setDescField("alignment", e.target.value)}
+                style={{ ...editInputStyle, cursor: "pointer" }}
+              >
+                <option value="">—</option>
+                {ALIGN_OPTIONS.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </EditSection>
+
+      {/* Atributos */}
+      <EditSection label="Atributos">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+          {ABILITIES.map((k) => (
+            <EditNumber
+              key={k}
+              label={`${ABILITY_SHORT[k]} · ${ABILITY_LABELS[k]}`}
+              value={scores[k]}
+              onChange={(v) => setScore(k, v)}
+              hint={`mod ${signed(mod(scores[k]))}`}
+            />
+          ))}
+        </div>
+      </EditSection>
+
+      {/* Combate / Progressão */}
+      <EditSection label="Combate & Progressão">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+          <EditNumber label="PV Máximo"   value={combat.hpMax}      onChange={(v) => setCombatField("hpMax", v)} />
+          <EditNumber label="PV Atual"    value={combat.hpCurrent}  onChange={(v) => setCombatField("hpCurrent", v)} />
+          <EditNumber label="Classe de Armadura" value={combat.armorClass} onChange={(v) => setCombatField("armorClass", v)} />
+          <EditNumber label="Iniciativa"  value={combat.initiative} onChange={(v) => setCombatField("initiative", v)} />
+          <EditNumber label="Velocidade"  value={combat.speed}      onChange={(v) => setCombatField("speed", v)} />
+          <EditNumber label="Nível"       value={combat.level}      onChange={(v) => setCombatField("level", v)} min={1} />
+          <EditNumber label="XP"          value={combat.xp}         onChange={(v) => setCombatField("xp", v)} />
+        </div>
+        <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 8, lineHeight: 1.5 }}>
+          Alterar o Nível aqui não concede recursos automáticos — use "Subir de Nível" para isso. Este campo é só para correções manuais.
+        </p>
+      </EditSection>
+
+      {/* Aparência */}
+      <EditSection label="Aparência Física">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+          <EditText label="Idade"  value={desc.age ?? ""}    onChange={(v) => setDescField("age", v)} />
+          <EditText label="Altura" value={desc.height ?? ""} onChange={(v) => setDescField("height", v)} />
+          <EditText label="Peso"   value={desc.weight ?? ""} onChange={(v) => setDescField("weight", v)} />
+          <EditText label="Olhos"  value={desc.eyes ?? ""}   onChange={(v) => setDescField("eyes", v)} />
+          <EditText label="Pele"   value={desc.skin ?? ""}   onChange={(v) => setDescField("skin", v)} />
+          <EditText label="Cabelo" value={desc.hair ?? ""}   onChange={(v) => setDescField("hair", v)} />
+        </div>
+      </EditSection>
+
+      {/* Personalidade */}
+      <EditSection label="Personalidade & História">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <EditArea label="Traço de Personalidade" value={desc.personalityTrait ?? ""} onChange={(v) => setDescField("personalityTrait", v)} />
+          <EditArea label="Ideal"    value={desc.ideal ?? ""} onChange={(v) => setDescField("ideal", v)} />
+          <EditArea label="Vínculo"  value={desc.bond ?? ""}  onChange={(v) => setDescField("bond", v)} />
+          <EditArea label="Fraqueza" value={desc.flaw ?? ""}  onChange={(v) => setDescField("flaw", v)} />
+          <EditArea label="História" value={desc.backstory ?? ""} onChange={(v) => setDescField("backstory", v)} rows={6} />
+        </div>
+      </EditSection>
+
+      {/* Inventário */}
+      <EditSection label="Inventário">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {equipment.length === 0 ? (
+            <p style={{ fontSize: "0.82rem", color: "var(--text-subtle)" }}>Nenhum item no inventário.</p>
+          ) : equipment.map((item) => (
+            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+              <button
+                onClick={() => toggleEquipped(item)}
+                style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${item.equipped ? "var(--accent)" : "var(--border)"}`, background: item.equipped ? "var(--accent-dim)" : "transparent", cursor: "pointer", flexShrink: 0 }}
+                title={item.equipped ? "Equipado" : "Guardado"}
+              />
+              <span style={{ flex: 1, fontSize: "0.84rem", color: "var(--text)" }}>{item.itemName}{item.quantity > 1 ? ` ×${item.quantity}` : ""}</span>
+              <button onClick={() => removeItem(item.id)} style={{ ...miniBtn, color: "#ff6b6b", borderColor: "#ff6b6b44" }}>✕</button>
+            </div>
+          ))}
+          <button
+            onClick={() => setShowItemPicker(true)}
+            style={{ padding: "8px 16px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer", fontFamily: "inherit", alignSelf: "flex-start" }}
+          >
+            + Adicionar item
+          </button>
+        </div>
+      </EditSection>
+
+      {/* Moedas */}
+      <EditSection label="Moedas">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 10 }}>
+          {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
+            const [value] = currencySetters[coin];
+            return (
+              <div key={coin} style={{ background: "var(--surface-2)", border: `1px solid ${CURRENCY_COLOR[coin]}44`, borderRadius: "var(--radius)", padding: "8px 4px", textAlign: "center" }}>
+                <p style={{ fontSize: "0.54rem", fontWeight: 700, color: CURRENCY_COLOR[coin], textTransform: "uppercase", letterSpacing: "0.05em" }}>{CURRENCY_LABEL[coin]}</p>
+                <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{value}</p>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 5, marginBottom: 4 }}>
+          <select value={goldCurrency} onChange={(e) => setGoldCurrency(e.target.value as "gp")} style={{ padding: "5px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}>
+            {(["cp","sp","ep","gp","pp"] as const).map((c) => <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>)}
+          </select>
+          <input type="number" value={goldInput} onChange={(e) => setGoldInput(e.target.value)} placeholder="±" onKeyDown={(e) => e.key === "Enter" && adjustCurrency()} style={{ width: 64, padding: "5px 6px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.82rem", fontFamily: "inherit" }} />
+          <button onClick={adjustCurrency} style={{ padding: "5px 10px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
+        </div>
+        <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", marginBottom: 6 }}>Use +N para ganhar, −N para gastar</p>
+        <button onClick={() => setShowConvert((v) => !v)} style={{ fontSize: "0.7rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", paddingLeft: 0, marginBottom: showConvert ? 8 : 0 }}>
+          {showConvert ? "▲" : "▼"} Converter moedas
+        </button>
+        {showConvert && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
+            <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>1PL=10PO · 1PO=2PE=10PP=100PC · 1PE=5PP</p>
+            <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
+              <input type="number" min={1} value={convertAmt} onChange={(e) => setConvertAmt(Math.max(1, parseInt(e.target.value) || 1))} style={{ width: 48, padding: "4px 6px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit" }} />
+              <select value={convertFrom} onChange={(e) => setConvertFrom(e.target.value as "gp")} style={{ padding: "4px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}>
+                {(["cp","sp","ep","gp","pp"] as const).map((c) => <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>)}
+              </select>
+              <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>→</span>
+              <select value={convertTo} onChange={(e) => setConvertTo(e.target.value as "cp")} style={{ padding: "4px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}>
+                {(["cp","sp","ep","gp","pp"] as const).map((c) => <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>)}
+              </select>
+            </div>
+            {convertFrom !== convertTo && (
+              <p style={{ fontSize: "0.66rem", color: "var(--text-muted)" }}>= {Math.floor((convertAmt * CP_VALUE[convertFrom]) / CP_VALUE[convertTo])} {CURRENCY_LABEL[convertTo]}</p>
+            )}
+            <button onClick={convertCurrency} disabled={convertFrom === convertTo || currencySetters[convertFrom][0] < convertAmt} style={{ padding: "5px 10px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.76rem", cursor: "pointer", fontFamily: "inherit", opacity: (convertFrom === convertTo || currencySetters[convertFrom][0] < convertAmt) ? 0.4 : 1 }}>
+              Converter
+            </button>
+          </div>
+        )}
+      </EditSection>
+
+      {/* Magias */}
+      {isCaster && (
+        <EditSection label="Magias">
+          <SpellbookPanel
+            characterId={characterId}
+            classId={classId}
+            spells={spells}
+            onSpellAdded={(spell) => setSpells([...spells, spell])}
+          />
+        </EditSection>
+      )}
+
+      {/* Save bar */}
+      <div style={{ position: "sticky", bottom: 0, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", boxShadow: "0 -4px 24px rgba(0,0,0,0.25)" }}>
+        <button
+          onClick={save}
+          disabled={saving}
+          style={{
+            padding: "10px 24px", borderRadius: "var(--radius-lg)", background: "var(--accent-dim)",
+            border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700,
+            fontSize: "0.9rem", cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit",
+            boxShadow: "0 0 16px var(--accent-glow)", opacity: saving ? 0.6 : 1,
+          }}
+        >
+          {saving ? "Salvando…" : "💾 Salvar alterações"}
+        </button>
+        {saved && <span style={{ fontSize: "0.82rem", color: "#5fbf7f", fontWeight: 700 }}>✓ Salvo</span>}
+        {error && <span style={{ fontSize: "0.82rem", color: "#ff6b6b" }}>{error}</span>}
+      </div>
+
+      {/* Item Picker Modal */}
+      {showItemPicker && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={(e) => { if (e.target === e.currentTarget) setShowItemPicker(false); }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", width: "100%", maxWidth: 680, maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
+            <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)" }}>Adicionar Item</p>
+              <button onClick={() => setShowItemPicker(false)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "1.2rem", cursor: "pointer", lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)" }}>
+              <input autoFocus value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} placeholder="Buscar item..." style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.88rem", fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {PICKER_GROUPS.map((g) => (
+                <button key={g} onClick={() => setItemPickerGroup(g)} style={{ padding: "4px 12px", borderRadius: "var(--radius)", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: itemPickerGroup === g ? "var(--accent-dim)" : "var(--surface-2)", border: `1px solid ${itemPickerGroup === g ? "var(--accent)" : "var(--border)"}`, color: itemPickerGroup === g ? "var(--accent-light)" : "var(--text-muted)" }}>{g}</button>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
+              {filteredItems.length === 0 ? (
+                <p style={{ fontSize: "0.82rem", color: "var(--text-subtle)", textAlign: "center", padding: "24px 0" }}>Nenhum item encontrado.</p>
+              ) : filteredItems.map((item) => {
+                const w = WEAPONS.find((w) => w.name === item.name);
+                const alreadyHas = equipment.some((e) => e.itemName === item.name);
+                return (
+                  <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text)" }}>{item.name}</p>
+                      <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+                        <span style={{ fontSize: "0.66rem", color: "var(--text-subtle)" }}>{item.group}</span>
+                        {item.cost && <span style={{ fontSize: "0.66rem", color: "var(--accent-light)" }}>{item.cost}</span>}
+                        {w && <span style={{ fontSize: "0.66rem", color: "var(--text-muted)" }}>{w.damage} {w.damageType}</span>}
+                        {alreadyHas && <span style={{ fontSize: "0.62rem", color: "#4fc3f7" }}>✓ no inventário</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                      <button onClick={() => setItemQty(Math.max(1, itemQty - 1))} style={smallBtn}>−</button>
+                      <span style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)", minWidth: 20, textAlign: "center" }}>{itemQty}</span>
+                      <button onClick={() => setItemQty(itemQty + 1)} style={smallBtn}>+</button>
+                      <button disabled={addingItem} onClick={async () => { await addItemByName(item.name, itemQty); setItemQty(1); }} style={{ padding: "5px 12px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.76rem", cursor: addingItem ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: addingItem ? 0.6 : 1 }}>+ Add</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const editLabelStyle: React.CSSProperties = {
+  fontSize: "0.66rem", fontWeight: 700, color: "var(--text-muted)",
+  textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5,
+};
+const editInputStyle: React.CSSProperties = {
+  width: "100%", background: "var(--surface-2)", border: "1px solid var(--border)",
+  borderRadius: "var(--radius)", padding: "8px 12px", color: "var(--text)",
+  fontSize: "0.86rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box",
+};
+const miniBtn: React.CSSProperties = {
+  padding: "5px 10px", borderRadius: "var(--radius)", background: "var(--surface-2)",
+  border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.72rem",
+  cursor: "pointer", fontFamily: "inherit",
+};
+
+function EditSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function EditNumber({ label, value, onChange, hint, min }: { label: string; value: number; onChange: (v: number) => void; hint?: string; min?: number }) {
+  const clamp = (v: number) => (min != null ? Math.max(min, v) : v);
+  return (
+    <div>
+      <p style={editLabelStyle}>{label}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <button onClick={() => onChange(clamp(value - 1))} style={smallBtn}>−</button>
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(clamp(parseInt(e.target.value) || 0))}
+          style={{ ...editInputStyle, textAlign: "center", padding: "8px 4px", fontWeight: 700 }}
+        />
+        <button onClick={() => onChange(clamp(value + 1))} style={smallBtn}>+</button>
+      </div>
+      {hint && <p style={{ fontSize: "0.64rem", color: "var(--text-subtle)", marginTop: 3, textAlign: "center" }}>{hint}</p>}
+    </div>
+  );
+}
+
+function EditText({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <p style={editLabelStyle}>{label}</p>
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} style={editInputStyle} />
+    </div>
+  );
+}
+
+function EditArea({ label, value, onChange, rows = 2 }: { label: string; value: string; onChange: (v: string) => void; rows?: number }) {
+  return (
+    <div>
+      <p style={editLabelStyle}>{label}</p>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows} style={{ ...editInputStyle, lineHeight: 1.6, resize: "vertical" }} />
     </div>
   );
 }
@@ -611,8 +1251,6 @@ function PlayMode({
   const rollId = useRef(0);
 
   // HP panel state
-  const [hpInput, setHpInput] = useState("");
-  const [hpMode, setHpMode] = useState<"none" | "damage" | "heal" | "temp">("none");
   const [confirmRestore, setConfirmRestore] = useState(false);
 
   // Restaura a ficha por completo: PV no máximo, dados de vida, espaços de
@@ -949,89 +1587,38 @@ function PlayMode({
           </div>
         </div>
 
-        {/* HP actions */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {(["damage", "heal", "temp"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setHpMode(hpMode === m ? "none" : m)}
-              style={{
-                padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                background: hpMode === m ? (m === "damage" ? "rgba(139,0,0,0.3)" : m === "heal" ? "rgba(45,139,45,0.3)" : "rgba(79,195,247,0.2)") : "var(--surface-2)",
-                border: `1px solid ${hpMode === m ? (m === "damage" ? "#8b0000" : m === "heal" ? "#2d8b2d" : "#4fc3f7") : "var(--border)"}`,
-                color: hpMode === m ? (m === "damage" ? "#ff6b6b" : m === "heal" ? "#6bff6b" : "#4fc3f7") : "var(--text-muted)",
-              }}
-            >
-              {m === "damage" ? "⚔️ Dano" : m === "heal" ? "💚 Curar" : "🔷 PV Temp"}
-            </button>
-          ))}
+        {/* HP arrows (Ordem-style) */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {/* Main HP −/+ */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={() => applyDamage(1)} style={dndVBtn}>−</button>
+            <button onClick={() => applyHeal(1)} style={dndVBtn}>+</button>
+          </div>
 
-          {/* Restaurar tudo: PV, dados de vida, espaços de magia */}
+          <div style={{ width: 1, height: 28, background: "var(--border)", flexShrink: 0 }} />
+
+          {/* Temp HP */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--text-subtle)", letterSpacing: "0.04em", textTransform: "uppercase" }}>Temp</span>
+            <button onClick={() => { const v = Math.max(0, hpTemp - 1); setHpTemp(v); patchSheet({ hpTemp: v }); }} style={dndVBtnTemp}>−</button>
+            <span style={{ minWidth: 22, textAlign: "center", fontSize: "0.9rem", fontWeight: 800, color: hpTemp > 0 ? "#4fc3f7" : "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>{hpTemp}</span>
+            <button onClick={() => { const v = hpTemp + 1; setHpTemp(v); patchSheet({ hpTemp: v }); }} style={dndVBtnTemp}>+</button>
+          </div>
+
+          <div style={{ width: 1, height: 28, background: "var(--border)", flexShrink: 0 }} />
+
+          {/* Restaurar */}
           {confirmRestore ? (
             <>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", alignSelf: "center" }}>Restaurar tudo?</span>
-              <button
-                onClick={restoreSheet}
-                style={{
-                  padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                  background: "rgba(95,191,127,0.25)", border: "1px solid #5fbf7f", color: "#5fbf7f",
-                }}
-              >Sim</button>
-              <button
-                onClick={() => setConfirmRestore(false)}
-                style={{
-                  padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                  background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)",
-                }}
-              >Não</button>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Restaurar tudo?</span>
+              <button onClick={restoreSheet} style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "rgba(95,191,127,0.25)", border: "1px solid #5fbf7f", color: "#5fbf7f" }}>Sim</button>
+              <button onClick={() => setConfirmRestore(false)} style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>Não</button>
             </>
           ) : (
-            <button
-              onClick={() => setConfirmRestore(true)}
-              title="Restaura PV, dados de vida e espaços de magia ao máximo"
-              style={{
-                padding: "6px 14px", borderRadius: "var(--radius)", fontSize: "0.8rem", fontWeight: 700,
-                cursor: "pointer", fontFamily: "inherit",
-                background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)",
-                transition: "all 0.15s",
-              }}
-            >
+            <button onClick={() => setConfirmRestore(true)} title="Restaura PV, dados de vida e espaços de magia ao máximo"
+              style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
               ✨ Restaurar Ficha
             </button>
-          )}
-
-          {hpMode !== "none" && (
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <input
-                type="number"
-                value={hpInput}
-                onChange={(e) => setHpInput(e.target.value)}
-                placeholder="0"
-                min="0"
-                style={{ width: 64, padding: "6px 10px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.9rem", fontFamily: "inherit" }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const v = parseInt(hpInput) || 0;
-                    if (hpMode === "damage") applyDamage(v);
-                    else if (hpMode === "heal") applyHeal(v);
-                    else { setHpTemp(v); patchSheet({ hpTemp: v }); }
-                    setHpInput(""); setHpMode("none");
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  const v = parseInt(hpInput) || 0;
-                  if (hpMode === "damage") applyDamage(v);
-                  else if (hpMode === "heal") applyHeal(v);
-                  else { setHpTemp(v); patchSheet({ hpTemp: v }); }
-                  setHpInput(""); setHpMode("none");
-                }}
-                style={{ padding: "6px 12px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}
-              >
-                OK
-              </button>
-            </div>
           )}
         </div>
 

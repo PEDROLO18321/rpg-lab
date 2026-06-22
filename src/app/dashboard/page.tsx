@@ -4,9 +4,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import dndImg       from "@/assets/systems/D&D.png";
-import tormentaImg  from "@/assets/systems/Tormenta.png";
-import cthulhuImg   from "@/assets/systems/CallofCthulhu.png";
+import dndImg           from "@/assets/systems/D&D.png";
+import tormentaImg      from "@/assets/systems/Tormenta.png";
+import cthulhuImg       from "@/assets/systems/CallofCthulhu.png";
+import ordemImg         from "@/assets/systems/OrdemParanormal.png";
 
 const SYSTEMS = [
   {
@@ -25,21 +26,6 @@ const SYSTEMS = [
     badgeLabel: "Disponível",
   },
   {
-    id: "tormenta",
-    name: "Tormenta 20",
-    edition: "Edição 2020",
-    description:
-      "O RPG nacional de maior sucesso. Fantasia épica com sabor brasileiro, magia, deuses e o caos da Tormenta.",
-    image: tormentaImg,
-    status: "planned" as const,
-    href: null,
-    accentColor: "#a01818",
-    accentGlow: "rgba(160,24,24,0.2)",
-    borderAccent: "rgba(160,24,24,0.38)",
-    badgeCls: "badge badge-planned",
-    badgeLabel: "Planejado",
-  },
-  {
     id: "cthulhu",
     name: "Call of Cthulhu",
     edition: "7ª Edição",
@@ -53,6 +39,36 @@ const SYSTEMS = [
     borderAccent: "rgba(107,122,58,0.38)",
     badgeCls: "badge badge-available",
     badgeLabel: "Disponível",
+  },
+  {
+    id: "ordem",
+    name: "Ordem Paranormal",
+    edition: "Versão 1.3",
+    description:
+      "Agentes enfrentam o Outro Lado numa narrativa de horror e mistério. Sistema de sanidade, traumas e poderes paranormais.",
+    image: ordemImg,
+    status: "available" as const,
+    href: "/dashboard/ordem",
+    accentColor: "#ffffff",
+    accentGlow: "rgba(255,255,255,0.2)",
+    borderAccent: "rgba(255,255,255,0.38)",
+    badgeCls: "badge badge-available",
+    badgeLabel: "Disponível",
+  },
+  {
+    id: "tormenta",
+    name: "Tormenta 20",
+    edition: "Edição 2020",
+    description:
+      "O RPG nacional de maior sucesso. Fantasia épica com sabor brasileiro, magia, deuses e o caos da Tormenta.",
+    image: tormentaImg,
+    status: "planned" as const,
+    href: null,
+    accentColor: "#a01818",
+    accentGlow: "rgba(160,24,24,0.2)",
+    borderAccent: "rgba(160,24,24,0.38)",
+    badgeCls: "badge badge-planned",
+    badgeLabel: "Planejado",
   },
 ];
 

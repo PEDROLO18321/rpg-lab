@@ -2,8 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
+
+import dndImg      from "@/assets/systems/D&D.png";
+import cthulhuImg  from "@/assets/systems/CallofCthulhu.png";
+import ordemImg    from "@/assets/systems/OrdemParanormal.png";
+import tormentaImg from "@/assets/systems/Tormenta.png";
 
 // ── Data pools ────────────────────────────────────────────────────────────────
 
@@ -53,12 +59,12 @@ const QUESTS = [
 ];
 
 const FEATURES = [
-  { title:"Mecânicas Automáticas",  desc:"Modificadores, proficiências e bônus calculados em tempo real. Zero cálculo manual."          },
-  { title:"D&D 5e Completo",        desc:"12 classes, 9 raças, subclasses, magias, antecedentes e ficha interativa de jogo."            },
-  { title:"Compartilhamento",       desc:"Gere um link único para sua ficha e compartilhe com o mestre ou grupo na hora."               },
-  { title:"Salvo na Nuvem",         desc:"Seus dados sincronizados e seguros. Acesse de qualquer dispositivo sem perder nada."          },
-  { title:"Modo de Jogo",           desc:"Ficha interativa com rolagem de dados, controle de HP, condições e espaços de magia."         },
-  { title:"Multi-sistema",          desc:"D&D 5e disponível agora. Call of Cthulhu e Tormenta 20 chegando em breve."                   },
+  { title:"Mecânicas Automáticas",  desc:"Modificadores, proficiências e bônus calculados em tempo real. Zero cálculo manual — para qualquer sistema."  },
+  { title:"Fichas Completas",       desc:"D&D 5e, Call of Cthulhu e mais. Cada sistema com suas mecânicas, atributos e regras próprias, fielmente implementadas." },
+  { title:"Compartilhamento",       desc:"Gere um link único para sua ficha e compartilhe com o mestre ou grupo na hora."                               },
+  { title:"Salvo na Nuvem",         desc:"Seus dados sincronizados e seguros. Acesse de qualquer dispositivo sem perder nada."                          },
+  { title:"Modo de Jogo",           desc:"Fichas interativas com rolagem de dados, controle de recursos e rastreamento de status em tempo real."         },
+  { title:"Multi-sistema",          desc:"D&D 5e e Call of Cthulhu disponíveis. Ordem Paranormal em desenvolvimento."                                  },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -166,6 +172,7 @@ export function HomeClient({ session }: Props) {
       </section>
 
       {isAuthed && <QuestBoard />}
+      {isAuthed && <SystemsShowcase />}
 
       {!isAuthed && (
         <>
@@ -255,7 +262,7 @@ function PublicContent({ classText, classVisible }: { classText: string; classVi
   return (
     <>
       <div className="anim-fade-up" style={{ animationDelay:"0.05s", display:"inline-flex", alignItems:"center", gap:8, padding:"6px 16px", background:"var(--accent-dim)", border:"1px solid var(--border-accent)", borderRadius:"var(--radius-full)", alignSelf:"flex-start", marginBottom:28 }}>
-        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>D&amp;D 5e · Call of Cthulhu · Tormenta 20</span>
+        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>D&amp;D 5e · Call of Cthulhu · Ordem Paranormal em breve</span>
       </div>
 
       <h1 className="anim-fade-up" style={{ animationDelay:"0.12s", fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(2.4rem,4.8vw,4rem)", fontWeight:700, lineHeight:1.08, letterSpacing:"-0.01em", color:"var(--text)", marginBottom:20 }}>
@@ -424,6 +431,67 @@ function QuestBoard() {
   );
 }
 
+// ── Systems Showcase (authed) ─────────────────────────────────────────────────
+
+const SHOWCASE_SYSTEMS = [
+  { id:"dnd",      name:"Dungeons & Dragons", label:"D&D 5e",            image:dndImg,      color:"#c9941f", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
+  { id:"cthulhu",  name:"Call of Cthulhu",   label:"CoC 7ª Ed.",        image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
+  { id:"ordem",    name:"Ordem Paranormal",   label:"OP RPG",            image:ordemImg,    color:"#b0b8c8", dot:"#b0b8c8", statusLabel:"Em desenvolvimento", available:false },
+  { id:"tormenta", name:"Tormenta 20",        label:"T20",               image:tormentaImg, color:"#a01818", dot:"#6b7280", statusLabel:"Planejado",          available:false },
+];
+
+function SystemsShowcase() {
+  return (
+    <section style={{ maxWidth:1060, margin:"0 auto", padding:"0 28px 100px" }}>
+      {/* Header divider */}
+      <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:28 }}>
+        <div style={{ flex:1, height:1, background:"linear-gradient(to right, transparent, var(--border))" }} />
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 20px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-full)" }}>
+          <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.78rem", fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.1em", textTransform:"uppercase" }}>Sistemas</span>
+        </div>
+        <div style={{ flex:1, height:1, background:"linear-gradient(to left, transparent, var(--border))" }} />
+      </div>
+
+      {/* Cards grid */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:16 }}>
+        {SHOWCASE_SYSTEMS.map((s) => (
+          <Link key={s.id} href={`/system/${s.id}`} style={{ textDecoration:"none" }}>
+            <div
+              style={{ display:"flex", flexDirection:"column", borderRadius:"var(--radius-xl)", overflow:"hidden", background:"var(--surface)", border:"1px solid var(--border)", transition:"border-color 0.2s, transform 0.2s, box-shadow 0.2s" }}
+              onMouseEnter={(e) => { const el=e.currentTarget; el.style.borderColor=s.color+"66"; el.style.transform="translateY(-3px)"; el.style.boxShadow=`0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px ${s.color}33`; }}
+              onMouseLeave={(e) => { const el=e.currentTarget; el.style.borderColor="var(--border)"; el.style.transform="translateY(0)"; el.style.boxShadow="none"; }}
+            >
+              {/* Image */}
+              <div style={{ position:"relative", width:"100%", height:200, borderRadius:"var(--radius-xl) var(--radius-xl) 0 0", overflow:"hidden" }}>
+                <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover", objectPosition:"center top", filter: s.available ? "none" : "grayscale(40%) brightness(0.7)" }} sizes="280px" />
+                <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(7,9,15,0.05) 0%, rgba(7,9,15,0.65) 100%)" }} />
+                <div style={{ position:"absolute", bottom:10, left:12 }}>
+                  <span style={{ fontSize:"0.6rem", fontWeight:700, color: s.available ? "#4ade80" : "var(--text-subtle)", letterSpacing:"0.08em", textTransform:"uppercase", background:"rgba(7,9,15,0.7)", padding:"3px 8px", borderRadius:"var(--radius-full)", border:`1px solid ${s.available ? "#4ade8033" : "var(--border)"}` }}>
+                    {s.statusLabel}
+                  </span>
+                </div>
+              </div>
+
+              {/* Info */}
+              <div style={{ padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <div>
+                  <p style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.82rem", fontWeight:700, color:"var(--text)", margin:0, marginBottom:2 }}>{s.name}</p>
+                  <p style={{ fontSize:"0.7rem", color:"var(--text-subtle)", margin:0 }}>{s.label}</p>
+                </div>
+                <span style={{ fontSize:"0.85rem", color: s.available ? s.color : "var(--text-subtle)" }}>→</span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      <p style={{ textAlign:"center", fontSize:"0.72rem", color:"var(--text-subtle)", marginTop:24, fontStyle:"italic" }}>
+        Clique em qualquer sistema para conhecer seu universo e mecânicas.
+      </p>
+    </section>
+  );
+}
+
 function QuestCard({ quest }: { quest: typeof QUESTS[number] }) {
   const [hovered, setHovered] = useState(false);
   const diffStars = Array.from({ length: 3 }, (_, i) => i < quest.diff);
@@ -482,21 +550,57 @@ function QuestCard({ quest }: { quest: typeof QUESTS[number] }) {
 
 // ── Stats strip ───────────────────────────────────────────────────────────────
 
+const STRIP_SYSTEMS = [
+  { id:"dnd",      name:"D&D 5e",           image:dndImg,      color:"#c9941f", dot:"#4ade80", statusLabel:"Disponível"         },
+  { id:"cthulhu",  name:"Call of Cthulhu",  image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível"         },
+  { id:"ordem",    name:"Ordem Paranormal", image:ordemImg,    color:"#b0b8c8", dot:"#b0b8c8", statusLabel:"Em desenvolvimento" },
+  { id:"tormenta", name:"Tormenta 20",      image:tormentaImg, color:"#a01818", dot:"#6b7280", statusLabel:"Planejado"          },
+];
+
 function StatsStrip() {
-  const stats = [
-    { value:"12", label:"Classes D&D 5e"   },
-    { value:"9",  label:"Raças disponíveis" },
-    { value:"∞",  label:"Personagens"       },
-    { value:"0",  label:"Reais por mês"     },
-  ];
   return (
-    <div style={{ borderTop:"1px solid var(--border)", borderBottom:"1px solid var(--border)", background:"var(--surface)", padding:"32px 28px" }}>
-      <div style={{ maxWidth:1000, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:24 }}>
-        {stats.map((s) => (
-          <div key={s.label} style={{ textAlign:"center" }}>
-            <p style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"2rem", fontWeight:700, color:"var(--accent-light)", lineHeight:1 }}>{s.value}</p>
-            <p style={{ fontSize:"0.76rem", color:"var(--text-muted)", marginTop:6 }}>{s.label}</p>
-          </div>
+    <div style={{ padding:"48px 28px 20px" }}>
+      <div style={{ maxWidth:920, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:20 }}>
+        {STRIP_SYSTEMS.map((s) => (
+          <Link key={s.id} href={`/system/${s.id}`} style={{ textDecoration:"none" }}>
+            <div
+              style={{
+                display:"flex", alignItems:"center", gap:24,
+                padding:"18px 28px 18px 18px",
+                background:"var(--surface)",
+                border:"1px solid var(--border)",
+                borderRadius:"var(--radius-xl)",
+                cursor:"pointer",
+                transition:"border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.style.borderColor = s.color + "66";
+                el.style.transform = "translateY(-3px)";
+                el.style.boxShadow = `0 10px 28px rgba(0,0,0,0.45), 0 0 0 1px ${s.color}33`;
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                el.style.borderColor = "var(--border)";
+                el.style.transform = "translateY(0)";
+                el.style.boxShadow = "none";
+              }}
+            >
+              <div style={{ width:126, height:126, borderRadius:"var(--radius-lg)", overflow:"hidden", flexShrink:0, position:"relative" }}>
+                <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover" }} sizes="126px" />
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, flex:1, minWidth:0 }}>
+                <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"1.1rem", fontWeight:700, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                  {s.name}
+                </span>
+                <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:s.dot, flexShrink:0 }} />
+                  <span style={{ fontSize:"0.82rem", fontWeight:700, color:s.dot }}>{s.statusLabel}</span>
+                </div>
+              </div>
+              <span style={{ fontSize:"0.9rem", color:"var(--text-subtle)", flexShrink:0 }}>→</span>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -507,7 +611,7 @@ function StatsStrip() {
 
 function FeaturesSection() {
   return (
-    <section id="features" style={{ padding:"100px 28px" }}>
+    <section id="features" style={{ padding:"48px 28px 20px" }}>
       <div style={{ maxWidth:1060, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:56 }}>
           <p className="section-label" style={{ marginBottom:12 }}>Recursos</p>
@@ -538,13 +642,13 @@ function FeaturesSection() {
 
 function SystemsSection() {
   const systems = [
-    { name:"D&D 5e",          status:"Disponível", statusColor:"#4ade80"             },
-    { name:"Call of Cthulhu", status:"Em breve",   statusColor:"var(--accent-light)" },
-    { name:"Tormenta 20",     status:"Em breve",   statusColor:"var(--accent-light)" },
-    { name:"Pathfinder 2e",   status:"Planejado",  statusColor:"var(--text-subtle)"  },
+    { name:"D&D 5e",              status:"Disponível",       statusColor:"#4ade80"             },
+    { name:"Call of Cthulhu",     status:"Disponível",       statusColor:"#4ade80"             },
+    { name:"Ordem Paranormal",    status:"Em desenvolvimento",statusColor:"#b0b8c8"             },
+    { name:"Tormenta 20",         status:"Planejado",        statusColor:"var(--text-subtle)"  },
   ];
   return (
-    <section id="systems" style={{ padding:"80px 28px", background:"var(--bg-alt)" }}>
+    <section id="systems" style={{ padding:"48px 28px 20px" }}>
       <div style={{ maxWidth:900, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:48 }}>
           <p className="section-label" style={{ marginBottom:12 }}>Sistemas</p>
@@ -567,7 +671,7 @@ function SystemsSection() {
 
 function CtaSection() {
   return (
-    <section style={{ padding:"100px 28px" }}>
+    <section style={{ padding:"48px 28px 80px" }}>
       <div style={{ maxWidth:640, margin:"0 auto", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
         <p className="section-label">Comece agora</p>
         <h2 style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(1.8rem,3.5vw,2.8rem)", fontWeight:700, color:"var(--text)", lineHeight:1.15 }}>
@@ -700,7 +804,7 @@ function SiteFooter({ isAuthed }: { isAuthed: boolean }) {
     <footer style={{ borderTop:"1px solid var(--border)", padding:"36px 28px" }}>
       <div style={{ maxWidth:1160, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
         <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.82rem", fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.06em" }}>RPG Lab</span>
-        <p style={{ fontSize:"0.74rem", color:"var(--text-subtle)" }}>Laboratório de fichas de RPG · D&amp;D 5e · {new Date().getFullYear()}</p>
+        <p style={{ fontSize:"0.74rem", color:"var(--text-subtle)" }}>Laboratório de fichas de RPG · D&amp;D 5e · Call of Cthulhu · {new Date().getFullYear()}</p>
         {!isAuthed && (
           <div style={{ display:"flex", gap:20 }}>
             <Link href="/login"    style={{ fontSize:"0.76rem", color:"var(--text-subtle)", textDecoration:"none" }}>Entrar</Link>

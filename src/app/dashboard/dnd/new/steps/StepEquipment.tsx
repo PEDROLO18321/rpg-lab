@@ -42,7 +42,7 @@ export function StepEquipment({ classId, backgroundId, equipmentChoices, onChang
           Equipamento <span className="text-gold">Inicial</span>
         </h2>
         <p style={{ marginTop: 8, fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Selecione o equipamento de partida. Moedas incluídas aparecem automaticamente na ficha.
+          Selecione o equipamento de partida. Todas as escolhas são <span style={{ color: "var(--accent-light)", fontWeight: 700 }}>obrigatórias</span> para avançar. Moedas incluídas aparecem automaticamente na ficha.
         </p>
       </div>
 

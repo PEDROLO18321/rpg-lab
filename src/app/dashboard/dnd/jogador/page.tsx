@@ -102,6 +102,7 @@ export default async function DndJogadorPage() {
                   race={sheet?.race ?? null}
                   className={firstClass?.className ?? null}
                   level={firstClass?.level ?? sheet?.level ?? 1}
+                  portraitUrl={char.portraitUrl}
                 />
               );
             })}

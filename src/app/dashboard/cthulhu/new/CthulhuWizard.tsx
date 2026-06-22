@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { OCCUPATIONS } from "@/lib/cthulhu/data";
+import { OCCUPATIONS, calcOccupationPoints } from "@/lib/cthulhu/data";
 import type { CthulhuAttrs } from "@/lib/cthulhu/data";
 import { StepAttrs }      from "./steps/StepAttrs";
 import { StepSkills }     from "./steps/StepSkills";
@@ -71,11 +71,18 @@ export function CthulhuWizard({ userId, systemId }: Props) {
   const canAdvance = useMemo(() => {
     if (step === 0) return !!data.name?.trim() && !!data.attrs && (data.age ?? 0) >= 15;
     if (step === 1) {
-      if (!data.occupationId) return false;
-      const occ    = OCCUPATIONS.find((o) => o.id === data.occupationId);
+      if (!data.occupationId || !data.attrs) return false;
+      const occ = OCCUPATIONS.find((o) => o.id === data.occupationId);
       if (!occ) return false;
       const credit = data.occupationSkills?.nivel_credito ?? 0;
-      return credit >= occ.creditRange[0] && credit <= occ.creditRange[1];
+      if (credit < occ.creditRange[0] || credit > occ.creditRange[1]) return false;
+      const totalOcc = calcOccupationPoints(occ.formula, data.attrs);
+      const usedOcc  = Object.values(data.occupationSkills ?? {}).reduce((a, b) => a + b, 0);
+      if (usedOcc < totalOcc) return false;
+      const totalInt = data.attrs.int * 2;
+      const usedInt  = Object.values(data.interestSkills ?? {}).reduce((a, b) => a + b, 0);
+      if (usedInt < totalInt) return false;
+      return true;
     }
     return true;
   }, [step, data]);

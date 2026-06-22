@@ -6,7 +6,7 @@ const FEATURES = [
   {
     icon: "🎲",
     title: "Multi-sistema",
-    desc: "D&D 5e, Call of Cthulhu, Tormenta 20 e mais. Cada sistema com suas regras implementadas corretamente.",
+    desc: "D&D 5e e Call of Cthulhu disponíveis. Ordem Paranormal em desenvolvimento. Mais sistemas chegando.",
   },
   {
     icon: "⚙️",

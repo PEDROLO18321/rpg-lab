@@ -14,6 +14,7 @@ function detectSystem(pathname: string): ParticleSystem {
   if (pathname.startsWith("/dashboard/dnd"))      return "dnd";
   if (pathname.startsWith("/dashboard/tormenta")) return "tormenta";
   if (pathname.startsWith("/dashboard/cthulhu"))  return "cthulhu";
+  if (pathname.startsWith("/dashboard/ordem"))    return "ordem";
   return null;
 }
 

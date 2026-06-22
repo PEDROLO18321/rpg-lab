@@ -78,6 +78,19 @@ const RACE_IMAGES: Record<string, StaticImageData> = {
   "tiefling":  imgTiefling,
 };
 
+// Idade adulta e longevidade por raça (Livro do Jogador, seção "Idade" de cada raça)
+const RACE_AGE: Record<string, { maturity: string; lifespan: string }> = {
+  "anao":      { maturity: "~50 anos",              lifespan: "~350 anos" },
+  "elfo":      { maturity: "~100 anos",             lifespan: "até 750 anos" },
+  "halfling":  { maturity: "20 anos",               lifespan: "até 150 anos" },
+  "humano":    { maturity: "fim da adolescência",   lifespan: "menos de um século" },
+  "draconato": { maturity: "15 anos",               lifespan: "até 80 anos" },
+  "gnomo":     { maturity: "~40 anos",              lifespan: "350 a 500 anos" },
+  "meio-elfo": { maturity: "~20 anos",              lifespan: "até ~180 anos" },
+  "meio-orc":  { maturity: "14 anos",               lifespan: "raramente mais de 75 anos" },
+  "tiefling":  { maturity: "fim da adolescência",   lifespan: "um pouco mais que humanos" },
+};
+
 interface Props {
   selected:              string | null;
   selectedSubrace:       string | null;
@@ -275,6 +288,12 @@ export function StepRace({ selected, selectedSubrace, charName, racialAbilityBon
               ))}
             <StatChip label="Deslocamento" value={`${race.speed}m`} />
             <StatChip label="Tamanho" value={race.size} />
+            {RACE_AGE[race.id] && (
+              <>
+                <StatChip label="Idade adulta" value={RACE_AGE[race.id].maturity} />
+                <StatChip label="Longevidade"  value={RACE_AGE[race.id].lifespan} />
+              </>
+            )}
           </div>
 
           {/* Traits */}

@@ -25,7 +25,7 @@ export async function PATCH(
     "inspiration", "conditions", "spellSlotsUsed",
     "gp", "cp", "sp", "ep", "pp",
     "str", "dex", "con", "int", "wis", "cha",
-    "armorClass", "speed", "hpMax", "xp", "level",
+    "armorClass", "initiative", "speed", "hpMax", "xp", "level",
     "spellAbility",
   ] as const;
 

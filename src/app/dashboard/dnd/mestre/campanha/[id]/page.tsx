@@ -10,11 +10,34 @@ import { NpcCreator } from "./NpcCreator";
 import { InitiativeTracker } from "./InitiativeTracker";
 import { SessionNotes } from "./SessionNotes";
 import { Bestiary } from "./Bestiary";
+import { CampaignStory } from "./CampaignStory";
+import { CampaignItems } from "./CampaignItems";
 import { MasterDiceRoller } from "../../MasterDiceRoller";
 
-type Tab = "npc" | "initiative" | "notes" | "bestiary";
+type Tab = "story" | "items" | "npc" | "initiative" | "notes" | "bestiary";
 
 const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
+  {
+    id: "story",
+    label: "História",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+    ),
+  },
+  {
+    id: "items",
+    label: "Itens",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="21 8 21 21 3 21 3 8"/>
+        <rect x="1" y="3" width="22" height="5"/>
+        <line x1="10" y1="12" x2="14" y2="12"/>
+      </svg>
+    ),
+  },
   {
     id: "npc",
     label: "Criador de NPC",
@@ -62,7 +85,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   const { data: session, status } = useSession();
   const router = useRouter();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [tab, setTab] = useState<Tab>("npc");
+  const [tab, setTab] = useState<Tab>("story");
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -175,6 +198,8 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         </div>
 
         {/* Tab content */}
+        {tab === "story" && <CampaignStory campaign={c} onChange={update} />}
+        {tab === "items" && <CampaignItems campaign={c} onChange={update} />}
         {tab === "npc" && <NpcCreator campaign={c} onChange={update} />}
         {tab === "initiative" && <InitiativeTracker campaign={c} onChange={update} />}
         {tab === "notes" && <SessionNotes campaign={c} onChange={update} />}

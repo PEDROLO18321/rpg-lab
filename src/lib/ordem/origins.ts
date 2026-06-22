@@ -1,0 +1,228 @@
+// ─── ORDEM PARANORMAL — Origens (Tabela 1.1) ─────────────────────────────────
+// Cada origem concede 2 perícias treinadas + um poder da origem.
+
+export interface Origin {
+  id: string;
+  name: string;
+  skills: string[]; // ids de perícia; vazio + chooseAny quando "à escolha do mestre"
+  chooseAny?: number; // nº de perícias livres a escolher (Amnésico)
+  powerName: string;
+  powerDesc: string;
+  description: string;
+}
+
+export const ORIGINS: Origin[] = [
+  {
+    id: "academico",
+    name: "Acadêmico",
+    skills: ["ciencias", "investigacao"],
+    powerName: "Saber é Poder",
+    powerDesc: "Quando faz um teste usando Intelecto, pode gastar 2 PE para receber +5 nesse teste.",
+    description: "Pesquisador ou professor universitário cujos estudos tocaram em assuntos misteriosos.",
+  },
+  {
+    id: "agente-saude",
+    name: "Agente de Saúde",
+    skills: ["intuicao", "medicina"],
+    powerName: "Técnica Medicinal",
+    powerDesc: "Sempre que cura um personagem, adiciona seu Intelecto no total de PV curados.",
+    description: "Profissional da saúde treinado no atendimento e cuidado de pessoas.",
+  },
+  {
+    id: "amnesico",
+    name: "Amnésico",
+    skills: [],
+    chooseAny: 2,
+    powerName: "Vislumbres do Passado",
+    powerDesc: "Uma vez por sessão, teste de Intelecto (DT 10) para reconhecer pessoas/lugares familiares. Se passar, recebe 1d4 PE temporários.",
+    description: "Perdeu a maior parte da memória. Hoje a Ordem é a única família que conhece.",
+  },
+  {
+    id: "artista",
+    name: "Artista",
+    skills: ["artes", "enganacao"],
+    powerName: "Magnum Opus",
+    powerDesc: "Uma vez por missão, faz um personagem o reconhecer. Recebe +5 em testes de Presença contra ele.",
+    description: "Ator, músico, escritor ou influenciador com um lado mais sombrio em sua obra.",
+  },
+  {
+    id: "atleta",
+    name: "Atleta",
+    skills: ["acrobacia", "atletismo"],
+    powerName: "110%",
+    powerDesc: "Em teste de Força ou Agilidade (exceto Luta e Pontaria), pode gastar 2 PE para receber +5.",
+    description: "Competia em um esporte individual ou coletivo de alto desempenho.",
+  },
+  {
+    id: "chef",
+    name: "Chef",
+    skills: ["fortitude", "profissao"],
+    powerName: "Ingrediente Secreto",
+    powerDesc: "Em interlúdio, ao cozinhar, você e o grupo recebem o benefício de dois pratos.",
+    description: "Cozinheiro amador ou profissional. Os agentes adoram quando você vai à missão.",
+  },
+  {
+    id: "criminoso",
+    name: "Criminoso",
+    skills: ["crime", "furtividade"],
+    powerName: "O Crime Compensa",
+    powerDesc: "No fim de uma missão, escolha um item encontrado. Na próxima, pode incluí-lo sem contar no limite de itens.",
+    description: "Vivia fora da lei. A Ordem preferiu recrutar seus talentos a tê-lo como estorvo.",
+  },
+  {
+    id: "cultista-arrependido",
+    name: "Cultista Arrependido",
+    skills: ["ocultismo", "religiao"],
+    powerName: "Traços do Outro Lado",
+    powerDesc: "Possui um poder paranormal à escolha. Porém, começa o jogo com metade da Sanidade normal da sua classe.",
+    description: "Fez parte de um culto paranormal. Algo abriu seus olhos e agora luta pelo lado certo.",
+  },
+  {
+    id: "desgarrado",
+    name: "Desgarrado",
+    skills: ["fortitude", "sobrevivencia"],
+    powerName: "Calejado",
+    powerDesc: "Recebe +1 PV para cada 5% de NEX.",
+    description: "Vivia fora das normas da sociedade — eremita, em situação de rua, ou fora da rotina.",
+  },
+  {
+    id: "engenheiro",
+    name: "Engenheiro",
+    skills: ["profissao", "tecnologia"],
+    powerName: "Ferramenta Favorita",
+    powerDesc: "Um item à escolha (exceto armas) conta como uma categoria abaixo para você.",
+    description: "Põe a mão na massa, seja como engenheiro profissional ou inventor de garagem.",
+  },
+  {
+    id: "executivo",
+    name: "Executivo",
+    skills: ["diplomacia", "profissao"],
+    powerName: "Processo Otimizado",
+    powerDesc: "Em teste de perícia durante teste estendido ou ao revisar documentos, pode pagar 2 PE para receber +5.",
+    description: "Trabalho de escritório em grande empresa, até descobrir algo que não devia.",
+  },
+  {
+    id: "investigador",
+    name: "Investigador",
+    skills: ["investigacao", "percepcao"],
+    powerName: "Faro para Pistas",
+    powerDesc: "Uma vez por cena, ao procurar pistas, pode gastar 1 PE para receber +5 nesse teste.",
+    description: "Investigador do governo ou privado, perito em resolver mistérios.",
+  },
+  {
+    id: "lutador",
+    name: "Lutador",
+    skills: ["luta", "reflexos"],
+    powerName: "Mão Pesada",
+    powerDesc: "Recebe +2 em rolagens de dano com ataques corpo a corpo.",
+    description: "Pratica arte marcial ou esporte de luta — ou cresceu na briga de rua.",
+  },
+  {
+    id: "magnata",
+    name: "Magnata",
+    skills: ["diplomacia", "pilotagem"],
+    powerName: "Patrocinador da Ordem",
+    powerDesc: "Seu limite de crédito é sempre considerado um acima do atual.",
+    description: "Possui muito dinheiro ou patrimônio e decidiu usá-lo para uma causa maior.",
+  },
+  {
+    id: "mercenario",
+    name: "Mercenário",
+    skills: ["iniciativa", "intimidacao"],
+    powerName: "Posição de Combate",
+    powerDesc: "No primeiro turno de cada cena de ação, pode gastar 2 PE para receber uma ação de movimento adicional.",
+    description: "Soldado de aluguel acostumado a escoltas e situações com o paranormal.",
+  },
+  {
+    id: "militar",
+    name: "Militar",
+    skills: ["pontaria", "tatica"],
+    powerName: "Para Bellum",
+    powerDesc: "Recebe +2 em rolagens de dano com armas de fogo.",
+    description: "Serviu em uma força militar e se tornou perito no uso de armas de fogo.",
+  },
+  {
+    id: "operario",
+    name: "Operário",
+    skills: ["fortitude", "profissao"],
+    powerName: "Ferramenta de Trabalho",
+    powerDesc: "Escolha uma arma simples/tática que sirva como ferramenta. Sabe usá-la e recebe +1 em ataque, dano e margem de ameaça com ela.",
+    description: "Pedreiro, industriário ou operador de máquinas com visão pragmática do mundo.",
+  },
+  {
+    id: "policial",
+    name: "Policial",
+    skills: ["percepcao", "pontaria"],
+    powerName: "Patrulha",
+    powerDesc: "Recebe +2 em Defesa.",
+    description: "Força de segurança pública que se deparou com um caso paranormal e sobreviveu.",
+  },
+  {
+    id: "religioso",
+    name: "Religioso",
+    skills: ["religiao", "vontade"],
+    powerName: "Acalentar",
+    powerDesc: "+5 em testes de Religião para acalmar. Ao acalmar, a pessoa recebe 1d6 + sua Presença de Sanidade.",
+    description: "Devoto ou sacerdote dedicado a auxiliar pessoas com problemas espirituais.",
+  },
+  {
+    id: "servidor-publico",
+    name: "Servidor Público",
+    skills: ["intuicao", "vontade"],
+    powerName: "Espírito Cívico",
+    powerDesc: "Ao fazer um teste para ajudar, pode gastar 1 PE para aumentar o bônus concedido em +2.",
+    description: "Carreira em órgão do governo, até ver representantes do povo servindo ao Outro Lado.",
+  },
+  {
+    id: "teorico-conspiracao",
+    name: "Teórico da Conspiração",
+    skills: ["investigacao", "ocultismo"],
+    powerName: "Eu Já Sabia",
+    powerDesc: "Recebe resistência a dano mental igual ao seu Intelecto.",
+    description: "Investigou a fundo teorias da conspiração — e esbarrou no paranormal de verdade.",
+  },
+  {
+    id: "ti",
+    name: "T.I.",
+    skills: ["investigacao", "tecnologia"],
+    powerName: "Motor de Busca",
+    powerDesc: "Com acesso à internet, pode gastar 2 PE para substituir um teste de perícia por um teste de Tecnologia.",
+    description: "Programador ou 'o cara da T.I.', com experiência em sistemas informatizados.",
+  },
+  {
+    id: "trabalhador-rural",
+    name: "Trabalhador Rural",
+    skills: ["adestramento", "sobrevivencia"],
+    powerName: "Desbravador",
+    powerDesc: "Em teste de Adestramento ou Sobrevivência, pode gastar 2 PE para +5. Não sofre penalidade por terreno difícil.",
+    description: "Trabalhava no campo ou áreas isoladas, acostumado à natureza e aos animais.",
+  },
+  {
+    id: "trambiqueiro",
+    name: "Trambiqueiro",
+    skills: ["crime", "enganacao"],
+    powerName: "Impostor",
+    powerDesc: "Uma vez por cena, pode gastar 2 PE para substituir um teste de perícia qualquer por um teste de Enganação.",
+    description: "Vivia de pequenos golpes e falcatruas, até enganar a pessoa errada.",
+  },
+  {
+    id: "universitario",
+    name: "Universitário",
+    skills: ["atualidades", "investigacao"],
+    powerName: "Dedicação",
+    powerDesc: "Recebe +1 PE, e mais 1 PE a cada NEX ímpar. Seu limite de PE por turno aumenta em 1.",
+    description: "Aluno de faculdade que descobriu algo — talvez um livro amaldiçoado no campus.",
+  },
+  {
+    id: "vitima",
+    name: "Vítima",
+    skills: ["reflexos", "vontade"],
+    powerName: "Cicatrizes Psicológicas",
+    powerDesc: "Recebe +1 de Sanidade para cada 5% de NEX.",
+    description: "Encontrou o paranormal e a experiência foi traumática. Decidiu lutar para impedir outros.",
+  },
+];
+
+export const ORIGIN_BY_ID: Record<string, Origin> = Object.fromEntries(
+  ORIGINS.map((o) => [o.id, o]),
+);

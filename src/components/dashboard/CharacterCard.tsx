@@ -9,9 +9,10 @@ interface Props {
   race: string | null;
   className: string | null;
   level: number;
+  portraitUrl?: string | null;
 }
 
-export function CharacterCard({ id, name, race, className, level }: Props) {
+export function CharacterCard({ id, name, race, className, level, portraitUrl }: Props) {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -81,6 +82,7 @@ export function CharacterCard({ id, name, race, className, level }: Props) {
       onKeyDown={(e) => { if (e.key === "Enter") openSheet(); }}
       style={{
         position: "relative",
+        zIndex: menuOpen ? 20 : hovered ? 2 : 1,
         background: "var(--surface)",
         border: `1px solid ${hovered ? "rgba(201,148,31,0.35)" : "rgba(255,255,255,0.07)"}`,
         borderRadius: "var(--radius-xl)",
@@ -176,9 +178,12 @@ export function CharacterCard({ id, name, race, className, level }: Props) {
             fontWeight: 700,
             color: "var(--accent-light)",
             flexShrink: 0,
+            overflow: "hidden",
           }}
         >
-          {initials}
+          {portraitUrl ? (
+            <img src={portraitUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : initials}
         </div>
         <div style={{ minWidth: 0 }}>
           <p

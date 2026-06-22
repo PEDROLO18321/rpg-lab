@@ -5,12 +5,13 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PerfTier } from "./usePerformanceTier";
 
-export type ParticleSystem = "dnd" | "tormenta" | "cthulhu" | null;
+export type ParticleSystem = "dnd" | "tormenta" | "cthulhu" | "ordem" | null;
 
 const SYSTEM_PALETTE: Record<NonNullable<ParticleSystem>, string[]> = {
   dnd:      ["#e8b84b", "#c9941f", "#f5d07a"],
   tormenta: ["#c0191a", "#8b0000", "#e03030"],
   cthulhu:  ["#7d9c3e", "#4a5828", "#a3b86c"],
+  ordem:    ["#ffffff", "#f2f5fb", "#e4eaf6"],
 };
 
 // Páginas genéricas: partículas multicor (fantasia)
@@ -63,7 +64,7 @@ function Embers({ count, system }: { count: number; system: ParticleSystem }) {
       positions[i * 3 + 1] = (rand() - 0.5) * BOUNDS.y * 2;
       positions[i * 3 + 2] = (rand() - 0.5) * BOUNDS.z * 2;
       c.set(palette[Math.floor(rand() * palette.length)]);
-      c.multiplyScalar(0.55 + rand() * 0.45);
+      c.multiplyScalar(system === "ordem" ? 0.82 + rand() * 0.18 : 0.55 + rand() * 0.45);
       colors[i * 3 + 0] = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
@@ -71,7 +72,7 @@ function Embers({ count, system }: { count: number; system: ParticleSystem }) {
       phases[i] = rand() * Math.PI * 2;
     }
     return { positions, colors, speeds, phases };
-  }, [count, palette]);
+  }, [count, palette, system]);
 
   useEffect(() => () => texture.dispose(), [texture]);
 

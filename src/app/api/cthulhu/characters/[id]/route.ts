@@ -39,7 +39,8 @@ export async function PATCH(
     pvMax, sanMax, mov,
     atribFor, atribCon, atribTam, atribDes, atribApa, atribInt, atribPod, atribEdu,
     occupation, age, era,
-    skills, skillChecks, equipment, name,
+    skills, skillChecks, equipment, name, insanityData, spellsData,
+    portraitUrl, weapons, background,
   } = body;
 
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
@@ -68,14 +69,22 @@ export async function PATCH(
     ...(era         !== undefined ? { era }        : {}),
     ...(notes       !== undefined ? { notes }      : {}),
     ...(equipment   !== undefined ? { equipment }  : {}),
-    ...(skills      !== undefined ? { skills: skills ? JSON.stringify(skills) : null } : {}),
-    ...(skillChecks !== undefined ? { skillChecks: skillChecks ? JSON.stringify(skillChecks) : null } : {}),
+    ...(skills        !== undefined ? { skills: skills ? JSON.stringify(skills) : null } : {}),
+    ...(skillChecks   !== undefined ? { skillChecks: skillChecks ? JSON.stringify(skillChecks) : null } : {}),
+    ...(insanityData  !== undefined ? { insanityData: insanityData ? JSON.stringify(insanityData) : null } : {}),
+    ...(spellsData    !== undefined ? { spellsData: spellsData ? JSON.stringify(spellsData) : null } : {}),
+    ...(weapons   !== undefined ? { weapons: weapons ? JSON.stringify(weapons) : null } : {}),
+    ...(background !== undefined ? { background: background ? JSON.stringify(background) : null } : {}),
   };
+
+  const charUpdates: Record<string, unknown> = {};
+  if (typeof name === "string" && name.trim()) charUpdates.name = name.trim();
+  if (portraitUrl !== undefined) charUpdates.portraitUrl = portraitUrl;
 
   await prisma.$transaction([
     prisma.cthulhuSheet.update({ where: { id }, data: sheetData }),
-    ...(typeof name === "string" && name.trim()
-      ? [prisma.character.update({ where: { id }, data: { name: name.trim() } })]
+    ...(Object.keys(charUpdates).length > 0
+      ? [prisma.character.update({ where: { id }, data: charUpdates })]
       : []),
   ]);
 

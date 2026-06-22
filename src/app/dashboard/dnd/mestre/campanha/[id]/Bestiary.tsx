@@ -42,6 +42,16 @@ function rollD20() { return Math.floor(Math.random() * 20) + 1; }
 
 const CR_OPTIONS = ["Todos", "0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11–15", "16–20", "21+"];
 
+const HP_OPTIONS: { id: string; label: string; min: number; max: number }[] = [
+  { id: "Todos", label: "Qualquer PV", min: 0,   max: Infinity },
+  { id: "1-10",  label: "1–10 PV",     min: 0,   max: 10 },
+  { id: "11-30", label: "11–30 PV",    min: 11,  max: 30 },
+  { id: "31-60", label: "31–60 PV",    min: 31,  max: 60 },
+  { id: "61-100",label: "61–100 PV",   min: 61,  max: 100 },
+  { id: "101-200",label: "101–200 PV", min: 101, max: 200 },
+  { id: "201+",  label: "201+ PV",     min: 201, max: Infinity },
+];
+
 const ATTR_KEYS: { key: keyof Monster; label: string }[] = [
   { key: "str", label: "FOR" }, { key: "dex", label: "DES" }, { key: "con", label: "CON" },
   { key: "int", label: "INT" }, { key: "wis", label: "SAB" }, { key: "cha", label: "CAR" },
@@ -51,6 +61,7 @@ export function Bestiary({ campaign, onChange }: Props) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<MonsterType | "">("");
   const [crFilter, setCrFilter] = useState("Todos");
+  const [hpFilter, setHpFilter] = useState("Todos");
   const [selected, setSelected] = useState<Monster | null>(null);
   const [initValue, setInitValue] = useState("");
   const [showInit, setShowInit] = useState(false);
@@ -70,13 +81,18 @@ export function Bestiary({ campaign, onChange }: Props) {
       });
     }
 
+    if (hpFilter !== "Todos") {
+      const range = HP_OPTIONS.find((o) => o.id === hpFilter);
+      if (range) list = list.filter((m) => m.hp >= range.min && m.hp <= range.max);
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       list = list.filter((m) => m.name.toLowerCase().includes(q) || m.type.toLowerCase().includes(q));
     }
 
     return [...list].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  }, [search, typeFilter, crFilter]);
+  }, [search, typeFilter, crFilter, hpFilter]);
 
   function addToInitiative() {
     if (!selected) return;
@@ -130,6 +146,15 @@ export function Bestiary({ campaign, onChange }: Props) {
           >
             {CR_OPTIONS.map((o) => (
               <option key={o} value={o}>{o === "Todos" ? "Qualquer ND" : `ND ${o}`}</option>
+            ))}
+          </select>
+          <select
+            value={hpFilter}
+            onChange={(e) => setHpFilter(e.target.value)}
+            style={{ flex: "0 1 140px", padding: "9px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem" }}
+          >
+            {HP_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
             ))}
           </select>
         </div>

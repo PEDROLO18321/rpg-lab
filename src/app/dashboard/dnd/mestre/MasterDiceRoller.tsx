@@ -64,7 +64,14 @@ export function MasterDiceRoller() {
 
   return (
     <div style={{ position: "fixed", left: 0, top: "50%", transform: "translateY(-50%)", zIndex: 60, display: "flex", alignItems: "center" }}>
-      {open && (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: open ? "260px" : "0px",
+          transition: "grid-template-columns 0.34s cubic-bezier(0.4, 0, 0.2, 1)",
+          overflow: "hidden",
+        }}
+      >
         <div
           style={{
             width: 260,
@@ -74,6 +81,11 @@ export function MasterDiceRoller() {
             borderLeft: "none",
             borderRadius: "0 var(--radius-xl) var(--radius-xl) 0",
             boxShadow: "0 12px 36px rgba(0,0,0,0.35)",
+            boxSizing: "border-box",
+            opacity: open ? 1 : 0,
+            transform: open ? "translateX(0)" : "translateX(-16px)",
+            transition: "opacity 0.3s ease, transform 0.34s cubic-bezier(0.4, 0, 0.2, 1)",
+            pointerEvents: open ? "auto" : "none",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -236,7 +248,7 @@ export function MasterDiceRoller() {
             )}
           </div>
         </div>
-      )}
+      </div>
 
       <button
         onClick={() => setOpen((value) => !value)}

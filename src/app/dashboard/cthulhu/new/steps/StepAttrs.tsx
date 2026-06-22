@@ -8,6 +8,7 @@ import {
   half, fifth,
   type AttrKey, type CthulhuAttrs,
 } from "@/lib/cthulhu/data";
+import { randomCthulhuName } from "@/lib/cthulhu/names";
 import type { WizardData } from "../CthulhuWizard";
 
 const ACCENT       = "#7d9c3e";
@@ -26,8 +27,9 @@ export function StepAttrs({ data, onChange }: Props) {
   const [name,    setName]    = useState(data.name ?? "");
   const [era,     setEra]     = useState<"1920s" | "modern">(data.era ?? "1920s");
   const [age,     setAge]     = useState(data.age ?? 25);
-  const [raw,     setRaw]     = useState<CthulhuAttrs | null>(data.attrs ?? null);
-  const [rolling, setRolling] = useState<AttrKey | "all" | null>(null);
+  const [raw,       setRaw]       = useState<CthulhuAttrs | null>(data.attrs ?? null);
+  const [rolling,   setRolling]   = useState<AttrKey | "all" | null>(null);
+  const [hasRolled, setHasRolled] = useState(!!data.attrs);
 
   const attrs = raw ? applyAgeModifiers(raw, age) : null;
 
@@ -45,17 +47,20 @@ export function StepAttrs({ data, onChange }: Props) {
   function handleAge(v: number) { setAge(v); emit({ a: v }); }
 
   function doRollAll() {
+    if (hasRolled) return;
     setRolling("all");
     setTimeout(() => {
       const r = rollAll();
       r.sorte = rollSorteForAge(age);
       setRaw(r);
       setRolling(null);
+      setHasRolled(true);
       emit({ r });
     }, 260);
   }
 
   function doRollOne(key: AttrKey) {
+    if (hasRolled) return;
     setRolling(key);
     setTimeout(() => {
       const next = raw ? { ...raw } : rollAll();
@@ -67,7 +72,7 @@ export function StepAttrs({ data, onChange }: Props) {
   }
 
   function doRollSorte() {
-    if (!raw) return;
+    if (!raw || hasRolled) return;
     const next = { ...raw, sorte: rollSorteForAge(age) };
     setRaw(next);
     emit({ r: next });
@@ -95,19 +100,36 @@ export function StepAttrs({ data, onChange }: Props) {
           <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Nome do Investigador *
           </span>
-          <input
-            value={name}
-            onChange={(e) => handleName(e.target.value)}
-            placeholder="Ex.: Henry Armitage"
-            style={{
-              background: "var(--surface)", border: "1px solid var(--border)",
-              borderRadius: "var(--radius)", padding: "9px 12px",
-              color: "var(--text)", fontSize: "0.9rem", outline: "none",
-              transition: "border-color 0.15s",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = ACCENT_BORD)}
-            onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
-          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={name}
+              onChange={(e) => handleName(e.target.value)}
+              placeholder="Ex.: Henry Armitage"
+              style={{
+                flex: 1, minWidth: 0,
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: "var(--radius)", padding: "9px 12px",
+                color: "var(--text)", fontSize: "0.9rem", outline: "none",
+                transition: "border-color 0.15s",
+              }}
+              onFocus={(e) => (e.target.style.borderColor = ACCENT_BORD)}
+              onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
+            />
+            <button
+              type="button"
+              onClick={() => handleName(randomCthulhuName(era))}
+              title="Gerar nome aleatório"
+              style={{
+                flexShrink: 0, padding: "0 14px",
+                background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`,
+                borderRadius: "var(--radius)", color: ACCENT_LIGHT,
+                fontSize: "0.84rem", fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+              }}
+            >
+              🎲 Aleatório
+            </button>
+          </div>
         </label>
 
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -142,22 +164,29 @@ export function StepAttrs({ data, onChange }: Props) {
       </div>
 
       {/* Roll All */}
-      <button
-        onClick={doRollAll}
-        disabled={rolling !== null}
-        style={{
-          alignSelf: "flex-start",
-          padding: "10px 22px",
-          background: rolling ? "var(--surface-2)" : `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)`,
-          color: rolling ? "var(--text-muted)" : "#06090f",
-          border: "none", borderRadius: "var(--radius)",
-          fontSize: "0.86rem", fontWeight: 700,
-          cursor: rolling ? "not-allowed" : "pointer",
-          transition: "all 0.18s",
-        }}
-      >
-        {rolling === "all" ? "Rolando…" : "🎲 Rolar Todos os Atributos"}
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button
+          onClick={doRollAll}
+          disabled={rolling !== null || hasRolled}
+          style={{
+            alignSelf: "flex-start",
+            padding: "10px 22px",
+            background: (rolling || hasRolled) ? "var(--surface-2)" : `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)`,
+            color: (rolling || hasRolled) ? "var(--text-muted)" : "#06090f",
+            border: "none", borderRadius: "var(--radius)",
+            fontSize: "0.86rem", fontWeight: 700,
+            cursor: (rolling || hasRolled) ? "not-allowed" : "pointer",
+            transition: "all 0.18s",
+          }}
+        >
+          {rolling === "all" ? "Rolando…" : "🎲 Rolar Todos os Atributos"}
+        </button>
+        {hasRolled && (
+          <span style={{ fontSize: "0.74rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
+            Atributos já foram rolados — valores fixos para este personagem.
+          </span>
+        )}
+      </div>
 
       {/* Attribute rows */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -204,14 +233,15 @@ export function StepAttrs({ data, onChange }: Props) {
               </span>
               <button
                 onClick={() => doRollOne(key)}
-                disabled={rolling !== null}
+                disabled={rolling !== null || hasRolled}
                 style={{
                   width: 30, height: 30, borderRadius: "var(--radius-xs)",
                   background: "var(--surface-2)", border: "1px solid var(--border)",
-                  color: "var(--text-muted)", cursor: rolling ? "not-allowed" : "pointer",
+                  color: "var(--text-muted)", cursor: (rolling || hasRolled) ? "not-allowed" : "pointer",
                   fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center",
+                  opacity: hasRolled ? 0.35 : 1,
                 }}
-                title="Rerolar este atributo"
+                title={hasRolled ? "Atributos já rolados" : "Rerolar este atributo"}
               >
                 🎲
               </button>
@@ -247,12 +277,13 @@ export function StepAttrs({ data, onChange }: Props) {
           </span>
           <button
             onClick={doRollSorte}
-            disabled={!raw || rolling !== null}
+            disabled={!raw || rolling !== null || hasRolled}
             style={{
               width: 30, height: 30, borderRadius: "var(--radius-xs)",
               background: "var(--surface-2)", border: "1px solid var(--border)",
-              color: "var(--text-muted)", cursor: (!raw || rolling) ? "not-allowed" : "pointer",
+              color: "var(--text-muted)", cursor: (!raw || rolling || hasRolled) ? "not-allowed" : "pointer",
               fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: hasRolled ? 0.35 : 1,
             }}
           >
             🎲
