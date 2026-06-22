@@ -59,6 +59,7 @@ function getCreditTier(cr: number): CreditTierInfo {
 }
 
 const CATEGORY_ORDER: WeaponCategory[] = ["corpo", "arremesso", "pistola", "rifle", "espingarda"];
+const FREE_WEAPON_IDS = ["desarmado", "pedra"];
 
 interface Props {
   data: Partial<WizardData>;
@@ -68,7 +69,11 @@ interface Props {
 export function StepEquipment({ data, onChange }: Props) {
   const era = data.era ?? "1920s";
   const [equip, setEquip]     = useState(data.equipment ?? "");
-  const [weapons, setWeapons] = useState<string[]>(data.weapons ?? []);
+  const [weapons, setWeapons] = useState<string[]>(() => {
+    const existing = data.weapons ?? [];
+    const missing  = FREE_WEAPON_IDS.filter((id) => !existing.includes(id));
+    return [...existing, ...missing];
+  });
 
   const creditPoints = data.occupationSkills?.nivel_credito ?? 0;
   const tier = getCreditTier(creditPoints);
@@ -83,10 +88,31 @@ export function StepEquipment({ data, onChange }: Props) {
     onChange({ equipment: v });
   }
 
+  function parseCost(s: string | undefined): number {
+    if (!s) return 0;
+    const n = parseFloat(s.replace(/[^0-9.]/g, ""));
+    return isNaN(n) ? 0 : n;
+  }
+
+  const costKey = era === "modern" ? "costModern" : "cost1920";
+  const selectedTotal = eraWeapons
+    .filter((w) => weapons.includes(w.id))
+    .reduce((sum, w) => sum + parseCost(w[costKey as keyof typeof w] as string), 0);
+  const remaining = money - selectedTotal;
+
   function toggleWeapon(id: string) {
-    const next = weapons.includes(id) ? weapons.filter((w) => w !== id) : [...weapons, id];
-    setWeapons(next);
-    onChange({ weapons: next });
+    if (weapons.includes(id)) {
+      const next = weapons.filter((w) => w !== id);
+      setWeapons(next);
+      onChange({ weapons: next });
+    } else {
+      const w = eraWeapons.find((x) => x.id === id);
+      const wCost = parseCost(w?.[costKey as keyof typeof w] as string);
+      if (wCost > remaining) return; // can't afford
+      const next = [...weapons, id];
+      setWeapons(next);
+      onChange({ weapons: next });
+    }
   }
 
   return (
@@ -127,10 +153,17 @@ export function StepEquipment({ data, onChange }: Props) {
             {tier.desc}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-            <InfoBox label="Dinheiro" value={`$${money}`} hint="NC × 2" />
+            <InfoBox label="Dinheiro" value={`$${money}`} hint="NC × 2 — para compras" />
             <InfoBox label="Patrimônio" value={`$${assets.toLocaleString("pt-BR")}`} hint="NC × 50" />
             <InfoBox label="Acomodação" value={tier.acomodacao} />
             <InfoBox label="Transporte" value={tier.viagem} />
+          </div>
+          {/* Budget tracker */}
+          <div style={{ marginTop: 10, padding: "10px 14px", background: remaining < 0 ? "rgba(248,113,113,0.08)" : "var(--surface-2)", border: `1px solid ${remaining < 0 ? "rgba(248,113,113,0.3)" : "var(--border)"}`, borderRadius: "var(--radius)", display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>Gasto em armas:</span>
+            <span style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--text)" }}>${selectedTotal.toFixed(0)}</span>
+            <span style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginLeft: "auto" }}>Saldo:</span>
+            <span style={{ fontSize: "0.86rem", fontWeight: 700, color: remaining < 0 ? "#f87171" : ACCENT_LIGHT }}>${remaining.toFixed(0)}</span>
           </div>
         </div>
       </div>
@@ -146,7 +179,7 @@ export function StepEquipment({ data, onChange }: Props) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {CATEGORY_ORDER.map((cat) => {
-            const list = eraWeapons.filter((w) => w.category === cat);
+            const list = eraWeapons.filter((w) => w.category === cat && !FREE_WEAPON_IDS.includes(w.id));
             if (!list.length) return null;
             return (
               <div key={cat}>
@@ -156,30 +189,36 @@ export function StepEquipment({ data, onChange }: Props) {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 6 }}>
                   {list.map((w) => {
                     const on = weapons.includes(w.id);
+                    const wCostStr = (era === "modern" ? w.costModern : w.cost1920) ?? "";
+                    const wCost = parseCost(wCostStr);
+                    const canAfford = on || wCost === 0 || wCost <= remaining;
                     return (
                       <button
                         key={w.id}
                         onClick={() => toggleWeapon(w.id)}
+                        disabled={!on && !canAfford}
                         style={{
-                          textAlign: "left", cursor: "pointer",
+                          textAlign: "left",
+                          cursor: !on && !canAfford ? "not-allowed" : "pointer",
                           padding: "8px 12px",
                           background: on ? ACCENT_DIM : "var(--surface)",
-                          border: `1px solid ${on ? ACCENT_BORD : "rgba(255,255,255,0.07)"}`,
+                          border: `1px solid ${on ? ACCENT_BORD : !canAfford ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.07)"}`,
                           borderRadius: "var(--radius)",
                           transition: "all 0.15s",
+                          opacity: !on && !canAfford ? 0.45 : 1,
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                          <span style={{ fontSize: "0.82rem", fontWeight: on ? 700 : 500, color: on ? ACCENT_LIGHT : "var(--text)" }}>
+                          <span style={{ fontSize: "0.82rem", fontWeight: on ? 700 : 500, color: on ? ACCENT_LIGHT : !canAfford ? "var(--text-subtle)" : "var(--text)" }}>
                             {on ? "✓ " : ""}{w.name}
                           </span>
                           <span style={{ fontSize: "0.8rem", fontWeight: 700, color: on ? ACCENT_LIGHT : "var(--text-muted)" }}>
                             {w.damage}{w.addDB ? "+DX" : ""}{w.halfDB ? "+½DX" : ""}
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>
-                          {w.range} · {w.attacks} atq{w.ammo ? ` · ${w.ammo} mun.` : ""}
-                          {(era === "modern" ? w.costModern : w.cost1920) ? ` · ${era === "modern" ? w.costModern : w.cost1920}` : ""}
+                        <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2, display: "flex", justifyContent: "space-between" }}>
+                          <span>{w.range} · {w.attacks} atq{w.ammo ? ` · ${w.ammo} mun.` : ""}</span>
+                          {wCostStr && <span style={{ color: on ? ACCENT_LIGHT : !canAfford ? "#f87171" : "var(--text-muted)", fontWeight: 600 }}>{wCostStr}</span>}
                         </div>
                       </button>
                     );

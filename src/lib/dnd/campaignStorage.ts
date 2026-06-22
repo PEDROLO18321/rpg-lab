@@ -34,6 +34,32 @@ export interface Combatant {
   isPlayer: boolean;
 }
 
+export interface CampaignSession {
+  id: string;
+  number: number;
+  name: string;
+  objective: string;
+  events: string;
+  summary: string;
+  sessionDate: string;
+}
+
+export interface CampaignItem {
+  id: string;
+  name: string;
+  description: string;
+  type: "arma" | "armadura" | "magia" | "consumível" | "misc";
+  rarity: "comum" | "incomum" | "raro" | "muito raro" | "lendário";
+  sessionId: string | null;
+}
+
+export interface CampaignStoryData {
+  objective: string;
+  purpose: string;
+  generalHistory: string;
+  currentArc: string;
+}
+
 export interface Campaign {
   id: string;
   name: string;
@@ -41,6 +67,9 @@ export interface Campaign {
   npcs: NPC[];
   combatants: Combatant[];
   notes: string;
+  story?: CampaignStoryData;
+  sessions?: CampaignSession[];
+  items?: CampaignItem[];
 }
 
 const KEY = "dnd_mestre_campaigns";

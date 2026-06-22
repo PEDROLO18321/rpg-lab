@@ -236,6 +236,25 @@ button:disabled { cursor: not-allowed; }
 .roll-overlay-enter { animation: roll-overlay-in 0.3s cubic-bezier(0.16,1,0.3,1) both; }
 .roll-overlay-exit  { animation: roll-overlay-out 0.35s ease-out both; }
 
+/* ── Ordem: detalhe de origem / expansão de classe ─────────────────────── */
+@keyframes ordem-detail-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.ordem-detail-in { animation: ordem-detail-in 0.42s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes ordem-expand-in {
+  from { opacity: 0; transform: translateY(-8px); max-height: 0; }
+  to   { opacity: 1; transform: translateY(0); max-height: 700px; }
+}
+.ordem-expand-in { animation: ordem-expand-in 0.38s cubic-bezier(0.16,1,0.3,1) both; overflow: hidden; }
+
+@keyframes ordem-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ordem-card-in { animation: ordem-card-in 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+
 /* ── Acessibilidade: usuário pediu menos movimento ─────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

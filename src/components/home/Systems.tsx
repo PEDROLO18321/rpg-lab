@@ -15,25 +15,25 @@ const SYSTEMS = [
     icon: "🕯️",
     name: "Call of Cthulhu",
     abbr: "CoC 7ª Ed.",
-    status: "soon" as const,
+    status: "available" as const,
     desc: "Ficha de investigador com perícias percentuais, sanidade, pontos de vida e dados de vida. Ocupações e histórico personalizáveis.",
     highlights: ["Perícias com %", "Sanidade e Sanidade Máxima", "Pontos de Sorte", "Ocupações"],
+  },
+  {
+    icon: "🔮",
+    name: "Ordem Paranormal",
+    abbr: "OP RPG",
+    status: "soon" as const,
+    desc: "Agentes enfrentam o Outro Lado numa narrativa de horror e mistério. Sistema de sanidade, traumas e poderes paranormais.",
+    highlights: ["Poderes paranormais", "Sanidade e traumas", "Agências e cargos", "O Outro Lado"],
   },
   {
     icon: "🌙",
     name: "Tormenta 20",
     abbr: "T20",
-    status: "soon" as const,
+    status: "planned" as const,
     desc: "O maior sistema nacional. Raças e classes brasileiras, monstros do folclore e um universo épico criado por autores do Brasil.",
     highlights: ["Raças nacionais", "Sistema de pontos", "Magias e rituais", "Divindades de Arton"],
-  },
-  {
-    icon: "🤖",
-    name: "Cyberpunk RED",
-    abbr: "CP RED",
-    status: "planned" as const,
-    desc: "Metrópoles neon, implantes cibernéticos e corporações sombrias. Função e papel social como pilares do personagem.",
-    highlights: ["Implantes e ciberware", "Funções e papéis", "Humanidade", "Combate tático"],
   },
 ];
 
@@ -78,7 +78,7 @@ export function Systems() {
             Escolha seu universo
           </h2>
           <p style={{ fontSize: "0.975rem", color: "var(--text-muted)", maxWidth: 440, margin: "0 auto" }}>
-            Começando por D&amp;D 5e, com novos sistemas sendo adicionados progressivamente.
+            D&amp;D 5e e Call of Cthulhu disponíveis. Ordem Paranormal em desenvolvimento.
           </p>
         </div>
 

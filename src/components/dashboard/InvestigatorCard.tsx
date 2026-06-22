@@ -13,15 +13,17 @@ interface Props {
   name: string;
   occupation: string | null;
   era: string | null;
+  age: number | null;
   sanCurrent: number;
   sanMax: number;
+  portraitUrl?: string | null;
 }
 
-export function InvestigatorCard({ id, name, occupation, era, sanCurrent, sanMax }: Props) {
+export function InvestigatorCard({ id, name, occupation, era, age, sanCurrent, sanMax, portraitUrl }: Props) {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [busy, setBusy] = useState<null | "excluir">(null);
+  const [busy, setBusy] = useState<null | "duplicar" | "excluir">(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +57,18 @@ export function InvestigatorCard({ id, name, occupation, era, sanCurrent, sanMax
     router.push(`/dashboard/cthulhu/${id}`);
   }
 
+  async function duplicate() {
+    if (busy) return;
+    setBusy("duplicar");
+    try {
+      const res = await fetch(`/api/cthulhu/characters/${id}/duplicate`, { method: "POST" });
+      if (res.ok) router.refresh();
+    } finally {
+      setBusy(null);
+      setMenuOpen(false);
+    }
+  }
+
   async function remove() {
     if (busy) return;
     if (!confirmDelete) {
@@ -82,6 +96,7 @@ export function InvestigatorCard({ id, name, occupation, era, sanCurrent, sanMax
       onKeyDown={(e) => { if (e.key === "Enter") openSheet(); }}
       style={{
         position: "relative",
+        zIndex: menuOpen ? 20 : hovered ? 2 : 1,
         background: "var(--surface)",
         border: `1px solid ${hovered ? ACCENT_BORD : "rgba(255,255,255,0.07)"}`,
         borderRadius: "var(--radius-xl)",
@@ -145,6 +160,13 @@ export function InvestigatorCard({ id, name, occupation, era, sanCurrent, sanMax
           >
             <MenuItem label="Visualizar" onClick={openSheet} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} />
             <MenuItem
+              label={busy === "duplicar" ? "Duplicando…" : "Duplicar"}
+              onClick={duplicate}
+              disabled={busy !== null}
+              accentLight={ACCENT_LIGHT}
+              accentDim={ACCENT_DIM}
+            />
+            <MenuItem
               label={busy === "excluir" ? "Excluindo…" : confirmDelete ? "Confirmar exclusão?" : "Excluir"}
               onClick={remove}
               disabled={busy !== null}
@@ -173,9 +195,12 @@ export function InvestigatorCard({ id, name, occupation, era, sanCurrent, sanMax
             fontWeight: 700,
             color: ACCENT_LIGHT,
             flexShrink: 0,
+            overflow: "hidden",
           }}
         >
-          {initials}
+          {portraitUrl ? (
+            <img src={portraitUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : initials}
         </div>
         <div style={{ minWidth: 0 }}>
           <p
@@ -192,8 +217,13 @@ export function InvestigatorCard({ id, name, occupation, era, sanCurrent, sanMax
             {name}
           </p>
           <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: 2 }}>
-            {[occupation, eraLabel].filter(Boolean).join(" · ") || "Sem ocupação ainda"}
+            {[occupation, age ? `${age} anos` : null].filter(Boolean).join(" · ") || "Sem ocupação ainda"}
           </p>
+          {eraLabel && (
+            <span style={{ display: "inline-block", marginTop: 5, fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xs)", padding: "1px 7px", letterSpacing: "0.04em" }}>
+              {eraLabel}
+            </span>
+          )}
         </div>
       </div>
 

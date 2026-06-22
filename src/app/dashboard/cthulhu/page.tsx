@@ -17,7 +17,7 @@ export default async function CthulhuRolePage() {
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "72px 24px 80px" }}>
         <div style={{ textAlign: "center", marginBottom: 52 }}>
-          <span className="section-label" style={{ display: "block", marginBottom: 12 }}>
+          <span className="section-label" style={{ display: "block", marginBottom: 12, color: "#7d9c3e" }}>
             Call of Cthulhu · 7ª Edição
           </span>
           <h1

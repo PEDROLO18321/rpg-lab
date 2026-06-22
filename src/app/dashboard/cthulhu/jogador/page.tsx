@@ -112,8 +112,10 @@ export default async function CthulhuJogadorPage() {
                 name={char.name}
                 occupation={char.cthulhuSheet?.occupation ?? null}
                 era={char.cthulhuSheet?.era ?? null}
+                age={char.cthulhuSheet?.age ?? null}
                 sanCurrent={char.cthulhuSheet?.sanCurrent ?? 50}
                 sanMax={char.cthulhuSheet?.sanMax ?? 99}
+                portraitUrl={char.portraitUrl}
               />
             ))}
           </div>
