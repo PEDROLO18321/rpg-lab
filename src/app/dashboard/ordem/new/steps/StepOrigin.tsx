@@ -181,7 +181,11 @@ export function StepOrigin({ data, onChange }: Props) {
                         }}
                       >
                         <p style={{ fontSize: "0.82rem", fontWeight: 700, color: on ? "#ffffff" : "var(--text)", marginBottom: 3 }}>{pp.name}</p>
+                        <p style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#b89cf0", marginBottom: 4 }}>
+                          {pp.element}{pp.prerequisite ? ` · req. ${pp.prerequisite}` : ""}
+                        </p>
                         <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", lineHeight: 1.5 }}>{pp.description}</p>
+                        <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.45, marginTop: 4 }}><strong style={{ color: "#9b7fd4" }}>Afinidade:</strong> {pp.affinity}</p>
                       </button>
                     );
                   })}

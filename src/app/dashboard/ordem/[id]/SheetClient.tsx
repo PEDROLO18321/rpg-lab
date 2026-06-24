@@ -16,7 +16,14 @@ import {
   WEAPONS, PROTECTIONS, GENERAL_ITEMS, GENERAL_GROUP_LABEL,
   armorDefenseBonus, loadStatus, OVERLOAD_DEFENSE_PENALTY, OVERLOAD_MOVE_PENALTY,
 } from "@/lib/ordem/items";
-import { sanityStatus, SANITY_STATUS_LABEL, lifeStatus } from "@/lib/ordem/sanity";
+import {
+  normalizeItems, configuredCategory, weaponSpaceDelta, protectionSpaceDelta,
+  accessorySpaceDelta, isAccessory, weaponEffectSummary, effectiveCrit,
+  WEAPON_MOD_BY_ID, WEAPON_CURSE_BY_ID, PROTECTION_MOD_BY_ID, PROTECTION_CURSE_BY_ID,
+  ACCESSORY_MOD_BY_ID, ACCESSORY_CURSE_BY_ID, CURSE_PRICE,
+  type ConfiguredItem, type ModElement,
+} from "@/lib/ordem/modifications";
+import { sanityStatus, SANITY_STATUS_LABEL, lifeStatus, rollInsanity } from "@/lib/ordem/sanity";
 import {
   getUnlockedAbilities, TRAILS_BY_CLASS, CLASS_POWERS_BY_CLASS, PARANORMAL_POWERS,
   TRAIL_BY_ID, CLASS_POWERS, PARANORMAL_POWER_BY_ID,
@@ -40,6 +47,30 @@ type AnyChar = any;
 const DEGREES: TrainDegree[] = ["destreinado", "treinado", "veterano", "expert"];
 const DEGREE_LETTER: Record<TrainDegree, string> = { destreinado: "D", treinado: "T", veterano: "V", expert: "E" };
 const DEGREE_COLOR:  Record<TrainDegree, string> = { destreinado: "#6b7280", treinado: "#ffffff", veterano: "#c9941f", expert: "#5a9fd4" };
+
+// Condições de combate / estado (Livro de Regras, Cap. 3). Marcadores sem
+// efeito mecânico automático — apenas registram o estado atual do agente.
+const ORDEM_CONDITIONS = [
+  "Abalado", "Agarrado", "Apavorado", "Atordoado", "Caído", "Cego", "Confuso",
+  "Debilitado", "Desprevenido", "Doente", "Em Chamas", "Enredado", "Envenenado",
+  "Esmorecido", "Exausto", "Fascinado", "Fraco", "Frustrado", "Imóvel",
+  "Inconsciente", "Indefeso", "Lento", "Ofuscado", "Paralisado", "Pasmo",
+  "Petrificado", "Provocado", "Sangrando", "Sobrecarregado", "Surdo",
+  "Surpreendido", "Vulnerável",
+];
+const ORDEM_CONDITION_COLOR: Record<string, string> = {
+  "Inconsciente": "#1a0a2e", "Indefeso": "#6b0000", "Paralisado": "#8b0000",
+  "Petrificado": "#607d8b", "Apavorado": "#4a1464", "Atordoado": "#c9941f",
+  "Sangrando": "#a01818", "Em Chamas": "#d35400", "Envenenado": "#2d7d2d",
+  "Caído": "#5d3a1a", "Surdo": "#546e7a", "Cego": "#4b5563", "Vulnerável": "#b5651d",
+  "Confuso": "#7e57c2", "Doente": "#6d8c3a",
+};
+
+const SANITY_STATUS_COLOR: Record<ReturnType<typeof sanityStatus>, string> = {
+  estavel: "#7dc864", perturbado: "#d88a2b", enlouquecendo: "#c0392b", insano: "#8b0000",
+};
+
+interface InsanityData { traumas: string[]; notes: string; }
 
 function parse<T>(raw: string | null | undefined, fallback: T): T {
   if (!raw) return fallback;
@@ -92,17 +123,23 @@ export function SheetClient({ character }: { character: AnyChar }) {
   const attrs = {
     agi: sheet.agi, for: sheet.forca, int: sheet.int, pre: sheet.pre, vig: sheet.vig,
   };
-  const weapons      = parse<string[]>(sheet.weapons, []);
+  const weapons      = normalizeItems(parse<unknown[]>(sheet.weapons, []));
   const background   = parse<{ appearance?: string; personality?: string; history?: string; objective?: string }>(sheet.background, {});
-  const inventory    = parse<{ kind: string; id: string }[]>(sheet.inventory, []);
-  const protectionIds = inventory.filter((i) => i.kind === "protection").map((i) => i.id);
-  const generalIds    = inventory.filter((i) => i.kind === "general").map((i) => i.id);
+  const inventory    = parse<{ kind: string; id: string; mods?: string[]; curses?: string[] }[]>(sheet.inventory, []);
+  const protections  = normalizeItems(inventory.filter((i) => i.kind === "protection"));
+  const generals     = normalizeItems(inventory.filter((i) => i.kind === "general"));
+  const protectionIds = protections.map((c) => c.id);
+  const generalIds    = generals.map((c) => c.id);
   const armorBonus   = armorDefenseBonus(protectionIds);
-  const bonusSpaces  = generalIds.reduce((a, id) => a + (GENERAL_BY_ID[id]?.capacityBonus ?? 0), 0);
+  const bonusSpaces  = generals.reduce((a, c) => a + (GENERAL_BY_ID[c.id]?.capacityBonus ?? 0), 0);
   const usedSpaces   = [
-    ...weapons.map((id) => WEAPON_BY_ID[id]?.spaces ?? 0),
-    ...protectionIds.map((id) => PROTECTION_BY_ID[id]?.spaces ?? 0),
-    ...generalIds.map((id) => GENERAL_BY_ID[id]?.spaces ?? 0),
+    ...weapons.map((c) => Math.max(0, (WEAPON_BY_ID[c.id]?.spaces ?? 0) + weaponSpaceDelta(c.mods))),
+    ...protections.map((c) => Math.max(0, (PROTECTION_BY_ID[c.id]?.spaces ?? 0) + protectionSpaceDelta(c.mods))),
+    ...generals.map((c) => {
+      const g = GENERAL_BY_ID[c.id];
+      const delta = g && isAccessory(g) ? accessorySpaceDelta(c.mods) : 0;
+      return Math.max(0, (g?.spaces ?? 0) + delta);
+    }),
   ].reduce((a, b) => a + b, 0);
   const load             = loadStatus(usedSpaces, sheet.forca, bonusSpaces);
   const effectiveDefense = sheet.defense + armorBonus - (load.overloaded ? OVERLOAD_DEFENSE_PENALTY : 0);
@@ -165,7 +202,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
   const sanStatus = sanityStatus(san.cur, san.max);
   const lifeStat  = lifeStatus(pv.cur, pv.max);
 
-  const sharedProps = { character, sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, log, saved };
+  const sharedProps = { character, sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, log, saved };
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent", paddingBottom: 60 }}>
@@ -368,7 +405,9 @@ interface SharedProps {
   skills: Record<string, TrainDegree>;
   skillAttr: Record<string, AttrKey>;
   notes: string;
-  weapons: string[];
+  weapons: ConfiguredItem[];
+  protections: ConfiguredItem[];
+  generals: ConfiguredItem[];
   protectionIds: string[];
   generalIds: string[];
   load: ReturnType<typeof loadStatus>;
@@ -384,7 +423,7 @@ interface SharedProps {
 
 // ─── VIEW MODE ────────────────────────────────────────────────────────────────
 
-function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, weapons, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, sanStatus, lifeStat }: SharedProps) {
+function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, sanStatus, lifeStat }: SharedProps) {
   const unlockedAbilities = cls ? getUnlockedAbilities(cls.id as ClassId, nex) : [];
   const classTrails = cls ? TRAILS_BY_CLASS[cls.id as ClassId] ?? [] : [];
   const maxCircle = maxRitualCircle(nex);
@@ -419,6 +458,13 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
         <Badge label="Prestígio" value={sheet.prestige ?? 0} />
         <Badge label="Patente" value={patente.name} />
       </div>
+
+      {/* Conditions & Insanity (read-only) */}
+      {(parse<string[]>(sheet.conditions, []).length > 0 ||
+        (parse<Partial<InsanityData>>(sheet.insanity, {}).traumas?.length ?? 0) > 0 ||
+        sanStatus !== "estavel") && (
+        <StatusPanel sheet={sheet} sanStatus={sanStatus} readOnly />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         {/* Left */}
@@ -602,37 +648,14 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
       </div>
 
       {/* Equipment full-width */}
-      {(weapons.length > 0 || protectionIds.length > 0 || generalIds.length > 0) && (
+      {(weapons.length > 0 || protections.length > 0 || generals.length > 0) && (
         <Panel title="Equipamento">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
-            {weapons.map((id) => {
-              const w = WEAPON_BY_ID[id]; if (!w) return null;
-              return (
-                <div key={id} style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
-                  <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>{w.name}</p>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>{w.damage} · {DAMAGE_TYPE_LABEL[w.type]} · crít {w.crit}{w.range ? ` · ${w.range}` : ""}</p>
-                </div>
-              );
-            })}
-            {protectionIds.map((id) => {
-              const p = PROTECTION_BY_ID[id]; if (!p) return null;
-              return (
-                <div key={id} style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "var(--radius-lg)" }}>
-                  <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>🛡 {p.name}</p>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>Defesa +{p.defense}{p.note ? ` · ${p.note}` : ""}</p>
-                </div>
-              );
-            })}
-            {generalIds.map((id) => {
-              const g = GENERAL_BY_ID[id]; if (!g) return null;
-              return (
-                <div key={id} style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
-                  <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>{g.name}</p>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2, lineHeight: 1.4 }}>{g.desc}</p>
-                </div>
-              );
-            })}
+            {weapons.map((c, i) => <WeaponCard key={`w${i}`} item={c} />)}
+            {protections.map((c, i) => <ProtectionCard key={`p${i}`} item={c} />)}
+            {generals.map((c, i) => <GeneralCard key={`g${i}`} item={c} />)}
           </div>
+          <CursePricePanel weapons={weapons} protections={protections} generals={generals} />
         </Panel>
       )}
     </div>
@@ -654,7 +677,7 @@ interface PlayProps extends SharedProps {
   save: (payload: Record<string, unknown>) => void;
 }
 
-function PlayMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, log, sanStatus, lifeStat, setPv, setPe, setSan, setNotes, setSkillAttrFor, rollSkillRow, rollAttribute, rollDamage, pushLog, save }: PlayProps) {
+function PlayMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, log, sanStatus, lifeStat, setPv, setPe, setSan, setNotes, setSkillAttrFor, rollSkillRow, rollAttribute, rollDamage, pushLog, save }: PlayProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Vitals editable */}
@@ -784,6 +807,9 @@ function PlayMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
             </Panel>
           )}
 
+          {/* Conditions & Insanity */}
+          <StatusPanel sheet={sheet} save={save} sanStatus={sanStatus} />
+
           {/* Notes */}
           <Panel title="Anotações">
             <textarea value={notes} onChange={(e) => { setNotes(e.target.value); save({ notes: e.target.value }); }} rows={5} placeholder="Notas da sessão, pistas, contatos…"
@@ -796,48 +822,140 @@ function PlayMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
       {sheet.className === "ocultista" && <RituaisPanel sheet={sheet} nex={nex} pe={pe} rollDamage={rollDamage} />}
 
       {/* Equipment full-width with roll buttons */}
-      {(weapons.length > 0 || protectionIds.length > 0 || generalIds.length > 0) && (
+      {(weapons.length > 0 || protections.length > 0 || generals.length > 0) && (
         <Panel title="Equipamento">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
-            {weapons.map((id) => {
-              const w = WEAPON_BY_ID[id]; if (!w) return null;
-              return (
-                <div key={id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>{w.name}</p>
-                    <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>{w.damage} · {DAMAGE_TYPE_LABEL[w.type]} · crít {w.crit}{w.range ? ` · ${w.range}` : ""}</p>
-                  </div>
-                  <button onClick={() => rollDamage(w.damage, w.name)}
-                    style={{ padding: "6px 12px", fontSize: "0.74rem", fontWeight: 700, background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: ACCENT_LIGHT, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
-                    Dano
-                  </button>
-                </div>
-              );
-            })}
-            {protectionIds.map((id) => {
-              const p = PROTECTION_BY_ID[id]; if (!p) return null;
-              return (
-                <div key={id} style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "var(--radius-lg)" }}>
-                  <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>🛡 {p.name}</p>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>Defesa +{p.defense}{p.note ? ` · ${p.note}` : ""}</p>
-                </div>
-              );
-            })}
-            {generalIds.map((id) => {
-              const g = GENERAL_BY_ID[id]; if (!g) return null;
-              return (
-                <div key={id} style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
-                    <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>{g.name}</p>
-                    <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", whiteSpace: "nowrap" }}>{g.spaces} esp</span>
-                  </div>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2, lineHeight: 1.4 }}>{g.desc}</p>
-                </div>
-              );
-            })}
+            {weapons.map((c, i) => <WeaponCard key={`w${i}`} item={c} onRollDamage={rollDamage} />)}
+            {protections.map((c, i) => <ProtectionCard key={`p${i}`} item={c} />)}
+            {generals.map((c, i) => <GeneralCard key={`g${i}`} item={c} />)}
           </div>
+          <CursePricePanel weapons={weapons} protections={protections} generals={generals} />
         </Panel>
       )}
+    </div>
+  );
+}
+
+// ─── EQUIPMENT CARDS (com modificações/maldições) ─────────────────────────────
+
+const ELEM_UI_COLOR: Record<string, string> = {
+  Sangue: "#e0524c", Morte: "#9aa0a8", Conhecimento: "#f5c451", Energia: "#9b7ce0", Medo: "#7dd3a8",
+};
+const ROMAN_SHEET = ["0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+
+function ModTags({ mods, curses, modMap, curseMap }: {
+  mods: string[]; curses: string[];
+  modMap: Record<string, { name: string }>;
+  curseMap: Record<string, { name: string; element: string }>;
+}) {
+  if (mods.length === 0 && curses.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+      {mods.map((id) => modMap[id] && (
+        <span key={id} style={{ fontSize: "0.58rem", fontWeight: 700, padding: "1px 6px", borderRadius: "var(--radius-full)", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", color: "var(--text-muted)" }}>
+          {modMap[id].name}
+        </span>
+      ))}
+      {curses.map((id) => curseMap[id] && (
+        <span key={id} title={curseMap[id].element} style={{ fontSize: "0.58rem", fontWeight: 700, padding: "1px 6px", borderRadius: "var(--radius-full)", background: "rgba(0,0,0,0.25)", border: `1px solid ${ELEM_UI_COLOR[curseMap[id].element] ?? "#fff"}`, color: ELEM_UI_COLOR[curseMap[id].element] ?? "#fff" }}>
+          ⛧ {curseMap[id].name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function CatBadge({ base, eff }: { base: number; eff: number }) {
+  if (eff === base) return null;
+  return (
+    <span style={{ fontSize: "0.58rem", fontWeight: 800, padding: "1px 6px", borderRadius: "var(--radius-full)", background: "rgba(224,132,60,0.18)", border: "1px solid rgba(224,132,60,0.5)", color: "#e0843c", whiteSpace: "nowrap" }}>
+      Cat {ROMAN_SHEET[eff] ?? eff}
+    </span>
+  );
+}
+
+function WeaponCard({ item, onRollDamage }: { item: ConfiguredItem; onRollDamage?: (expr: string, label: string) => void }) {
+  const w = WEAPON_BY_ID[item.id]; if (!w) return null;
+  const eff = weaponEffectSummary(w, item.mods, item.curses);
+  const cat = configuredCategory(w.category, item);
+  const crit = effectiveCrit(w.crit, eff.threatBonus, eff.critMultBonus);
+  const dmgExtra = eff.extraDamage.length ? ` ${eff.extraDamage.join(" ")}` : "";
+  const dmgBonus = eff.damageBonus ? ` +${eff.damageBonus}` : "";
+  const atk = eff.attackBonus ? ` · atq +${eff.attackBonus}` : "";
+  return (
+    <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>{w.name}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <CatBadge base={w.category} eff={cat} />
+          {onRollDamage && (
+            <button onClick={() => onRollDamage(w.damage, w.name)}
+              style={{ padding: "5px 11px", fontSize: "0.72rem", fontWeight: 700, background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: ACCENT_LIGHT, cursor: "pointer", whiteSpace: "nowrap" }}>
+              Dano
+            </button>
+          )}
+        </div>
+      </div>
+      <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
+        {w.damage}{dmgBonus}{dmgExtra} · {DAMAGE_TYPE_LABEL[w.type]} · crít {crit}{w.range ? ` · ${w.range}` : ""}{atk}
+      </p>
+      <ModTags mods={item.mods} curses={item.curses} modMap={WEAPON_MOD_BY_ID} curseMap={WEAPON_CURSE_BY_ID} />
+      {eff.notes.length > 0 && (
+        <ul style={{ margin: "4px 0 0", paddingLeft: 16, listStyle: "disc" }}>
+          {eff.notes.map((n, i) => <li key={i} style={{ fontSize: "0.62rem", color: "var(--text-subtle)", lineHeight: 1.4 }}>{n}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ProtectionCard({ item }: { item: ConfiguredItem }) {
+  const p = PROTECTION_BY_ID[item.id]; if (!p) return null;
+  const cat = configuredCategory(p.category, item);
+  const defBonus = item.mods.includes("reforcada") ? 2 : 0;
+  return (
+    <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "var(--radius-lg)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>🛡 {p.name}</p>
+        <CatBadge base={p.category} eff={cat} />
+      </div>
+      <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>Defesa +{p.defense + defBonus}{p.note ? ` · ${p.note}` : ""}</p>
+      <ModTags mods={item.mods} curses={item.curses} modMap={PROTECTION_MOD_BY_ID} curseMap={PROTECTION_CURSE_BY_ID} />
+    </div>
+  );
+}
+
+function GeneralCard({ item }: { item: ConfiguredItem }) {
+  const g = GENERAL_BY_ID[item.id]; if (!g) return null;
+  const acc = isAccessory(g);
+  const cat = configuredCategory(g.category, item);
+  return (
+    <div style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+        <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text)" }}>{g.name}</p>
+        <CatBadge base={g.category} eff={cat} />
+      </div>
+      <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2, lineHeight: 1.4 }}>{g.desc}</p>
+      {acc && <ModTags mods={item.mods} curses={item.curses} modMap={ACCESSORY_MOD_BY_ID} curseMap={ACCESSORY_CURSE_BY_ID} />}
+    </div>
+  );
+}
+
+// Preço da maldição: lista os elementos presentes nos itens amaldiçoados.
+function CursePricePanel({ weapons, protections, generals }: { weapons: ConfiguredItem[]; protections: ConfiguredItem[]; generals: ConfiguredItem[] }) {
+  const elements = new Set<ModElement>();
+  for (const c of weapons) for (const id of c.curses) { const x = WEAPON_CURSE_BY_ID[id]; if (x) elements.add(x.element); }
+  for (const c of protections) for (const id of c.curses) { const x = PROTECTION_CURSE_BY_ID[id]; if (x) elements.add(x.element); }
+  for (const c of generals) for (const id of c.curses) { const x = ACCESSORY_CURSE_BY_ID[id]; if (x) elements.add(x.element); }
+  if (elements.size === 0) return null;
+  return (
+    <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(160,24,24,0.08)", border: "1px solid rgba(224,80,76,0.35)", borderRadius: "var(--radius-lg)" }}>
+      <p style={{ fontSize: "0.7rem", fontWeight: 800, color: "#e0524c", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>⛧ Preço da Maldição</p>
+      <ul style={{ margin: 0, paddingLeft: 16, listStyle: "disc" }}>
+        {[...elements].map((el) => (
+          <li key={el} style={{ fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.45 }}>{CURSE_PRICE[el]}</li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -978,11 +1096,11 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
   const [classPowers,      setClassPowers]      = useState<string[]>(prog0.classPowers);
   const [paranormalPowers, setParanormalPowers] = useState<string[]>(prog0.paranormalPowers);
 
-  // ── Itens ─────────────────────────────────────────────────────────────────
-  const inv0 = parse<{ kind: string; id: string }[]>(sheet.inventory, []);
-  const [weapons,     setWeapons]     = useState<string[]>(parse<string[]>(sheet.weapons, []));
-  const [protections, setProtections] = useState<string[]>(inv0.filter((i) => i.kind === "protection").map((i) => i.id));
-  const [generalItems, setGeneralItems] = useState<string[]>(inv0.filter((i) => i.kind === "general").map((i) => i.id));
+  // ── Itens (preservam modificações/maldições; edição de mods no criador) ─────
+  const inv0 = parse<{ kind: string; id: string; mods?: string[]; curses?: string[] }[]>(sheet.inventory, []);
+  const [weapons,     setWeapons]     = useState<ConfiguredItem[]>(normalizeItems(parse<unknown[]>(sheet.weapons, [])));
+  const [protections, setProtections] = useState<ConfiguredItem[]>(normalizeItems(inv0.filter((i) => i.kind === "protection")));
+  const [generalItems, setGeneralItems] = useState<ConfiguredItem[]>(normalizeItems(inv0.filter((i) => i.kind === "general")));
 
   // ── Rituais ───────────────────────────────────────────────────────────────
   const [selectedRituals, setSelectedRituals] = useState<string[]>(parse<string[]>(sheet.rituals, []));
@@ -1005,6 +1123,10 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
 
   const toggle = (arr: string[], set: (v: string[]) => void, id: string) =>
     set(arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+
+  // Toggle preservando modificações/maldições já aplicadas ao item.
+  const toggleItem = (arr: ConfiguredItem[], set: (v: ConfiguredItem[]) => void, id: string) =>
+    set(arr.some((c) => c.id === id) ? arr.filter((c) => c.id !== id) : [...arr, { id, mods: [], curses: [] }]);
 
   function setAttr(k: AttrKey, v: number) {
     setAttrs((p) => ({ ...p, [k]: Math.max(0, Math.min(ATTR_MAX, v)) }));
@@ -1036,8 +1158,8 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
       trailId: trail || null, classPowers, paranormalPowers, features: prog0.features,
     };
     const inventory = [
-      ...protections.map((id) => ({ kind: "protection", id })),
-      ...generalItems.map((id) => ({ kind: "general", id })),
+      ...protections.map((c) => ({ kind: "protection", id: c.id, mods: c.mods, curses: c.curses })),
+      ...generalItems.map((c) => ({ kind: "general", id: c.id, mods: c.mods, curses: c.curses })),
     ];
     try {
       const res = await fetch(`/api/ordem/characters/${character.id}`, {
@@ -1206,7 +1328,9 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
               <button key={p.id} onClick={() => toggle(paranormalPowers, setParanormalPowers, p.id)}
                 style={{ textAlign: "left", padding: "10px 12px", background: on ? "rgba(155,127,212,0.18)" : "var(--surface-2)", border: `1px solid ${on ? "rgba(155,127,212,0.5)" : "var(--border)"}`, borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 <p style={{ fontSize: "0.82rem", fontWeight: 700, color: on ? "#b89cf0" : "var(--text)" }}>{p.name}</p>
+                <p style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#b89cf0", marginTop: 2 }}>{p.element}{p.prerequisite ? ` · req. ${p.prerequisite}` : ""}</p>
                 <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", lineHeight: 1.45, marginTop: 3 }}>{p.description}</p>
+                <p style={{ fontSize: "0.66rem", color: "var(--text-muted)", lineHeight: 1.4, marginTop: 3 }}><strong style={{ color: "#9b7fd4" }}>Afinidade:</strong> {p.affinity}</p>
               </button>
             );
           })}
@@ -1215,13 +1339,14 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
 
       {/* Itens */}
       <EditSection label={`Armas (${weapons.length})`}>
-        <PickerGrid items={WEAPONS.map((w) => ({ id: w.id, name: w.name, sub: `${w.damage} · ${DAMAGE_TYPE_LABEL[w.type]} · crít ${w.crit}${w.range ? ` · ${w.range}` : ""}` }))} selected={weapons} onToggle={(id) => toggle(weapons, setWeapons, id)} search />
+        <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginBottom: 8 }}>Modificações/maldições são preservadas; aplique-as no criador de agente.</p>
+        <PickerGrid items={WEAPONS.map((w) => ({ id: w.id, name: w.name, sub: `${w.damage} · ${DAMAGE_TYPE_LABEL[w.type]} · crít ${w.crit}${w.range ? ` · ${w.range}` : ""}` }))} selected={weapons.map((c) => c.id)} onToggle={(id) => toggleItem(weapons, setWeapons, id)} search />
       </EditSection>
       <EditSection label={`Proteções (${protections.length})`}>
-        <PickerGrid items={PROTECTIONS.map((p) => ({ id: p.id, name: p.name, sub: `Defesa +${p.defense}${p.note ? ` · ${p.note}` : ""}` }))} selected={protections} onToggle={(id) => toggle(protections, setProtections, id)} />
+        <PickerGrid items={PROTECTIONS.map((p) => ({ id: p.id, name: p.name, sub: `Defesa +${p.defense}${p.note ? ` · ${p.note}` : ""}` }))} selected={protections.map((c) => c.id)} onToggle={(id) => toggleItem(protections, setProtections, id)} />
       </EditSection>
       <EditSection label={`Equipamento Geral (${generalItems.length})`}>
-        <PickerGrid items={GENERAL_ITEMS.map((g) => ({ id: g.id, name: g.name, sub: `${GENERAL_GROUP_LABEL[g.group]} · ${g.desc}` }))} selected={generalItems} onToggle={(id) => toggle(generalItems, setGeneralItems, id)} search />
+        <PickerGrid items={GENERAL_ITEMS.map((g) => ({ id: g.id, name: g.name, sub: `${GENERAL_GROUP_LABEL[g.group]} · ${g.desc}` }))} selected={generalItems.map((c) => c.id)} onToggle={(id) => toggleItem(generalItems, setGeneralItems, id)} search />
       </EditSection>
 
       {/* Rituais */}
@@ -1375,6 +1500,113 @@ function DegreeDot({ degree, onClick, small }: { degree: TrainDegree; onClick?: 
   };
   if (!onClick) return <span style={style}>{DEGREE_LETTER[degree]}</span>;
   return <button onClick={onClick} title={TRAIN_LABEL[degree]} style={{ ...style, cursor: "pointer" }}>{DEGREE_LETTER[degree]}</button>;
+}
+
+// ─── CONDIÇÕES & INSANIDADE ──────────────────────────────────────────────────
+function StatusPanel({
+  sheet, save, sanStatus, readOnly,
+}: {
+  sheet: AnyChar;
+  save?: (payload: Record<string, unknown>) => void;
+  sanStatus: ReturnType<typeof sanityStatus>;
+  readOnly?: boolean;
+}) {
+  const [conditions, setConditions] = useState<string[]>(() => parse<string[]>(sheet.conditions, []));
+  const [insanity, setInsanity] = useState<InsanityData>(() => {
+    const raw = parse<Partial<InsanityData>>(sheet.insanity, {});
+    return { traumas: Array.isArray(raw.traumas) ? raw.traumas : [], notes: raw.notes ?? "" };
+  });
+  const [showPicker, setShowPicker] = useState(false);
+
+  const persistCond = (v: string[]) => { setConditions(v); save?.({ conditions: v }); };
+  const persistIns  = (v: InsanityData) => { setInsanity(v); save?.({ insanity: v }); };
+
+  const addTrauma = (text: string) => {
+    const t = text.trim();
+    if (!t || insanity.traumas.includes(t)) return;
+    persistIns({ ...insanity, traumas: [...insanity.traumas, t] });
+  };
+
+  const statusColor = SANITY_STATUS_COLOR[sanStatus];
+
+  return (
+    <Panel title="Condições & Insanidade">
+      {/* Estado de Sanidade */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <span style={{ fontSize: "0.72rem", color: "var(--text-subtle)", fontWeight: 700 }}>Estado mental:</span>
+        <span style={{ fontSize: "0.78rem", fontWeight: 800, padding: "3px 12px", borderRadius: "var(--radius-lg)", background: `${statusColor}22`, border: `1px solid ${statusColor}`, color: statusColor }}>
+          {SANITY_STATUS_LABEL[sanStatus]}
+        </span>
+      </div>
+
+      {/* Condições */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Condições</p>
+        {!readOnly && (
+          <button onClick={() => setShowPicker((v) => !v)} style={{ fontSize: "0.72rem", color: ACCENT_LIGHT, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>+ Adicionar</button>
+        )}
+      </div>
+      {showPicker && !readOnly && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10, maxHeight: 150, overflowY: "auto" }}>
+          {ORDEM_CONDITIONS.filter((c) => !conditions.includes(c)).map((c) => (
+            <button key={c} onClick={() => { persistCond([...conditions, c]); setShowPicker(false); }}
+              style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: `${ORDEM_CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${ORDEM_CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", cursor: "pointer", fontFamily: "inherit" }}>
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+      {conditions.length === 0 ? (
+        <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhuma condição ativa.</p>
+      ) : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {conditions.map((c) => (
+            <span key={c}
+              onClick={readOnly ? undefined : () => persistCond(conditions.filter((x) => x !== c))}
+              title={readOnly ? c : "Clique para remover"}
+              style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-xs)", cursor: readOnly ? "default" : "pointer", background: `${ORDEM_CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${ORDEM_CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", userSelect: "none" }}>
+              {c}{readOnly ? "" : " ✕"}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Insanidade / Traumas */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "16px 0 8px" }}>
+        <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Efeitos de Insanidade</p>
+        {!readOnly && (
+          <button onClick={() => addTrauma(rollInsanity().effect)} style={{ fontSize: "0.72rem", color: ACCENT_LIGHT, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>🎲 Rolar (1d20)</button>
+        )}
+      </div>
+      {insanity.traumas.length === 0 ? (
+        <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhum efeito de insanidade registrado.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {insanity.traumas.map((t, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+              <span style={{ flex: 1, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.45 }}>{t}</span>
+              {!readOnly && (
+                <button onClick={() => persistIns({ ...insanity, traumas: insanity.traumas.filter((_, j) => j !== i) })}
+                  style={{ flexShrink: 0, background: "none", border: "none", color: "var(--text-subtle)", cursor: "pointer", fontSize: "0.8rem" }} title="Remover">✕</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {!readOnly && (
+        <textarea
+          value={insanity.notes}
+          onChange={(e) => persistIns({ ...insanity, notes: e.target.value })}
+          rows={2}
+          placeholder="Transtornos, gatilhos, manias persistentes…"
+          style={{ width: "100%", marginTop: 10, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit", resize: "vertical" }}
+        />
+      )}
+      {readOnly && insanity.notes && (
+        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{insanity.notes}</p>
+      )}
+    </Panel>
+  );
 }
 
 function Badge({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {

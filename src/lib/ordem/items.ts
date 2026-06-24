@@ -140,7 +140,7 @@ export const AMMO: Ammo[] = [
 
 // ─── Itens gerais (Tabela 3.8) ───────────────────────────────────────────────
 
-export type GeneralGroup = "acessorio" | "explosivo" | "operacional";
+export type GeneralGroup = "acessorio" | "explosivo" | "operacional" | "paranormal";
 
 export interface GeneralItem {
   id: string;
@@ -156,6 +156,7 @@ export const GENERAL_GROUP_LABEL: Record<GeneralGroup, string> = {
   acessorio: "Acessórios",
   explosivo: "Explosivos",
   operacional: "Itens Operacionais",
+  paranormal: "Itens Paranormais",
 };
 
 export const GENERAL_ITEMS: GeneralItem[] = [
@@ -189,6 +190,14 @@ export const GENERAL_ITEMS: GeneralItem[] = [
   { id: "spray-pimenta",    name: "Spray de pimenta", group: "operacional", category: 1, spaces: 1, desc: "Ação padrão: cega um adjacente por 1d4 rodadas (Fort DT Agi). Dois usos." },
   { id: "taser",            name: "Taser",            group: "operacional", category: 1, spaces: 1, desc: "Ação padrão: 1d6 elétrico e atordoa 1 rodada (Fort DT Agi). Dois usos." },
   { id: "traje-hazmat",     name: "Traje hazmat",     group: "operacional", category: 1, spaces: 2, desc: "+5 em resistência contra efeitos ambientais e RD químico 10." },
+  // ── Itens Paranormais (Tabela 3.10) ──
+  { id: "amarras-elemento", name: "Amarras de (elemento)", group: "paranormal", category: 2, spaces: 1, desc: "Cordas/correntes de um elemento. Armadilha (3x3m, ação completa + 2 PE; Reflexos DT Int ou imóvel) ou Laçar (ação padrão + 1 PE; Vontade DT Agi ou paralisado, manter 1 PE/rodada)." },
+  { id: "camera-aura",      name: "Câmera de aura paranormal", group: "paranormal", category: 2, spaces: 1, desc: "Câmera amaldiçoada com Energia + sigilos de Conhecimento. Foto (ação padrão + 1 PE) revela auras paranormais em pessoas/objetos, na cor do elemento." },
+  { id: "componentes-ritualisticos", name: "Componentes ritualísticos de (elemento)", group: "paranormal", category: 0, spaces: 1, desc: "Conjunto de objetos de um elemento (Sangue, Morte, Conhecimento ou Energia — não há de Medo). Necessários para conjurar rituais do elemento." },
+  { id: "emissor-pulsos",   name: "Emissor de pulsos paranormais", group: "paranormal", category: 2, spaces: 1, desc: "Isca: ação completa + 1 PE emite pulso de um elemento que atrai criaturas do mesmo elemento e afasta as do oposto (Vontade DT Pre evita)." },
+  { id: "escuta-ruidos",    name: "Escuta de ruídos paranormais", group: "paranormal", category: 2, spaces: 1, desc: "Microfone que capta ruídos paranormais. Ação completa + 2 PE grava por até 24h. Ouvir dá +5 em Ocultismo para identificar criatura." },
+  { id: "medidor-membrana", name: "Medidor de estabilidade da membrana", group: "paranormal", category: 2, spaces: 1, desc: "Agente treinado em Ocultismo avalia o estado da Membrana numa área (chance de manifestação). Indicativo, não definitivo." },
+  { id: "scanner-manifestacao", name: "Scanner de manifestação paranormal de (elemento)", group: "paranormal", category: 2, spaces: 1, desc: "Ativar é ação padrão (1 PE/rodada): sempre sabe a direção de todas as manifestações do elemento escolhido em alcance longo. Detecta também o complemento." },
 ];
 
 export const GENERAL_BY_ID: Record<string, GeneralItem> = Object.fromEntries(

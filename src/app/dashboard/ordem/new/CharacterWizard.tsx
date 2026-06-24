@@ -131,8 +131,8 @@ export function CharacterWizard({ systemId }: Props) {
 
     try {
       const inventory = [
-        ...data.protections.map((id) => ({ kind: "protection", id })),
-        ...data.generalItems.map((id) => ({ kind: "general", id })),
+        ...data.protections.map((c) => ({ kind: "protection", id: c.id, mods: c.mods, curses: c.curses })),
+        ...data.generalItems.map((c) => ({ kind: "general", id: c.id, mods: c.mods, curses: c.curses })),
       ];
 
       const res = await fetch("/api/ordem/characters", {
@@ -146,7 +146,7 @@ export function CharacterWizard({ systemId }: Props) {
           nex:       5,
           attrs:     data.attrs,
           skills:    buildTrainedSkills(data),
-          weapons:   data.weapons,
+          weapons:   data.weapons, // ConfiguredItem[] { id, mods, curses }
           inventory,
           rituals:   data.classId === "ocultista" && data.startingRituals.length
                        ? data.startingRituals

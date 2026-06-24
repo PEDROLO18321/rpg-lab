@@ -378,77 +378,134 @@ export const CLASS_POWERS_BY_CLASS: Record<ClassId, ClassPower[]> = {
 // Disponíveis via poder "Transcender" de qualquer classe, ou para Cultista
 // Arrependido na criação (substituindo ganho de SAN pela metade).
 
+export type ParanormalElement = "conhecimento" | "energia" | "morte" | "sangue";
+
 export interface ParanormalPower {
   id: string;
   name: string;
+  element: ParanormalElement;
   description: string;
+  prerequisite?: string;
+  affinity: string;
 }
 
+// Poderes paranormais (Livro de Regras, Cap. 5 — Transcender). Organizados por
+// elemento, cada um com pré-requisito de afinidade elemental e bônus de Afinidade.
 export const PARANORMAL_POWERS: ParanormalPower[] = [
+  // ── CONHECIMENTO ──
   {
-    id: "ampliar_sentidos",
-    name: "Ampliar Sentidos",
-    description: "+5 em Percepção e Investigação. Você enxerga no escuro até 18m e detecta seres pelo olfato/audição até 9m, mesmo sem visão.",
+    id: "expansao_conhecimento", name: "Expansão de Conhecimento", element: "conhecimento",
+    description: "Você aprende um poder de classe que não pertença à sua classe (se tiver pré-requisitos, precisa preenchê-los).",
+    prerequisite: "Conhecimento 1",
+    affinity: "Você aprende um segundo poder de classe que não pertença à sua classe.",
   },
   {
-    id: "aura_vitalizante",
-    name: "Aura Vitalizante",
-    description: "Aliados adjacentes a você no início do turno recuperam 1 PV. O efeito se aplica uma vez por turno por personagem.",
+    id: "percepcao_paranormal", name: "Percepção Paranormal", element: "conhecimento",
+    description: "Em cenas de investigação, ao procurar pistas você pode rolar novamente um dado com resultado menor que 10 (deve aceitar a segunda rolagem).",
+    affinity: "Você pode rolar novamente até dois dados com resultado menor que 10.",
   },
   {
-    id: "corpo_paranormal",
-    name: "Corpo Paranormal",
-    description: "Imunidade a veneno e doenças naturais. +5 em testes de Fortitude contra efeitos ambientais e condições físicas.",
+    id: "precognicao", name: "Precognição", element: "conhecimento",
+    description: "Um “sexto sentido” o avisa do perigo. Você recebe +2 em Defesa e em testes de resistência.",
+    prerequisite: "Conhecimento 1",
+    affinity: "Você fica imune à condição desprevenido.",
   },
   {
-    id: "escudo_paranormal",
-    name: "Escudo Paranormal",
-    description: "Você possui Redução de Dano paranormal 5. Dano de rituais e criaturas do Outro Lado é reduzido em 5 pontos.",
+    id: "sensitivo", name: "Sensitivo", element: "conhecimento",
+    description: "Você sente emoções e intenções alheias, recebendo +5 em Diplomacia, Intimidação e Intuição.",
+    affinity: "Em testes opostos com uma dessas perícias, o oponente sofre –1d20 (pega o pior).",
   },
   {
-    id: "forca_sobre_humana",
-    name: "Força Sobre-Humana",
-    description: "+2 em Força (não aumenta PV retroativos). Ataques desarmados causam 1d6 de dano de impacto.",
+    id: "visao_oculto", name: "Visão do Oculto", element: "conhecimento",
+    description: "Você enxerga pela percepção do Conhecimento: +5 em Percepção e enxerga no escuro.",
+    affinity: "Você ignora camuflagem.",
+  },
+  // ── ENERGIA ──
+  {
+    id: "afortunado", name: "Afortunado", element: "energia",
+    description: "Uma vez por rolagem, você pode rolar novamente um resultado 1 em qualquer dado que não seja d20.",
+    affinity: "Além disso, uma vez por teste, pode rolar novamente um resultado 1 em d20.",
   },
   {
-    id: "manto_sombrio",
-    name: "Manto Sombrio",
-    description: "Em ambientes com pouca luz ou escuridão, você possui camuflagem (50% de chance de falha em ataques contra você). +5 em Furtividade.",
+    id: "campo_protetor", name: "Campo Protetor", element: "energia",
+    description: "Ao usar a ação esquiva, gaste 1 PE para receber +5 em Defesa.",
+    prerequisite: "Energia 1",
+    affinity: "Também recebe +5 em Reflexos e, até seu próximo turno, se passar num Reflexos que reduziria dano à metade, não sofre dano nenhum.",
   },
   {
-    id: "olhos_alem",
-    name: "Olhos do Além",
-    description: "Você enxerga manifestações paranormais, criaturas incorpóreas e itens amaldiçoados automaticamente. Equivale ao ritual Terceiro Olho passivo.",
+    id: "causalidade_fortuita", name: "Causalidade Fortuita", element: "energia",
+    description: "Em cenas de investigação, a DT para procurar pistas diminui em –5 até você encontrar uma pista.",
+    affinity: "A DT para procurar pistas sempre diminui em –5 para você.",
   },
   {
-    id: "presenca_apavorante",
-    name: "Presença Apavorante",
-    description: "Uma vez por cena, ação de movimento: teste de Presença vs. Vontade contra todos inimigos que possam ver você em alcance curto. Se falhar, ficam apavorados por 1d4 rodadas.",
+    id: "golpe_sorte", name: "Golpe de Sorte", element: "energia",
+    description: "Seus ataques recebem +1 na margem de ameaça.",
+    prerequisite: "Energia 1",
+    affinity: "Seus ataques recebem +1 no multiplicador de crítico.",
   },
   {
-    id: "pulso_paranormal",
-    name: "Pulso Paranormal",
-    description: "Ação padrão: projete pulso de energia do Outro Lado (alcance curto, 1d6+PRE de dano paranormal). Não exige proficiência e não pode ser bloqueado por proteção comum.",
+    id: "manipular_entropia", name: "Manipular Entropia", element: "energia",
+    description: "Gaste 2 PE para fazer um alvo em alcance curto (exceto você) rolar novamente um dos dados em um teste de perícia.",
+    prerequisite: "Energia 1",
+    affinity: "O alvo rola novamente todos os dados que você escolher.",
+  },
+  // ── MORTE ──
+  {
+    id: "encarar_morte", name: "Encarar a Morte", element: "morte",
+    description: "Durante cenas de ação, seu limite de gasto de PE por turno aumenta em +1 (não afeta a DT dos seus efeitos).",
+    affinity: "O aumento passa a ser +2 (total +3).",
   },
   {
-    id: "sentido_perigo",
-    name: "Sentido do Perigo",
-    description: "Você nunca é surpreendido. Se outro efeito causaria surpresa, você ainda age no primeiro turno. +5 em Iniciativa.",
+    id: "escapar_morte", name: "Escapar da Morte", element: "morte",
+    description: "Uma vez por cena, ao receber dano que o deixaria com 0 PV, você fica com 1 PV. Não funciona contra dano massivo.",
+    prerequisite: "Morte 1",
+    affinity: "Em vez disso, evita completamente o dano (no dano massivo, fica com 1 PV).",
   },
   {
-    id: "toque_anestesiante",
-    name: "Toque Anestesiante",
-    description: "Ação padrão e toque: alvo deve fazer Fortitude (DT = 10 + PRE) ou fica inconsciente até o fim da cena. Funciona apenas contra humanos e humanoides.",
+    id: "potencial_aprimorado", name: "Potencial Aprimorado", element: "morte",
+    description: "Você recebe +1 PE por NEX. Os PE recebidos aumentam conforme sobe de NEX.",
+    affinity: "Recebe +1 PE adicional por NEX (total +2 PE por NEX).",
   },
   {
-    id: "velocidade_sobre_humana",
-    name: "Velocidade Sobre-Humana",
-    description: "+2 em Agilidade (não aumenta PE ou Defesa retroativamente). Seu deslocamento aumenta em +3m.",
+    id: "potencial_reaproveitado", name: "Potencial Reaproveitado", element: "morte",
+    description: "Uma vez por rodada, ao passar num teste de resistência, ganha 2 PE temporários cumulativos (somem no fim da cena).",
+    affinity: "Ganha 3 PE temporários em vez de 2.",
   },
   {
-    id: "voo",
-    name: "Voo",
-    description: "Você pode voar com velocidade igual ao seu deslocamento. Manter o voo exige uma ação livre por rodada; se não puder agir, você cai.",
+    id: "surto_temporal", name: "Surto Temporal", element: "morte",
+    description: "Uma vez por cena, em seu turno, gaste 3 PE para realizar uma ação padrão adicional.",
+    prerequisite: "Morte 2",
+    affinity: "Pode usar uma vez por turno em vez de uma vez por cena.",
+  },
+  // ── SANGUE ──
+  {
+    id: "anatomia_insana", name: "Anatomia Insana", element: "sangue",
+    description: "50% de chance (resultado par em 1d4) de ignorar o dano adicional de um acerto crítico ou ataque furtivo.",
+    prerequisite: "Sangue 2",
+    affinity: "Você fica imune aos efeitos de acertos críticos e ataques furtivos.",
+  },
+  {
+    id: "arma_sangue", name: "Arma de Sangue", element: "sangue",
+    description: "Ação de movimento e 2 PE: produz uma arma simples corpo a corpo leve (1d6 de Sangue) que não precisa empunhar. Uma vez/turno, na ação agredir, gaste 1 PE para um ataque adicional. Dura até o fim da cena.",
+    affinity: "A arma se torna permanente e causa 1d10 de dano de Sangue.",
+  },
+  {
+    id: "sangue_ferro", name: "Sangue de Ferro", element: "sangue",
+    description: "Você recebe +2 PV por NEX. Os PV recebidos aumentam conforme sobe de NEX (ex.: NEX 50% = 20 PV).",
+    prerequisite: "Sangue 1",
+    affinity: "Recebe +5 em Fortitude e fica imune a venenos e doenças.",
+  },
+  {
+    id: "sangue_fervente", name: "Sangue Fervente", element: "sangue",
+    description: "Enquanto estiver machucado, recebe +1 em Agilidade ou Força (à escolha, sempre que ativar).",
+    prerequisite: "Sangue 2",
+    affinity: "O bônus aumenta para +2.",
+  },
+  {
+    id: "sangue_vivo", name: "Sangue Vivo", element: "sangue",
+    description: "Na primeira vez que ficar machucado numa cena, recebe cura acelerada 2 (nunca cura acima da metade dos PV; termina no fim da cena ou ao deixar de estar machucado).",
+    prerequisite: "Sangue 1",
+    affinity: "A cura acelerada aumenta para 5.",
   },
 ];
 
