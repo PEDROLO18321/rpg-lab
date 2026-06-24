@@ -25,6 +25,44 @@ export interface OrdemCreature {
   description: string;
 }
 
+// ─── ALIADOS (pág. 170) ──────────────────────────────────────────────────────
+// NPCs auxiliares: só têm um Bônus (passivo ao personagem ajudado) e uma
+// Habilidade (ação livre, 1×/rodada, ativada pelo personagem ajudado).
+export interface OrdemAlly {
+  id: string;
+  name: string;
+  concept: string;
+  bonus: string;
+  ability: string;
+}
+
+export const ORDEM_ALLIES: OrdemAlly[] = [
+  {
+    id: "acolito", name: "Acólito",
+    concept: "Pessoa envolvida com o paranormal, com conhecimento suficiente para auxiliar em rituais.",
+    bonus: "+2 em testes de Ocultismo e você não precisa manipular componentes ritualísticos para conjurar rituais (o aliado faz isso).",
+    ability: "Conjuração Conjunta: ao conjurar um ritual, gaste 1 PE para aumentar a DT contra esse ritual em +2.",
+  },
+  {
+    id: "faz-tudo", name: "Faz-Tudo",
+    concept: "Pessoa treinada em uma ou mais perícias, com bastante prática.",
+    bonus: "Escolha duas perícias (exceto Luta e Pontaria). Você é considerado treinado nelas.",
+    ability: "Dica Valiosa: gaste 1 PE para receber +1d6 em um teste de uma das perícias escolhidas.",
+  },
+  {
+    id: "guerrilheiro", name: "Guerrilheiro",
+    concept: "Soldado, policial ou indivíduo treinado para o combate armado.",
+    bonus: "+2 em testes de ataque.",
+    ability: "Ataque Conjunto: ao atacar, gaste 1 PE. Se acertar, causa +1d8 de dano.",
+  },
+  {
+    id: "socorrista", name: "Socorrista",
+    concept: "Médico, enfermeiro ou indivíduo treinado em primeiros socorros e remédios.",
+    bonus: "Você é considerado treinado em Medicina.",
+    ability: "Bolsa de Remédios: gaste 1 PE para recuperar 1d8+1 PV de si mesmo ou de um aliado adjacente.",
+  },
+];
+
 export const BESTIARY: OrdemCreature[] = [
   // ─────────────────────────────── SANGUE ───────────────────────────────
   {
