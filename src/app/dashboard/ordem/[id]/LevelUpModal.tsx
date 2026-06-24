@@ -319,7 +319,9 @@ export function LevelUpModal({ character, onClose }: Props) {
                     <button key={pp.id} disabled={owned || full} onClick={() => setParaPicks(on ? paraPicks.filter((x) => x !== pp.id) : [...paraPicks, pp.id])}
                       style={{ ...cardBtn(on), opacity: owned ? 0.4 : full ? 0.5 : 1, cursor: owned || full ? "default" : "pointer" }}>
                       <p style={{ fontSize: "0.82rem", fontWeight: 700, color: on ? "#b89cf0" : "var(--text)" }}>{pp.name}{owned ? " ✓" : ""}</p>
+                      <p style={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "#b89cf0", marginTop: 2 }}>{pp.element}{pp.prerequisite ? ` · req. ${pp.prerequisite}` : ""}</p>
                       <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", lineHeight: 1.45, marginTop: 3 }}>{pp.description}</p>
+                      <p style={{ fontSize: "0.66rem", color: "var(--text-muted)", lineHeight: 1.4, marginTop: 3 }}><strong style={{ color: "#9b7fd4" }}>Afinidade:</strong> {pp.affinity}</p>
                     </button>
                   );
                 })}

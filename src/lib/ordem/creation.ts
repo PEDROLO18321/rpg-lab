@@ -5,6 +5,7 @@ import {
   CLASS_BY_ID, type ClassId, type OrdemAttrs,
 } from "./data";
 import { ORIGIN_BY_ID } from "./origins";
+import type { ConfiguredItem } from "./modifications";
 
 export interface OrdemWizardData {
   name:               string;
@@ -16,9 +17,9 @@ export interface OrdemWizardData {
   fixedChoices:       Record<string, string>;  // "luta|pontaria" → "luta"
   trainedSkills:      string[];                // escolha livre da classe (skillBase + INT + sobreposições)
   startingRituals:    string[];                // ocultista: 3 rituais de 1º círculo
-  weapons:            string[];                // ids de armas iniciais
-  protections:        string[];                // ids de proteções iniciais
-  generalItems:       string[];                // ids de itens gerais (Tabela 3.8)
+  weapons:            ConfiguredItem[];        // armas iniciais (com modificações/maldições)
+  protections:        ConfiguredItem[];        // proteções iniciais (com modificações/maldições)
+  generalItems:       ConfiguredItem[];        // itens gerais (Tabela 3.8) — acessórios podem ter mods
   background:         { appearance: string; personality: string; history: string; objective: string };
 }
 

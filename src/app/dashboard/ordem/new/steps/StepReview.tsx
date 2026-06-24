@@ -8,6 +8,10 @@ import {
 } from "@/lib/ordem/data";
 import { ORIGIN_BY_ID } from "@/lib/ordem/origins";
 import { WEAPON_BY_ID, PROTECTION_BY_ID, GENERAL_BY_ID, armorDefenseBonus, loadStatus } from "@/lib/ordem/items";
+import {
+  configuredCategory, weaponSpaceDelta, protectionSpaceDelta, accessorySpaceDelta, isAccessory,
+  type ConfiguredItem,
+} from "@/lib/ordem/modifications";
 import { buildTrainedSkills } from "@/lib/ordem/creation";
 import { RITUALS } from "@/lib/ordem/rituals";
 import { PARANORMAL_POWER_BY_ID } from "@/lib/ordem/abilities";
@@ -19,14 +23,18 @@ export function StepReview({ data }: { data: OrdemWizardData }) {
   const cls = data.classId ? CLASS_BY_ID[data.classId] : null;
   const origin = ORIGIN_BY_ID[data.originId];
   const vitals = cls ? computeVitals(data.classId as never, 5, data.attrs.vig, data.attrs.pre, data.originId) : null;
-  const defense = computeDefense(data.attrs.agi) + armorDefenseBonus(data.protections);
+  const defense = computeDefense(data.attrs.agi) + armorDefenseBonus(data.protections.map((c) => c.id));
   const trained = Object.keys(buildTrainedSkills(data));
 
-  const bonusSpaces = data.generalItems.reduce((a, id) => a + (GENERAL_BY_ID[id]?.capacityBonus ?? 0), 0);
+  const bonusSpaces = data.generalItems.reduce((a, c) => a + (GENERAL_BY_ID[c.id]?.capacityBonus ?? 0), 0);
   const usedSpaces = [
-    ...data.weapons.map((id) => WEAPON_BY_ID[id]?.spaces ?? 0),
-    ...data.protections.map((id) => PROTECTION_BY_ID[id]?.spaces ?? 0),
-    ...data.generalItems.map((id) => GENERAL_BY_ID[id]?.spaces ?? 0),
+    ...data.weapons.map((c) => Math.max(0, (WEAPON_BY_ID[c.id]?.spaces ?? 0) + weaponSpaceDelta(c.mods))),
+    ...data.protections.map((c) => Math.max(0, (PROTECTION_BY_ID[c.id]?.spaces ?? 0) + protectionSpaceDelta(c.mods))),
+    ...data.generalItems.map((c) => {
+      const g = GENERAL_BY_ID[c.id];
+      const delta = g && isAccessory(g) ? accessorySpaceDelta(c.mods) : 0;
+      return Math.max(0, (g?.spaces ?? 0) + delta);
+    }),
   ].reduce((a, b) => a + b, 0);
   const load = loadStatus(usedSpaces, data.attrs.for, bonusSpaces);
   const hasEquip = data.weapons.length > 0 || data.protections.length > 0 || data.generalItems.length > 0;
@@ -85,15 +93,21 @@ export function StepReview({ data }: { data: OrdemWizardData }) {
       {hasEquip && (
         <Section title="Equipamento">
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {data.weapons.map((id) => (
-              <Chip key={id} text={WEAPON_BY_ID[id]?.name ?? id} />
-            ))}
-            {data.protections.map((id) => (
-              <Chip key={id} text={`🛡 ${PROTECTION_BY_ID[id]?.name ?? id}`} />
-            ))}
-            {data.generalItems.map((id) => (
-              <Chip key={id} text={GENERAL_BY_ID[id]?.name ?? id} />
-            ))}
+            {data.weapons.map((c) => {
+              const w = WEAPON_BY_ID[c.id];
+              const cat = w ? configuredCategory(w.category, c) : 0;
+              return <Chip key={c.id} text={`${w?.name ?? c.id}${modSuffix(c, cat)}`} />;
+            })}
+            {data.protections.map((c) => {
+              const p = PROTECTION_BY_ID[c.id];
+              const cat = p ? configuredCategory(p.category, c) : 0;
+              return <Chip key={c.id} text={`🛡 ${p?.name ?? c.id}${modSuffix(c, cat)}`} />;
+            })}
+            {data.generalItems.map((c) => {
+              const g = GENERAL_BY_ID[c.id];
+              const cat = g ? configuredCategory(g.category, c) : 0;
+              return <Chip key={c.id} text={`${g?.name ?? c.id}${modSuffix(c, cat)}`} />;
+            })}
           </div>
         </Section>
       )}
@@ -175,6 +189,13 @@ function Vital({ label, value, color }: { label: string; value: number | string;
       <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 2 }}>{label}</p>
     </div>
   );
+}
+
+const ROMAN_REVIEW = ["0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+function modSuffix(c: ConfiguredItem, cat: number): string {
+  const n = c.mods.length + c.curses.length;
+  if (n === 0) return "";
+  return ` · Cat ${ROMAN_REVIEW[cat] ?? cat} (${n} mod${n > 1 ? "s" : ""})`;
 }
 
 function Chip({ text }: { text: string }) {

@@ -23,7 +23,7 @@ const SYSTEMS = [
     icon: "🔮",
     name: "Ordem Paranormal",
     abbr: "OP RPG",
-    status: "soon" as const,
+    status: "available" as const,
     desc: "Agentes enfrentam o Outro Lado numa narrativa de horror e mistério. Sistema de sanidade, traumas e poderes paranormais.",
     highlights: ["Poderes paranormais", "Sanidade e traumas", "Agências e cargos", "O Outro Lado"],
   },
@@ -78,7 +78,7 @@ export function Systems() {
             Escolha seu universo
           </h2>
           <p style={{ fontSize: "0.975rem", color: "var(--text-muted)", maxWidth: 440, margin: "0 auto" }}>
-            D&amp;D 5e e Call of Cthulhu disponíveis. Ordem Paranormal em desenvolvimento.
+            D&amp;D 5e, Call of Cthulhu e Ordem Paranormal disponíveis. Tormenta 20 em desenvolvimento.
           </p>
         </div>
 
