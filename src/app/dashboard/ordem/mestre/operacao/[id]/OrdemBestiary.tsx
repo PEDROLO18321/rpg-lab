@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { type OrdemCampaign } from "@/lib/ordem/ordemCampaignStorage";
-import { BESTIARY, type Element, type OrdemCreature } from "@/lib/ordem/bestiary";
+import { BESTIARY, ORDEM_ALLIES, type Element, type OrdemCreature } from "@/lib/ordem/bestiary";
 
 const AL = "#e8e8ef";
 const AD = "rgba(255,255,255,0.1)";
@@ -40,6 +40,7 @@ export function OrdemBestiary({ campaign, onChange }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [addTarget, setAddTarget] = useState<string | null>(null);
   const [addInit, setAddInit] = useState("");
+  const [showAllies, setShowAllies] = useState(false);
 
   function addToInitiative(creature: OrdemCreature) {
     const init = addInit !== "" ? Number(addInit) : creature.agi + Math.floor(Math.random() * 20) + 1;
@@ -94,6 +95,29 @@ export function OrdemBestiary({ campaign, onChange }: Props) {
       <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: 16 }}>
         {filtered.length} ameaça{filtered.length !== 1 ? "s" : ""} de {BESTIARY.length} no total
       </p>
+
+      {/* Aliados */}
+      <div style={{ marginBottom: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+        <button onClick={() => setShowAllies((v) => !v)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)" }}>🤝 Aliados</p>
+            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>NPCs auxiliares — só Bônus + Habilidade, sem PV/PE ou turno próprio</p>
+          </div>
+          <span style={{ color: "var(--text-subtle)", fontSize: "0.82rem", transform: showAllies ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.22s" }}>▾</span>
+        </button>
+        {showAllies && (
+          <div style={{ padding: "0 20px 16px", borderTop: "1px solid var(--border)", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10, marginTop: 4 }}>
+            {ORDEM_ALLIES.map((a) => (
+              <div key={a.id} style={{ padding: "12px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                <p style={{ fontWeight: 700, fontSize: "0.86rem", color: AL }}>{a.name}</p>
+                <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", fontStyle: "italic", margin: "3px 0 8px", lineHeight: 1.45 }}>{a.concept}</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}><strong style={{ color: "#7dd3a8" }}>Bônus:</strong> {a.bonus}</p>
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5, marginTop: 5 }}><strong style={{ color: "#9b7ce0" }}>Habilidade:</strong> {a.ability}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Creature list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

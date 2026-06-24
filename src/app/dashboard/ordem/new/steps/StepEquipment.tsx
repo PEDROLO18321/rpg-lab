@@ -180,7 +180,7 @@ export function StepEquipment({ data, onChange }: Props) {
   }
 
   const profs: WeaponProf[] = ["simples", "tatica", "pesada"];
-  const groups: GeneralGroup[] = ["acessorio", "explosivo", "operacional", "paranormal"];
+  const groups: GeneralGroup[] = ["acessorio", "explosivo", "operacional", "paranormal", "artefato"];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>

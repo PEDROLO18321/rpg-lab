@@ -140,7 +140,7 @@ export const AMMO: Ammo[] = [
 
 // ─── Itens gerais (Tabela 3.8) ───────────────────────────────────────────────
 
-export type GeneralGroup = "acessorio" | "explosivo" | "operacional" | "paranormal";
+export type GeneralGroup = "acessorio" | "explosivo" | "operacional" | "paranormal" | "artefato";
 
 export interface GeneralItem {
   id: string;
@@ -157,6 +157,7 @@ export const GENERAL_GROUP_LABEL: Record<GeneralGroup, string> = {
   explosivo: "Explosivos",
   operacional: "Itens Operacionais",
   paranormal: "Itens Paranormais",
+  artefato: "Itens Amaldiçoados Especiais",
 };
 
 export const GENERAL_ITEMS: GeneralItem[] = [
@@ -198,6 +199,29 @@ export const GENERAL_ITEMS: GeneralItem[] = [
   { id: "escuta-ruidos",    name: "Escuta de ruídos paranormais", group: "paranormal", category: 2, spaces: 1, desc: "Microfone que capta ruídos paranormais. Ação completa + 2 PE grava por até 24h. Ouvir dá +5 em Ocultismo para identificar criatura." },
   { id: "medidor-membrana", name: "Medidor de estabilidade da membrana", group: "paranormal", category: 2, spaces: 1, desc: "Agente treinado em Ocultismo avalia o estado da Membrana numa área (chance de manifestação). Indicativo, não definitivo." },
   { id: "scanner-manifestacao", name: "Scanner de manifestação paranormal de (elemento)", group: "paranormal", category: 2, spaces: 1, desc: "Ativar é ação padrão (1 PE/rodada): sempre sabe a direção de todas as manifestações do elemento escolhido em alcance longo. Detecta também o complemento." },
+  // ── Itens Amaldiçoados Especiais (Cap. 5) — contam como 1 maldição, categoria II ──
+  { id: "coroa-espinhos",   name: "Coroa de Espinhos",   group: "artefato", category: 2, spaces: 1, desc: "SANGUE. Reação 1×/rodada: transforma dano mental que sofreria em dano de Sangue, mas não recupera Sanidade por descanso enquanto vestir. Ativa após 1 semana de uso." },
+  { id: "frasco-vitalidade", name: "Frasco de Vitalidade", group: "artefato", category: 2, spaces: 1, desc: "SANGUE. 1 min + até 20 de dano para encher com seu sangue. Ação padrão para beber e recuperar os PV armazenados (Fortitude DT 20 ou enjoado 1 rodada)." },
+  { id: "perola-sangue",    name: "Pérola de Sangue",    group: "artefato", category: 2, spaces: 1, desc: "SANGUE. Ação de movimento para absorver: +5 em AGI/FOR/VIG e testes baseados até o fim da cena. Depois, Fortitude DT 20: falha = fatigado; falha por 5+ = parada cardíaca (morrendo)." },
+  { id: "punhos-enraivecidos", name: "Punhos Enraivecidos", group: "artefato", category: 2, spaces: 1, desc: "SANGUE. Ataques desarmados causam 1d8 de Sangue. Ao acertar desarmado, faça outro ataque pagando 2 PE por ataque já feito no turno, até errar ou faltar PE." },
+  { id: "seringa-transfiguracao", name: "Seringa de Transfiguração", group: "artefato", category: 2, spaces: 1, desc: "SANGUE. Suga sangue de adjacente (ataque se não voluntário); injetar transfigura a aparência do alvo (Distorcer Aparência, 1 dia). Ao acabar, 1d6: em 1, perde 1 PV permanente." },
+  { id: "casaco-lodo",      name: "Casaco de Lodo",      group: "artefato", category: 2, spaces: 1, desc: "MORTE. RD corte/impacto/perfuração/Morte 5, mas vulnerabilidade a dano balístico e de Energia. Feito de Lodo ativo." },
+  { id: "coletora",         name: "Coletora",            group: "artefato", category: 2, spaces: 1, desc: "MORTE. Punhal: ação completa para apunhalar alguém morrendo, matando-o e armazenando 1d8 PE (máx 20), utilizáveis como seus após portar 1 semana. Causa pesadelos e descanso ruim." },
+  { id: "cranio-espiral",   name: "Crânio Espiral",      group: "artefato", category: 2, spaces: 1, desc: "MORTE. Ação livre 1×/rodada: ganha 1 ação padrão adicional. Vontade DT 15 (+5 por uso/dia): falha = envelhece 1d4 anos e não pode mais usá-lo no dia." },
+  { id: "frasco-lodo",      name: "Frasco de Lodo",      group: "artefato", category: 2, spaces: 1, desc: "MORTE. Ação padrão: em ferida recente recupera 6d8+20 PV. Ferida antiga, role 1d: par = 3d8+10 PV; ímpar = a ferida infecciona, 3d8+10 de dano de Morte. Uso único." },
+  { id: "vislumbre-fim",    name: "Vislumbre do Fim",    group: "artefato", category: 2, spaces: 1, desc: "MORTE. Ação de movimento: foca um ser visível e obtém info sobre sua morte. Em Marcados/criaturas, revela o pior teste de resistência e vulnerabilidades." },
+  { id: "lanterna-reveladora", name: "Lanterna Reveladora", group: "artefato", category: 2, spaces: 1, desc: "CONHECIMENTO. Ação padrão + 1 PE: emite por uma cena luz com efeito de Terceiro Olho. Criaturas de Sangue iluminadas passam a atacá-lo preferencialmente." },
+  { id: "mascara-sombras",  name: "Máscara das Pessoas nas Sombras", group: "artefato", category: 2, spaces: 1, desc: "CONHECIMENTO. RD Conhecimento 10. Ação de movimento + 2 PE: entra numa sombra adjacente e sai por outra que veja em alcance médio. Vesti-la tem consequências." },
+  { id: "municao-jurada",   name: "Munição Jurada",      group: "artefato", category: 2, spaces: 1, desc: "CONHECIMENTO. Ritual de 1h vincula a munição a um ser. Contra ele: +10 ataque, dobra a margem de ameaça e +6d12 de Conhecimento. Obsessão: –2 em Defesa e ataque contra outros." },
+  { id: "pergaminho-pertinacia", name: "Pergaminho da Pertinácia", group: "artefato", category: 2, spaces: 1, desc: "CONHECIMENTO. Ação padrão: encara os sigilos e recebe 5 PE temporários até o fim da cena. Ocultismo DT 15 (+5 por uso/dia): falha = o pergaminho se desfaz." },
+  { id: "tela-pesadelo",    name: "Tela do Pesadelo",    group: "artefato", category: 2, spaces: 1, desc: "CONHECIMENTO. Ação padrão + 2 PE: a próxima pessoa que tocar a tela faz Vontade (DT à escolha +5) ou fica atordoada, sofre 4d6 mental e repete o teste até passar ou enlouquecer." },
+  { id: "bateria-reversa",  name: "Bateria Reversa",     group: "artefato", category: 2, spaces: 1, desc: "ENERGIA. Ação padrão + 2 PE: absorve a carga de um dispositivo eletrônico em alcance curto (descarrega). Cheia, transfere a carga para reenergizar outro dispositivo. Ocultismo por uso." },
+  { id: "peitoral-segunda-chance", name: "Peitoral da Segunda Chance", group: "artefato", category: 2, spaces: 1, desc: "ENERGIA. Ao chegar a 0 PV, gasta 5 PE seus para reanimá-lo com 4d10 PV. Chance de 1 em 1d10 da descarga matá-lo instantaneamente, virando plasma de Energia." },
+  { id: "relogio-arnaldo",  name: "Relógio de Arnaldo",  group: "artefato", category: 2, spaces: 1, desc: "ENERGIA. 1×/rodada: gaste 1 PE para rolar novamente um dado com resultado 1 (custo +1 PE por uso/dia). Item único — apenas um agente pode escolhê-lo." },
+  { id: "talisma-sorte",    name: "Talismã da Sorte",    group: "artefato", category: 2, spaces: 1, desc: "ENERGIA. Ao sofrer dano, reação + 3 PE: role 1d4 — 2-3 evita o dano; 4 evita e o talismã vira cinzas; 1 sofre o dobro do dano e o talismã vira cinzas." },
+  { id: "teclado-neural",   name: "Teclado de Conexão Neural", group: "artefato", category: 2, spaces: 1, desc: "ENERGIA. Plugado a um computador (ação de movimento), conecta sua mente à máquina: usa o computador sem barreira técnica/idioma e recebe +10 em testes relacionados." },
+  { id: "veiculo-energizado", name: "Veículo Energizado", group: "artefato", category: 2, spaces: 1, desc: "ENERGIA. Motor não precisa de combustível. Reação + Pilotagem DT 25: o carro e ocupantes viram energia pura por um instante, atravessando um objeto como incorpóreos." },
+  { id: "selos-paranormais", name: "Selos Paranormais",   group: "artefato", category: 2, spaces: 1, desc: "Objeto com um ritual gravado. Empunhe e leia os sigilos (ação padrão ou a do ritual). Precisa conhecer o ritual ou passar em Ocultismo (DT 20 + custo em PE)." },
 ];
 
 export const GENERAL_BY_ID: Record<string, GeneralItem> = Object.fromEntries(
