@@ -50,7 +50,7 @@ export const RITUALS: Ritual[] = [
     range: "toque",
     target: "1 arma corpo a corpo ou pacote de munição",
     duration: "cena",
-    description: "Imbui a arma/munições com Conhecimento: causam +1d6 de dano de Conhecimento. (Ao aprender, escolha o elemento — este é o Conhecimento.)",
+    description: "Ao aprender, escolha um elemento entre Conhecimento, Energia, Morte e Sangue — o ritual passa a ser desse elemento. Imbui a arma/munições, fazendo-as causar +1d6 de dano do elemento escolhido.",
     upgrade: "Discente (+2 PE): dano +2d6. Requer 2º círculo.",
     trueForm: "Verdadeiro (+5 PE): dano +4d6. Requer 3º círculo e afinidade.",
   },
@@ -135,19 +135,6 @@ export const RITUALS: Ritual[] = [
 
   // ENERGIA
   {
-    id: "amaldicooar_arma_en",
-    name: "Amaldiçoar Arma (Energia)",
-    element: "energia",
-    circle: 1,
-    execution: "padrão",
-    range: "toque",
-    target: "1 arma corpo a corpo ou pacote de munição",
-    duration: "cena",
-    description: "Imbui a arma/munições com Energia: causam +1d6 de dano de Energia.",
-    upgrade: "Discente (+2 PE): dano +2d6. Requer 2º círculo.",
-    trueForm: "Verdadeiro (+5 PE): dano +4d6. Requer 3º círculo e afinidade.",
-  },
-  {
     id: "amaldicooar_tecnologia",
     name: "Amaldiçoar Tecnologia",
     element: "energia",
@@ -226,19 +213,6 @@ export const RITUALS: Ritual[] = [
 
   // MORTE
   {
-    id: "amaldicooar_arma_mo",
-    name: "Amaldiçoar Arma (Morte)",
-    element: "morte",
-    circle: 1,
-    execution: "padrão",
-    range: "toque",
-    target: "1 arma corpo a corpo ou pacote de munição",
-    duration: "cena",
-    description: "Imbui a arma/munições com Morte: causam +1d6 de dano de Morte.",
-    upgrade: "Discente (+2 PE): dano +2d6. Requer 2º círculo.",
-    trueForm: "Verdadeiro (+5 PE): dano +4d6. Requer 3º círculo e afinidade.",
-  },
-  {
     id: "cicatrizacao",
     name: "Cicatrização",
     element: "morte",
@@ -316,19 +290,6 @@ export const RITUALS: Ritual[] = [
   },
 
   // SANGUE
-  {
-    id: "amaldicooar_arma_sa",
-    name: "Amaldiçoar Arma (Sangue)",
-    element: "sangue",
-    circle: 1,
-    execution: "padrão",
-    range: "toque",
-    target: "1 arma corpo a corpo ou pacote de munição",
-    duration: "cena",
-    description: "Imbui a arma/munições com Sangue: causam +1d6 de dano de Sangue.",
-    upgrade: "Discente (+2 PE): dano +2d6. Requer 2º círculo.",
-    trueForm: "Verdadeiro (+5 PE): dano +4d6. Requer 3º círculo e afinidade.",
-  },
   {
     id: "arma_atroz",
     name: "Arma Atroz",
