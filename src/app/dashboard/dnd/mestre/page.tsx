@@ -7,43 +7,49 @@ import Link from "next/link";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { MasterDiceRoller } from "./MasterDiceRoller";
 import {
-  getCampaigns,
+  listCampaigns,
   createCampaign,
   deleteCampaign,
-  type Campaign,
-} from "@/lib/dnd/campaignStorage";
+  type DndCampaignSummary,
+} from "@/lib/dnd/dndCampaignClient";
 
 export default function MestrePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState<DndCampaignSummary[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    setCampaigns(getCampaigns());
-  }, []);
+    if (status === "authenticated") listCampaigns().then(setCampaigns).catch(() => setCampaigns([]));
+  }, [status]);
 
   const userName = session?.user?.name ?? session?.user?.email ?? "Mestre";
 
-  function handleCreate() {
+  async function handleCreate() {
     const name = newName.trim();
-    if (!name) return;
-    const c = createCampaign(name);
-    setNewName("");
-    setCreating(false);
-    router.push(`/dashboard/dnd/mestre/campanha/${c.id}`);
+    if (!name || busy) return;
+    setBusy(true);
+    try {
+      const id = await createCampaign(name);
+      setNewName("");
+      setCreating(false);
+      router.push(`/dashboard/dnd/mestre/campanha/${id}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function handleDelete(id: string) {
-    deleteCampaign(id);
-    setCampaigns(getCampaigns());
+  async function handleDelete(id: string) {
+    await deleteCampaign(id);
+    setCampaigns(await listCampaigns());
     setConfirmDelete(null);
   }
 
@@ -310,7 +316,7 @@ export default function MestrePage() {
                         {c.name}
                       </p>
                       <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        {c.npcs.length} NPC{c.npcs.length !== 1 ? "s" : ""} · {c.combatants.length} combatente{c.combatants.length !== 1 ? "s" : ""}
+                        {c._count.dndNpcs} NPC{c._count.dndNpcs !== 1 ? "s" : ""} · {c._count.dndCombatants} combatente{c._count.dndCombatants !== 1 ? "s" : ""}
                       </p>
                     </div>
                   </div>

@@ -383,9 +383,421 @@ model Campaign {
   inviteCode  String   @unique @default(cuid())
   createdAt   DateTime @default(now())
 
+  // ── Campos do Mestre (compartilhados entre sistemas) ──
+  tier          String    @default("1") // Ordem: círculo / faixa de NEX
+  era           String?   // Cthulhu: 1920s | modern | outro
+  nextSessionAt DateTime? // agenda da próxima sessão
+  notes         String?
+
   system     System             @relation(fields: [systemId], references: [id])
   members    CampaignMember[]
   characters CampaignCharacter[]
+
+  ordemStory       OrdemStory?
+  ordemNpcs        OrdemNpc[]
+  ordemCombatants  OrdemCombatant[]
+  ordemSessions    OrdemGameSession[]
+  ordemItems       OrdemItem[]
+  ordemSanity      OrdemSanityRecord[]
+  ordemClues       OrdemClue[]
+  ordemClocks      OrdemClock[]
+  ordemRewards     OrdemReward[]
+
+  dndStory      DndCampaignStory?
+  dndNpcs       DndNpc[]
+  dndCombatants DndCombatant[]
+  dndSessions   DndGameSession[]
+  dndItems      DndCampaignItem[]
+  dndClues      DndClue[]
+  dndClocks     DndClock[]
+
+  cthulhuStory     CthulhuCampaignStory?
+  cthulhuNpcs      CthulhuNpc[]
+  cthulhuCombatants CthulhuCombatant[]
+  cthulhuSessions  CthulhuGameSession[]
+  cthulhuItems     CthulhuCampaignItem[]
+  cthulhuInsanity  CthulhuInsanityRecord[]
+  cthulhuClues     CthulhuClue[]
+  cthulhuClocks    CthulhuClock[]
+}
+
+// ─── MESTRE D&D 5e ────────────────────────────────────────────────────────────
+
+model DndCampaignStory {
+  id             String @id @default(cuid())
+  campaignId     String @unique
+  objective      String @default("")
+  purpose        String @default("")
+  generalHistory String @default("")
+  currentArc     String @default("")
+  mainVillain    String @default("")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model DndNpc {
+  id          String   @id @default(cuid())
+  campaignId  String
+  name        String
+  race        String   @default("")
+  role        String   @default("")
+  alignment   String   @default("")
+  trait       String   @default("")
+  appearance  String   @default("")
+  notes       String   @default("")
+  hp          Int?
+  ac          Int?
+  str         Int?
+  dex         Int?
+  con         Int?
+  int         Int?
+  wis         Int?
+  cha         Int?
+  attacks     String   @default("[]") // JSON NPCAttack[]
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model DndCombatant {
+  id            String  @id @default(cuid())
+  campaignId    String
+  characterId   String?
+  name          String
+  initiative    Int     @default(0)
+  hp            Int?
+  maxHp         Int?
+  tempHp        Int     @default(0)
+  ac            Int?
+  conditions    String  @default("[]") // JSON string[]
+  concentration Boolean @default(false)
+  isPlayer      Boolean @default(false)
+  order         Int     @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model DndGameSession {
+  id          String   @id @default(cuid())
+  campaignId  String
+  number      Int      @default(1)
+  name        String   @default("")
+  objective   String   @default("")
+  events      String   @default("")
+  summary     String   @default("")
+  sessionDate String   @default("")
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model DndCampaignItem {
+  id          String  @id @default(cuid())
+  campaignId  String
+  name        String
+  description String  @default("")
+  type        String  @default("misc") // arma|armadura|magia|consumível|misc
+  rarity      String  @default("comum")
+  sessionId   String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model DndClue {
+  id          String   @id @default(cuid())
+  campaignId  String
+  title       String   @default("")
+  content     String   @default("")
+  source      String   @default("")
+  discovered  Boolean  @default(false)
+  sessionId   String?
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model DndClock {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String   @default("")
+  segments   Int      @default(4)
+  filled     Int      @default(0)
+  kind       String   @default("ameaca") // ameaca|missao|neutro
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+// ─── MESTRE CALL OF CTHULHU ───────────────────────────────────────────────────
+
+model CthulhuCampaignStory {
+  id             String @id @default(cuid())
+  campaignId     String @unique
+  objective      String @default("")
+  hook           String @default("")
+  generalHistory String @default("")
+  currentArc     String @default("")
+  mainCult       String @default("")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuNpc {
+  id          String   @id @default(cuid())
+  campaignId  String
+  name        String
+  occupation  String   @default("")
+  age         Int?
+  gender      String   @default("")
+  nationality String   @default("")
+  description String   @default("")
+  personality String   @default("")
+  mythosTies  String   @default("")
+  notes       String   @default("")
+  str         Int?
+  con         Int?
+  siz         Int?
+  dex         Int?
+  int         Int?
+  pow         Int?
+  app         Int?
+  edu         Int?
+  hp          Int?
+  san         Int?
+  attacks     String   @default("[]") // JSON CthulhuNPCAttack[]
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuCombatant {
+  id          String  @id @default(cuid())
+  campaignId  String
+  characterId String?
+  name        String
+  dex         Int     @default(0)
+  hp          Int?
+  maxHp       Int?
+  san         Int?
+  maxSan      Int?
+  mp          Int?
+  maxMp       Int?
+  conditions  String  @default("[]") // JSON string[]
+  isPlayer    Boolean @default(false)
+  order       Int     @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuGameSession {
+  id          String   @id @default(cuid())
+  campaignId  String
+  number      Int      @default(1)
+  name        String   @default("")
+  objective   String   @default("")
+  events      String   @default("")
+  summary     String   @default("")
+  sessionDate String   @default("")
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuCampaignItem {
+  id          String  @id @default(cuid())
+  campaignId  String
+  name        String
+  description String  @default("")
+  type        String  @default("misc") // tomo|artefato|arma|equipamento|misc
+  mythos      Boolean @default(false)
+  sessionId   String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuInsanityRecord {
+  id               String @id @default(cuid())
+  campaignId       String
+  characterId      String?
+  investigatorName String @default("")
+  currentSan       Int    @default(0)
+  maxSan           Int    @default(0)
+  sessionLoss      Int    @default(0)
+  status           String @default("normal") // normal|temp_insane|indef_insane
+  phobias          String @default("[]")     // JSON string[]
+  manias           String @default("[]")     // JSON string[]
+  notes            String @default("")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuClue {
+  id          String   @id @default(cuid())
+  campaignId  String
+  title       String   @default("")
+  content     String   @default("")
+  source      String   @default("")
+  discovered  Boolean  @default(false)
+  sessionId   String?
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CthulhuClock {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String   @default("")
+  segments   Int      @default(4)
+  filled     Int      @default(0)
+  kind       String   @default("ameaca")
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+// ─── MESTRE DE ORDEM PARANORMAL: dados da operação ────────────────────────────
+
+model OrdemStory {
+  id             String @id @default(cuid())
+  campaignId     String @unique
+  objective      String @default("")
+  hook           String @default("")
+  generalHistory String @default("")
+  currentArc     String @default("")
+  mainThreat     String @default("")
+  membrana       String @default("danificada") // intacta|estavel|danificada|arruinada|rompida
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemNpc {
+  id             String   @id @default(cuid())
+  campaignId     String
+  name           String
+  role           String   @default("")
+  age            Int?
+  gender         String   @default("")
+  affiliation    String   @default("")
+  description    String   @default("")
+  personality    String   @default("")
+  paranormalTies String   @default("")
+  notes          String   @default("")
+  agi            Int?
+  forca          Int?
+  int            Int?
+  pre            Int?
+  vig            Int?
+  pv             Int?
+  pe             Int?
+  san            Int?
+  defense        Int?
+  attacks        String   @default("[]") // JSON: OrdemNPCAttack[]
+  createdAt      DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemCombatant {
+  id          String  @id @default(cuid())
+  campaignId  String
+  characterId String? // vínculo com ficha real do jogador (import de PC)
+  name        String
+  init        Int     @default(0)
+  pv          Int?
+  maxPv       Int?
+  pe          Int?
+  maxPe       Int?
+  san         Int?
+  maxSan      Int?
+  rd          Int     @default(0)  // redução de dano
+  isPlayer    Boolean @default(false)
+  conditions  String  @default("[]") // JSON: string[] (ids de condição)
+  order       Int     @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemGameSession {
+  id          String   @id @default(cuid())
+  campaignId  String
+  number      Int      @default(1)
+  name        String   @default("")
+  objective   String   @default("")
+  events      String   @default("")
+  summary     String   @default("")
+  sessionDate String   @default("")
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemItem {
+  id          String  @id @default(cuid())
+  campaignId  String
+  name        String
+  description String  @default("")
+  type        String  @default("misc") // arma|protecao|item-paranormal|equipamento|ritual|misc
+  paranormal  Boolean @default(false)
+  sessionId   String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemSanityRecord {
+  id          String @id @default(cuid())
+  campaignId  String
+  characterId String?
+  agentName   String @default("")
+  currentSan  Int    @default(0)
+  maxSan      Int    @default(0)
+  sessionLoss Int    @default(0)
+  status      String @default("normal") // normal|perturbado|enlouquecido
+  traumas     String @default("[]")     // JSON: string[]
+  notes       String @default("")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemClue {
+  id          String   @id @default(cuid())
+  campaignId  String
+  title       String   @default("")
+  content     String   @default("")
+  source      String   @default("") // onde/como foi achada
+  discovered  Boolean  @default(false)
+  sessionId   String?
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemClock {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String   @default("")
+  segments   Int      @default(4)
+  filled     Int      @default(0)
+  kind       String   @default("ameaca") // ameaca|missao|neutro
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model OrdemReward {
+  id          String   @id @default(cuid())
+  campaignId  String
+  characterId String?
+  agentName   String   @default("")
+  prestige    Int      @default(0) // delta de Pontos de Prestígio
+  reason      String   @default("")
+  sessionId   String?
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
 model CampaignMember {

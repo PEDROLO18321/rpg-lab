@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { MONSTERS, MONSTER_TYPES, CR_ORDER, type Monster, type MonsterType } from "@/lib/dnd/monsters";
-import { type Campaign } from "@/lib/dnd/campaignStorage";
+import type { DndApi } from "@/lib/dnd/useDndCampaign";
 
-interface Props { campaign: Campaign; onChange: (c: Campaign) => void; }
+interface Props { api: DndApi; }
 
 const TYPE_COLORS: Record<MonsterType, string> = {
   "Aberração": "#e8b84b",
@@ -57,7 +57,7 @@ const ATTR_KEYS: { key: keyof Monster; label: string }[] = [
   { key: "int", label: "INT" }, { key: "wis", label: "SAB" }, { key: "cha", label: "CAR" },
 ];
 
-export function Bestiary({ campaign, onChange }: Props) {
+export function Bestiary({ api }: Props) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<MonsterType | "">("");
   const [crFilter, setCrFilter] = useState("Todos");
@@ -94,15 +94,13 @@ export function Bestiary({ campaign, onChange }: Props) {
     return [...list].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   }, [search, typeFilter, crFilter, hpFilter]);
 
-  function addToInitiative() {
+  async function addToInitiative() {
     if (!selected) return;
     const initiative = initValue !== "" ? Number(initValue) : rollD20();
-    onChange({
-      ...campaign,
-      combatants: [
-        ...campaign.combatants,
-        { id: crypto.randomUUID(), name: selected.name, initiative, hp: selected.hp, maxHp: selected.hp, isPlayer: false },
-      ],
+    await api.addChild("combatants", {
+      name: selected.name, initiative, hp: selected.hp, maxHp: selected.hp, tempHp: 0,
+      ac: selected.ac ?? null, conditions: "[]", concentration: false, isPlayer: false,
+      order: api.campaign.dndCombatants.length,
     });
     setShowInit(false);
     setInitValue("");

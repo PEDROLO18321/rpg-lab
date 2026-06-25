@@ -1,0 +1,67 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { ownedCampaign, campaignInclude } from "@/lib/ordem/masterServer";
+
+// GET — operação completa (todos os filhos).
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+
+  const campaign = await prisma.campaign.findUnique({ where: { id }, include: campaignInclude });
+  if (!campaign || campaign.ownerId !== session.user.id)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json({ campaign });
+}
+
+// PATCH — campos da campanha e da história (story singleton).
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+  if (!(await ownedCampaign(id, session.user.id)))
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const body = await req.json().catch(() => ({}));
+
+  const campaignData: Record<string, unknown> = {};
+  if (typeof body.name === "string" && body.name.trim()) campaignData.name = body.name.trim();
+  if (["1", "2", "3", "4"].includes(body.tier)) campaignData.tier = body.tier;
+  if (typeof body.notes === "string") campaignData.notes = body.notes;
+  if ("nextSessionAt" in body)
+    campaignData.nextSessionAt = body.nextSessionAt ? new Date(body.nextSessionAt) : null;
+
+  const storyFields = ["objective", "hook", "generalHistory", "currentArc", "mainThreat", "membrana"];
+  const storyData: Record<string, unknown> = {};
+  if (body.story && typeof body.story === "object") {
+    for (const f of storyFields) {
+      if (typeof body.story[f] === "string") storyData[f] = body.story[f];
+    }
+  }
+
+  await prisma.campaign.update({
+    where: { id },
+    data: {
+      ...campaignData,
+      ...(Object.keys(storyData).length
+        ? { ordemStory: { upsert: { create: storyData, update: storyData } } }
+        : {}),
+    },
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
+// DELETE — remove operação e filhos (cascade).
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id } = await params;
+  if (!(await ownedCampaign(id, session.user.id)))
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.campaign.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
