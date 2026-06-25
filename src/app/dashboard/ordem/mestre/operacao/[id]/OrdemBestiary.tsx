@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { type OrdemCampaign } from "@/lib/ordem/ordemCampaignStorage";
+import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import { BESTIARY, ORDEM_ALLIES, type Element, type OrdemCreature } from "@/lib/ordem/bestiary";
 
 const AL = "#e8e8ef";
 const AD = "rgba(255,255,255,0.1)";
 const AB = "rgba(255,255,255,0.28)";
 
-interface Props { campaign: OrdemCampaign; onChange: (c: OrdemCampaign) => void; }
+interface Props { api: OperacaoApi; }
 
 const ELEMENT_COLOR: Record<Element, string> = {
   Sangue: "#e0524c",
@@ -33,7 +33,7 @@ function vdNum(vd: string) {
   return Number.isNaN(n) ? 0 : n;
 }
 
-export function OrdemBestiary({ campaign, onChange }: Props) {
+export function OrdemBestiary({ api }: Props) {
   const [search, setSearch] = useState("");
   const [elementFilter, setElementFilter] = useState<Element | "Todos">("Todos");
   const [pvFilter, setPvFilter] = useState("Todos");
@@ -42,14 +42,12 @@ export function OrdemBestiary({ campaign, onChange }: Props) {
   const [addInit, setAddInit] = useState("");
   const [showAllies, setShowAllies] = useState(false);
 
-  function addToInitiative(creature: OrdemCreature) {
+  async function addToInitiative(creature: OrdemCreature) {
     const init = addInit !== "" ? Number(addInit) : creature.agi + Math.floor(Math.random() * 20) + 1;
-    onChange({
-      ...campaign,
-      combatants: [
-        ...campaign.combatants,
-        { id: crypto.randomUUID(), name: creature.name, init, pv: creature.pv, maxPv: creature.pv, pe: null, maxPe: null, san: null, maxSan: null, isPlayer: false },
-      ],
+    await api.addChild("combatants", {
+      name: creature.name, init, pv: creature.pv, maxPv: creature.pv,
+      pe: null, maxPe: null, san: null, maxSan: null, rd: 0, isPlayer: false,
+      conditions: "[]", order: api.campaign.ordemCombatants.length,
     });
     setAddTarget(null);
     setAddInit("");

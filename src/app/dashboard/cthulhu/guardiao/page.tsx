@@ -7,13 +7,14 @@ import Link from "next/link";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { GuardianDiceRoller } from "./GuardianDiceRoller";
 import {
-  getCthulhuCampaigns,
-  createCthulhuCampaign,
-  deleteCthulhuCampaign,
-  type CthulhuCampaign,
-} from "@/lib/cthulhu/cthulhuCampaignStorage";
+  listCampaigns,
+  createCampaign,
+  deleteCampaign,
+  type CthulhuCampaignSummary,
+  type Era,
+} from "@/lib/cthulhu/cthulhuCampaignClient";
 
-const ERA_OPTIONS: { value: CthulhuCampaign["era"]; label: string }[] = [
+const ERA_OPTIONS: { value: Era; label: string }[] = [
   { value: "1920s", label: "Anos 1920" },
   { value: "modern", label: "Moderno" },
   { value: "outro", label: "Era Personalizada" },
@@ -23,34 +24,40 @@ export default function GuardiaoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [campaigns, setCampaigns] = useState<CthulhuCampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CthulhuCampaignSummary[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newEra, setNewEra] = useState<CthulhuCampaign["era"]>("1920s");
+  const [newEra, setNewEra] = useState<Era>("1920s");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    setCampaigns(getCthulhuCampaigns());
-  }, []);
+    if (status === "authenticated") listCampaigns().then(setCampaigns).catch(() => setCampaigns([]));
+  }, [status]);
 
   const userName = session?.user?.name ?? session?.user?.email ?? "Guardião";
 
-  function handleCreate() {
+  async function handleCreate() {
     const name = newName.trim();
-    if (!name) return;
-    const c = createCthulhuCampaign(name, newEra);
-    setNewName("");
-    setCreating(false);
-    router.push(`/dashboard/cthulhu/guardiao/cenario/${c.id}`);
+    if (!name || busy) return;
+    setBusy(true);
+    try {
+      const id = await createCampaign(name, newEra);
+      setNewName("");
+      setCreating(false);
+      router.push(`/dashboard/cthulhu/guardiao/cenario/${id}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function handleDelete(id: string) {
-    deleteCthulhuCampaign(id);
-    setCampaigns(getCthulhuCampaigns());
+  async function handleDelete(id: string) {
+    await deleteCampaign(id);
+    setCampaigns(await listCampaigns());
     setConfirmDelete(null);
   }
 
@@ -115,7 +122,7 @@ export default function GuardiaoPage() {
               </label>
               <select
                 value={newEra}
-                onChange={(e) => setNewEra(e.target.value as CthulhuCampaign["era"])}
+                onChange={(e) => setNewEra(e.target.value as Era)}
                 style={{ width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.9rem", cursor: "pointer" }}
               >
                 {ERA_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -182,8 +189,8 @@ export default function GuardiaoPage() {
                         </span>
                       </div>
                       <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        {c.npcs.length} NPC{c.npcs.length !== 1 ? "s" : ""} · {c.combatants.length} na ordem
-                        {c.sessions?.length ? ` · ${c.sessions.length} sessão${c.sessions.length !== 1 ? "ões" : ""}` : ""}
+                        {c._count.cthulhuNpcs} NPC{c._count.cthulhuNpcs !== 1 ? "s" : ""} · {c._count.cthulhuCombatants} na ordem
+                        {c._count.cthulhuSessions ? ` · ${c._count.cthulhuSessions} sessão${c._count.cthulhuSessions !== 1 ? "ões" : ""}` : ""}
                       </p>
                     </div>
                   </div>

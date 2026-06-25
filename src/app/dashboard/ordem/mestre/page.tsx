@@ -7,19 +7,20 @@ import Link from "next/link";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { OrdemMasterDiceRoller } from "./OrdemMasterDiceRoller";
 import {
-  getOrdemCampaigns,
-  createOrdemCampaign,
-  deleteOrdemCampaign,
+  listCampaigns,
+  createCampaign,
+  deleteCampaign,
   TIER_LABEL,
-  type OrdemCampaign,
-} from "@/lib/ordem/ordemCampaignStorage";
+  type CampaignSummary,
+  type Tier,
+} from "@/lib/ordem/ordemCampaignClient";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
 const AD = "rgba(255,255,255,0.1)";
 const AB = "rgba(255,255,255,0.28)";
 
-const TIER_OPTIONS: { value: OrdemCampaign["tier"]; label: string }[] = [
+const TIER_OPTIONS: { value: Tier; label: string }[] = [
   { value: "1", label: "1º Círculo (NEX 5-35%)" },
   { value: "2", label: "2º Círculo (NEX 40-65%)" },
   { value: "3", label: "3º Círculo (NEX 70-95%)" },
@@ -30,34 +31,40 @@ export default function OrdemMestrePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [campaigns, setCampaigns] = useState<OrdemCampaign[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newTier, setNewTier] = useState<OrdemCampaign["tier"]>("1");
+  const [newTier, setNewTier] = useState<Tier>("1");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
   }, [status, router]);
 
   useEffect(() => {
-    setCampaigns(getOrdemCampaigns());
-  }, []);
+    if (status === "authenticated") listCampaigns().then(setCampaigns).catch(() => setCampaigns([]));
+  }, [status]);
 
   const userName = session?.user?.name ?? session?.user?.email ?? "Mestre";
 
-  function handleCreate() {
+  async function handleCreate() {
     const name = newName.trim();
-    if (!name) return;
-    const c = createOrdemCampaign(name, newTier);
-    setNewName("");
-    setCreating(false);
-    router.push(`/dashboard/ordem/mestre/operacao/${c.id}`);
+    if (!name || busy) return;
+    setBusy(true);
+    try {
+      const id = await createCampaign(name, newTier);
+      setNewName("");
+      setCreating(false);
+      router.push(`/dashboard/ordem/mestre/operacao/${id}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function handleDelete(id: string) {
-    deleteOrdemCampaign(id);
-    setCampaigns(getOrdemCampaigns());
+  async function handleDelete(id: string) {
+    await deleteCampaign(id);
+    setCampaigns(await listCampaigns());
     setConfirmDelete(null);
   }
 
@@ -122,7 +129,7 @@ export default function OrdemMestrePage() {
               </label>
               <select
                 value={newTier}
-                onChange={(e) => setNewTier(e.target.value as OrdemCampaign["tier"])}
+                onChange={(e) => setNewTier(e.target.value as Tier)}
                 style={{ width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.9rem", cursor: "pointer" }}
               >
                 {TIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -187,8 +194,8 @@ export default function OrdemMestrePage() {
                         </span>
                       </div>
                       <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        {c.npcs.length} NPC{c.npcs.length !== 1 ? "s" : ""} · {c.combatants.length} na ordem
-                        {c.sessions?.length ? ` · ${c.sessions.length} sessão${c.sessions.length !== 1 ? "ões" : ""}` : ""}
+                        {c._count.ordemNpcs} NPC{c._count.ordemNpcs !== 1 ? "s" : ""} · {c._count.ordemCombatants} na ordem
+                        {c._count.ordemSessions ? ` · ${c._count.ordemSessions} sessão${c._count.ordemSessions !== 1 ? "ões" : ""}` : ""}
                       </p>
                     </div>
                   </div>

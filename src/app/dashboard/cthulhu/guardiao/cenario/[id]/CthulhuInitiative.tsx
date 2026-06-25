@@ -1,226 +1,182 @@
 "use client";
 
 import { useState } from "react";
-import { type CthulhuCampaign, type CthulhuCombatant } from "@/lib/cthulhu/cthulhuCampaignStorage";
+import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
+import type { CthulhuCombatant } from "@/lib/cthulhu/cthulhuCampaignClient";
+import { CTHULHU_STATES, CTHULHU_STATE_BY_ID } from "@/lib/cthulhu/states";
 
-interface Props { campaign: CthulhuCampaign; onChange: (c: CthulhuCampaign) => void; }
+const A = "#a3b86c";
+const ADIM = "rgba(125,156,62,0.14)";
+const ABORD = "rgba(125,156,62,0.32)";
 
-const btnBase: React.CSSProperties = {
-  height: 26,
-  background: "transparent",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius)",
-  cursor: "pointer",
-  fontSize: "0.72rem",
-  fontWeight: 700,
-  lineHeight: 1,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "0 5px",
-  color: "var(--text-muted)",
-  transition: "all 0.15s",
-};
+const btnBase: React.CSSProperties = { height: 26, background: "transparent", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: "pointer", fontSize: "0.72rem", fontWeight: 700, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", color: "var(--text-muted)", transition: "all 0.15s" };
+const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" };
 
-export function CthulhuInitiative({ campaign, onChange }: Props) {
+function parseConditions(json: string): string[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+
+export function CthulhuInitiative({ api }: { api: CthulhuApi }) {
+  const combatants = api.campaign.cthulhuCombatants;
   const [name, setName] = useState("");
   const [dexVal, setDexVal] = useState("");
   const [hp, setHp] = useState("");
   const [san, setSan] = useState("");
+  const [mp, setMp] = useState("");
   const [isPlayer, setIsPlayer] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [round, setRound] = useState(1);
+  const [token, setToken] = useState("");
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [condFor, setCondFor] = useState<string | null>(null);
 
-  const combatants = campaign.combatants;
-
-  function save(list: CthulhuCombatant[]) {
-    onChange({ ...campaign, combatants: list });
-  }
-
-  function add() {
+  async function add() {
     const trimmed = name.trim();
     if (!trimmed) return;
     const dex = dexVal !== "" ? Number(dexVal) : Math.floor(Math.random() * 70) + 30;
     const hpNum = hp !== "" ? Number(hp) : null;
     const sanNum = san !== "" ? Number(san) : null;
-    const entry: CthulhuCombatant = {
-      id: crypto.randomUUID(), name: trimmed, dex, hp: hpNum, maxHp: hpNum, san: sanNum, maxSan: sanNum, isPlayer,
-    };
-    setName(""); setDexVal(""); setHp(""); setSan(""); setIsPlayer(false);
-    save([...combatants, entry]);
+    const mpNum = mp !== "" ? Number(mp) : null;
+    await api.addChild("combatants", { name: trimmed, dex, hp: hpNum, maxHp: hpNum, san: sanNum, maxSan: sanNum, mp: mpNum, maxMp: mpNum, conditions: "[]", isPlayer, order: combatants.length });
+    setName(""); setDexVal(""); setHp(""); setSan(""); setMp(""); setIsPlayer(false);
   }
 
-  function sort() {
-    save([...combatants].sort((a, b) => b.dex - a.dex));
+  async function doImport() {
+    const t = token.trim(); if (!t) return;
+    try { const n = await api.importAgent(t); setToken(""); setImportMsg(`✓ ${n} importado.`); setTimeout(() => setImportMsg(null), 4000); }
+    catch (e) { setImportMsg(`✗ ${(e as Error).message}`); setTimeout(() => setImportMsg(null), 4000); }
   }
 
-  function moveUp(idx: number) {
-    if (idx === 0) return;
-    const list = [...combatants];
-    [list[idx - 1], list[idx]] = [list[idx], list[idx - 1]];
-    save(list);
-  }
-
-  function moveDown(idx: number) {
-    if (idx === combatants.length - 1) return;
-    const list = [...combatants];
-    [list[idx], list[idx + 1]] = [list[idx + 1], list[idx]];
-    save(list);
-  }
-
-  function remove(id: string) {
-    save(combatants.filter((c) => c.id !== id));
-    if (activeId === id) setActiveId(null);
+  async function sortByDex() {
+    const sorted = [...combatants].sort((a, b) => b.dex - a.dex);
+    for (let i = 0; i < sorted.length; i++) if (sorted[i].order !== i) await api.editChild("combatants", sorted[i].id, { order: i });
   }
 
   function nextTurn() {
     if (combatants.length === 0) return;
     if (activeId === null) { setActiveId(combatants[0].id); return; }
     const idx = combatants.findIndex((c) => c.id === activeId);
-    setActiveId(combatants[(idx + 1) % combatants.length].id);
+    const nextIdx = (idx + 1) % combatants.length;
+    if (nextIdx === 0) setRound((r) => r + 1);
+    setActiveId(combatants[nextIdx].id);
   }
 
-  function updateHp(id: string, delta: number) {
-    save(combatants.map((c) => c.id !== id || c.hp === null ? c : { ...c, hp: Math.max(0, c.hp + delta) }));
+  function adjust(c: CthulhuCombatant, field: "hp" | "san" | "mp", delta: number) {
+    if (c[field] === null) return;
+    const max = field === "hp" ? c.maxHp : field === "san" ? c.maxSan : c.maxMp;
+    let next = (c[field] as number) + delta;
+    next = Math.max(0, next);
+    if (max !== null) next = Math.min(max, next);
+    api.editChild("combatants", c.id, { [field]: next });
+  }
+  function toggleCondition(c: CthulhuCombatant, id: string) {
+    const cur = parseConditions(c.conditions);
+    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+    api.editChild("combatants", c.id, { conditions: JSON.stringify(next) });
   }
 
-  function updateSan(id: string, delta: number) {
-    save(combatants.map((c) => c.id !== id || c.san === null ? c : { ...c, san: Math.max(0, c.san + delta) }));
+  function vital(c: CthulhuCombatant, field: "hp" | "san" | "mp", label: string, baseColor: string) {
+    const cur = c[field];
+    const max = field === "hp" ? c.maxHp : field === "san" ? c.maxSan : c.maxMp;
+    if (cur === null || max === null) return null;
+    const pct = max > 0 ? Math.max(0, cur / max) : 0;
+    const color = field === "hp" ? (pct < 0.3 ? "#f87171" : pct < 0.6 ? "#fbbf24" : "#4ade80") : baseColor;
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+        <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", marginRight: 2 }}>{label}</span>
+        <button onClick={() => adjust(c, field, -1)} style={{ ...btnBase, color, borderColor: `${color}44`, background: `${color}14`, width: 24 }}>−</button>
+        <div style={{ minWidth: 46, textAlign: "center" }}>
+          <p style={{ fontSize: "0.8rem", fontWeight: 700, color }}>{cur}/{max}</p>
+          <div style={{ height: 3, background: "var(--surface-2)", borderRadius: 2, marginTop: 2 }}><div style={{ height: "100%", width: `${pct * 100}%`, background: color, borderRadius: 2, transition: "width 0.3s" }} /></div>
+        </div>
+        <button onClick={() => adjust(c, field, 1)} style={{ ...btnBase, color, borderColor: `${color}44`, background: `${color}14`, width: 24 }}>+</button>
+      </div>
+    );
   }
-
-  function clearAll() { save([]); setActiveId(null); }
-
-  const inputStyle: React.CSSProperties = {
-    padding: "9px 12px",
-    background: "var(--surface-2)",
-    border: "1px solid rgba(125,156,62,0.32)",
-    borderRadius: "var(--radius)",
-    color: "var(--text)",
-    fontSize: "0.86rem",
-    width: "100%",
-    boxSizing: "border-box",
-  };
 
   return (
     <div>
-      {/* Add form */}
-      <div style={{ padding: "20px 24px", background: "var(--surface)", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius-xl)", marginBottom: 24 }}>
-        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
-          Adicionar à Ordem de Ação
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
-          <div>
-            <label style={{ display: "block", fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: 4 }}>Nome</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Cultista, Ghoul" style={inputStyle} />
+      <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 320px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius-xl)" }}>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Importar Ficha de Investigador</p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={token} onChange={(e) => setToken(e.target.value)} onKeyDown={(e) => e.key === "Enter" && doImport()} placeholder="Código de compartilhamento da ficha" style={{ ...inputStyle, flex: 1 }} />
+            <button onClick={doImport} disabled={!token.trim()} style={{ padding: "9px 16px", background: token.trim() ? ADIM : "var(--surface-2)", color: token.trim() ? A : "var(--text-subtle)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: token.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>Importar</button>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: 4 }}>DEX <span style={{ color: "var(--text-subtle)", fontWeight: 400 }}>(vazio = aleatório)</span></label>
-            <input type="number" value={dexVal} onChange={(e) => setDexVal(e.target.value)} placeholder="—" style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: 4 }}>PV <span style={{ color: "var(--text-subtle)", fontWeight: 400 }}>(opcional)</span></label>
-            <input type="number" value={hp} onChange={(e) => setHp(e.target.value)} placeholder="—" style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ display: "block", fontSize: "0.68rem", color: "var(--text-muted)", marginBottom: 4 }}>SAN <span style={{ color: "var(--text-subtle)", fontWeight: 400 }}>(opcional)</span></label>
-            <input type="number" value={san} onChange={(e) => setSan(e.target.value)} placeholder="—" style={inputStyle} />
-          </div>
+          <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 8, lineHeight: 1.5 }}>Importa PV/SAN/PM reais para a ordem e o rastreador de Insanidade.</p>
+          {importMsg && <p style={{ fontSize: "0.76rem", marginTop: 8, color: importMsg.startsWith("✓") ? "#4ade80" : "#f87171" }}>{importMsg}</p>}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem", color: "var(--text-muted)", cursor: "pointer" }}>
-            <input type="checkbox" checked={isPlayer} onChange={(e) => setIsPlayer(e.target.checked)} />
-            Investigador (PC)
-          </label>
-          <button onClick={add} disabled={!name.trim()} style={{ padding: "9px 20px", background: name.trim() ? "linear-gradient(135deg, #a3b86c 0%, #7d9c3e 100%)" : "var(--surface-2)", color: name.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, cursor: name.trim() ? "pointer" : "not-allowed" }}>
-            + Adicionar
-          </button>
+
+        <div style={{ flex: "2 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius-xl)" }}>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar à Ordem de Ação</p>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Cultista, Ghoul" style={inputStyle} />
+            <input type="number" value={dexVal} onChange={(e) => setDexVal(e.target.value)} placeholder="DEX" title="DEX (vazio = aleatório)" style={inputStyle} />
+            <input type="number" value={hp} onChange={(e) => setHp(e.target.value)} placeholder="PV" style={inputStyle} />
+            <input type="number" value={san} onChange={(e) => setSan(e.target.value)} placeholder="SAN" style={inputStyle} />
+            <input type="number" value={mp} onChange={(e) => setMp(e.target.value)} placeholder="PM" title="Pontos de Magia" style={inputStyle} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem", color: "var(--text-muted)", cursor: "pointer" }}>
+              <input type="checkbox" checked={isPlayer} onChange={(e) => setIsPlayer(e.target.checked)} /> Investigador (PC)
+            </label>
+            <button onClick={add} disabled={!name.trim()} style={{ padding: "9px 20px", background: name.trim() ? "linear-gradient(135deg, #a3b86c 0%, #7d9c3e 100%)" : "var(--surface-2)", color: name.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, cursor: name.trim() ? "pointer" : "not-allowed" }}>+ Adicionar</button>
+          </div>
         </div>
       </div>
 
-      {/* Controls */}
       {combatants.length > 0 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-          <button onClick={sort} style={{ padding: "8px 16px", background: "rgba(125,156,62,0.14)", color: "#a3b86c", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
-            ↕ Ordenar por DEX
-          </button>
-          <button onClick={nextTurn} style={{ padding: "8px 16px", background: "rgba(125,156,62,0.14)", color: "#a3b86c", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>
-            ▶ Próxima Ação
-          </button>
-          <button onClick={clearAll} style={{ padding: "8px 14px", background: "transparent", color: "var(--text-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "0.82rem", cursor: "pointer", marginLeft: "auto" }}>
-            Limpar tudo
-          </button>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+          <button onClick={sortByDex} style={{ padding: "8px 16px", background: ADIM, color: A, border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>↕ Ordenar por DEX</button>
+          <button onClick={nextTurn} style={{ padding: "8px 16px", background: ADIM, color: A, border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>▶ Próxima Ação</button>
+          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 700 }}>Rodada {round}</span>
+          <button onClick={() => { setActiveId(null); setRound(1); }} style={{ padding: "8px 14px", background: "transparent", color: "var(--text-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "0.82rem", cursor: "pointer", marginLeft: "auto" }}>Reiniciar rodadas</button>
         </div>
       )}
 
-      {/* List */}
       {combatants.length === 0 ? (
-        <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "40px 0" }}>
-          Nenhum combatente na ordem. Adicione investigadores e criaturas acima.
-        </p>
+        <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "40px 0" }}>Nenhum combatente. Importe investigadores ou adicione criaturas acima.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {combatants.map((c, idx) => {
+          {combatants.map((c) => {
             const isActive = c.id === activeId;
-            const hpPct = c.hp !== null && c.maxHp ? Math.max(0, c.hp / c.maxHp) : null;
-            const hpColor = hpPct !== null && hpPct < 0.3 ? "#f87171" : hpPct !== null && hpPct < 0.6 ? "#fbbf24" : "#4ade80";
-            const sanPct = c.san !== null && c.maxSan ? Math.max(0, c.san / c.maxSan) : null;
-            const sanColor = sanPct !== null && sanPct < 0.3 ? "#f87171" : sanPct !== null && sanPct < 0.6 ? "#fbbf24" : "#a3b86c";
+            const conds = parseConditions(c.conditions);
             return (
-              <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", background: isActive ? "rgba(125,156,62,0.14)" : "var(--surface)", border: `1px solid ${isActive ? "rgba(125,156,62,0.32)" : "var(--border)"}`, borderRadius: "var(--radius-xl)", transition: "all 0.2s" }}>
-                {/* Turn indicator */}
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: isActive ? "#7d9c3e" : "transparent", border: `2px solid ${isActive ? "#7d9c3e" : "var(--border)"}`, flexShrink: 0 }} />
-
-                {/* Reorder */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, flexShrink: 0 }}>
-                  <button onClick={() => moveUp(idx)} disabled={idx === 0} style={{ padding: "1px 5px", background: "transparent", border: "none", cursor: idx === 0 ? "default" : "pointer", color: idx === 0 ? "var(--border)" : "var(--text-muted)", fontSize: "0.7rem", lineHeight: 1 }}>▲</button>
-                  <button onClick={() => moveDown(idx)} disabled={idx === combatants.length - 1} style={{ padding: "1px 5px", background: "transparent", border: "none", cursor: idx === combatants.length - 1 ? "default" : "pointer", color: idx === combatants.length - 1 ? "var(--border)" : "var(--text-muted)", fontSize: "0.7rem", lineHeight: 1 }}>▼</button>
+              <div key={c.id} style={{ background: isActive ? ADIM : "var(--surface)", border: `1px solid ${isActive ? ABORD : "var(--border)"}`, borderRadius: "var(--radius-xl)", transition: "all 0.2s", overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", flexWrap: "wrap" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: isActive ? "#7d9c3e" : "transparent", border: `2px solid ${isActive ? "#7d9c3e" : "var(--border)"}`, flexShrink: 0 }} />
+                  <div style={{ minWidth: 36, height: 36, borderRadius: "var(--radius)", background: isActive ? ADIM : c.isPlayer ? "rgba(99,179,237,0.1)" : "var(--surface-2)", border: `1px solid ${isActive ? ABORD : c.isPlayer ? "rgba(99,179,237,0.25)" : "var(--border)"}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontSize: "0.66rem", fontWeight: 700, color: isActive ? A : c.isPlayer ? "#63b3ed" : "var(--text-muted)", flexShrink: 0 }}>
+                    <span style={{ fontSize: "0.5rem", letterSpacing: "0.04em", opacity: 0.7 }}>DEX</span><span>{c.dex}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 90 }}>
+                    <p style={{ fontSize: "0.88rem", fontWeight: 700, color: isActive ? A : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</p>
+                    <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>{c.isPlayer ? "Investigador" : "Criatura/NPC"}</p>
+                  </div>
+                  {vital(c, "hp", "PV", "#4ade80")}
+                  {vital(c, "san", "SAN", "#a78bfa")}
+                  {vital(c, "mp", "PM", "#60a5fa")}
+                  <button onClick={() => setCondFor(condFor === c.id ? null : c.id)} title="Estados" style={{ ...btnBase, height: 30, padding: "0 10px", color: conds.length ? "#fbbf24" : "var(--text-muted)", borderColor: conds.length ? "#fbbf2444" : "var(--border)" }}>⚑ {conds.length || ""}</button>
+                  <button onClick={() => api.removeChild("combatants", c.id)} style={{ padding: "4px 8px", background: "transparent", color: "var(--text-subtle)", border: "none", cursor: "pointer", fontSize: "0.8rem", flexShrink: 0 }}>✕</button>
                 </div>
 
-                {/* DEX badge */}
-                <div style={{ minWidth: 36, height: 36, borderRadius: "var(--radius)", background: isActive ? "rgba(125,156,62,0.14)" : c.isPlayer ? "rgba(99,179,237,0.1)" : "var(--surface-2)", border: `1px solid ${isActive ? "rgba(125,156,62,0.32)" : c.isPlayer ? "rgba(99,179,237,0.25)" : "var(--border)"}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontSize: "0.66rem", fontWeight: 700, color: isActive ? "#a3b86c" : c.isPlayer ? "#63b3ed" : "var(--text-muted)", flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.5rem", fontWeight: 700, letterSpacing: "0.04em", opacity: 0.7 }}>DEX</span>
-                  <span>{c.dex}</span>
-                </div>
-
-                {/* Name */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: "0.88rem", fontWeight: 700, color: isActive ? "#a3b86c" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</p>
-                  <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>{c.isPlayer ? "Investigador" : "Criatura/NPC"}</p>
-                </div>
-
-                {/* HP controls */}
-                {c.hp !== null && c.maxHp !== null && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                    <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", marginRight: 2 }}>PV</span>
-                    <button onClick={() => updateHp(c.id, -5)} title="−5 PV" style={{ ...btnBase, color: "#f87171", borderColor: "rgba(239,68,68,0.2)", width: 26 }}>{"<<"}</button>
-                    <button onClick={() => updateHp(c.id, -1)} title="−1 PV" style={{ ...btnBase, color: "#f87171", borderColor: "rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.08)", width: 24 }}>−</button>
-                    <div style={{ minWidth: 48, textAlign: "center" }}>
-                      <p style={{ fontSize: "0.8rem", fontWeight: 700, color: hpColor }}>{c.hp}/{c.maxHp}</p>
-                      <div style={{ height: 3, background: "var(--surface-2)", borderRadius: 2, marginTop: 2 }}>
-                        <div style={{ height: "100%", width: `${(hpPct ?? 1) * 100}%`, background: hpColor, borderRadius: 2, transition: "width 0.3s" }} />
-                      </div>
-                    </div>
-                    <button onClick={() => updateHp(c.id, 1)} title="+1 PV" style={{ ...btnBase, color: "#4ade80", borderColor: "rgba(74,222,128,0.25)", background: "rgba(74,222,128,0.08)", width: 24 }}>+</button>
-                    <button onClick={() => updateHp(c.id, 5)} title="+5 PV" style={{ ...btnBase, color: "#4ade80", borderColor: "rgba(74,222,128,0.2)", width: 26 }}>{">>"}</button>
+                {conds.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, padding: "0 14px 10px 30px" }}>
+                    {conds.map((id) => {
+                      const st = CTHULHU_STATE_BY_ID[id]; if (!st) return null;
+                      return <span key={id} title={st.desc} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", background: "#fbbf241a", border: "1px solid #fbbf2455", borderRadius: "var(--radius-xs)", fontSize: "0.7rem", color: "#fbbf24", fontWeight: 700 }}>{st.name}<button onClick={() => toggleCondition(c, id)} style={{ background: "transparent", border: "none", color: "#fbbf24", cursor: "pointer", fontSize: "0.75rem", lineHeight: 1, padding: 0 }}>×</button></span>;
+                    })}
                   </div>
                 )}
 
-                {/* SAN controls */}
-                {c.san !== null && c.maxSan !== null && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                    <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", marginRight: 2 }}>SAN</span>
-                    <button onClick={() => updateSan(c.id, -5)} title="−5 SAN" style={{ ...btnBase, color: "#a78bfa", borderColor: "rgba(167,139,250,0.2)", width: 26 }}>{"<<"}</button>
-                    <button onClick={() => updateSan(c.id, -1)} title="−1 SAN" style={{ ...btnBase, color: "#a78bfa", borderColor: "rgba(167,139,250,0.25)", background: "rgba(167,139,250,0.08)", width: 24 }}>−</button>
-                    <div style={{ minWidth: 48, textAlign: "center" }}>
-                      <p style={{ fontSize: "0.8rem", fontWeight: 700, color: sanColor }}>{c.san}/{c.maxSan}</p>
-                      <div style={{ height: 3, background: "var(--surface-2)", borderRadius: 2, marginTop: 2 }}>
-                        <div style={{ height: "100%", width: `${(sanPct ?? 1) * 100}%`, background: sanColor, borderRadius: 2, transition: "width 0.3s" }} />
-                      </div>
+                {condFor === c.id && (
+                  <div style={{ padding: "10px 14px 14px 30px", borderTop: "1px solid var(--border)" }}>
+                    <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Aplicar / remover estado</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {CTHULHU_STATES.map((st) => {
+                        const on = conds.includes(st.id);
+                        return <button key={st.id} title={st.desc} onClick={() => toggleCondition(c, st.id)} style={{ padding: "3px 9px", borderRadius: "var(--radius-xs)", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", background: on ? "#fbbf242a" : "var(--surface-2)", border: `1px solid ${on ? "#fbbf24" : "var(--border)"}`, color: on ? "#fbbf24" : "var(--text-muted)" }}>{st.name}</button>;
+                      })}
                     </div>
-                    <button onClick={() => updateSan(c.id, 1)} title="+1 SAN" style={{ ...btnBase, color: sanColor, borderColor: "rgba(167,139,250,0.25)", background: "rgba(167,139,250,0.08)", width: 24 }}>+</button>
                   </div>
                 )}
-
-                <button onClick={() => remove(c.id)} style={{ padding: "4px 8px", background: "transparent", color: "var(--text-subtle)", border: "none", cursor: "pointer", fontSize: "0.8rem", flexShrink: 0 }}>✕</button>
               </div>
             );
           })}

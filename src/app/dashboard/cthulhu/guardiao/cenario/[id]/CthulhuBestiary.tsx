@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { type CthulhuCampaign } from "@/lib/cthulhu/cthulhuCampaignStorage";
+import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 
-interface Props { campaign: CthulhuCampaign; onChange: (c: CthulhuCampaign) => void; }
+interface Props { api: CthulhuApi; }
 
 interface CthulhuCreature {
   name: string;
@@ -67,7 +67,7 @@ const HP_OPTIONS = [
   { id: "51+", min: 51, max: Infinity },
 ];
 
-export function CthulhuBestiary({ campaign, onChange }: Props) {
+export function CthulhuBestiary({ api }: Props) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("Todos");
   const [hpFilter, setHpFilter] = useState("Todos");
@@ -75,14 +75,12 @@ export function CthulhuBestiary({ campaign, onChange }: Props) {
   const [addTarget, setAddTarget] = useState<string | null>(null);
   const [addDex, setAddDex] = useState("");
 
-  function addToInitiative(creature: CthulhuCreature) {
+  async function addToInitiative(creature: CthulhuCreature) {
     const dex = addDex !== "" ? Number(addDex) : creature.dex;
-    onChange({
-      ...campaign,
-      combatants: [
-        ...campaign.combatants,
-        { id: crypto.randomUUID(), name: creature.name, dex, hp: creature.hp, maxHp: creature.hp, san: null, maxSan: null, isPlayer: false },
-      ],
+    await api.addChild("combatants", {
+      name: creature.name, dex, hp: creature.hp, maxHp: creature.hp,
+      san: null, maxSan: null, mp: null, maxMp: null, conditions: "[]", isPlayer: false,
+      order: api.campaign.cthulhuCombatants.length,
     });
     setAddTarget(null);
     setAddDex("");
