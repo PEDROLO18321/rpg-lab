@@ -7,9 +7,9 @@ const prisma  = new PrismaClient({ adapter });
 
 async function main() {
   await prisma.system.upsert({
-    where:  { slug: "dnd5e" },
+    where:  { slug: "dnd" },
     update: {},
-    create: { slug: "dnd5e", name: "Dungeons & Dragons", version: "5ª Edição", active: true },
+    create: { slug: "dnd", name: "Dungeons & Dragons", version: "5ª Edição", active: true },
   });
 
   await prisma.system.upsert({
@@ -19,9 +19,9 @@ async function main() {
   });
 
   await prisma.system.upsert({
-    where:  { slug: "cthulhu7" },
+    where:  { slug: "cthulhu" },
     update: {},
-    create: { slug: "cthulhu7", name: "Call of Cthulhu", version: "7ª Edição", active: true },
+    create: { slug: "cthulhu", name: "Call of Cthulhu", version: "7ª Edição", active: true },
   });
 
   await prisma.system.upsert({
