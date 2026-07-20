@@ -145,7 +145,7 @@ export function OrdemInitiative({ api }: { api: OperacaoApi }) {
 
       {/* List */}
       {combatants.length === 0 ? (
-        <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "40px 0" }}>Ninguém na ordem de ação. Importe agentes ou adicione criaturas/NPCs acima.</p>
+        <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "40px 0" }}>Ninguém na ordem de ação. Adicione agentes, criaturas ou NPCs acima.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {combatants.map((c) => {

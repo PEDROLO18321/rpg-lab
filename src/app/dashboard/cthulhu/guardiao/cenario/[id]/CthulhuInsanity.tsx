@@ -34,8 +34,9 @@ const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 11px", ba
 const numStyle: React.CSSProperties = { width: 70, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit", textAlign: "center" };
 
 function parseTags(json: string): string[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
-function computeStatus(sessionLoss: number, maxSan: number): Status {
-  if (sessionLoss >= Math.floor(maxSan / 5)) return "indef_insane";
+// Indefinida: perdeu 1/5+ da SAN que tinha no início da sessão (não da SAN máxima).
+function computeStatus(sessionLoss: number, sanAtSessionStart: number): Status {
+  if (sessionLoss >= Math.floor(sanAtSessionStart / 5)) return "indef_insane";
   if (sessionLoss >= 5) return "temp_insane";
   return "normal";
 }
@@ -57,7 +58,8 @@ export function CthulhuInsanity({ api }: { api: CthulhuApi }) {
     const next = Math.max(0, Math.min(r.maxSan, r.currentSan + delta));
     const lost = delta < 0 ? Math.abs(delta) : 0;
     const newLoss = r.sessionLoss + lost;
-    patch(r.id, { currentSan: next, sessionLoss: newLoss, status: computeStatus(newLoss, r.maxSan) });
+    const sanAtSessionStart = r.currentSan + r.sessionLoss;
+    patch(r.id, { currentSan: next, sessionLoss: newLoss, status: computeStatus(newLoss, sanAtSessionStart) });
   }
   function setTags(r: CthulhuInsanityRecord, field: "phobias" | "manias", list: string[]) { patch(r.id, { [field]: JSON.stringify(list) }); }
   function addTag(r: CthulhuInsanityRecord, field: "phobias" | "manias", value: string) {
@@ -142,7 +144,7 @@ function InsanityEditor({ r, phobias, manias, onPatch, onAddTag, onRemoveTag, on
 }) {
   const [name, setName] = useState(r.investigatorName);
   const [notes, setNotes] = useState(r.notes);
-  const indefiniteThreshold = Math.floor(r.maxSan / 5);
+  const indefiniteThreshold = Math.floor((r.currentSan + r.sessionLoss) / 5);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
