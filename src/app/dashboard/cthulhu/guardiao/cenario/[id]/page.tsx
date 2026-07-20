@@ -18,13 +18,14 @@ import { CthulhuClues } from "./CthulhuClues";
 import { CthulhuClocks } from "./CthulhuClocks";
 import { CthulhuGenerators } from "./CthulhuGenerators";
 import { CthulhuAgenda } from "./CthulhuAgenda";
+import { CthulhuGuide } from "./CthulhuGuide";
 import { GuardianDiceRoller } from "../../GuardianDiceRoller";
 
 const A = "#a3b86c";
 const ADIM = "rgba(125,156,62,0.14)";
 const ABORD = "rgba(125,156,62,0.32)";
 
-type Tab = "scenario" | "npc" | "initiative" | "insanity" | "clues" | "clocks" | "items" | "bestiary" | "generators" | "notes" | "agenda";
+type Tab = "scenario" | "npc" | "initiative" | "insanity" | "clues" | "clocks" | "items" | "bestiary" | "generators" | "notes" | "agenda" | "guide";
 
 function icon(d: string) {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>;
@@ -42,6 +43,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: "generators", label: "Geradores",     icon: icon("M5 3v4 M3 5h4 M6 17v4 M4 19h4 M13 3l3 6 6 1-5 5 1 7-5-3") },
   { id: "notes",      label: "Notas",         icon: icon("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h8") },
   { id: "agenda",     label: "Agenda",        icon: icon("M8 2v4 M16 2v4 M3 8h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z") },
+  { id: "guide",      label: "Guia",          icon: icon("M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z") },
 ];
 
 export default function CthulhuCenarioPage({ params }: { params: Promise<{ id: string }> }) {
@@ -104,6 +106,7 @@ export default function CthulhuCenarioPage({ params }: { params: Promise<{ id: s
         {tab === "generators" && <CthulhuGenerators api={api} />}
         {tab === "notes"      && <CthulhuSessionNotes api={api} />}
         {tab === "agenda"     && <CthulhuAgenda api={api} />}
+{tab === "guide"      && <CthulhuGuide />}
       </main>
     </div>
   );
