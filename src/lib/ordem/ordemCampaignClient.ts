@@ -157,10 +157,3 @@ export async function updateChild<T>(campaignId: string, resource: ResourceName,
 export async function deleteChild(campaignId: string, resource: ResourceName, itemId: string): Promise<void> {
   await jsonOrThrow(await fetch(`${BASE}/${campaignId}/${resource}/${itemId}`, { method: "DELETE" }));
 }
-
-export async function importPc(campaignId: string, token: string): Promise<{ combatant: OrdemCombatant; sanity: OrdemSanityRecord; name: string }> {
-  return jsonOrThrow(await fetch(`${BASE}/${campaignId}/import`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token }),
-  }));
-}

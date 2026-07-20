@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  getCampaign, patchCampaign, createChild, updateChild, deleteChild, importPc,
+  getCampaign, patchCampaign, createChild, updateChild, deleteChild,
   type CthulhuCampaign, type CthulhuStory, type ResourceName, type Era,
 } from "./cthulhuCampaignClient";
 
@@ -17,7 +17,6 @@ export interface CthulhuApi {
   addChild: <T = unknown>(resource: ResourceName, data: Record<string, unknown>) => Promise<T>;
   editChild: (resource: ResourceName, id: string, data: Record<string, unknown>) => Promise<void>;
   removeChild: (resource: ResourceName, id: string) => Promise<void>;
-  importAgent: (token: string) => Promise<string>;
 }
 
 export interface CthulhuState { status: "loading" | "ready" | "notfound"; api: CthulhuApi | null }
@@ -73,11 +72,5 @@ export function useCthulhuCampaign(id: string): CthulhuState {
     await deleteChild(id, resource, itemId);
   }, [id]);
 
-  const importAgent: CthulhuApi["importAgent"] = useCallback(async (token) => {
-    const r = await importPc(id, token);
-    setCampaign((prev) => prev ? { ...prev, cthulhuCombatants: [...prev.cthulhuCombatants, r.combatant], cthulhuInsanity: [...prev.cthulhuInsanity, r.insanity] } : prev);
-    return r.name;
-  }, [id]);
-
-  return { status, api: campaign ? { campaign, patch, addChild, editChild, removeChild, importAgent } : null };
+  return { status, api: campaign ? { campaign, patch, addChild, editChild, removeChild } : null };
 }

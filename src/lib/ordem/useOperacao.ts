@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  getCampaign, patchCampaign, createChild, updateChild, deleteChild, importPc,
+  getCampaign, patchCampaign, createChild, updateChild, deleteChild,
   type OrdemCampaign, type OrdemStory, type ResourceName, type Tier,
 } from "./ordemCampaignClient";
 
@@ -23,7 +23,6 @@ export interface OperacaoApi {
   addChild: <T = unknown>(resource: ResourceName, data: Record<string, unknown>) => Promise<T>;
   editChild: (resource: ResourceName, id: string, data: Record<string, unknown>) => Promise<void>;
   removeChild: (resource: ResourceName, id: string) => Promise<void>;
-  importAgent: (token: string) => Promise<string>;
   setLocal: (updater: (c: OrdemCampaign) => OrdemCampaign) => void;
 }
 
@@ -96,19 +95,9 @@ export function useOperacao(id: string): OperacaoState {
     await deleteChild(id, resource, itemId);
   }, [id]);
 
-  const importAgent: OperacaoApi["importAgent"] = useCallback(async (token) => {
-    const r = await importPc(id, token);
-    setCampaign((prev) => prev ? {
-      ...prev,
-      ordemCombatants: [...prev.ordemCombatants, r.combatant],
-      ordemSanity: [...prev.ordemSanity, r.sanity],
-    } : prev);
-    return r.name;
-  }, [id]);
-
   return {
     status,
-    api: campaign ? { campaign, patch, addChild, editChild, removeChild, importAgent, setLocal } : null,
+    api: campaign ? { campaign, patch, addChild, editChild, removeChild, setLocal } : null,
   };
 }
 

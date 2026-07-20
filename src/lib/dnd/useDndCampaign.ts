@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  getCampaign, patchCampaign, createChild, updateChild, deleteChild, importPc,
+  getCampaign, patchCampaign, createChild, updateChild, deleteChild,
   type DndCampaign, type DndStory, type ResourceName,
 } from "./dndCampaignClient";
 
@@ -17,7 +17,6 @@ export interface DndApi {
   addChild: <T = unknown>(resource: ResourceName, data: Record<string, unknown>) => Promise<T>;
   editChild: (resource: ResourceName, id: string, data: Record<string, unknown>) => Promise<void>;
   removeChild: (resource: ResourceName, id: string) => Promise<void>;
-  importAgent: (token: string) => Promise<string>;
 }
 
 export interface DndState { status: "loading" | "ready" | "notfound"; api: DndApi | null }
@@ -72,11 +71,5 @@ export function useDndCampaign(id: string): DndState {
     await deleteChild(id, resource, itemId);
   }, [id]);
 
-  const importAgent: DndApi["importAgent"] = useCallback(async (token) => {
-    const r = await importPc(id, token);
-    setCampaign((prev) => prev ? { ...prev, dndCombatants: [...prev.dndCombatants, r.combatant] } : prev);
-    return r.name;
-  }, [id]);
-
-  return { status, api: campaign ? { campaign, patch, addChild, editChild, removeChild, importAgent } : null };
+  return { status, api: campaign ? { campaign, patch, addChild, editChild, removeChild } : null };
 }
