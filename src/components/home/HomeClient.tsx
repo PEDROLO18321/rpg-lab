@@ -64,7 +64,7 @@ const FEATURES = [
   { title:"Compartilhamento",       desc:"Gere um link único para sua ficha e compartilhe com o mestre ou grupo na hora."                               },
   { title:"Salvo na Nuvem",         desc:"Seus dados sincronizados e seguros. Acesse de qualquer dispositivo sem perder nada."                          },
   { title:"Modo de Jogo",           desc:"Fichas interativas com rolagem de dados, controle de recursos e rastreamento de status em tempo real."         },
-  { title:"Multi-sistema",          desc:"D&D 5e e Call of Cthulhu disponíveis. Ordem Paranormal em desenvolvimento."                                  },
+  { title:"Multi-sistema",          desc:"D&D 5e, Call of Cthulhu e Ordem Paranormal disponíveis. Tormenta 20 em desenvolvimento."                     },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -262,7 +262,7 @@ function PublicContent({ classText, classVisible }: { classText: string; classVi
   return (
     <>
       <div className="anim-fade-up" style={{ animationDelay:"0.05s", display:"inline-flex", alignItems:"center", gap:8, padding:"6px 16px", background:"var(--accent-dim)", border:"1px solid var(--border-accent)", borderRadius:"var(--radius-full)", alignSelf:"flex-start", marginBottom:28 }}>
-        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>D&amp;D 5e · Call of Cthulhu · Ordem Paranormal em breve</span>
+        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>D&amp;D 5e · Call of Cthulhu · Ordem Paranormal</span>
       </div>
 
       <h1 className="anim-fade-up" style={{ animationDelay:"0.12s", fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(2.4rem,4.8vw,4rem)", fontWeight:700, lineHeight:1.08, letterSpacing:"-0.01em", color:"var(--text)", marginBottom:20 }}>
@@ -436,7 +436,7 @@ function QuestBoard() {
 const SHOWCASE_SYSTEMS = [
   { id:"dnd",      name:"Dungeons & Dragons", label:"D&D 5e",            image:dndImg,      color:"#c9941f", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"cthulhu",  name:"Call of Cthulhu",   label:"CoC 7ª Ed.",        image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
-  { id:"ordem",    name:"Ordem Paranormal",   label:"OP RPG",            image:ordemImg,    color:"#b0b8c8", dot:"#b0b8c8", statusLabel:"Em desenvolvimento", available:false },
+  { id:"ordem",    name:"Ordem Paranormal",   label:"OP RPG",            image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"tormenta", name:"Tormenta 20",        label:"T20",               image:tormentaImg, color:"#a01818", dot:"#6b7280", statusLabel:"Planejado",          available:false },
 ];
 
@@ -553,7 +553,7 @@ function QuestCard({ quest }: { quest: typeof QUESTS[number] }) {
 const STRIP_SYSTEMS = [
   { id:"dnd",      name:"D&D 5e",           image:dndImg,      color:"#c9941f", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"cthulhu",  name:"Call of Cthulhu",  image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível"         },
-  { id:"ordem",    name:"Ordem Paranormal", image:ordemImg,    color:"#b0b8c8", dot:"#b0b8c8", statusLabel:"Em desenvolvimento" },
+  { id:"ordem",    name:"Ordem Paranormal", image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"tormenta", name:"Tormenta 20",      image:tormentaImg, color:"#a01818", dot:"#6b7280", statusLabel:"Planejado"          },
 ];
 
@@ -644,7 +644,7 @@ function SystemsSection() {
   const systems = [
     { name:"D&D 5e",              status:"Disponível",       statusColor:"#4ade80"             },
     { name:"Call of Cthulhu",     status:"Disponível",       statusColor:"#4ade80"             },
-    { name:"Ordem Paranormal",    status:"Em desenvolvimento",statusColor:"#b0b8c8"             },
+    { name:"Ordem Paranormal",    status:"Disponível",       statusColor:"#4ade80"             },
     { name:"Tormenta 20",         status:"Planejado",        statusColor:"var(--text-subtle)"  },
   ];
   return (
