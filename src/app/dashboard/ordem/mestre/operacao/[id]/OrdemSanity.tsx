@@ -69,7 +69,7 @@ export function OrdemSanity({ api }: { api: OperacaoApi }) {
             {records.length > 0 && <span style={{ fontSize: "0.72rem", fontWeight: 700, color: AL, background: AD, border: `1px solid ${AB}`, borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>{records.length}</span>}
           </h2>
           <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 4 }}>
-            SAN baixa: agente perturbado · SAN 0: enlouquece e vira NPC do Mestre. Importe agentes pela aba Ordem de Ação.
+            SAN baixa: agente perturbado · SAN 0: enlouquece e vira NPC do Mestre.
           </p>
         </div>
         <button onClick={addRecord} style={{ padding: "8px 18px", background: `linear-gradient(135deg, ${A} 0%, #b9b9c6 100%)`, color: "#06090f", border: "none", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>+ Agente</button>

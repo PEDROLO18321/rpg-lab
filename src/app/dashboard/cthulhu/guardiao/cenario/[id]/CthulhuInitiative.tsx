@@ -115,7 +115,7 @@ export function CthulhuInitiative({ api }: { api: CthulhuApi }) {
       )}
 
       {combatants.length === 0 ? (
-        <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "40px 0" }}>Nenhum combatente. Importe investigadores ou adicione criaturas acima.</p>
+        <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "40px 0" }}>Nenhum combatente. Adicione investigadores ou criaturas acima.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {combatants.map((c) => {
