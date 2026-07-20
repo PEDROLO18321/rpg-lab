@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 
 const A = "#a3b86c";
-const ADIM = "rgba(125,156,62,0.14)";
 const ABORD = "rgba(125,156,62,0.32)";
 
 function toLocalInput(iso: string | null): string {
@@ -15,14 +14,9 @@ function toLocalInput(iso: string | null): string {
 
 export function CthulhuAgenda({ api }: { api: CthulhuApi }) {
   const [value, setValue] = useState(toLocalInput(api.campaign.nextSessionAt));
-  const [shareUrl, setShareUrl] = useState("");
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => { setShareUrl(`${window.location.origin}/cthulhu/cenario/${api.campaign.inviteCode}`); }, [api.campaign.inviteCode]);
 
   function save() { api.patch({ nextSessionAt: value ? new Date(value).toISOString() : null }); }
   function clear() { setValue(""); api.patch({ nextSessionAt: null }); }
-  async function copy() { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }
 
   const next = api.campaign.nextSessionAt ? new Date(api.campaign.nextSessionAt) : null;
   const sessionsWithDate = api.campaign.cthulhuSessions.filter((s) => s.sessionDate);
@@ -42,16 +36,6 @@ export function CthulhuAgenda({ api }: { api: CthulhuApi }) {
           {api.campaign.nextSessionAt && <button onClick={clear} style={{ padding: "9px 14px", background: "transparent", color: "var(--text-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "0.84rem", cursor: "pointer" }}>Limpar</button>}
         </div>
         {next && <p style={{ fontSize: "0.84rem", color: A, marginTop: 12 }}>🕒 {next.toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", hour: "2-digit", minute: "2-digit" })}</p>}
-      </div>
-
-      <div style={card}>
-        <label style={lab}>Tela do Investigador (somente leitura)</label>
-        <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>Compartilhe com os jogadores. Mostra a cena atual, ordem de ação, relógios e pistas reveladas.</p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input readOnly value={shareUrl} onFocus={(e) => e.currentTarget.select()} style={{ flex: 1, minWidth: 220, padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }} />
-          <button onClick={copy} style={{ padding: "9px 18px", background: ADIM, color: A, border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: "pointer" }}>{copied ? "✓ Copiado" : "Copiar"}</button>
-          <a href={shareUrl} target="_blank" rel="noreferrer" style={{ padding: "9px 18px", background: "transparent", color: A, border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, textDecoration: "none" }}>Abrir ↗</a>
-        </div>
       </div>
 
       {sessionsWithDate.length > 0 && (

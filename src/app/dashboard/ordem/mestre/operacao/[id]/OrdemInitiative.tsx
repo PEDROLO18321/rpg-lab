@@ -35,8 +35,6 @@ export function OrdemInitiative({ api }: { api: OperacaoApi }) {
   const [isPlayer, setIsPlayer] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [round, setRound] = useState(1);
-  const [token, setToken] = useState("");
-  const [importMsg, setImportMsg] = useState<string | null>(null);
   const [condFor, setCondFor] = useState<string | null>(null);
 
   async function add() {
@@ -52,18 +50,6 @@ export function OrdemInitiative({ api }: { api: OperacaoApi }) {
       conditions: "[]", order: combatants.length,
     });
     setName(""); setInitVal(""); setPv(""); setPe(""); setSan(""); setRd(""); setIsPlayer(false);
-  }
-
-  async function doImport() {
-    const t = token.trim(); if (!t) return;
-    try {
-      const agentName = await api.importAgent(t);
-      setToken(""); setImportMsg(`✓ ${agentName} importado.`);
-      setTimeout(() => setImportMsg(null), 4000);
-    } catch (e) {
-      setImportMsg(`✗ ${(e as Error).message}`);
-      setTimeout(() => setImportMsg(null), 4000);
-    }
   }
 
   async function sortByInit() {
@@ -126,21 +112,9 @@ export function OrdemInitiative({ api }: { api: OperacaoApi }) {
 
   return (
     <div>
-      {/* Import + add forms */}
+      {/* Add form */}
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 320px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)" }}>
-          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Importar Ficha de Agente</p>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input value={token} onChange={(e) => setToken(e.target.value)} onKeyDown={(e) => e.key === "Enter" && doImport()} placeholder="Código de compartilhamento da ficha" style={{ ...inputStyle, flex: 1 }} />
-            <button onClick={doImport} disabled={!token.trim()} style={{ padding: "9px 16px", background: token.trim() ? AD : "var(--surface-2)", color: token.trim() ? AL : "var(--text-subtle)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: token.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>Importar</button>
-          </div>
-          <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 8, lineHeight: 1.5 }}>
-            O jogador encontra o código na ficha dele. Importa PV/PE/SAN reais e adiciona à ordem e ao rastreador de Sanidade.
-          </p>
-          {importMsg && <p style={{ fontSize: "0.76rem", marginTop: 8, color: importMsg.startsWith("✓") ? "#4ade80" : "#f87171" }}>{importMsg}</p>}
-        </div>
-
-        <div style={{ flex: "2 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)" }}>
+        <div style={{ flex: "1 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar à Ordem de Ação</p>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Nome" style={inputStyle} />
