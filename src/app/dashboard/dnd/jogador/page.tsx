@@ -13,9 +13,9 @@ export default async function DndJogadorPage() {
   const userId = session.user.id;
 
   const [system, characters] = await Promise.all([
-    prisma.system.findUnique({ where: { slug: "dnd5e" } }),
+    prisma.system.findUnique({ where: { slug: "dnd" } }),
     prisma.character.findMany({
-      where: { userId, system: { slug: "dnd5e" } },
+      where: { userId, system: { slug: "dnd" } },
       include: {
         dndSheet: {
           include: { classes: { orderBy: { level: "desc" } } },

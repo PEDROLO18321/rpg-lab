@@ -7,7 +7,7 @@ export default async function NewCharacterPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const system = await prisma.system.findUnique({ where: { slug: "dnd5e" } });
+  const system = await prisma.system.findUnique({ where: { slug: "dnd" } });
   if (!system) redirect("/dashboard/dnd");
 
   return <CharacterWizard userId={session.user.id} systemId={system.id} />;

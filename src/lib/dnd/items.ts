@@ -165,3 +165,49 @@ export const ALL_PHB_ITEMS: PickerItem[] = [
 
 export const PICKER_GROUPS = ["Tudo", "Arma Simples", "Arma Marcial", "Armadura", "Equipamento", "Ferramenta", "Instrumento"] as const;
 export type PickerGroup = typeof PICKER_GROUPS[number];
+
+// ── Armor table (PHB) — para cálculo de Classe de Armadura ────────────────
+export type ArmorEntry = {
+  name: string;
+  baseAC: number;
+  dexCap: number | null; // null = sem limite (leve); número = limite (média); 0 = não soma DES (pesada)
+  strMin?: number;
+};
+
+export const ARMORS: ArmorEntry[] = [
+  // Leve — soma DES sem limite
+  { name: "Acolchoada",   baseAC: 11, dexCap: null },
+  { name: "Couro",        baseAC: 11, dexCap: null },
+  { name: "Couro Batido", baseAC: 12, dexCap: null },
+  // Média — soma DES até +2
+  { name: "Gibão de Peles",    baseAC: 12, dexCap: 2 },
+  { name: "Camisão de Malha",  baseAC: 13, dexCap: 2 },
+  { name: "Brunea",            baseAC: 14, dexCap: 2 },
+  { name: "Peitoral",          baseAC: 14, dexCap: 2 },
+  { name: "Meia-Armadura",     baseAC: 15, dexCap: 2 },
+  // Pesada — não soma DES
+  { name: "Cota de Anéis", baseAC: 14, dexCap: 0 },
+  { name: "Cota de Malha", baseAC: 16, dexCap: 0, strMin: 13 },
+  { name: "Cota de Talas", baseAC: 17, dexCap: 0, strMin: 15 },
+  { name: "Placas",        baseAC: 18, dexCap: 0, strMin: 15 },
+];
+
+export const SHIELD_AC_BONUS = 2;
+
+/**
+ * Calcula a Classe de Armadura a partir dos itens equipados (nomes livres,
+ * como retornados por resolveEquipment). Ignora armadura se nenhuma constar
+ * na lista; adiciona +2 de Escudo se presente. `unarmoredBase` é o valor sem
+ * armadura já considerando defesas de classe (bárbaro/monge).
+ */
+export function computeArmorAC(itemNames: string[], dexMod: number, unarmoredBase: number): number {
+  const has = (name: string) => itemNames.some((i) => i.toLowerCase() === name.toLowerCase());
+  const armor = ARMORS.find((a) => has(a.name));
+  const shieldBonus = has("Escudo") ? SHIELD_AC_BONUS : 0;
+
+  if (!armor) return unarmoredBase + shieldBonus;
+  if (armor.dexCap === 0) return armor.baseAC + shieldBonus; // pesada: DES não é somada
+
+  const dexBonus = armor.dexCap === null ? dexMod : Math.min(dexMod, armor.dexCap);
+  return armor.baseAC + dexBonus + shieldBonus;
+}

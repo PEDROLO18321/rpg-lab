@@ -4,6 +4,7 @@ import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import { resolveEquipment } from "@/lib/dnd/equipmentParser";
+import { computeArmorAC } from "@/lib/dnd/items";
 import { SPELLS, SPELLCASTING } from "@/lib/dnd/spells";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
@@ -71,8 +72,18 @@ export function StepReview({ data }: Props) {
 
   const conMod = mod(finalScores.con);
   const dexMod = mod(finalScores.dex);
+  const wisMod = mod(finalScores.wis);
   const hp     = cls ? Math.max(1, cls.hitDie + conMod) : null;
-  const ac     = 10 + dexMod;
+
+  const resolvedItems = resolveEquipment(
+    cls?.startingEquipment ?? [],
+    bg?.startingEquipment  ?? [],
+    data.equipmentChoices ?? {},
+  );
+  const unarmoredBase = data.classId === "barbaro" ? 10 + dexMod + conMod
+                       : data.classId === "monge"   ? 10 + dexMod + wisMod
+                       : 10 + dexMod;
+  const ac = computeArmorAC(resolvedItems, dexMod, unarmoredBase);
 
   const raceName = race ? (subrace ? `${race.name} (${subrace.name})` : race.name) : "—";
   const desc = data.desc ?? {};
@@ -368,11 +379,7 @@ export function StepReview({ data }: Props) {
         const ec = data.equipmentChoices ?? {};
         const useGold = ec["useGold"] === "true";
         const goldAmt = ec["rolledGold"];
-        const resolved = resolveEquipment(
-          cls?.startingEquipment ?? [],
-          bg?.startingEquipment  ?? [],
-          ec,
-        );
+        const resolved = resolvedItems;
         return (
           <Section label="Equipamento Inicial">
             {useGold ? (

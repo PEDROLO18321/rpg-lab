@@ -17,9 +17,9 @@ export default async function CthulhuJogadorPage() {
   const userId = session.user.id;
 
   const [system, characters] = await Promise.all([
-    prisma.system.findUnique({ where: { slug: "cthulhu7" } }),
+    prisma.system.findUnique({ where: { slug: "cthulhu" } }),
     prisma.character.findMany({
-      where: { userId, system: { slug: "cthulhu7" } },
+      where: { userId, system: { slug: "cthulhu" } },
       include: { cthulhuSheet: true },
       orderBy: { updatedAt: "desc" },
     }),

@@ -7,7 +7,7 @@ export default async function NewInvestigatorPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const system = await prisma.system.findUnique({ where: { slug: "cthulhu7" } });
+  const system = await prisma.system.findUnique({ where: { slug: "cthulhu" } });
   if (!system) redirect("/dashboard/cthulhu");
 
   return <CthulhuWizard userId={session.user.id} systemId={system.id} />;
