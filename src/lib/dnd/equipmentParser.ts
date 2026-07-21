@@ -10,6 +10,8 @@ export type EquipmentChoice = {
   letter: string;
   label:  string;
   sub?:   SubSelection;
+  /** Item fixo adicional concedido junto da sub-escolha (ex.: "Escudo" em "uma arma marcial e um escudo"). */
+  extra?: string;
 };
 
 export type EquipmentLine =
@@ -83,7 +85,8 @@ export function parseEquipmentLine(text: string): EquipmentLine {
     label = label.replace(/,?\s*ou\s*$/, "").replace(/,\s*$/, "").trim();
 
     const sub = detectSub(label);
-    return { letter, label, sub };
+    const extra = /\be(?:\s+um)?\s+escudo\b/i.test(label) ? "Escudo" : undefined;
+    return { letter, label, sub, extra };
   });
 
   return { type: "choice", choices };
@@ -149,6 +152,7 @@ export function resolveEquipment(
         if (val) result.push(val);
       }
     }
+    if (chosen.extra) result.push(chosen.extra);
   }
 
   clsItems.forEach((raw, i) => resolve(raw, "cls", i));

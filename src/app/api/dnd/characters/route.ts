@@ -4,6 +4,7 @@ import { RACES } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import { resolveEquipment, extractStartingCurrency } from "@/lib/dnd/equipmentParser";
+import { computeArmorAC } from "@/lib/dnd/items";
 import { SPELLS } from "@/lib/dnd/spells";
 import type { AbilityKey } from "@/lib/dnd/races";
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     const unarmoredDefense = classId === "barbaro"  ? 10 + dexMod + conMod
                            : classId === "monge"    ? 10 + dexMod + wisMod
                            : 10 + dexMod;
-    const ac = Math.max(baseAC, unarmoredDefense);
+    const unarmoredBase = Math.max(baseAC, unarmoredDefense);
 
     // Serialize description + languages into Character.notes
     const notesData = {
@@ -113,6 +114,10 @@ export async function POST(req: NextRequest) {
     const ec: Record<string, string> = equipmentChoices ?? {};
     const resolvedItems = resolveEquipment(cls.startingEquipment, bg?.startingEquipment ?? [], ec);
     const startingCurrency = extractStartingCurrency(cls.startingEquipment, bg?.startingEquipment ?? []);
+
+    // computeArmorAC usa unarmoredBase (defesa sem armadura, já com Vig/Sab de bárbaro/monge)
+    // só quando nenhuma armadura da lista de itens é encontrada.
+    const ac = computeArmorAC(resolvedItems, dexMod, unarmoredBase);
 
     const character = await prisma.character.create({
       data: {
