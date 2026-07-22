@@ -62,13 +62,13 @@ const SYSTEMS = [
     description:
       "O RPG nacional de maior sucesso. Fantasia épica com sabor brasileiro, magia, deuses e o caos da Tormenta.",
     image: tormentaImg,
-    status: "planned" as const,
-    href: null,
+    status: "available" as const,
+    href: "/dashboard/tormenta",
     accentColor: "#a01818",
     accentGlow: "rgba(160,24,24,0.2)",
     borderAccent: "rgba(160,24,24,0.38)",
-    badgeCls: "badge badge-planned",
-    badgeLabel: "Planejado",
+    badgeCls: "badge badge-available",
+    badgeLabel: "Disponível",
   },
 ];
 
@@ -195,7 +195,7 @@ export default function SystemSelectPage() {
                 boxShadow: isHovered
                   ? `0 20px 56px ${sys.accentGlow}, 0 0 0 1px ${sys.borderAccent}`
                   : "0 2px 16px rgba(0,0,0,0.25)",
-                opacity: sys.status === "planned" ? 0.6 : 1,
+                opacity: isActive ? 1 : 0.6,
                 userSelect: "none",
               }}
             >

@@ -437,7 +437,7 @@ const SHOWCASE_SYSTEMS = [
   { id:"dnd",      name:"Dungeons & Dragons", label:"D&D 5e",            image:dndImg,      color:"#c9941f", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"cthulhu",  name:"Call of Cthulhu",   label:"CoC 7ª Ed.",        image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"ordem",    name:"Ordem Paranormal",   label:"OP RPG",            image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
-  { id:"tormenta", name:"Tormenta 20",        label:"T20",               image:tormentaImg, color:"#a01818", dot:"#6b7280", statusLabel:"Planejado",          available:false },
+  { id:"tormenta", name:"Tormenta 20",        label:"T20",               image:tormentaImg, color:"#a01818", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
 ];
 
 function SystemsShowcase() {
@@ -554,7 +554,7 @@ const STRIP_SYSTEMS = [
   { id:"dnd",      name:"D&D 5e",           image:dndImg,      color:"#c9941f", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"cthulhu",  name:"Call of Cthulhu",  image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"ordem",    name:"Ordem Paranormal", image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível"         },
-  { id:"tormenta", name:"Tormenta 20",      image:tormentaImg, color:"#a01818", dot:"#6b7280", statusLabel:"Planejado"          },
+  { id:"tormenta", name:"Tormenta 20",      image:tormentaImg, color:"#a01818", dot:"#4ade80", statusLabel:"Disponível"         },
 ];
 
 function StatsStrip() {

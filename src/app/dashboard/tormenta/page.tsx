@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { RoleSelectGrid } from "./RoleSelectGrid";
 
-export default async function TormentaDashboardPage() {
+export default async function TormentaRolePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -11,41 +12,23 @@ export default async function TormentaDashboardPage() {
       <DashboardNav
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="Tormenta 20"
-        systemHref="/dashboard/tormenta"
+        systemHref="/dashboard"
       />
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "80px 24px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{
-          textAlign: "center",
-          padding: "72px 40px",
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-xl)",
-          maxWidth: 480,
-          width: "100%",
-        }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: "var(--radius-xl)",
-            background: "var(--surface-2)", border: "1px solid var(--border)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.8rem", margin: "0 auto 20px",
-          }}>
-            🛡️
-          </div>
-          <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10 }}>
-            Em desenvolvimento
-          </p>
-          <h1 style={{
-            fontFamily: "var(--font-cinzel), serif",
-            fontSize: "1.5rem", fontWeight: 700,
-            color: "var(--text)", marginBottom: 12,
-          }}>
-            Tormenta 20
+
+      <main style={{ maxWidth: 800, margin: "0 auto", padding: "72px 24px 80px" }}>
+        <div style={{ textAlign: "center", marginBottom: 52 }}>
+          <span className="section-label" style={{ display: "block", marginBottom: 12 }}>
+            Tormenta 20 · O RPG Nacional
+          </span>
+          <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.2, marginBottom: 12 }}>
+            Como você vai <span style={{ color: "#c94040" }}>jogar</span>?
           </h1>
-          <p style={{ fontSize: "0.88rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
-            O suporte ao sistema Tormenta 20 ainda está sendo desenvolvido.
-            Por enquanto, utilize o sistema de D&amp;D 5e disponível.
+          <p style={{ fontSize: "0.92rem", color: "var(--text-muted)", maxWidth: 380, margin: "0 auto", lineHeight: 1.7 }}>
+            Selecione seu papel em Arton. Jogador ou Mestre — cada um tem seu próprio painel.
           </p>
         </div>
+
+        <RoleSelectGrid />
       </main>
     </div>
   );
