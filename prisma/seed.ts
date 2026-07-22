@@ -14,8 +14,8 @@ async function main() {
 
   await prisma.system.upsert({
     where:  { slug: "tormenta20" },
-    update: {},
-    create: { slug: "tormenta20", name: "Tormenta 20", version: "Edição 2020", active: false },
+    update: { active: true },
+    create: { slug: "tormenta20", name: "Tormenta 20", version: "Edição 2020", active: true },
   });
 
   await prisma.system.upsert({
