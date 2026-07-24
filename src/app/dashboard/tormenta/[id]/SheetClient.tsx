@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { DeleteCharacterButton } from "@/components/dashboard/DeleteCharacterButton";
 import { RACE_BY_ID } from "@/lib/tormenta/races";
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 import { ORIGIN_BY_ID } from "@/lib/tormenta/origins";
@@ -30,20 +31,19 @@ function parse<T>(raw: string | null | undefined, fallback: T): T {
 interface Background { appearance?: string; personality?: string; history?: string; objective?: string }
 
 export function SheetClient({ character }: { character: AnyChar }) {
-  const router = useRouter();
   const sheet = character.tormentaSheet;
   const race = sheet.race ? RACE_BY_ID[sheet.race] : null;
   const cls = sheet.className ? CLASS_BY_ID[sheet.className] : null;
   const origin = sheet.origin ? ORIGIN_BY_ID[sheet.origin] : null;
   const god = sheet.godId ? GOD_BY_ID[sheet.godId] : null;
 
+  const [mode, setMode] = useState<"ficha" | "editar">("ficha");
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(character.portraitUrl ?? null);
   const [pv, setPv] = useState({ cur: sheet.pvCurrent, max: sheet.pvMax, temp: sheet.pvTemp });
   const [pm, setPm] = useState({ cur: sheet.pmCurrent, max: sheet.pmMax, temp: sheet.pmTemp });
   const [notes, setNotes] = useState<string>(sheet.notes ?? "");
   const [background, setBackground] = useState<Background>(parse(sheet.background, {}));
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [levelingUp, setLevelingUp] = useState(false);
 
   const attrs = { for: sheet.forca, des: sheet.des, con: sheet.con, int: sheet.int, sab: sheet.sab, car: sheet.car };
@@ -76,42 +76,49 @@ export function SheetClient({ character }: { character: AnyChar }) {
     save({ pmCurrent: next.cur });
   }
 
-  async function remove() {
-    if (!confirmDelete) { setConfirmDelete(true); return; }
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/tormenta/characters/${character.id}`, { method: "DELETE" });
-      if (res.ok) router.push("/dashboard/tormenta/jogador");
-    } finally { setDeleting(false); }
-  }
-
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
       <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "36px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>Tormenta 20</span>
-            <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.4rem, 3vw, 1.9rem)", fontWeight: 700, color: "var(--text)" }}>{character.name}</h1>
-            <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
-              {race?.icon} {race?.name} · {cls?.icon} {cls?.name} (nível {sheet.level}) · {origin?.name}{god ? ` · Devoto de ${god.name}` : ""}
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 52, height: 52, borderRadius: "var(--radius-xl)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {portraitUrl
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={portraitUrl} alt={character.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: ACCENT_LIGHT, letterSpacing: "0.04em" }}>{cls ? cls.id.slice(0, 3).toUpperCase() : "T20"}</span>}
+            </div>
+            <div>
+              <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>Tormenta 20</span>
+              <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.4rem, 3vw, 1.9rem)", fontWeight: 700, color: "var(--text)" }}>{character.name}</h1>
+              <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
+                {race?.icon} {race?.name} · {cls?.icon} {cls?.name} (nível {sheet.level}) · {origin?.name}{god ? ` · Devoto de ${god.name}` : ""}
+              </p>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            {sheet.level < 20 && (
+            {sheet.level < 20 && mode === "ficha" && (
               <button onClick={() => setLevelingUp(true)}
                 style={{ padding: "8px 16px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: ACCENT_LIGHT, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>
                 ⬆ Subir de Nível
               </button>
             )}
-            <button onClick={remove} disabled={deleting}
-              style={{ padding: "8px 16px", background: confirmDelete ? "rgba(220,60,60,0.15)" : "var(--surface-2)", border: `1px solid ${confirmDelete ? "#e06c6c" : "var(--border)"}`, borderRadius: "var(--radius)", color: confirmDelete ? "#e06c6c" : "var(--text-muted)", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer" }}>
-              {deleting ? "Excluindo…" : confirmDelete ? "Confirmar exclusão?" : "Excluir personagem"}
-            </button>
+            <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
+            <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
           </div>
         </div>
 
+        {mode === "editar" ? (
+          <EditMode
+            characterId={character.id}
+            characterName={character.name}
+            sheet={sheet}
+            portraitUrl={portraitUrl}
+            setPortraitUrl={setPortraitUrl}
+          />
+        ) : (
+        <>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <VitalCard label="Pontos de Vida" color={ACCENT_LIGHT} data={pv} onDelta={adjustPv} />
           <VitalCard label="Pontos de Mana" color={ACCENT_LIGHT} data={pm} onDelta={adjustPm} />
@@ -228,10 +235,224 @@ export function SheetClient({ character }: { character: AnyChar }) {
         {saving && <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)" }}>Salvando…</p>}
 
         <Link href="/dashboard/tormenta/jogador" style={{ fontSize: "0.82rem", color: "var(--text-muted)", textDecoration: "none" }}>← Voltar para Meus Heróis</Link>
+        </>
+        )}
       </main>
+
+      <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 40 }}>
+        <DeleteCharacterButton
+          characterId={character.id}
+          characterName={character.name}
+          apiPath={`/api/tormenta/characters/${character.id}`}
+          redirectTo="/dashboard/tormenta/jogador"
+        />
+      </div>
     </div>
   );
 }
+
+// ── Mode Button ───────────────────────────────────────────────────────────────
+
+function ModeBtn({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "8px 18px",
+        borderRadius: "var(--radius-lg)",
+        background: active ? ACCENT_DIM : "var(--surface-2)",
+        border: `1px solid ${active ? ACCENT_BORD : "var(--border)"}`,
+        color: active ? ACCENT_LIGHT : "var(--text-muted)",
+        fontWeight: active ? 700 : 400,
+        fontSize: "0.84rem",
+        cursor: "pointer",
+        transition: "all 0.15s",
+        fontFamily: "inherit",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── EDIT MODE ─────────────────────────────────────────────────────────────────
+
+interface EditProps {
+  characterId: string;
+  characterName: string;
+  sheet: AnyChar;
+  portraitUrl: string | null;
+  setPortraitUrl: (v: string | null) => void;
+}
+
+function EditMode({ characterId, characterName, sheet, portraitUrl, setPortraitUrl }: EditProps) {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [name, setName] = useState(characterName);
+  const [portrait, setPortrait] = useState<string | null>(portraitUrl);
+  const [attrs, setAttrs] = useState<Record<(typeof ATTR_KEYS)[number], number>>({
+    for: sheet.forca, des: sheet.des, con: sheet.con, int: sheet.int, sab: sheet.sab, car: sheet.car,
+  });
+  const [vitals, setVitals] = useState({
+    level: sheet.level, xp: sheet.xp,
+    pvMax: sheet.pvMax, pvCurrent: sheet.pvCurrent,
+    pmMax: sheet.pmMax, pmCurrent: sheet.pmCurrent,
+    defense: sheet.defense, movement: sheet.movement, money: sheet.money,
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function setAttr(k: keyof typeof attrs, v: number) {
+    setAttrs((a) => ({ ...a, [k]: v }));
+    setSaved(false);
+  }
+  function setVital(k: keyof typeof vitals, v: number) {
+    setVitals((s) => ({ ...s, [k]: v }));
+    setSaved(false);
+  }
+
+  // Redimensiona a imagem escolhida (máx. 400px) e guarda como data URL — sem
+  // depender de storage externo; cabe na coluna portraitUrl.
+  function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onload = () => {
+        const max = 400;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, w, h);
+        setPortrait(canvas.toDataURL("image/jpeg", 0.85));
+        setSaved(false);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function saveAll() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/tormenta/characters/${characterId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, portraitUrl: portrait, ...attrs, ...vitals }),
+      });
+      if (!res.ok) throw new Error("Falha ao salvar.");
+      setPortraitUrl(portrait);
+      setSaved(true);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div style={{ background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-lg)", padding: "12px 16px" }}>
+        <p style={{ fontSize: "0.78rem", color: ACCENT_LIGHT, fontWeight: 700, marginBottom: 2 }}>⚠ Atenção: edição manual da ficha</p>
+        <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+          Ao salvar, os valores atuais desta tela substituem os antigos. Use com liberdade para ajustar nome, retrato, atributos e vitais — revise antes de confirmar.
+        </p>
+      </div>
+
+      <Section title="Identidade">
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 110, height: 110, borderRadius: "var(--radius-lg)", border: `1px solid ${ACCENT_BORD}`, background: "var(--surface-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {portrait
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={portrait} alt="Retrato" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: "0.66rem", color: "var(--text-subtle)", textAlign: "center", padding: 8 }}>Sem foto</span>}
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: "none" }} />
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => fileRef.current?.click()} style={miniBtn}>Trocar foto</button>
+              {portrait && <button onClick={() => { setPortrait(null); setSaved(false); }} style={miniBtn}>Remover</button>}
+            </div>
+            <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textAlign: "center", lineHeight: 1.4, maxWidth: 130 }}>
+              Ideal: imagem quadrada (1:1), ~400×400px. Redimensionada automaticamente.
+            </p>
+          </div>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <EditText label="Nome" value={name} onChange={(v) => { setName(v); setSaved(false); }} />
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Atributos">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+          {ATTR_KEYS.map((k) => (
+            <EditNumber key={k} label={ATTR_LABEL[k]} value={attrs[k]} onChange={(v) => setAttr(k, v)} hint={`mod ${attrMod(attrs[k]) >= 0 ? "+" : ""}${attrMod(attrs[k])}`} />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Vitais & Progressão">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+          <EditNumber label="Nível" value={vitals.level} onChange={(v) => setVital("level", v)} />
+          <EditNumber label="XP" value={vitals.xp} onChange={(v) => setVital("xp", v)} />
+          <EditNumber label="PV Máximo" value={vitals.pvMax} onChange={(v) => setVital("pvMax", v)} />
+          <EditNumber label="PV Atual" value={vitals.pvCurrent} onChange={(v) => setVital("pvCurrent", v)} />
+          <EditNumber label="PM Máximo" value={vitals.pmMax} onChange={(v) => setVital("pmMax", v)} />
+          <EditNumber label="PM Atual" value={vitals.pmCurrent} onChange={(v) => setVital("pmCurrent", v)} />
+          <EditNumber label="Defesa" value={vitals.defense} onChange={(v) => setVital("defense", v)} />
+          <EditNumber label="Deslocamento" value={vitals.movement} onChange={(v) => setVital("movement", v)} />
+          <EditNumber label="Dinheiro (T$)" value={vitals.money} onChange={(v) => setVital("money", v)} />
+        </div>
+      </Section>
+
+      {error && <p style={{ fontSize: "0.8rem", color: "#ff6b6b" }}>{error}</p>}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button onClick={saveAll} disabled={saving}
+          style={{ padding: "10px 24px", background: `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)`, border: "none", borderRadius: "var(--radius-lg)", color: "#fff", fontWeight: 700, fontSize: "0.88rem", cursor: saving ? "wait" : "pointer" }}>
+          {saving ? "Salvando…" : "Salvar alterações"}
+        </button>
+        {saved && <span style={{ fontSize: "0.78rem", color: "#5fbf7f" }}>✓ Salvo</span>}
+      </div>
+    </div>
+  );
+}
+
+function EditText({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <p style={editLabelStyle}>{label}</p>
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} style={editInputStyle} />
+    </div>
+  );
+}
+
+function EditNumber({ label, value, onChange, hint }: { label: string; value: number; onChange: (v: number) => void; hint?: string }) {
+  return (
+    <div>
+      <p style={editLabelStyle}>{label}{hint ? <span style={{ color: "var(--text-subtle)", fontWeight: 400 }}> · {hint}</span> : ""}</p>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value) || 0)}
+        style={editInputStyle}
+      />
+    </div>
+  );
+}
+
+const editLabelStyle: React.CSSProperties = { fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 };
+const editInputStyle: React.CSSProperties = { width: "100%", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "8px 12px", color: "var(--text)", fontSize: "0.86rem", fontFamily: "inherit", boxSizing: "border-box" };
+const miniBtn: React.CSSProperties = { padding: "5px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.74rem", cursor: "pointer" };
 
 function VitalCard({ label, color, data, onDelta }: { label: string; color: string; data: { cur: number; max: number; temp: number }; onDelta: (d: number) => void }) {
   const pct = Math.max(0, Math.min(100, (data.cur / Math.max(1, data.max)) * 100));

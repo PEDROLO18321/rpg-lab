@@ -19,6 +19,7 @@ export async function PATCH(
     pvCurrent, pvTemp, pmCurrent, pmTemp, money, notes,
     skills, spellsKnown, schoolsChosen, weapons, equipment, conditions, background,
     name, portraitUrl,
+    forca, des, con, int, sab, car, level, xp, pvMax, pmMax, defense, movement,
   } = body;
 
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
@@ -29,6 +30,18 @@ export async function PATCH(
     ...(num(pmCurrent) !== undefined ? { pmCurrent } : {}),
     ...(num(pmTemp)    !== undefined ? { pmTemp }    : {}),
     ...(num(money)     !== undefined ? { money }     : {}),
+    ...(num(forca)     !== undefined ? { forca }     : {}),
+    ...(num(des)       !== undefined ? { des }       : {}),
+    ...(num(con)       !== undefined ? { con }       : {}),
+    ...(num(int)       !== undefined ? { int }       : {}),
+    ...(num(sab)       !== undefined ? { sab }       : {}),
+    ...(num(car)       !== undefined ? { car }       : {}),
+    ...(num(level)     !== undefined ? { level }     : {}),
+    ...(num(xp)        !== undefined ? { xp }        : {}),
+    ...(num(pvMax)     !== undefined ? { pvMax }     : {}),
+    ...(num(pmMax)     !== undefined ? { pmMax }     : {}),
+    ...(num(defense)   !== undefined ? { defense }   : {}),
+    ...(num(movement)  !== undefined ? { movement }  : {}),
     ...(notes !== undefined ? { notes } : {}),
     ...(skills        !== undefined ? { skills: skills ? JSON.stringify(skills) : null } : {}),
     ...(spellsKnown   !== undefined ? { spellsKnown: spellsKnown ? JSON.stringify(spellsKnown) : null } : {}),

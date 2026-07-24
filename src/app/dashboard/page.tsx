@@ -8,6 +8,7 @@ import dndImg           from "@/assets/systems/D&D.png";
 import tormentaImg      from "@/assets/systems/Tormenta.png";
 import cthulhuImg       from "@/assets/systems/CallofCthulhu.png";
 import ordemImg         from "@/assets/systems/OrdemParanormal.png";
+import starWarsImg      from "@/assets/systems/StarWars.png";
 
 const SYSTEMS = [
   {
@@ -67,6 +68,21 @@ const SYSTEMS = [
     accentColor: "#a01818",
     accentGlow: "rgba(160,24,24,0.2)",
     borderAccent: "rgba(160,24,24,0.38)",
+    badgeCls: "badge badge-available",
+    badgeLabel: "Disponível",
+  },
+  {
+    id: "starwars",
+    name: "Star Wars: Além da Fronteira",
+    edition: "Sistema Autoral",
+    description:
+      "Sistema de RPG autoral numa linha do tempo alternativa, focado na exploração das Regiões Desconhecidas. 35 espécies, 23 classes e progressão até o nível 99.",
+    image: starWarsImg,
+    status: "available" as const,
+    href: "/dashboard/starwars",
+    accentColor: "#3b82c4",
+    accentGlow: "rgba(59,130,196,0.2)",
+    borderAccent: "rgba(59,130,196,0.38)",
     badgeCls: "badge badge-available",
     badgeLabel: "Disponível",
   },
@@ -161,11 +177,11 @@ export default function SystemSelectPage() {
       {/* Cards */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(272px, 1fr))",
-          gap: 22,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
           width: "100%",
-          maxWidth: 940,
+          maxWidth: 780,
           position: "relative",
           zIndex: 1,
         }}
@@ -185,28 +201,31 @@ export default function SystemSelectPage() {
               onMouseLeave={() => setHovered(null)}
               style={{
                 position: "relative",
+                display: "flex",
+                alignItems: "stretch",
+                gap: 20,
                 background: "var(--surface)",
                 border: `1px solid ${isHovered ? sys.borderAccent : "rgba(255,255,255,0.07)"}`,
                 borderRadius: "var(--radius-xl)",
                 overflow: "hidden",
                 cursor: isActive ? "pointer" : "default",
                 transition: "border-color 0.25s, transform 0.25s, box-shadow 0.25s",
-                transform: isHovered ? "translateY(-5px)" : "translateY(0)",
+                transform: isHovered ? "translateX(4px)" : "translateX(0)",
                 boxShadow: isHovered
-                  ? `0 20px 56px ${sys.accentGlow}, 0 0 0 1px ${sys.borderAccent}`
+                  ? `0 14px 40px ${sys.accentGlow}, 0 0 0 1px ${sys.borderAccent}`
                   : "0 2px 16px rgba(0,0,0,0.25)",
                 opacity: isActive ? 1 : 0.6,
                 userSelect: "none",
               }}
             >
-              {/* Image */}
-              <div style={{ position: "relative", width: "100%", height: 180 }}>
+              {/* Image (square) */}
+              <div style={{ position: "relative", width: 128, height: 128, flexShrink: 0 }}>
                 <Image
                   src={sys.image}
                   alt={sys.name}
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes="(max-width: 960px) 100vw, 313px"
+                  sizes="128px"
                 />
 
                 {/* gradient overlay */}
@@ -215,7 +234,7 @@ export default function SystemSelectPage() {
                     position: "absolute",
                     inset: 0,
                     background:
-                      "linear-gradient(to bottom, rgba(7,9,15,0.1) 0%, rgba(7,9,15,0.7) 100%)",
+                      "linear-gradient(to bottom, rgba(7,9,15,0.05) 0%, rgba(7,9,15,0.55) 100%)",
                   }}
                 />
 
@@ -234,88 +253,98 @@ export default function SystemSelectPage() {
                   >
                     <div
                       style={{
-                        width: 40,
-                        height: 40,
+                        width: 34,
+                        height: 34,
                         borderRadius: "50%",
                         background: "rgba(255,255,255,0.06)",
                         border: "1px solid rgba(255,255,255,0.12)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "1.1rem",
                       }}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     </div>
                   </div>
                 )}
 
                 {/* badge over image */}
-                <div style={{ position: "absolute", top: 12, left: 14 }}>
-                  <span className={sys.badgeCls}>{sys.badgeLabel}</span>
+                <div style={{ position: "absolute", top: 8, left: 8 }}>
+                  <span className={sys.badgeCls} style={{ fontSize: "0.6rem", padding: "3px 8px" }}>{sys.badgeLabel}</span>
                 </div>
               </div>
 
               {/* Content */}
-              <div style={{ padding: "20px 22px 22px" }}>
-                <h2
-                  style={{
-                    fontFamily: "var(--font-cinzel), serif",
-                    fontSize: "1rem",
-                    fontWeight: 700,
-                    color: "var(--text)",
-                    marginBottom: 2,
-                  }}
-                >
-                  {sys.name}
-                </h2>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: "14px 20px 14px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  gap: 4,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                  <h2
+                    style={{
+                      fontFamily: "var(--font-cinzel), serif",
+                      fontSize: "1.02rem",
+                      fontWeight: 700,
+                      color: "var(--text)",
+                    }}
+                  >
+                    {sys.name}
+                  </h2>
+
+                  {isActive && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: "0.82rem",
+                        fontWeight: 700,
+                        color: isHovered ? sys.accentColor : "var(--text-muted)",
+                        transition: "color 0.2s",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Selecionar
+                      <span
+                        style={{
+                          display: "inline-block",
+                          transition: "transform 0.2s",
+                          transform: isHovered ? "translateX(4px)" : "translateX(0)",
+                        }}
+                      >
+                        →
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <p
                   style={{
-                    fontSize: "0.72rem",
+                    fontSize: "0.7rem",
                     fontWeight: 700,
                     color: sys.accentColor,
                     letterSpacing: "0.05em",
                     textTransform: "uppercase",
-                    marginBottom: 10,
                   }}
                 >
                   {sys.edition}
                 </p>
                 <p
                   style={{
-                    fontSize: "0.83rem",
+                    fontSize: "0.8rem",
                     color: "var(--text-muted)",
-                    lineHeight: 1.65,
-                    marginBottom: isActive ? 18 : 0,
+                    lineHeight: 1.6,
                   }}
                 >
                   {sys.description}
                 </p>
-
-                {isActive && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 5,
-                      fontSize: "0.82rem",
-                      fontWeight: 700,
-                      color: isHovered ? sys.accentColor : "var(--text-muted)",
-                      transition: "color 0.2s",
-                    }}
-                  >
-                    Selecionar
-                    <span
-                      style={{
-                        display: "inline-block",
-                        transition: "transform 0.2s",
-                        transform: isHovered ? "translateX(4px)" : "translateX(0)",
-                      }}
-                    >
-                      →
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           );

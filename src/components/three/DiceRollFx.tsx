@@ -34,6 +34,7 @@ export function RollResultDie({
   edgeColor,
   emissive,
   resultColor,
+  label,
 }: {
   sides: number;
   size: number;
@@ -43,6 +44,8 @@ export function RollResultDie({
   edgeColor?: string;
   emissive?: string;
   resultColor?: string;
+  /** Texto do rótulo ocioso (ex.: "d%" quando a geometria real usada é d10). Padrão: `d${sides}`. */
+  label?: string;
 }) {
   const tier = usePerformanceTier();
   // Derivado por id (sem setState síncrono em effect): rolagem nova fica
@@ -90,7 +93,7 @@ export function RollResultDie({
               textShadow: "0 1px 8px rgba(0,0,0,0.8)",
             }}
           >
-            {sides === 100 ? "d%" : `d${sides}`}
+            {label ?? (sides === 100 ? "d%" : `d${sides}`)}
           </span>
         ) : null}
       </div>
@@ -105,7 +108,7 @@ export function RollResultDie({
  */
 type ToastPhase = "rolling" | "result" | "exit" | "done";
 
-export function RollToast({ roll }: { roll: DiceFxRoll | null }) {
+export function RollToast({ roll, color, edgeColor, emissive }: { roll: DiceFxRoll | null; color?: string; edgeColor?: string; emissive?: string }) {
   const tier = usePerformanceTier();
   // Fase derivada por id de rolagem: roll novo começa "rolling" sem precisar
   // de setState síncrono; os timeouts só avançam a fase (callbacks async).
@@ -153,7 +156,7 @@ export function RollToast({ roll }: { roll: DiceFxRoll | null }) {
       }}
     >
       {show3d ? (
-        <Dice3D sides={visible.dice} size={56} rollToken={visible.id} />
+        <Dice3D sides={visible.dice} size={56} rollToken={visible.id} color={color} edgeColor={edgeColor} emissive={emissive} />
       ) : (
         <span style={{ fontSize: "1.6rem" }} aria-hidden>🎲</span>
       )}

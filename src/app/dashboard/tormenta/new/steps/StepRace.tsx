@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import { RACES, RACE_BY_ID } from "@/lib/tormenta/races";
 import { ATTR_KEYS, ATTR_LABEL, type AttrKey } from "@/lib/tormenta/data";
 import { randomTormentaName } from "@/lib/tormenta/names";
+import { smoothScrollTo } from "@/lib/smoothScroll";
 import type { WizardData } from "../CharacterWizard";
 import { ACCENT, ACCENT_LIGHT, ACCENT_DIM, ACCENT_BORD } from "../CharacterWizard";
 import { Intro } from "./Intro";
@@ -21,10 +23,14 @@ function formatBonus(b: Partial<Record<AttrKey, number>>): string {
 
 export function StepRace({ raceId, raceVariantId, racialAttrChoices, charName, onChange }: Props) {
   const race = raceId ? RACE_BY_ID[raceId] : undefined;
+  const detailRef = useRef<HTMLDivElement>(null);
 
   function pick(id: string) {
     if (raceId === id) return;
     onChange({ raceId: id, raceVariantId: "", racialAttrChoices: [] });
+    setTimeout(() => {
+      if (detailRef.current) smoothScrollTo(detailRef.current);
+    }, 50);
   }
 
   function toggleAttrChoice(k: AttrKey) {
@@ -56,7 +62,7 @@ export function StepRace({ raceId, raceVariantId, racialAttrChoices, charName, o
       </div>
 
       {race && (
-        <div style={{ background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 24px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div ref={detailRef} style={{ background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 24px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
           <div>
             <h3 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{race.icon} {race.name}</h3>
             <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>{race.description}</p>

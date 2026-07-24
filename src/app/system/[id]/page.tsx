@@ -266,6 +266,65 @@ const SYSTEMS: Record<string, SystemData> = {
       ],
     },
   },
+  starwars: {
+    name: "Star Wars: Além da Fronteira",
+    tagline: "Uma galáxia onde Anakin nunca existiu, nas Regiões Desconhecidas",
+    orbColor: "rgba(59,130,196,0.22)",
+    accentColor: "#3b82c4",
+    ctaHref: "/dashboard/starwars",
+    lore: "Numa linha do tempo alternativa, sem a Guerra dos Clones que conhecemos, um grupo de exploradores parte rumo às Regiões Desconhecidas — território não mapeado, perigoso e cheio de possibilidades.",
+    wiki: {
+      intro:
+        "Star Wars: Além da Fronteira é um sistema de RPG de mesa autoral, criado do zero para esta plataforma. Não é um produto oficial da Lucasfilm — é uma reinterpretação mecânica e narrativa do universo Star Wars, inspirada na estrutura de Ordem Paranormal, ambientada numa linha do tempo alternativa onde Anakin Skywalker nunca existiu e o foco narrativo é a exploração das Regiões Desconhecidas, com uma pegada estilo Star Trek.",
+      quickFacts: [
+        { label: "Tipo",              value: "Sistema autoral, criado nesta plataforma" },
+        { label: "Inspiração",        value: "Ordem Paranormal (estrutura) + universo Star Wars" },
+        { label: "Ambientação",       value: "Linha do tempo alternativa — Regiões Desconhecidas" },
+        { label: "Atributos",         value: "6 — Agilidade, Inteligência, Força, Vigor, Presença, Sensitividade" },
+        { label: "Perícias",          value: "25, cada uma ligada a 1-2 atributos" },
+        { label: "Espécies",          value: "35 jogáveis" },
+        { label: "Planetas",          value: "28 planetas de origem" },
+        { label: "Classes",           value: "23 (20 iniciais + 3 avançadas no nível 30)" },
+        { label: "Progressão",        value: "Nível 1 a 99" },
+      ],
+      sections: [
+        {
+          title: "O que é este sistema?",
+          body:
+            "Diferente dos outros sistemas do laboratório, Star Wars: Além da Fronteira não é baseado em um livro publicado — foi desenhado peça por peça: atributos, perícias, espécies, planetas, classes, habilidades de combate, Formas de Sabre de Luz, Pontos de Poder e regras de progressão. Tudo pensado para funcionar como um sistema jogável de verdade, com números que se sustentam entre si e uma identidade própria dentro do universo Star Wars.",
+          highlight:
+            "Nenhuma classe, forma de combate ou espécie foi copiada de outro sistema — tudo aqui foi balanceado do zero.",
+        },
+        {
+          title: "A Premissa: Anakin nunca existiu",
+          body:
+            "A campanha padrão para este sistema parte de uma pergunta simples: e se Anakin Skywalker nunca tivesse nascido? Sem ele, não há Darth Vader, a Guerra dos Clones se desenrola de forma diferente, e o equilíbrio de poder na galáxia muda de maneiras imprevisíveis.\n\nCom esse ponto de divergência estabelecido, o foco da campanha se volta pra fora do conflito Jedi/Sith que domina a mídia oficial: um grupo de exploradores parte rumo às Regiões Desconhecidas — a fronteira não mapeada da galáxia — numa jornada de descoberta que lembra mais Star Trek do que uma guerra de sabres de luz.",
+        },
+        {
+          title: "Atributos e Perícias",
+          body:
+            "O sistema usa 6 atributos: Agilidade, Inteligência, Força, Vigor, Presença e Sensitividade (afinidade com a Força). Na criação, o jogador distribui 7 pontos livremente entre eles.\n\nAs 25 perícias cobrem tudo, de combate (Pontaria, Sabres de Luz, Combate Corpo a Corpo) a exploração (Astrogação, Sobrevivência Espacial, Pilotagem) e interação social (Diplomacia, Persuasão, Enganação). Cada perícia evolui por 6 graus de treinamento — de Inexperiente (+0) a Mestre (+25).",
+        },
+        {
+          title: "Espécies e Planetas",
+          body:
+            "35 espécies jogáveis — de Humanos e Wookiees a Miraluka e Cerean — cada uma com perícias iniciais, modificadores de atributo e um perfil de vida/energia próprio. O Humano é a única exceção às regras: em vez de um modificador fixo, escolhe livremente onde aplicar seus bônus, pagando em identidade o que ganha em flexibilidade.\n\n28 planetas de origem completam a criação, cada um concedendo uma Habilidade Natal — um bônus fixo em perícias ligadas à cultura ou ambiente do mundo natal do personagem.",
+        },
+        {
+          title: "23 Classes e as Formas de Sabre de Luz",
+          body:
+            "As classes vão de combatentes marciais (Mandaloriano, Soldado da República, Mercenário) a especialistas versáteis (Engenheiro, Espião, Diplomata) e sensíveis à Força (Padawan Jedi, Acólito Sith, Andarilho da Força — este último um caminho neutro, fora das ordens Jedi e Sith).\n\nAs 3 classes ligadas à Força aprendem as 7 Formas de Sabre clássicas (Shii-Cho, Makashi, Soresu, Ataru, Djem So, Niman, Vaapad) através de um sistema circular de vantagem: cada forma vence exatamente 3 outras e perde para exatamente 3 — nenhuma é objetivamente superior, só situacionalmente.\n\nAo atingir o nível 30, essas 3 classes podem evoluir para versões avançadas — O Lado da Luz, O Lado Negro e Xamã da Força — que abandonam parte do combate físico em favor de poderes da Força quase puros.",
+          highlight:
+            "Progressão até o nível 99 — muito além dos 20 níveis comuns em outros sistemas d20.",
+        },
+        {
+          title: "Poderes Gerais e Multiclasse",
+          body:
+            "Além das habilidades de classe, todo personagem tem acesso a 50 Poderes Gerais (18 básicos + 32 avançados com pré-requisito), pagos com Pontos de Poder (PP) — um recurso próprio, separado de Vida (PV) e Energia da Força (PE). Poderes podem ser instantâneos (efeito único) ou sustentados (custam PP a cada turno mantido).\n\nO sistema também permite multiclasse: todo personagem pode escolher uma segunda classe de graça no nível 2; depois disso, cada nova multiclasse exige 2 perícias em grau Expert. As 3 classes ligadas à Força não podem ser combinadas entre si — só um caminho de Força por personagem.",
+        },
+      ],
+    },
+  },
 };
 
 /* ─── Page ───────────────────────────────────────────────── */

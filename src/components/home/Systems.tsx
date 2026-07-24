@@ -35,6 +35,14 @@ const SYSTEMS = [
     desc: "O maior sistema nacional. Raças e classes brasileiras, monstros do folclore e um universo épico criado por autores do Brasil.",
     highlights: ["Raças nacionais", "Sistema de pontos", "Magias e rituais", "Divindades de Arton"],
   },
+  {
+    icon: "🚀",
+    name: "Star Wars: Além da Fronteira",
+    abbr: "Sistema Autoral",
+    status: "available" as const,
+    desc: "Sistema de RPG autoral ambientado numa linha do tempo alternativa nas Regiões Desconhecidas. 35 espécies, 23 classes e progressão até o nível 99.",
+    highlights: ["35 espécies e 28 planetas", "23 classes + Formas de Sabre", "Poderes Gerais e PP", "Multiclasse e progressão até nível 99"],
+  },
 ];
 
 const STATUS = {
