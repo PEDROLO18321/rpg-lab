@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 interface Props {
   characterId: string;
   characterName: string;
+  apiPath?: string;    // padrão: /api/dnd/characters/{id}
+  redirectTo?: string; // padrão: /dashboard/dnd
 }
 
-export function DeleteCharacterButton({ characterId, characterName }: Props) {
+export function DeleteCharacterButton({ characterId, characterName, apiPath, redirectTo }: Props) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,8 +18,8 @@ export function DeleteCharacterButton({ characterId, characterName }: Props) {
   async function handleDelete() {
     setLoading(true);
     try {
-      await fetch(`/api/dnd/characters/${characterId}`, { method: "DELETE" });
-      router.push("/dashboard/dnd");
+      await fetch(apiPath ?? `/api/dnd/characters/${characterId}`, { method: "DELETE" });
+      router.push(redirectTo ?? "/dashboard/dnd");
     } catch {
       setLoading(false);
       setConfirming(false);

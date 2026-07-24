@@ -95,6 +95,7 @@ model Character {
   tormentaSheet      TormentaSheet?
   cthulhuSheet       CthulhuSheet?
   ordemSheet         OrdemSheet?
+  starWarsSheet      StarWarsSheet?
   campaignCharacters CampaignCharacter[]
 }
 
@@ -344,6 +345,50 @@ model OrdemSheet {
   notes      String?
 }
 
+// ─── STAR WARS: ALÉM DA FRONTEIRA (sistema autoral) ───────────────────────────
+
+model StarWarsSheet {
+  id        String    @id
+  character Character @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  species  String? // slug da espécie
+  planet   String? // slug do planeta de origem
+  planetSkillChoice String? // perícia escolhida pelo jogador pra receber o +5 da Habilidade Natal (quando o planeta lista 2 opções)
+  path     String? // "luz" | "neutro" | "sombrio"
+  classes  String  @default("{}") // JSON: Record<classId, level> (multiclasse)
+  level    Int     @default(1) // nível total (soma das classes)
+  xp       Int     @default(0)
+  humanAttrChoice String? // JSON: atributos escolhidos pelo Humano (+2/+2/+1/+1/+1/-1)
+
+  agi Int @default(1)
+  int Int @default(1)
+  forca Int @default(1) // "for" é palavra reservada → forca
+  vig Int @default(1)
+  pre Int @default(1)
+  sen Int @default(1)
+
+  pvMax     Int @default(10)
+  pvCurrent Int @default(10)
+  pvTemp    Int @default(0)
+  peMax     Int @default(0) // Pontos de Energia da Força
+  peCurrent Int @default(0)
+  peTemp    Int @default(0)
+  ppMax     Int @default(0) // Pontos de Poder (Poderes Gerais)
+  ppCurrent Int @default(0)
+  ppTemp    Int @default(0)
+
+  sabreForm String? // forma de sabre especialista escolhida (5º círculo), se aplicável
+
+  skills       String? // JSON: Record<skillId, grau> (inexperiente|iniciante|treinado|expert|veterano|mestre)
+  classPowers  String? // JSON: ChosenPower[] (habilidades de classe escolhidas por nível)
+  generalPowers String? // JSON: string[] (ids de Poderes Gerais aprendidos)
+  equipment    String? // JSON: item list
+  weapons      String? // JSON: weapon list
+  conditions   String? // JSON: string[]
+  background   String? // JSON: { organization, appearance, personality, history, objective }
+  notes        String?
+}
+
 // ─── CAMPANHAS (preparado, sem área mestre ativa) ─────────────────────────────
 
 model Campaign {
@@ -399,6 +444,14 @@ model Campaign {
   tormentaItems      TormentaCampaignItem[]
   tormentaClues      TormentaClue[]
   tormentaClocks     TormentaClock[]
+
+  starWarsStory      StarWarsStory?
+  starWarsNpcs       StarWarsNpc[]
+  starWarsCombatants StarWarsCombatant[]
+  starWarsSessions   StarWarsGameSession[]
+  starWarsItems      StarWarsCampaignItem[]
+  starWarsClues      StarWarsClue[]
+  starWarsClocks     StarWarsClock[]
 }
 
 // ─── MESTRE D&D 5e ────────────────────────────────────────────────────────────
@@ -875,6 +928,111 @@ model TormentaClue {
 }
 
 model TormentaClock {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String   @default("")
+  segments   Int      @default(4)
+  filled     Int      @default(0)
+  kind       String   @default("ameaca") // ameaca|missao|neutro
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+// ─── MESTRE STAR WARS: ALÉM DA FRONTEIRA ──────────────────────────────────────
+
+model StarWarsStory {
+  id             String @id @default(cuid())
+  campaignId     String @unique
+  objective      String @default("")
+  purpose        String @default("")
+  generalHistory String @default("")
+  currentArc     String @default("")
+  mainVillain    String @default("")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model StarWarsNpc {
+  id          String   @id @default(cuid())
+  campaignId  String
+  name        String
+  species     String   @default("")
+  role        String   @default("")
+  description String   @default("")
+  personality String   @default("")
+  notes       String   @default("")
+  pv          Int?
+  agi         Int?
+  int         Int?
+  forca       Int?
+  vig         Int?
+  pre         Int?
+  sen         Int?
+  attacks     String   @default("[]") // JSON NPCAttack[]
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model StarWarsCombatant {
+  id          String  @id @default(cuid())
+  campaignId  String
+  characterId String?
+  name        String
+  initiative  Int     @default(0)
+  pv          Int?
+  maxPv       Int?
+  pe          Int?
+  maxPe       Int?
+  conditions  String  @default("[]") // JSON string[]
+  isPlayer    Boolean @default(false)
+  order       Int     @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model StarWarsGameSession {
+  id          String   @id @default(cuid())
+  campaignId  String
+  number      Int      @default(1)
+  name        String   @default("")
+  objective   String   @default("")
+  events      String   @default("")
+  summary     String   @default("")
+  sessionDate String   @default("")
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model StarWarsCampaignItem {
+  id          String  @id @default(cuid())
+  campaignId  String
+  name        String
+  description String  @default("")
+  type        String  @default("misc") // arma|equipamento|nave|artefato|misc
+  rarity      String  @default("comum")
+  sessionId   String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model StarWarsClue {
+  id         String   @id @default(cuid())
+  campaignId String
+  title      String   @default("")
+  content    String   @default("")
+  source     String   @default("")
+  discovered Boolean  @default(false)
+  sessionId  String?
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model StarWarsClock {
   id         String   @id @default(cuid())
   campaignId String
   name       String   @default("")
