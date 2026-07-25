@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { useStarWarsCampaign } from "@/lib/starwars/useStarWarsCampaign";
 import { NpcCreator } from "./NpcCreator";
+import { StarWarsBestiary } from "./StarWarsBestiary";
 import { InitiativeTracker } from "./InitiativeTracker";
 import { SessionNotes } from "./SessionNotes";
 import { CampaignStory } from "./CampaignStory";
@@ -21,7 +22,7 @@ const ACCENT_LIGHT = "#69a8e0";
 const ACCENT_DIM = "rgba(59,130,196,0.12)";
 const ACCENT_BORD = "rgba(59,130,196,0.28)";
 
-type Tab = "story" | "items" | "npc" | "initiative" | "clues" | "clocks" | "notes" | "guide";
+type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "notes" | "guide";
 
 function icon(d: string) {
   return (
@@ -34,6 +35,7 @@ function icon(d: string) {
 const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: "story",      label: "História",   icon: icon("M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z") },
   { id: "npc",        label: "NPCs",       icon: icon("M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 7a4 4 0 1 0 0 0") },
+  { id: "bestiary",   label: "Bestiário",  icon: icon("M12 2 4 7v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V7z M9 10h.01 M15 10h.01 M9 15c1 1 5 1 6 0") },
   { id: "initiative", label: "Iniciativa", icon: icon("M12 2 15 8l6 1-5 5 1 7-6-3-6 3 1-7-5-5 6-1z") },
   { id: "clues",      label: "Pistas",     icon: icon("M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.35-4.35") },
   { id: "clocks",     label: "Relógios",   icon: icon("M12 22a10 10 0 1 0 0-20 M12 12l5-3 M12 12V7") },
@@ -103,6 +105,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
 
         {tab === "story"      && <CampaignStory api={api} />}
         {tab === "npc"        && <NpcCreator api={api} />}
+        {tab === "bestiary"   && <StarWarsBestiary api={api} />}
         {tab === "initiative" && <InitiativeTracker api={api} />}
         {tab === "clues"      && <CampaignClues api={api} />}
         {tab === "clocks"     && <CampaignClocks api={api} />}
