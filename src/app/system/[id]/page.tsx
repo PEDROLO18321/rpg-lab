@@ -440,7 +440,7 @@ function WikiPage({ sys }: { sys: SystemData }) {
       <main style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "64px 28px 100px" }}>
 
         {/* First section + sidebar: 2 columns */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 48, alignItems: "start", marginBottom: 56 }}>
+        <div className="sys-sidebar-grid" style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 48, alignItems: "start", marginBottom: 56 }}>
           <article>
             <h2 style={{
               fontFamily: "var(--font-cinzel), serif",
@@ -468,7 +468,7 @@ function WikiPage({ sys }: { sys: SystemData }) {
           </article>
 
           {/* Sidebar */}
-          <aside style={{ position: "sticky", top: 100 }}>
+          <aside className="sys-sidebar-aside" style={{ position: "sticky", top: 100 }}>
             <div style={{ background: "var(--surface)", border: `1px solid ${accent}33`, borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
               <div style={{ padding: "12px 18px", background: `${accent}18`, borderBottom: `1px solid ${accent}22` }}>
                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>

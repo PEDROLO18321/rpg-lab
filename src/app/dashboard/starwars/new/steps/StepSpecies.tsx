@@ -102,7 +102,7 @@ export function StepSpecies({ charName, speciesId, humanChoice, onChange }: Prop
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
               <input value={charName} onChange={(e) => onChange({ charName: e.target.value })}
                 placeholder={names ? `Ex.: ${names.male[0]}` : "Digite um nome..."} maxLength={60}
-                style={{ flex: 1, padding: "11px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.92rem", fontFamily: "var(--font-cinzel), serif" }} />
+                style={{ flex: 1, minWidth: 0, padding: "11px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.92rem", fontFamily: "var(--font-cinzel), serif" }} />
               {names && (
                 <button type="button" onClick={pickRandomName}
                   style={{ padding: "0 20px", background: "rgba(255,255,255,0.02)", border: `1px solid ${SW.accentBord}`, color: SW.accentLight, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>

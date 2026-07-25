@@ -420,7 +420,7 @@ function QuestBoard() {
         <div style={{ flex:1, height:1, background:"linear-gradient(to left, transparent, var(--border))" }} />
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"minmax(290px, 520px)", gap:20, justifyContent:"center" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"minmax(0, 520px)", gap:20, justifyContent:"center" }}>
         {QUESTS.map((q) => <QuestCard key={q.title} quest={q} />)}
       </div>
 
@@ -560,7 +560,7 @@ const STRIP_SYSTEMS = [
 function StatsStrip() {
   return (
     <div style={{ padding:"48px 28px 20px" }}>
-      <div style={{ maxWidth:920, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:20 }}>
+      <div style={{ maxWidth:920, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
         {STRIP_SYSTEMS.map((s) => (
           <Link key={s.id} href={`/system/${s.id}`} style={{ textDecoration:"none" }}>
             <div
@@ -714,7 +714,7 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
 
   return (
     <header style={{ position:"fixed", top:0, left:0, right:0, zIndex:100, transition:"background 0.3s, backdrop-filter 0.3s, border-color 0.3s", background:scrolled?"rgba(7,9,15,0.9)":"transparent", backdropFilter:scrolled?"blur(20px)":"none", WebkitBackdropFilter:scrolled?"blur(20px)":"none", borderBottom:`1px solid ${scrolled?"var(--border)":"transparent"}` }}>
-      <div style={{ maxWidth:1160, margin:"0 auto", padding:"0 28px", height:66, display:"flex", alignItems:"center", justifyContent:"space-between", gap:24 }}>
+      <div className="home-nav-bar" style={{ maxWidth:1160, margin:"0 auto", padding:"0 28px", height:66, display:"flex", alignItems:"center", justifyContent:"space-between", gap:24 }}>
         <Link href="/" style={{ display:"flex", alignItems:"center", gap:10, textDecoration:"none", flexShrink:0 }}>
           <div style={{ width:34, height:34, background:"var(--accent-dim)", border:"1px solid var(--border-accent)", borderRadius:"var(--radius)", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -723,7 +723,7 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
         </Link>
 
         {!isAuthed && (
-          <nav style={{ display:"flex", gap:2, flex:1, justifyContent:"center" }}>
+          <nav className="hidden md:flex" style={{ gap:2, flex:1, justifyContent:"center" }}>
             {[["Recursos","#features"],["Sistemas","#systems"]].map(([label, href]) => (
               <a key={label} href={href} style={{ padding:"6px 15px", fontSize:"0.865rem", color:"var(--text-muted)", textDecoration:"none", borderRadius:"var(--radius)", transition:"color 0.15s, background 0.15s" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color="var(--text)"; e.currentTarget.style.background="rgba(255,255,255,0.05)"; }}
@@ -737,7 +737,7 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
         <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
           {isAuthed ? (
             <>
-              <Link href="/dashboard"
+              <Link href="/dashboard" className="hidden sm:inline-flex"
                 style={{ padding:"7px 18px", fontSize:"0.865rem", fontWeight:600, color:"#06090f", background:"linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)", textDecoration:"none", borderRadius:"var(--radius)", boxShadow:"0 0 18px var(--accent-glow)", transition:"filter 0.2s, transform 0.2s" }}
                 onMouseEnter={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.filter="brightness(1.1)"; el.style.transform="translateY(-1px)"; }}
                 onMouseLeave={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.filter=""; el.style.transform=""; }}>
@@ -777,17 +777,18 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
             </>
           ) : (
             <>
-              <Link href="/login"
-                style={{ padding:"7px 16px", fontSize:"0.865rem", fontWeight:500, color:"var(--text-muted)", textDecoration:"none", borderRadius:"var(--radius)", transition:"color 0.15s" }}
+              <Link href="/login" className="home-nav-cta"
+                style={{ padding:"7px 16px", fontSize:"0.865rem", fontWeight:500, color:"var(--text-muted)", textDecoration:"none", borderRadius:"var(--radius)", transition:"color 0.15s", whiteSpace:"nowrap" }}
                 onMouseEnter={(e) => (e.currentTarget as HTMLAnchorElement).style.color="var(--text)"}
                 onMouseLeave={(e) => (e.currentTarget as HTMLAnchorElement).style.color="var(--text-muted)"}>
                 Entrar
               </Link>
-              <Link href="/register"
-                style={{ padding:"7px 20px", fontSize:"0.865rem", fontWeight:600, color:"#06090f", background:"linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)", textDecoration:"none", borderRadius:"var(--radius)", boxShadow:"0 0 18px var(--accent-glow)", transition:"filter 0.2s, transform 0.2s" }}
+              <Link href="/register" className="home-nav-cta"
+                style={{ padding:"7px 20px", fontSize:"0.865rem", fontWeight:600, color:"#06090f", background:"linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%)", textDecoration:"none", borderRadius:"var(--radius)", boxShadow:"0 0 18px var(--accent-glow)", transition:"filter 0.2s, transform 0.2s", whiteSpace:"nowrap" }}
                 onMouseEnter={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.filter="brightness(1.1)"; el.style.transform="translateY(-1px)"; }}
                 onMouseLeave={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.filter=""; el.style.transform=""; }}>
-                Começar grátis
+                <span className="home-nav-cta-full">Começar grátis</span>
+                <span className="home-nav-cta-short">Começar</span>
               </Link>
             </>
           )}

@@ -264,3 +264,44 @@ button:disabled { cursor: not-allowed; }
   }
   html { scroll-behavior: auto; }
 }
+
+/* ── Star Wars: responsivo mobile (o resto do app usa inline style fixo,
+   então as classes abaixo levam !important só pra vencer o inline em telas
+   pequenas — nada disso afeta desktop) ─────────────────────────────────── */
+@media (max-width: 640px) {
+  .sw-header-inner {
+    height: auto !important;
+    flex-wrap: wrap !important;
+    padding: 10px 14px !important;
+    row-gap: 8px !important;
+  }
+  .sw-header-title { order: 3; width: 100%; text-align: center; font-size: 0.74rem !important; }
+  .sw-mode-tabs-wrap { order: 2; width: 100%; justify-content: center !important; flex-wrap: wrap !important; }
+  .sw-mode-tabs-wrap button { flex: 1 1 auto; }
+
+  .sw-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 6px !important; }
+  .sw-wizard-header-title { order: 3; width: 100%; text-align: center; font-size: 0.7rem !important; }
+  .sw-wizard-footer { padding: 12px 14px !important; }
+
+  .sw-main-padding { padding: 18px 14px !important; }
+  .sw-two-col { grid-template-columns: 1fr !important; }
+  .sw-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .sw-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
+  .sw-attr-row { flex-wrap: wrap !important; row-gap: 8px !important; }
+  .sw-attr-row-trailing { margin-left: 0 !important; width: 100%; justify-content: space-between !important; }
+  .sw-levelup-btn { width: 100%; margin-left: 0 !important; justify-content: center; }
+  .sw-npc-attack-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── Home/Login/Dashboard: nav e cabeçalhos globais no mobile ────────────── */
+.home-nav-cta-short { display: none; }
+@media (max-width: 480px) {
+  .home-nav-bar { padding: 0 14px !important; gap: 10px !important; }
+  .home-nav-cta { padding: 7px 12px !important; font-size: 0.8rem !important; }
+  .home-nav-cta-full { display: none; }
+  .home-nav-cta-short { display: inline; }
+}
+@media (max-width: 720px) {
+  .sys-sidebar-grid { grid-template-columns: 1fr !important; }
+  .sys-sidebar-aside { position: static !important; }
+}

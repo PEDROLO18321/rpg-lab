@@ -140,11 +140,11 @@ export function CharacterWizard({ userId, systemId }: Props) {
   return (
     <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse at 50% -10%, rgba(59,130,196,0.08), transparent 60%), ${SW.bg}`, display: "flex", flexDirection: "column" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${SW.panelBorder}`, background: "rgba(5,7,13,0.92)", backdropFilter: "blur(20px)" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="sw-wizard-header-inner" style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", color: SW.textMuted, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
             ← Cancelar
           </button>
-          <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.86rem", fontWeight: 700, color: "var(--text)", letterSpacing: "0.03em" }}>
+          <span className="sw-wizard-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.86rem", fontWeight: 700, color: "var(--text)", letterSpacing: "0.03em" }}>
             <span style={{ color: SW.accentLight }}>NOVO PERSONAGEM</span> · Star Wars: Além da Fronteira
           </span>
           <span style={{ fontSize: "0.74rem", color: SW.textMuted, fontFamily: "var(--font-cinzel), serif", letterSpacing: "0.05em" }}>{STEPS[step].num}/08</span>
@@ -210,7 +210,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
         )}
       </main>
 
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, borderTop: `1px solid ${SW.panelBorder}`, background: "rgba(5,7,13,0.95)", backdropFilter: "blur(20px)", padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 40 }}>
+      <div className="sw-wizard-footer" style={{ position: "fixed", bottom: 0, left: 0, right: 0, borderTop: `1px solid ${SW.panelBorder}`, background: "rgba(5,7,13,0.95)", backdropFilter: "blur(20px)", padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 40 }}>
         <GhostButton onClick={back} disabled={step === 0}>← Anterior</GhostButton>
 
         {step < STEPS.length - 1 ? (

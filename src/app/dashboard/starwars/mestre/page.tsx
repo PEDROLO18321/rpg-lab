@@ -65,9 +65,9 @@ export default function StarWarsMestrePage() {
         </div>
 
         {creating && (
-          <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome da campanha" autoFocus
-              style={{ flex: 1, padding: "10px 14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)" }} />
+              style={{ flex: 1, minWidth: 0, padding: "10px 14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)" }} />
             <button onClick={handleCreate} disabled={busy} style={{ padding: "10px 18px", background: ACCENT, color: "#fff", border: "none", borderRadius: "var(--radius)", cursor: "pointer" }}>Criar</button>
             <button onClick={() => setCreating(false)} style={{ padding: "10px 18px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", cursor: "pointer" }}>Cancelar</button>
           </div>

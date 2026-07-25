@@ -295,14 +295,14 @@ export function SheetClient({ character }: { character: CharacterProp }) {
   return (
     <div style={{ minHeight: "100vh", background: "transparent", paddingBottom: 60 }}>
       <header style={{ position: "sticky", top: 0, zIndex: 30, borderBottom: "1px solid var(--border)", background: "rgba(5,7,13,0.9)", backdropFilter: "blur(20px)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="sw-header-inner" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/dashboard/starwars/jogador" style={{ color: "var(--text-muted)", fontSize: "0.82rem", textDecoration: "none" }}>
             ← Meus Personagens
           </Link>
-          <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
+          <span className="sw-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
             Star Wars: Além da Fronteira
           </span>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div className="sw-mode-tabs-wrap" style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
               {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
             </span>
@@ -323,7 +323,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         </div>
       </header>
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+      <main className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
           <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>
             {character.portraitUrl
@@ -337,7 +337,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
               {[species?.name, planet?.name, Object.entries(classLevels).map(([id, lvl]) => `${CLASS_BY_ID[id]?.name ?? id} ${lvl}`).join(" / "), `Nível ${sheet.level}`].filter(Boolean).join(" · ")}
             </p>
           </div>
-          <button onClick={() => setShowLevelUp(true)} style={{
+          <button className="sw-levelup-btn" onClick={() => setShowLevelUp(true)} style={{
             marginLeft: "auto", padding: "10px 18px", borderRadius: "var(--radius-lg)",
             background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT,
             fontWeight: 700, fontSize: "0.84rem", fontFamily: "inherit", cursor: "pointer",
@@ -419,10 +419,10 @@ function ViewMode({
         {conditions.length > 0 && <Badge label="Condições" value={conditions.join(", ")} warn />}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
+      <div className="sw-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <Panel title="Atributos">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+            <div className="sw-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => {
                 const pool = attributeDicePool(attrs[k]);
                 return (
@@ -660,10 +660,10 @@ function PlayMode({
         <VitalCard label="Pontos de Poder" color={GOLD} cur={ppCur} max={sheet.ppMax} temp={ppTemp} onDelta={(d) => adjust("pp", d)} onTemp={(v) => setTempValue("pp", v)} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
+      <div className="sw-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <Panel title="Atributos">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+            <div className="sw-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => {
                 const pool = attributeDicePool(attrs[k]);
                 return (
@@ -754,7 +754,7 @@ function PlayMode({
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <Panel title="Rolagem de Dados">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 14 }}>
+            <div className="sw-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 14 }}>
               {DICE_SIDES.map((d) => (
                 <button key={d} onClick={() => setSelectedDie(d)} style={{
                   padding: "5px 0", borderRadius: "var(--radius)", fontSize: "0.72rem", fontWeight: 700,
@@ -840,7 +840,7 @@ function PlayMode({
               {equipment.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Sem itens registrados.</p>}
             </div>
             <div style={{ display: "flex", gap: 5 }}>
-              <input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Novo item…" style={{ flex: 1, padding: "6px 9px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem" }} />
+              <input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Novo item…" style={{ flex: 1, minWidth: 0, padding: "6px 9px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem" }} />
               <input type="number" min={1} value={newItemQty} onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value) || 1))} style={{ width: 44, padding: "6px 5px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem", textAlign: "center" }} />
               <button onClick={() => { if (newItemName.trim()) { addEquipment(newItemName.trim(), newItemQty); setNewItemName(""); setNewItemQty(1); } }} style={{ padding: "6px 11px", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: 5, cursor: "pointer", fontSize: "0.74rem" }}>+</button>
             </div>
