@@ -287,6 +287,7 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         systemName="D&D 5e"
         systemHref="/dashboard/dnd/jogador"
         backLabel="Meus Personagens"
+        accentColor="#c9941f"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>

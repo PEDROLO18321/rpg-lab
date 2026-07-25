@@ -86,6 +86,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         systemName={c.name}
         systemHref="/dashboard/tormenta/mestre"
         backLabel="Campanhas"
+        accentColor="#a01818"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>

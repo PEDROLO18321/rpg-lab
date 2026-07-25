@@ -13,6 +13,7 @@ export default async function TormentaRolePage() {
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="Tormenta 20"
         systemHref="/dashboard"
+        accentColor="#a01818"
       />
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "72px 24px 80px" }}>

@@ -77,6 +77,7 @@ export default function GuardiaoPage() {
         systemName="Call of Cthulhu"
         systemHref="/dashboard/cthulhu"
         backLabel="Call of Cthulhu"
+        accentColor="#6b7a3a"
       />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>

@@ -84,6 +84,7 @@ export default function OrdemMestrePage() {
         systemName="Ordem Paranormal"
         systemHref="/dashboard/ordem"
         backLabel="Ordem Paranormal"
+        accentColor="#ffffff"
       />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>

@@ -13,6 +13,7 @@ export default async function CthulhuRolePage() {
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="Call of Cthulhu"
         systemHref="/dashboard"
+        accentColor="#6b7a3a"
       />
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "72px 24px 80px" }}>

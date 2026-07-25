@@ -69,6 +69,7 @@ export default function MestrePage() {
         systemName="D&D 5e"
         systemHref="/dashboard/dnd"
         backLabel="D&D 5e"
+        accentColor="#c9941f"
       />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>

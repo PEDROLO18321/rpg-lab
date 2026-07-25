@@ -13,6 +13,7 @@ export default async function OrdemRolePage() {
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="Ordem Paranormal"
         systemHref="/dashboard"
+        accentColor="#ffffff"
       />
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "72px 24px 80px" }}>

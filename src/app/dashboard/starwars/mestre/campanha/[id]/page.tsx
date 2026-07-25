@@ -80,6 +80,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
         systemName={c.name}
         systemHref="/dashboard/starwars/mestre"
         backLabel="Campanhas"
+        accentColor="#3b82c4"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
