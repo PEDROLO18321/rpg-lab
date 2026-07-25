@@ -62,7 +62,10 @@ export function StepSpecies({ charName, speciesId, humanChoice, onChange }: Prop
         <Panel active glow style={{ scrollMarginTop: 120 }}>
           <div ref={detailRef} />
           <h3 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.1rem", fontWeight: 700, color: SW.accentBright, marginBottom: 8 }}>{species.name}</h3>
-          <p style={{ fontSize: "0.84rem", color: SW.textMuted, lineHeight: 1.65, marginBottom: 14 }}>{species.description}</p>
+          <p style={{ fontSize: "0.84rem", color: SW.textMuted, lineHeight: 1.65, marginBottom: 10 }}>{species.description}</p>
+          <p style={{ fontSize: "0.8rem", color: SW.textMuted, lineHeight: 1.6, marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.025)", border: `1px solid ${SW.panelBorder}`, borderRadius: 6 }}>
+            <strong style={{ color: "var(--text)" }}>Aparência: </strong>{species.appearance}
+          </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
             <Badge tone="gold">Perícias iniciais: {species.initialSkills.join(", ")}</Badge>
