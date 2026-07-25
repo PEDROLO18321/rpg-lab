@@ -38,14 +38,14 @@ export function StepAttrs({ attrBases, attrsFinal, speciesId, onChange }: Props)
           const bonus = attrsFinal[k] - attrBases[k];
           const pool = attributeDicePool(attrsFinal[k]);
           return (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 18px", background: "rgba(255,255,255,0.015)", border: "1px solid var(--border)" }}>
+            <div key={k} className="sw-attr-row" style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 18px", background: "rgba(255,255,255,0.015)", border: "1px solid var(--border)" }}>
               <span style={{ width: 150, fontSize: "0.86rem", fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-cinzel), serif" }}>{ATTR_LABEL[k]}</span>
               <button onClick={() => set(k, -1)} disabled={attrBases[k] <= 0}
                 style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${SW.accentBord}`, background: "rgba(255,255,255,0.03)", color: SW.accentLight, cursor: "pointer", fontWeight: 700 }}>−</button>
               <span style={{ width: 26, textAlign: "center", fontSize: "1rem", fontWeight: 800, color: "var(--text)" }}>{attrBases[k]}</span>
               <button onClick={() => set(k, 1)} disabled={remaining <= 0}
                 style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${SW.accentBord}`, background: "rgba(255,255,255,0.03)", color: SW.accentLight, cursor: "pointer", fontWeight: 700 }}>+</button>
-              <span style={{ marginLeft: "auto", fontSize: "0.76rem", color: SW.textSubtle, display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="sw-attr-row-trailing" style={{ marginLeft: "auto", fontSize: "0.76rem", color: SW.textSubtle, display: "flex", alignItems: "center", gap: 8 }}>
                 {bonus !== 0 && <span style={{ color: bonus > 0 ? SW.success : SW.danger, fontWeight: 700 }}>{bonus > 0 ? `+${bonus}` : bonus}</span>}
                 <span>Final <strong style={{ color: attrsFinal[k] < 0 ? SW.danger : SW.accentBright, fontSize: "0.92rem" }}>{attrsFinal[k]}</strong></span>
                 <span style={{ fontSize: "0.66rem" }}>({pool.dice}d20 {pool.take === "highest" ? "maior" : "menor"})</span>

@@ -38,7 +38,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel }: Pr
         }}
       >
         {/* Left — breadcrumb */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, overflow: "hidden" }}>
           <Link
             href={systemHref}
             style={{
@@ -49,19 +49,23 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel }: Pr
               alignItems: "center",
               gap: 5,
               transition: "color 0.15s",
+              flexShrink: 0,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
           >
             ← {backLabel ?? "Sistemas"}
           </Link>
-          <span style={{ color: "var(--text-subtle)", fontSize: "0.8rem" }}>/</span>
+          <span style={{ color: "var(--text-subtle)", fontSize: "0.8rem", flexShrink: 0 }}>/</span>
           <span
             style={{
               fontSize: "0.82rem",
               fontWeight: 600,
               color: "var(--text)",
               fontFamily: "var(--font-cinzel), serif",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             {systemName}
@@ -69,7 +73,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel }: Pr
         </div>
 
         {/* Right — user menu */}
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", flexShrink: 0 }}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             style={{
