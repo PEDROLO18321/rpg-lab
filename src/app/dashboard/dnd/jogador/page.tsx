@@ -42,6 +42,7 @@ export default async function DndJogadorPage() {
         systemName="D&D 5e"
         systemHref="/dashboard/dnd"
         backLabel="D&D 5e"
+        accentColor="#c9941f"
       />
 
       <main

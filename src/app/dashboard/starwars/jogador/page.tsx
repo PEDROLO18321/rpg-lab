@@ -44,6 +44,7 @@ export default async function StarWarsJogadorPage() {
         systemName="Star Wars: Além da Fronteira"
         systemHref="/dashboard/starwars"
         backLabel="Star Wars"
+        accentColor="#3b82c4"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>

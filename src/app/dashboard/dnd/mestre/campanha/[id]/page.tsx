@@ -81,6 +81,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         systemName={c.name}
         systemHref="/dashboard/dnd/mestre"
         backLabel="Campanhas"
+        accentColor="#c9941f"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>

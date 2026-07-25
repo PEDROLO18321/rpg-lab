@@ -13,6 +13,7 @@ export default async function DndRolePage() {
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="D&D 5e"
         systemHref="/dashboard"
+        accentColor="#c9941f"
       />
 
       <main

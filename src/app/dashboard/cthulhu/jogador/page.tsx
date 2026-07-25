@@ -42,6 +42,7 @@ export default async function CthulhuJogadorPage() {
         systemName="Call of Cthulhu"
         systemHref="/dashboard/cthulhu"
         backLabel="Call of Cthulhu"
+        accentColor="#6b7a3a"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>

@@ -13,6 +13,7 @@ export default async function StarWarsRolePage() {
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="Star Wars: Além da Fronteira"
         systemHref="/dashboard"
+        accentColor="#3b82c4"
       />
 
       <main style={{ maxWidth: 800, margin: "0 auto", padding: "72px 24px 80px" }}>

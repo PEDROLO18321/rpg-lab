@@ -9,9 +9,11 @@ interface Props {
   systemName: string;
   systemHref: string;
   backLabel?: string;
+  /** Cor de destaque do sistema atual (hex) — tinge o avatar do usuário. Sem isso, usa o dourado padrão. */
+  accentColor?: string;
 }
 
-export function DashboardNav({ userName, systemName, systemHref, backLabel }: Props) {
+export function DashboardNav({ userName, systemName, systemHref, backLabel, accentColor }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -98,14 +100,14 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel }: Pr
                 width: 26,
                 height: 26,
                 borderRadius: "50%",
-                background: "var(--accent-dim)",
-                border: "1px solid var(--border-accent)",
+                background: accentColor ? `${accentColor}22` : "var(--accent-dim)",
+                border: `1px solid ${accentColor ? `${accentColor}55` : "var(--border-accent)"}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: "0.75rem",
                 fontWeight: 700,
-                color: "var(--accent-light)",
+                color: accentColor ?? "var(--accent-light)",
               }}
             >
               {userName.charAt(0).toUpperCase()}

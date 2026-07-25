@@ -74,6 +74,7 @@ export default function MestrePage() {
         systemName="Tormenta 20"
         systemHref="/dashboard/tormenta"
         backLabel="Tormenta 20"
+        accentColor="#a01818"
       />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>

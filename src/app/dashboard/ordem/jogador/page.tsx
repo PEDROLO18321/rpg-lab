@@ -43,6 +43,7 @@ export default async function OrdemJogadorPage() {
         systemName="Ordem Paranormal"
         systemHref="/dashboard/ordem"
         backLabel="Ordem Paranormal"
+        accentColor="#ffffff"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>

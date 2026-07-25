@@ -93,6 +93,7 @@ export default function OrdemOperacaoPage({ params }: { params: Promise<{ id: st
         systemName={c.name}
         systemHref="/dashboard/ordem/mestre"
         backLabel="Operações"
+        accentColor="#ffffff"
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>

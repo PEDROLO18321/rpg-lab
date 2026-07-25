@@ -78,7 +78,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
-      <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" />
+      <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" accentColor="#a01818" />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "36px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
