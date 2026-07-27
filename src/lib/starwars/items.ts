@@ -8,7 +8,7 @@
 
 export type ItemCategory =
   | "melee" | "ranged" | "sabre" | "armor" | "shield"
-  | "explosive" | "medical" | "gear" | "accessory" | "rare";
+  | "explosive" | "medical" | "gear" | "accessory" | "drone" | "rare";
 
 export const CATEGORY_LABEL: Record<ItemCategory, string> = {
   melee: "Arma Corpo a Corpo",
@@ -20,11 +20,12 @@ export const CATEGORY_LABEL: Record<ItemCategory, string> = {
   medical: "Equipamento Médico",
   gear: "Equipamento Geral",
   accessory: "Acessório/Componente",
+  drone: "Drones e Droides",
   rare: "Item Raro/Artefato",
 };
 
 export const CATEGORY_ORDER: ItemCategory[] = [
-  "melee", "ranged", "sabre", "armor", "shield", "explosive", "medical", "gear", "accessory", "rare",
+  "melee", "ranged", "sabre", "armor", "shield", "explosive", "medical", "gear", "accessory", "drone", "rare",
 ];
 
 export type ItemRarity = "Comum" | "Incomum" | "Raro" | "Lendário";
@@ -86,6 +87,10 @@ export const ITEMS: StarWarsItem[] = [
     testAttr: "agi", skill: "armas_energia", damage: "2d6", damageType: "Corte", range: "Corpo a corpo",
     special: "Forjado em beskar: ignora a Redução de Dano de armaduras comuns.",
     description: "Lâmina cerimonial de beskar, passada entre gerações de um clã mandaloriano." },
+  { id: "cetro-forca-imperial", name: "Cetro de força imperial", category: "melee", rarity: "Incomum", price: 350, weight: 2,
+    testAttr: "forca", skill: "armas_energia", damage: "2d6", damageType: "Energia (atordoante ou letal)", range: "Corpo a corpo",
+    special: "Alterna entre modo letal e modo não letal (atordoante) com uma ação livre.",
+    description: "Cajado de choque usado por guardas de elite e forças de repressão do Império." },
 
   // ─── ARMAS À DISTÂNCIA (ranged) ─────────────────────────────────────────────
   { id: "pistola-blaster", name: "Pistola blaster", category: "ranged", rarity: "Comum", price: 250, weight: 1,
@@ -143,6 +148,22 @@ export const ITEMS: StarWarsItem[] = [
     testAttr: "vig", skill: "pontaria", damage: "5d6", damageType: "Explosivo (área curta)", range: "Médio",
     special: "Atinge todos num raio de 3m no ponto de impacto (Reflexos/Acrobacia reduz à metade).",
     description: "Arma de suporte que dispara granadas de fragmentação a distância segura." },
+  { id: "lanca-chamas", name: "Lança-chamas", category: "ranged", rarity: "Incomum", price: 850, weight: 5,
+    testAttr: "agi", skill: "pontaria", damage: "4d6", damageType: "Fogo (área em cone)", range: "Curto",
+    special: "Atinge todos num cone de 3m; pode incendiar cenário e alvos inflamáveis por mais 1d6 na rodada seguinte.",
+    description: "Projetor de combustível incendiário, usado tanto por engenharia quanto por tropas de choque." },
+  { id: "pistola-balistica", name: "Pistola balística (slugthrower)", category: "ranged", rarity: "Comum", price: 200, weight: 1,
+    testAttr: "agi", skill: "pontaria", damage: "2d6", damageType: "Perfurante", range: "Curto",
+    special: "Projétil sólido: ignora escudos de energia pessoais e não é detectado por sensores de blaster.",
+    description: "Arma balística discreta, popular entre assassinos que precisam furar defletores de energia." },
+  { id: "lancador-misseis", name: "Lançador de mísseis portátil", category: "ranged", rarity: "Lendário", price: 4500, weight: 8,
+    testAttr: "vig", skill: "pontaria", damage: "7d6", damageType: "Explosivo (área média)", range: "Longo",
+    special: "Munição limitada (1 míssil carregado por vez, recarga de 2 rodadas); dano dobrado contra veículos.",
+    description: "Arma antiveículo de ombro, item raro fora de arsenais militares ou mercenários bem financiados." },
+  { id: "arma-sonica-geonosiana", name: "Arma sônica geonosiana", category: "ranged", rarity: "Raro", price: 1600, weight: 3,
+    testAttr: "agi", skill: "pontaria", damage: "3d6", damageType: "Sônico (ignora armadura física)", range: "Médio",
+    special: "Acerto força teste de VIG do alvo ou fica Atordoado 1 rodada; inútil no vácuo.",
+    description: "Tecnologia bio-mecânica geonosiana que dispara pulsos sônicos concentrados." },
 
   // ─── SABRES DE LUZ E ARMAS DA FORÇA ─────────────────────────────────────────
   { id: "sabre-luz-padrao", name: "Sabre de luz", category: "sabre", rarity: "Raro", price: 0, weight: 1,
@@ -160,6 +181,18 @@ export const ITEMS: StarWarsItem[] = [
   { id: "lanca-forca-sith", name: "Lança de força sith", category: "sabre", rarity: "Incomum", price: 1500, weight: 3,
     testAttr: "sen", skill: "armas_energia", damage: "3d6", damageType: "Energia", range: "Corpo a corpo (alcance 3m)",
     description: "Haste energizada usada por guardas sith e cultistas — não é um sabre de luz de verdade, mas canaliza a Força." },
+  { id: "sabre-lanca", name: "Sabre-lança (lightsaber pike)", category: "sabre", rarity: "Raro", price: 0, weight: 2,
+    testAttr: "misto", skill: "sabres_de_luz", damage: "6d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo (alcance 2m)",
+    special: "Regra fixa do sistema. Haste longa dá alcance extra; não é vendido, construído ou herdado.",
+    description: "Variante de sabre montada numa haste longa, favorecida por guardiões cerimoniais e duelistas de Forma V." },
+  { id: "chicote-luz", name: "Chicote de luz (lightwhip)", category: "sabre", rarity: "Raro", price: 0, weight: 1,
+    testAttr: "misto", skill: "sabres_de_luz", damage: "6d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo (alcance 4m)",
+    special: "Regra fixa do sistema. Extremamente difícil de manejar: –3 no teste de Acerto pra quem não tem a perícia Sabres de Luz em grau Mestre.",
+    description: "Lâmina flexível e instável, rara arma de duelistas excêntricos como as Irmãs da Noite de Dathomir." },
+  { id: "darksaber", name: "Darksaber", category: "sabre", rarity: "Lendário", price: 0, weight: 0.8,
+    testAttr: "misto", skill: "sabres_de_luz", damage: "6d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia (lâmina negra)", range: "Corpo a corpo",
+    special: "Regra fixa do sistema. Arma única e nomeada — só existe um exemplar na campanha; carrega peso político (símbolo de liderança de Mandalore).",
+    description: "Lâmina negra forjada por um único Jedi mandaloriano há milênios, empunhada por quem reivindica o direito de governar Mandalore." },
 
   // ─── ARMADURAS ───────────────────────────────────────────────────────────────
   { id: "roupa-viajante", name: "Roupas de viajante", category: "armor", rarity: "Comum", price: 20, weight: 1,
@@ -180,6 +213,9 @@ export const ITEMS: StarWarsItem[] = [
   { id: "armadura-repulsor", name: "Armadura de repulsor", category: "armor", rarity: "Lendário", price: 9000, weight: 18,
     defenseBonus: 6, special: "Repulsores integrados permitem queda segura de qualquer altura.",
     description: "Armadura motorizada de altíssima tecnologia, rara mesmo entre exércitos regulares." },
+  { id: "armadura-cortosis", name: "Armadura de cortosis", category: "armor", rarity: "Raro", price: 3500, weight: 8,
+    defenseBonus: 3, special: "Contato direto de um sabre de luz causa curto-circuito na lâmina, desligando-a por 1 rodada.",
+    description: "Armadura tecida com fibras de cortosis, o único material que resiste ao contato de uma lâmina de plasma." },
 
   // ─── ESCUDOS E DEFESA ───────────────────────────────────────────────────────
   { id: "gerador-escudo-pessoal", name: "Gerador de escudo pessoal", category: "shield", rarity: "Raro", price: 2500, weight: 1,
@@ -191,6 +227,12 @@ export const ITEMS: StarWarsItem[] = [
   { id: "capa-camuflada-termica", name: "Capa térmica camuflada", category: "shield", rarity: "Incomum", price: 600, weight: 1.5,
     defenseBonus: 0, special: "+10 em testes de Furtividade contra sensores térmicos e visão noturna.",
     description: "Tecido que dissipa assinatura de calor, essencial contra caçadores bem equipados." },
+  { id: "escudo-fisico-repressao", name: "Escudo físico de repressão", category: "shield", rarity: "Incomum", price: 700, weight: 5,
+    defenseBonus: 2, special: "Bloqueia por completo ataques frontais à distância; ocupa uma mão e impede o uso de armas de duas mãos.",
+    description: "Escudo balístico transparente usado por tropas de choque e forças de contenção de motins." },
+  { id: "gerador-campo-camuflagem", name: "Gerador de campo de camuflagem", category: "shield", rarity: "Raro", price: 3000, weight: 2,
+    defenseBonus: 0, special: "+15 em Furtividade enquanto ativo; carga limitada, dura só alguns minutos por uso antes de recarregar.",
+    description: "Dispositivo de dobra de luz que torna o usuário quase invisível a olho nu por curtos períodos." },
 
   // ─── EXPLOSIVOS ─────────────────────────────────────────────────────────────
   { id: "granada-fragmentacao", name: "Granada de fragmentação", category: "explosive", rarity: "Incomum", price: 150, weight: 0.5,
@@ -212,6 +254,10 @@ export const ITEMS: StarWarsItem[] = [
     damage: "8d6", damageType: "Explosivo (estrutural)",
     special: "Bônus contra estruturas/veículos; detonação remota com atraso configurável.",
     description: "Explosivo de engenharia militar, projetado para derrubar paredes e cascos blindados." },
+  { id: "granada-ionica", name: "Granada iônica", category: "explosive", rarity: "Incomum", price: 200, weight: 0.5,
+    testAttr: "agi", skill: "pontaria", damage: "4d6", damageType: "Energia (só droides/escudos, área curta)", range: "Arremesso curto",
+    special: "Sem efeito contra alvos orgânicos desprotegidos; ignora escudos de energia e desativa droides na área.",
+    description: "Versão em granada da tecnologia de íons, item padrão de equipes anti-droide e de abordagem." },
 
   // ─── EQUIPAMENTO MÉDICO ─────────────────────────────────────────────────────
   { id: "kit-medico-basico", name: "Kit médico básico", category: "medical", rarity: "Comum", price: 100, weight: 1,
@@ -265,6 +311,21 @@ export const ITEMS: StarWarsItem[] = [
   { id: "scanner-tecnologico", name: "Scanner tecnológico", category: "gear", rarity: "Incomum", price: 400, weight: 1,
     special: "+5 em testes de Ciências ou Mecânica pra identificar tecnologia desconhecida.",
     description: "Dispositivo de análise usado por engenheiros e exploradores." },
+  { id: "mochila-jato", name: "Mochila a jato", category: "gear", rarity: "Raro", price: 3000, weight: 5,
+    special: "Ação pra ativar: permite voo vertical ou rajadas curtas de deslocamento aéreo; combustível limitado por cena.",
+    description: "Propulsor costal a repulsor, ícone de caçadores de recompensas e comandos de elite." },
+  { id: "lancador-ascensao", name: "Lançador de ascensão", category: "gear", rarity: "Incomum", price: 250, weight: 1,
+    special: "+10 em Atletismo pra escalar; alcance de disparo 30m e puxa automaticamente o usuário até o ponto de ancoragem.",
+    description: "Versão motorizada do gancho e cabo, ergue o próprio usuário sem esforço físico." },
+  { id: "macarico-fusao", name: "Maçarico de fusão", category: "gear", rarity: "Comum", price: 150, weight: 1.5,
+    special: "+5 em Mecânica pra cortar metal ou selar cascos; também serve como ferramenta improvisada de sabotagem.",
+    description: "Ferramenta industrial de corte térmico, item comum em qualquer oficina ou porão de nave." },
+  { id: "holoprojetor", name: "Holoprojetor", category: "gear", rarity: "Comum", price: 200, weight: 0.4,
+    special: "Grava e projeta mensagens, mapas ou plantas em holografia tridimensional.",
+    description: "Dispositivo compacto de gravação e projeção holográfica, usado tanto por diplomatas quanto por espiões." },
+  { id: "kit-invasao", name: "Kit de invasão (slicer)", category: "gear", rarity: "Incomum", price: 350, weight: 0.5,
+    special: "+5 em testes de Computação pra invadir sistemas de segurança, travas eletrônicas e terminais.",
+    description: "Conjunto de ferramentas de hardware e software voltado a arrombar o que é digital em vez de físico." },
 
   // ─── ACESSÓRIOS E COMPONENTES ────────────────────────────────────────────────
   { id: "mira-telescopica", name: "Mira telescópica", category: "accessory", rarity: "Comum", price: 200, weight: 0.3,
@@ -281,6 +342,15 @@ export const ITEMS: StarWarsItem[] = [
   { id: "cristal-kyber-sintetico", name: "Cristal kyber sintético", category: "accessory", rarity: "Raro", price: 3000, weight: 0.1,
     special: "Necessário para construir um sabre de luz novo.",
     description: "Cristal focalizador cultivado artificialmente — funcional, mas sem a ressonância de um cristal natural." },
+  { id: "algemas-contencao", name: "Algemas de contenção", category: "accessory", rarity: "Comum", price: 40, weight: 0.3,
+    special: "Impede o uso de mãos e a maioria das perícias físicas do alvo; escapar exige teste de Atletismo contra DT alta.",
+    description: "Algemas magnéticas padrão de forças de segurança e caçadores de recompensas por toda a galáxia." },
+  { id: "parafuso-restricao", name: "Parafuso de restrição", category: "accessory", rarity: "Comum", price: 60, weight: 0.1,
+    special: "Aplicado a um droide, impede que ele desobedeça ordens diretas do proprietário registrado.",
+    description: "Dispositivo padrão de controle, obrigatório para droides em muitos sistemas centrais." },
+  { id: "vocalizador", name: "Vocalizador/modulador de voz", category: "accessory", rarity: "Incomum", price: 120, weight: 0.1,
+    special: "Distorce, disfarça ou imita vozes; +5 em Enganação quando usado para se passar por outra pessoa ao telefone/comunicador.",
+    description: "Equipamento acoplado a capacetes ou máscaras, comum entre mandalorianos e agentes disfarçados." },
 
   // ─── ITENS RAROS / ARTEFATOS ─────────────────────────────────────────────────
   { id: "fragmento-holocron", name: "Fragmento de holocron", category: "rare", rarity: "Lendário", price: 0, weight: 0.2,
@@ -294,6 +364,45 @@ export const ITEMS: StarWarsItem[] = [
     description: "Fragmento recuperado das cavernas de cristal de Ilum, mundo sagrado dos Jedi." },
   { id: "moeda-jedha", name: "Moeda ancestral de Jedha", category: "rare", rarity: "Incomum", price: 100, weight: 0.05,
     description: "Relíquia religiosa da lua sagrada, valorizada por peregrinos e colecionadores." },
+  { id: "ysalamiri", name: "Ysalamiri", category: "rare", rarity: "Raro", price: 1500, weight: 0.5,
+    special: "Enquanto viva e mantida próxima (poleiro/gaiola), anula temporariamente poderes da Força num raio de ~3m — inclusive os do próprio usuário.",
+    description: "Pequena criatura lagarto-símia de Myrkr, capaz de empurrar a Força pra fora de sua presença imediata." },
+  { id: "camara-carbonita", name: "Câmara de congelamento em carbonita", category: "rare", rarity: "Lendário", price: 0, weight: 200,
+    special: "Gancho de campanha — congela um alvo vivo em animação suspensa; descongelar sem sequelas exige instalação médica especializada.",
+    description: "Equipamento industrial de mineração adaptado (ou pervertido) para prender pessoas em estase por tempo indefinido." },
+  { id: "camtono", name: "Camtono", category: "rare", rarity: "Incomum", price: 500, weight: 3,
+    special: "Contêiner selado e blindado contra scanners básicos — esconde o que estiver guardado dentro de inspeções superficiais.",
+    description: "Cofre cilíndrico usado por contrabandistas e nobres para transportar valores sem chamar atenção." },
+
+  // ─── DRONES E DROIDES ────────────────────────────────────────────────────────
+  // Arquétipos genéricos, não droides nomeados — o jogador define nome, personalidade e fabricante.
+  { id: "drone-vigilancia", name: "Micro-drone de vigilância", category: "drone", rarity: "Comum", price: 150, weight: 0.3,
+    special: "Pequeno drone voador do tamanho de uma mão; transmite vídeo/áudio ao dono a curta distância. Frágil (1 PV).",
+    description: "Câmera voadora silenciosa, usada para reconhecimento discreto antes de entrar num local." },
+  { id: "drone-reconhecimento", name: "Droide de reconhecimento esférico", category: "drone", rarity: "Comum", price: 400, weight: 5,
+    special: "Voa e escaneia o ambiente; +5 em Percepção pra quem o controla ativamente. PV 6, Defesa 10.",
+    description: "Droide pequeno e esférico, do tipo usado para explorar terrenos hostis ou desconhecidos à frente do grupo." },
+  { id: "drone-astromecanico", name: "Droide astromecânico", category: "drone", rarity: "Incomum", price: 1200, weight: 30,
+    special: "Repara naves e sistemas mecânicos/eletrônicos; +5 em Mecânica ou Computação quando acoplado a um console ou casco. PV 12, Defesa 11.",
+    description: "Droide utilitário cilíndrico sobre rodas ou esteiras, copiloto informal de qualquer nave que se preze." },
+  { id: "drone-protocolo", name: "Droide de protocolo humanoide", category: "drone", rarity: "Incomum", price: 1000, weight: 40,
+    special: "Fluente em milhões de formas de comunicação; +5 em Diplomacia ou Persuasão em negociações que ele participe. PV 8, Defesa 10.",
+    description: "Droide humanoide de etiqueta e tradução, elegante e (quase sempre) ansioso demais para agradar." },
+  { id: "drone-medico", name: "Droide médico", category: "drone", rarity: "Raro", price: 2200, weight: 35,
+    special: "Ação: restaura 3d6 PV ou remove uma condição física de um paciente; ilimitado fora de combate, 1x por cena em combate. PV 10, Defesa 10.",
+    description: "Droide flutuante ou humanoide equipado com braços cirúrgicos e diagnóstico automatizado." },
+  { id: "drone-seguranca", name: "Droide de segurança (patrulha)", category: "drone", rarity: "Incomum", price: 1500, weight: 45,
+    testAttr: "agi", skill: "pontaria", damage: "2d6", damageType: "Energia", range: "Curto",
+    special: "PV 14, Defesa 12. Patrulha e reage a intrusos conforme programação; pode ser hackeado (Computação) ou enganado (Enganação).",
+    description: "Droide de patrulha compacto, sobre pernas ou rodas, comum em instalações corporativas e depósitos." },
+  { id: "drone-combate-humanoide", name: "Droide de combate humanoide", category: "drone", rarity: "Raro", price: 3000, weight: 70,
+    testAttr: "agi", skill: "armas_energia", damage: "3d6", damageType: "Energia/Físico", range: "Corpo a corpo ou curto",
+    special: "PV 20, Defesa 13. Segue ordens táticas simples; em geral vem em esquadrões, não sozinho.",
+    description: "Droide militar humanoide, chassi robusto usado por exércitos e milícias em larga escala." },
+  { id: "drone-assalto-pesado", name: "Droide pesado de assalto", category: "drone", rarity: "Lendário", price: 6000, weight: 400,
+    testAttr: "vig", skill: "pontaria", damage: "6d6", damageType: "Energia (área curta)", range: "Médio",
+    special: "PV 40, Defesa 14, RD 3. Lento e caro de manter — normalmente propriedade de exércitos, cartéis ou senhores da guerra.",
+    description: "Droide de guerra de grande porte, blindado e armado o suficiente para enfrentar um pelotão sozinho." },
 ];
 
 export const ITEM_BY_ID: Record<string, StarWarsItem> = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
