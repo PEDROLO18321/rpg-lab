@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemNpc, OrdemNPCAttack } from "@/lib/ordem/ordemCampaignClient";
 import { randomOrdemName } from "@/lib/ordem/names";
+import "../../../ordem-responsive.css";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -162,10 +163,10 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
 
         <div style={{ borderTop: `1px solid ${AB}`, paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Atributos <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 12 }}>
+          <div className="op-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 12 }}>
             {ATTR_LABELS.map(({ key, label }) => numField(label, key, 9))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          <div className="op-npc-vitals-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
             {numField("PV", "pv")}{numField("PE", "pe")}{numField("SAN", "san")}{numField("DEFESA", "defense")}
           </div>
         </div>
@@ -189,7 +190,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
               ))}
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px", gap: 8, marginBottom: 8 }}>
+          <div className="op-npc-attack-row" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px", gap: 8, marginBottom: 8 }}>
             <div><label style={labelStyle}>Nome</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Pistola" style={inputStyle} /></div>
             <div><label style={labelStyle}>Teste</label><input value={newAtk.test} onChange={(e) => setNewAtk({ ...newAtk, test: e.target.value })} placeholder="Pontaria" style={inputStyle} /></div>
             <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="2d6" style={inputStyle} /></div>
@@ -255,7 +256,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
                     {ATTR_LABELS.some(({ key }) => npc[key] !== null) && (
                       <div style={{ marginBottom: 14 }}>
                         <p style={{ fontSize: "0.64rem", fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Atributos</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+                        <div className="op-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
                           {ATTR_LABELS.map(({ key, label }) => (
                             <div key={key} style={{ textAlign: "center", padding: "6px 2px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                               <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</p>

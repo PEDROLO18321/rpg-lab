@@ -1,0 +1,44 @@
+/* Tormenta 20 — mobile-only responsive overrides.
+   Desktop stays untouched: these rules only fire below 640px, and only
+   target elements that already carry the matching className alongside
+   their fixed inline `style`. Same technique used for the Star Wars and
+   Call of Cthulhu systems. */
+
+@media (max-width: 640px) {
+  /* CharacterWizard.tsx — sticky header */
+  .tm-wizard-header-inner {
+    height: auto !important;
+    flex-wrap: wrap !important;
+    padding: 10px 14px !important;
+    row-gap: 6px !important;
+  }
+  .tm-wizard-header-title {
+    order: 3;
+    width: 100%;
+    text-align: center;
+    font-size: 0.7rem !important;
+  }
+
+  /* LevelUpModal.tsx / Bestiary.tsx / NpcCreator.tsx — 6-attribute grids
+     (FOR/DES/CON/INT/SAB/CAR pickers and displays) */
+  .tm-attr-grid-6 { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* LevelUpModal.tsx — PV/PM/Defesa delta cards */
+  .tm-delta-grid {
+    gap: 6px !important;
+    padding: 8px 4px !important;
+  }
+
+  /* Bestiary.tsx / NpcCreator.tsx — new attack row (name / bonus / dano) */
+  .tm-npc-attack-grid { grid-template-columns: 1fr !important; }
+
+  /* StepRace.tsx — racial attribute-choice buttons (full attribute names,
+     e.g. "Constituição", "Inteligência" — need more room per button) */
+  .tm-race-attr-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* MasterDiceRoller.tsx — die type selector (d4..d%) */
+  .tm-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* InitiativeTracker.tsx — add combatant row (name / iniciativa / pv / pm / defesa) */
+  .tm-initiative-add-grid { grid-template-columns: 1fr !important; }
+}

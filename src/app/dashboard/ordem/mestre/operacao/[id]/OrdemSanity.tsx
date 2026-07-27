@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemSanityRecord } from "@/lib/ordem/ordemCampaignClient";
+import "../../../ordem-responsive.css";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -143,7 +144,7 @@ function SanityEditor({ r, traumas, onPatch, onAddTrauma, onRemoveTrauma, onRemo
   const [notes, setNotes] = useState(r.notes);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
+      <div className="op-sanity-editor-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
         <div>
           <label style={labelStyle}>Nome do Agente</label>
           <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => onPatch({ agentName: e.target.value })} placeholder="Nome..." />

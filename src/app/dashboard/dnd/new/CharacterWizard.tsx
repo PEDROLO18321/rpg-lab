@@ -16,6 +16,7 @@ import { StepEquipment } from "./steps/StepEquipment";
 import { StepSpells } from "./steps/StepSpells";
 import { StepReview } from "./steps/StepReview";
 import { SPELLCASTING } from "@/lib/dnd/spells";
+import "../dnd-responsive.css";
 
 const STEPS = [
   { id: "race",       label: "Raça"        },
@@ -197,6 +198,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
         }}
       >
         <div
+          className="dnd-wizard-header-inner"
           style={{
             maxWidth: 900,
             margin: "0 auto",
@@ -224,6 +226,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
             ← Cancelar
           </button>
           <span
+            className="dnd-wizard-header-title"
             style={{
               fontFamily: "var(--font-cinzel), serif",
               fontSize: "0.88rem",

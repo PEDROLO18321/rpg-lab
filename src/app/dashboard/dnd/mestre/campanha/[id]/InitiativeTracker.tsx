@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DndApi } from "@/lib/dnd/useDndCampaign";
 import type { DndCombatant } from "@/lib/dnd/dndCampaignClient";
 import { DND_CONDITIONS, DND_CONDITION_BY_ID } from "@/lib/dnd/conditions";
+import "../../../dnd-responsive.css";
 
 const ACCENT = "var(--accent)";
 const ACCENT_LIGHT = "var(--accent-light)";
@@ -77,7 +78,7 @@ export function InitiativeTracker({ api }: { api: DndApi }) {
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar Combatente</p>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div className="dnd-initiative-form-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Goblin Arqueiro" style={inputStyle} />
             <input type="number" value={initVal} onChange={(e) => setInitVal(e.target.value)} placeholder="Inic" title="Iniciativa (vazio = d20)" style={inputStyle} />
             <input type="number" value={hp} onChange={(e) => setHp(e.target.value)} placeholder="PV" style={inputStyle} />

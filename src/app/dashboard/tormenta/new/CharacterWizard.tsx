@@ -1,5 +1,6 @@
 "use client";
 
+import "../tormenta-responsive.css";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { RACE_BY_ID } from "@/lib/tormenta/races";
@@ -154,11 +155,11 @@ export function CharacterWizard({ userId, systemId }: Props) {
   return (
     <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: "1px solid var(--border)", background: "rgba(7,9,15,0.90)", backdropFilter: "blur(20px)" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="tm-wizard-header-inner" style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
             ← Cancelar
           </button>
-          <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
+          <span className="tm-wizard-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
             Novo Herói · Tormenta 20
           </span>
           <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{step + 1}/{STEPS.length}</span>

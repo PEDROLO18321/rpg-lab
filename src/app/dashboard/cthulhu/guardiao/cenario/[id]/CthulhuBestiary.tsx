@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
+import "../../../cthulhu-responsive.css";
 
 interface Props { api: CthulhuApi; }
 
@@ -201,7 +202,7 @@ export function CthulhuBestiary({ api }: Props) {
               {isOpen && (
                 <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)" }}>
                   {/* Attributes grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, margin: "16px 0 14px" }}>
+                  <div className="cth-bestiary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, margin: "16px 0 14px" }}>
                     {[["FOR", creature.str], ["CON", creature.con], ["TAM", creature.siz], ["DES", creature.dex], ["INT", creature.int], ["POD", creature.pow], ["PV", creature.hp]].map(([label, val]) => (
                       <div key={label} style={{ textAlign: "center", padding: "8px 4px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                         <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</p>

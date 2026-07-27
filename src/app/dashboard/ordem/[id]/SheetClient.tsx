@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import "../ordem-responsive.css";
 
 import { RollResultDie, type DiceFxRoll } from "@/components/three/DiceRollFx";
 import {
@@ -208,14 +209,14 @@ export function SheetClient({ character }: { character: AnyChar }) {
     <div style={{ minHeight: "100vh", background: "transparent", paddingBottom: 60 }}>
       {/* Top bar */}
       <header style={{ position: "sticky", top: 0, zIndex: 30, borderBottom: "1px solid var(--border)", background: "rgba(7,9,15,0.9)", backdropFilter: "blur(20px)" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="op-header-inner" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/dashboard/ordem/jogador" style={{ color: "var(--text-muted)", fontSize: "0.82rem", textDecoration: "none" }}>
             ← Meus Agentes
           </Link>
-          <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
+          <span className="op-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
             Ordem Paranormal
           </span>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div className="op-header-modes" style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
               {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
             </span>
@@ -334,7 +335,7 @@ function OrdemDicePanel({ pushLog }: { pushLog: (entry: RollLog) => void }) {
   return (
     <Panel title="Rolagem de Dados">
       {/* Dice type selector */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 14 }}>
+      <div className="op-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 14 }}>
         {DICE_SIDES.map((d) => (
           <button key={d} onClick={() => setSelected(d)} style={{
             ...btnBase,
@@ -466,12 +467,12 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
         <StatusPanel sheet={sheet} sanStatus={sanStatus} readOnly />
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
+      <div className="op-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
         {/* Left */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Attributes */}
           <Panel title="Atributos">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+            <div className="op-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => (
                 <div key={k} style={{ textAlign: "center", padding: "12px 6px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
                   <p style={{ fontSize: "0.6rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em" }}>{ATTR_ABBR[k]}</p>
@@ -696,12 +697,12 @@ function PlayMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
         <Badge label="Prestígio" value={sheet.prestige ?? 0} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 24, alignItems: "start" }}>
+      <div className="op-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 24, alignItems: "start" }}>
         {/* Left */}
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {/* Attributes — clickable */}
           <Panel title="Atributos">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+            <div className="op-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => (
                 <button key={k} onClick={() => rollAttribute(k)} title={`Rolar ${ATTR_LABEL[k]}`}
                   style={{ textAlign: "center", padding: "12px 6px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: "pointer", transition: "border-color 0.15s" }}>
@@ -1235,7 +1236,7 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
 
       {/* Atributos */}
       <EditSection label="Atributos (0–5)">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+        <div className="op-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
           {ATTR_KEYS.map((k) => (
             <div key={k}>
               <p style={editLabelStyle}>{ATTR_ABBR[k]} · {ATTR_LABEL[k]}</p>

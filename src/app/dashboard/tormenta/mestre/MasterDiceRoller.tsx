@@ -1,5 +1,6 @@
 "use client";
 
+import "../tormenta-responsive.css";
 import { useRef, useState } from "react";
 
 const ACCENT = "#a01818";
@@ -107,7 +108,7 @@ export function MasterDiceRoller() {
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 12 }}>
+          <div className="tm-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 12 }}>
             {DICE_TYPES.map((die) => (
               <button
                 key={die}

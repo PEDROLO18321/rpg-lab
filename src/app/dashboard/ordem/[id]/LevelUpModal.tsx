@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import "../ordem-responsive.css";
 import {
   ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, ATTR_MAX,
   SKILLS, SKILL_BY_ID, TRAIN_LABEL,
@@ -208,7 +209,7 @@ export function LevelUpModal({ character, onClose }: Props) {
       )}
 
       {/* Ganhos de vitais */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+      <div className="op-lvlup-vitals-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
         <Delta label="PV"  value={vitAfter.pvMax}  delta={dPv}  color="#c03030" />
         <Delta label="PE"  value={vitAfter.peMax}  delta={dPe}  color={ACCENT} />
         <Delta label="SAN" value={vitAfter.sanMax} delta={dSan} color="#c9941f" />
@@ -249,7 +250,7 @@ export function LevelUpModal({ character, onClose }: Props) {
       {/* Aumento de atributo */}
       {plan.attrIncreases > 0 && (
         <Group label={`Aumento de Atributo (${attrPicks.length}/${plan.attrIncreases})`} hint="+1 em um atributo, até o máximo de 5.">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+          <div className="op-lvlup-attrpick-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
             {ATTR_KEYS.map((k) => {
               const on = attrPicks.includes(k);
               const atMax = baseAttrs[k] >= ATTR_MAX;

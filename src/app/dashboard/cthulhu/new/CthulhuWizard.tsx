@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import "../cthulhu-responsive.css";
 import { OCCUPATIONS, calcOccupationPoints } from "@/lib/cthulhu/data";
 import type { CthulhuAttrs } from "@/lib/cthulhu/data";
 import { StepAttrs }      from "./steps/StepAttrs";
@@ -154,6 +155,7 @@ export function CthulhuWizard({ userId, systemId }: Props) {
         }}
       >
         <div
+          className="cth-wizard-header-inner"
           style={{
             maxWidth: 900, margin: "0 auto", padding: "0 24px",
             height: 56,
@@ -171,6 +173,7 @@ export function CthulhuWizard({ userId, systemId }: Props) {
             ← Cancelar
           </button>
           <span
+            className="cth-wizard-header-title"
             style={{
               fontFamily: "var(--font-cinzel), serif",
               fontSize: "0.88rem", fontWeight: 700, color: "var(--text)",

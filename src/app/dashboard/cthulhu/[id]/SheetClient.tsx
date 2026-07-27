@@ -8,6 +8,7 @@ import {
   resolveCheck, rollWeaponDamage, rollExpr, rollImprovement, CHECK_LABELS,
   type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon,
 } from "@/lib/cthulhu/data";
+import "../cthulhu-responsive.css";
 
 const ACCENT       = "#7d9c3e";
 const ACCENT_LIGHT  = "#a3b86c";
@@ -892,7 +893,7 @@ export function SheetClient({ character }: Props) {
           )}
           {spellOpen === "manual" && (
             <div style={{ padding: "14px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 10 }}>
+              <div className="cth-spell-form-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 10 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.7rem", color: "var(--text-muted)" }}>
                   Nome do Feitiço
                   <input value={spellForm.name} onChange={(e) => setSpellForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ex: Chamar Cthulhu" style={{ ...editInput }} />

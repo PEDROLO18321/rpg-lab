@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuNpc, CthulhuNPCAttack } from "@/lib/cthulhu/cthulhuCampaignClient";
+import "../../../cthulhu-responsive.css";
 
 const A = "#a3b86c";
 const ABORD = "rgba(125,156,62,0.32)";
@@ -114,7 +115,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
 
         <div style={{ borderTop: `1px solid ${ABORD}`, paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Atributos <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 8, marginBottom: 12 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
+          <div className="cth-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 8, marginBottom: 12 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{numField("PV", "hp")}{numField("SAN", "san")}</div>
         </div>
 
@@ -133,7 +134,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
               ))}
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px", gap: 8, marginBottom: 8 }}>
+          <div className="cth-npc-atk-row" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px", gap: 8, marginBottom: 8 }}>
             <div><label style={labelStyle}>Nome</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Revólver .38" style={inputStyle} /></div>
             <div><label style={labelStyle}>Perícia / %</label><input value={newAtk.skill} onChange={(e) => setNewAtk({ ...newAtk, skill: e.target.value })} placeholder="Briga 50%" style={inputStyle} /></div>
             <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="1d10" style={inputStyle} /></div>
@@ -191,7 +192,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
                     {ATTR_LABELS.some(({ key }) => npc[key] !== null) && (
                       <div style={{ marginBottom: 14 }}>
                         <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "#7d9c3e", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Atributos</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6 }}>
+                        <div className="cth-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6 }}>
                           {ATTR_LABELS.map(({ key, label }) => (
                             <div key={key} style={{ textAlign: "center", padding: "6px 2px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                               <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</p>

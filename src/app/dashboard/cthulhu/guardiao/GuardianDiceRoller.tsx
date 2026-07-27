@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import "../cthulhu-responsive.css";
 
 const DICE_TYPES = [3, 6, 8, 10, 100] as const;
 type DiceType = typeof DICE_TYPES[number];
@@ -109,7 +110,7 @@ export function GuardianDiceRoller() {
           </div>
 
           {/* Die selector */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 12 }}>
+          <div className="cth-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 12 }}>
             {DICE_TYPES.map((die) => (
               <button
                 key={die}

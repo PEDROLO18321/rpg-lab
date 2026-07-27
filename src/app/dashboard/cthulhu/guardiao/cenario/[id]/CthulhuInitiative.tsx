@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuCombatant } from "@/lib/cthulhu/cthulhuCampaignClient";
 import { CTHULHU_STATES, CTHULHU_STATE_BY_ID } from "@/lib/cthulhu/states";
+import "../../../cthulhu-responsive.css";
 
 const A = "#a3b86c";
 const ADIM = "rgba(125,156,62,0.14)";
@@ -89,7 +90,7 @@ export function CthulhuInitiative({ api }: { api: CthulhuApi }) {
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius-xl)" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar à Ordem de Ação</p>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div className="cth-initiative-add-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Cultista, Ghoul" style={inputStyle} />
             <input type="number" value={dexVal} onChange={(e) => setDexVal(e.target.value)} placeholder="DEX" title="DEX (vazio = aleatório)" style={inputStyle} />
             <input type="number" value={hp} onChange={(e) => setHp(e.target.value)} placeholder="PV" style={inputStyle} />

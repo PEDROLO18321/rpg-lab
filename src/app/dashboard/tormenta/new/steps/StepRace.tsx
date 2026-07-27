@@ -1,5 +1,6 @@
 "use client";
 
+import "../../tormenta-responsive.css";
 import { useRef } from "react";
 import { RACES, RACE_BY_ID } from "@/lib/tormenta/races";
 import { ATTR_KEYS, ATTR_LABEL, type AttrKey } from "@/lib/tormenta/data";
@@ -79,7 +80,7 @@ export function StepRace({ raceId, raceVariantId, racialAttrChoices, charName, o
               <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
                 +{race.attrChoiceBonus.amount} em {race.attrChoiceBonus.count} atributos à escolha ({racialAttrChoices.length}/{race.attrChoiceBonus.count})
               </p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              <div className="tm-race-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {ATTR_KEYS.filter((k) => !(race.attrChoiceBonus!.exclude ?? []).includes(k)).map((k) => {
                   const chosen = racialAttrChoices.includes(k);
                   const maxed = !chosen && racialAttrChoices.length >= race.attrChoiceBonus!.count;

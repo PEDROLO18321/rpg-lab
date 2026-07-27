@@ -1,0 +1,48 @@
+/* D&D 5e — mobile responsiveness overrides.
+   Desktop styles stay in the inline `style={{...}}` props (untouched).
+   These rules only kick in below 640px, mirroring the Star Wars sw-* pattern. */
+
+@media (max-width: 640px) {
+  /* CharacterWizard — top header bar */
+  .dnd-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 8px !important; }
+  .dnd-wizard-header-title { order: 3; width: 100%; text-align: center; font-size: 0.74rem !important; }
+
+  /* SheetClient — main 3-column layout (220px 1fr 280px) stacks to a single column */
+  .dnd-sheet-columns { grid-template-columns: 1fr !important; }
+
+  /* SheetClient / StepReview — read-only ability score cards (6 items, 3 cols) */
+  .dnd-attr-view-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+
+  /* SheetClient — currency grid (cp/sp/ep/gp/pp, 5 cols) */
+  .dnd-currency-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* StepAttrs — ability score buy grids (3 cols with +/- buttons) */
+  .dnd-attr-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* StepDesc — alignment picker (9 items, 3 cols) */
+  .dnd-alignment-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* StepRace — racial ability bonus choices (3 cols) */
+  .dnd-ability-choice-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* NpcCreator — attribute grids (6 cols) */
+  .dnd-npc-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* NpcCreator — new attack row (name / bonus / damage) stacks */
+  .dnd-npc-attack-grid { grid-template-columns: 1fr !important; }
+
+  /* Bestiary — key stats row (CA/PV/ND/XP, 4 cols) */
+  .dnd-bestiary-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Bestiary — ability score row (6 cols) */
+  .dnd-bestiary-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Bestiary — list + detail panel (1fr 360px) stacks */
+  .dnd-bestiary-layout { grid-template-columns: 1fr !important; }
+
+  /* MasterDiceRoller — die type picker (7 cols) */
+  .dnd-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* InitiativeTracker — add combatant row (2fr 1fr 1fr 1fr) */
+  .dnd-initiative-form-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}

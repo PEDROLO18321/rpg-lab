@@ -8,6 +8,7 @@ import type { WizardData } from "../CharacterWizard";
 import { Tilt3D } from "@/components/ui/Tilt3D";
 import { RaceMorphSlot } from "@/components/three/RaceMorph";
 import { smoothScrollTo } from "@/lib/smoothScroll";
+import "../../dnd-responsive.css";
 
 import imgAnao       from "@/assets/D&D-Racas/Anoes.png";
 import imgElfo       from "@/assets/D&D-Racas/Elfos.png";
@@ -416,7 +417,7 @@ export function StepRace({ selected, selectedSubrace, charName, racialAbilityBon
               <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: 10 }}>
                 Escolha {race.abilityBonusChoices.count} atributos para receber +{race.abilityBonusChoices.amount} cada ({Object.keys(racialAbilityBonuses).length}/{race.abilityBonusChoices.count} escolhidos).
               </p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              <div className="dnd-ability-choice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {ABILITY_KEYS
                   .filter((k) => !(race.abilityBonusChoices!.exclude ?? []).includes(k))
                   .map((k) => {

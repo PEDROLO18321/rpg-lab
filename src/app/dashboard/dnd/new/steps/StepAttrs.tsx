@@ -6,6 +6,7 @@ import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
+import "../../dnd-responsive.css";
 
 /* ── constants ──────────────────────────────────────────────────────── */
 
@@ -276,7 +277,7 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          <div className="dnd-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {ABILITIES.map((key) => {
               const base   = effectiveBases[key];
               const racial = racialBonus[key] ?? 0;
@@ -350,7 +351,7 @@ export function StepAttrs({ raceId, subraceId, classId, backgroundId, bases, sel
             })}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          <div className="dnd-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {ABILITIES.map((key) => {
               const base   = displayBases[key];
               const racial = racialBonus[key] ?? 0;

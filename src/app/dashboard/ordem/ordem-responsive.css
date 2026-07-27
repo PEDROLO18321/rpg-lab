@@ -1,0 +1,42 @@
+/* Ordem Paranormal — ajustes responsivos para mobile.
+   Toda a UI do sistema usa inline style={{...}} fixo (desktop, intocado).
+   Estas classes só têm efeito abaixo de 640px, via !important, seguindo o
+   mesmo padrão já aprovado para o sistema Star Wars (ver globals.css). */
+
+@media (max-width: 640px) {
+  /* CharacterWizard.tsx — header do wizard de criação */
+  .op-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 8px !important; }
+  .op-wizard-header-title { order: 3; width: 100%; text-align: center; font-size: 0.78rem !important; }
+
+  /* SheetClient.tsx — header do topo da ficha */
+  .op-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 8px !important; }
+  .op-header-title { order: 3; width: 100%; text-align: center; font-size: 0.78rem !important; }
+  .op-header-modes { flex-wrap: wrap !important; row-gap: 6px !important; }
+
+  /* SheetClient.tsx — layout de 2 colunas (conteúdo principal + sidebar) */
+  .op-two-col { grid-template-columns: 1fr !important; }
+
+  /* SheetClient.tsx — grade de atributos (5: AGI/FOR/INT/PRE/VIG), reaproveitada
+     em ViewMode, PlayMode e EditMode; e StepReview.tsx (revisão do wizard) */
+  .op-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* SheetClient.tsx / OrdemMasterDiceRoller.tsx — seletor de tipo de dado (d4..d100) */
+  .op-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
+  .op-master-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* LevelUpModal.tsx — ganhos de vitais (PV/PE/SAN) e aumento de atributo */
+  .op-lvlup-vitals-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .op-lvlup-attrpick-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* OrdemNpcCreator.tsx — atributos do NPC (5), vitais (PV/PE/SAN/DEFESA) e
+     linha de criação de ataque (Nome/Teste/Dano) */
+  .op-npc-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .op-npc-vitals-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .op-npc-attack-row { grid-template-columns: 1fr !important; }
+
+  /* OrdemBestiary.tsx — ficha expandida da criatura (AGI/FOR/INT/PRE/VIG/PV/DEF) */
+  .op-bestiary-attr-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* OrdemSanity.tsx — editor de agente (Nome/SAN/PV/PM) */
+  .op-sanity-editor-grid { grid-template-columns: 1fr !important; }
+}

@@ -4,6 +4,7 @@ import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
 import { RACES } from "@/lib/dnd/races";
 import { randomPhysical, pick } from "@/lib/dnd/physicalTraits";
 import type { WizardData, DescData } from "../CharacterWizard";
+import "../../dnd-responsive.css";
 
 const STANDARD_LANGUAGES = [
   "Anão", "Élfico", "Gnômico", "Halfling", "Orc", "Goblin", "Gigante",
@@ -85,6 +86,7 @@ export function StepDesc({ backgroundId, raceId, subraceId, desc, selectedLangua
       {/* Alignment */}
       <Section label="Alinhamento" required>
         <div
+          className="dnd-alignment-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(3, 1fr)",

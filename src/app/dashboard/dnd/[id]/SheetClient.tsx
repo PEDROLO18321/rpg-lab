@@ -17,6 +17,7 @@ import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
 import { proficiencyBonus, getMaxSlots, getMulticlassSlots } from "@/lib/dnd/leveling";
 import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
+import "../dnd-responsive.css";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -543,7 +544,7 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Ability scores */}
           <ViewSection label="Atributos">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <div className="dnd-attr-view-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
               {ABILITIES.map((k) => {
                 const score = scores[k];
                 const m = mod(score);
@@ -649,7 +650,7 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
 
           {/* Currency */}
           <ViewSection label="Moedas">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+            <div className="dnd-currency-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
               {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
                 const value = coin === "gp" ? gp : sheet[coin];
                 return (
@@ -1006,7 +1007,7 @@ function EditMode({
 
       {/* Moedas */}
       <EditSection label="Moedas">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 10 }}>
+        <div className="dnd-currency-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 10 }}>
           {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
             const [value] = currencySetters[coin];
             return (
@@ -1678,7 +1679,7 @@ function PlayMode({
       </div>
 
       {/* Main 3-column grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "220px 1fr 280px", gap: 16, alignItems: "start" }}>
+      <div className="dnd-sheet-columns" style={{ display: "grid", gridTemplateColumns: "220px 1fr 280px", gap: 16, alignItems: "start" }}>
 
         {/* LEFT: Abilities + Saves + Skills */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -2390,7 +2391,7 @@ function PlayMode({
             <p style={labelStyle}>Moedas</p>
 
             {/* Currency display */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 10 }}>
+            <div className="dnd-currency-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 10 }}>
               {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
                 const value = currencySetters[coin][0];
                 return (

@@ -10,6 +10,7 @@ import {
 } from "@/lib/cthulhu/data";
 import { randomCthulhuName } from "@/lib/cthulhu/names";
 import type { WizardData } from "../CthulhuWizard";
+import "../../cthulhu-responsive.css";
 
 const ACCENT       = "#7d9c3e";
 const ACCENT_LIGHT  = "#a3b86c";
@@ -197,6 +198,7 @@ export function StepAttrs({ data, onChange }: Props) {
           return (
             <div
               key={key}
+              className="cth-attr-row"
               style={{
                 display: "grid",
                 gridTemplateColumns: "130px 1fr 80px 70px 60px 36px",
@@ -251,6 +253,7 @@ export function StepAttrs({ data, onChange }: Props) {
 
         {/* Sorte */}
         <div
+          className="cth-attr-row"
           style={{
             display: "grid",
             gridTemplateColumns: "130px 1fr 80px 70px 60px 36px",
