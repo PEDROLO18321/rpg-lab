@@ -1,5 +1,6 @@
 "use client";
 
+import "../tormenta-responsive.css";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, attrMod, type AttrKey, type TormentaAttrs } from "@/lib/tormenta/data";
@@ -139,7 +140,7 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
         </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+      <div className="tm-delta-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
         <Delta label="PV" value={newPvMax} delta={dPv} color="#c03030" />
         <Delta label="PM" value={newPmMax} delta={dPm} color={ACCENT} />
         <Delta label="Defesa" value={newDefense} delta={dDefense} color="#c9941f" />
@@ -187,7 +188,7 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
 
       {isAttrIncrease && (
         <Group label={`Atributo (+${attrAmount ?? 2})`} hint="Escolha o atributo que recebe o aumento.">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
+          <div className="tm-attr-grid-6" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
             {ATTR_KEYS.map((k) => {
               const on = attrKey === k;
               const amt = nextAttributeIncreaseAmount(existingPowers, k);

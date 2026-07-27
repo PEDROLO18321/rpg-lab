@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import "../dnd-responsive.css";
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100] as const;
 type DiceType = typeof DICE_TYPES[number];
@@ -101,7 +102,7 @@ export function MasterDiceRoller() {
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 12 }}>
+          <div className="dnd-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginBottom: 12 }}>
             {DICE_TYPES.map((die) => (
               <button
                 key={die}

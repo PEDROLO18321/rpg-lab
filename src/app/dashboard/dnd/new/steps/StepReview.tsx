@@ -8,6 +8,7 @@ import { computeArmorAC } from "@/lib/dnd/items";
 import { SPELLS, SPELLCASTING } from "@/lib/dnd/spells";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { WizardData } from "../CharacterWizard";
+import "../../dnd-responsive.css";
 
 const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 const ABILITY_SHORT: Record<AbilityKey, string> = {
@@ -158,7 +159,7 @@ export function StepReview({ data }: Props) {
 
       {/* Ability scores */}
       <Section label="Atributos">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+        <div className="dnd-attr-view-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {ABILITIES.map((k) => {
             const score  = finalScores[k];
             const m      = mod(score);

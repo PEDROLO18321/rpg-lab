@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { DndApi } from "@/lib/dnd/useDndCampaign";
 import type { DndNpc, NPCAttack } from "@/lib/dnd/dndCampaignClient";
+import "../../../dnd-responsive.css";
 
 const RACES = ["Humano", "Elfo", "Anão", "Halfling", "Gnomo", "Meio-Elfo", "Meio-Orc", "Tiefling", "Draconato", "Aasimar", "Orc", "Goblin"];
 const ROLES = ["Aldeão", "Guarda da Cidade", "Mercador", "Sacerdote", "Taberneiro", "Ladrão", "Nobre", "Mago", "Guerreiro", "Ladino", "Ferreiro", "Fazendeiro", "Curandeiro", "Explorador", "Espião", "Cultista", "Mendigo", "Artesão", "Pescador", "Soldado", "Cavaleiro", "Mensageiro", "Bardo", "Herói"];
@@ -116,7 +117,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
         <div style={{ borderTop: "1px solid var(--border-accent)", paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Estatísticas de Combate <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "hp")}{numField("CA", "ac")}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
+          <div className="dnd-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
         </div>
 
         <div style={{ borderTop: "1px solid var(--border-accent)", paddingTop: 16, marginBottom: 16 }}>
@@ -134,7 +135,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
               ))}
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px", gap: 8, marginBottom: 8 }}>
+          <div className="dnd-npc-attack-grid" style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px", gap: 8, marginBottom: 8 }}>
             <div><label style={labelStyle}>Nome do Ataque</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Espada Longa" style={inputStyle} /></div>
             <div><label style={labelStyle}>Bônus</label><input value={newAtk.bonus} onChange={(e) => setNewAtk({ ...newAtk, bonus: e.target.value })} placeholder="+5" style={inputStyle} /></div>
             <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="1d8+3" style={inputStyle} /></div>
@@ -191,7 +192,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
                     {ATTR_LABELS.some(({ key }) => npc[key] !== null) && (
                       <div style={{ marginBottom: 14 }}>
                         <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Atributos</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+                        <div className="dnd-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
                           {ATTR_LABELS.map(({ key, label }) => (
                             <div key={key} style={{ textAlign: "center", padding: "6px 4px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                               <p style={{ fontSize: "0.58rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{label}</p>

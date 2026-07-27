@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { MONSTERS, MONSTER_TYPES, CR_ORDER, type Monster, type MonsterType } from "@/lib/dnd/monsters";
 import type { DndApi } from "@/lib/dnd/useDndCampaign";
+import "../../../dnd-responsive.css";
 
 interface Props { api: DndApi; }
 
@@ -109,7 +110,7 @@ export function Bestiary({ api }: Props) {
   const accent = selected ? (TYPE_COLORS[selected.type] ?? "#e8b84b") : "#e8b84b";
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 360px" : "1fr", gap: 20, alignItems: "start" }}>
+    <div className="dnd-bestiary-layout" style={{ display: "grid", gridTemplateColumns: selected ? "1fr 360px" : "1fr", gap: 20, alignItems: "start" }}>
       {/* Left: list */}
       <div>
         {/* Filters */}
@@ -238,7 +239,7 @@ export function Bestiary({ api }: Props) {
           <div style={{ height: 1, background: `${accent}30`, marginBottom: 14 }} />
 
           {/* Key stats row */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
+          <div className="dnd-bestiary-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
             {[
               { label: "CA", value: String(selected.ac) },
               { label: "PV", value: String(selected.hp) },
@@ -262,7 +263,7 @@ export function Bestiary({ api }: Props) {
           {"str" in selected && (
             <>
               <div style={{ height: 1, background: "var(--border)", marginBottom: 12 }} />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginBottom: 14 }}>
+              <div className="dnd-bestiary-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginBottom: 14 }}>
                 {ATTR_KEYS.map(({ key, label }) => {
                   const val = (selected as unknown as Record<string, unknown>)[key] as number | undefined;
                   return (

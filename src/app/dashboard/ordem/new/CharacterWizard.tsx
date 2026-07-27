@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import "../ordem-responsive.css";
 import {
   attrsValid, computeSkillPlan, buildTrainedSkills,
   type OrdemWizardData,
@@ -179,6 +180,7 @@ export function CharacterWizard({ systemId }: Props) {
         }}
       >
         <div
+          className="op-wizard-header-inner"
           style={{
             maxWidth: 900, margin: "0 auto", padding: "0 24px",
             height: 56,
@@ -195,7 +197,7 @@ export function CharacterWizard({ systemId }: Props) {
           >
             ← Cancelar
           </button>
-          <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
+          <span className="op-wizard-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
             Novo Agente · Ordem Paranormal
           </span>
           <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>

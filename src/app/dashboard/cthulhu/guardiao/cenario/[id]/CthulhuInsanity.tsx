@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuInsanityRecord } from "@/lib/cthulhu/cthulhuCampaignClient";
+import "../../../cthulhu-responsive.css";
 
 const G = "#7d9c3e";
 const GL = "#a3b86c";
@@ -147,7 +148,7 @@ function InsanityEditor({ r, phobias, manias, onPatch, onAddTag, onRemoveTag, on
   const indefiniteThreshold = Math.floor((r.currentSan + r.sessionLoss) / 5);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
+      <div className="cth-insanity-editor-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
         <div><label style={labelStyle}>Nome do Investigador</label><input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => onPatch({ investigatorName: e.target.value })} placeholder="Nome..." /></div>
         <div><label style={labelStyle}>SAN Atual</label><input type="number" style={numStyle} value={r.currentSan} min={0} max={r.maxSan} onChange={(e) => { const v = Math.max(0, Math.min(r.maxSan, Number(e.target.value))); onPatch({ currentSan: v }); }} /></div>
         <div><label style={labelStyle}>SAN Máxima</label><input type="number" style={numStyle} value={r.maxSan} min={1} max={99} onChange={(e) => { const v = Math.max(1, Number(e.target.value)); onPatch({ maxSan: v, currentSan: Math.min(r.currentSan, v) }); }} /></div>

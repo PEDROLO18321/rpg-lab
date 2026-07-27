@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import { BESTIARY, ORDEM_ALLIES, type Element, type OrdemCreature } from "@/lib/ordem/bestiary";
+import "../../../ordem-responsive.css";
 
 const AL = "#e8e8ef";
 const AD = "rgba(255,255,255,0.1)";
@@ -183,7 +184,7 @@ export function OrdemBestiary({ api }: Props) {
               {/* Expanded stats */}
               {isOpen && (
                 <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, margin: "16px 0 14px" }}>
+                  <div className="op-bestiary-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, margin: "16px 0 14px" }}>
                     {[["AGI", creature.agi], ["FOR", creature.forc], ["INT", creature.int], ["PRE", creature.pre], ["VIG", creature.vig], ["PV", creature.pv], ["DEF", creature.defense]].map(([label, val]) => (
                       <div key={label} style={{ textAlign: "center", padding: "8px 4px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                         <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</p>

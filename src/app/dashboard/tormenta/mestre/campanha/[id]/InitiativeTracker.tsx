@@ -1,5 +1,6 @@
 "use client";
 
+import "../../../tormenta-responsive.css";
 import { useState } from "react";
 import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 import type { TormentaCombatant } from "@/lib/tormenta/tormentaCampaignClient";
@@ -111,7 +112,7 @@ export function InitiativeTracker({ api }: { api: TormentaApi }) {
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar Combatente</p>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div className="tm-initiative-add-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Goblin Arqueiro" style={inputStyle} />
             <input type="number" value={initVal} onChange={(e) => setInitVal(e.target.value)} placeholder="Inic" title="Iniciativa (vazio = d20)" style={inputStyle} />
             <input type="number" value={pv} onChange={(e) => setPv(e.target.value)} placeholder="PV" style={inputStyle} />

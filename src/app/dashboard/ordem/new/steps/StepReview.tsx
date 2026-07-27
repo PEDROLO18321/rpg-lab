@@ -2,6 +2,7 @@
 
 import type { OrdemWizardData } from "../CharacterWizard";
 import { Intro } from "./StepAttrs";
+import "../../ordem-responsive.css";
 import {
   ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, CLASS_BY_ID, SKILL_BY_ID,
   computeVitals, computeDefense, BASE_MOVEMENT,
@@ -65,7 +66,7 @@ export function StepReview({ data }: { data: OrdemWizardData }) {
 
       {/* Atributos */}
       <Section title="Atributos">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
+        <div className="op-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
           {ATTR_KEYS.map((k) => (
             <div key={k} style={{ textAlign: "center", padding: "10px 6px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
               <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em" }}>{ATTR_ABBR[k]}</p>

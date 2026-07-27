@@ -1,0 +1,48 @@
+/* Call of Cthulhu — mobile-only responsive overrides.
+   Desktop stays untouched: these rules only fire below 640px, and only
+   target elements that already carry the matching className alongside
+   their fixed inline `style`. Same technique used for the Star Wars system. */
+
+@media (max-width: 640px) {
+  /* CthulhuWizard.tsx — sticky header */
+  .cth-wizard-header-inner {
+    height: auto !important;
+    flex-wrap: wrap !important;
+    padding: 10px 14px !important;
+    row-gap: 6px !important;
+  }
+  .cth-wizard-header-title {
+    order: 3;
+    width: 100%;
+    text-align: center;
+    font-size: 0.7rem !important;
+  }
+
+  /* GuardianDiceRoller.tsx — die type selector */
+  .cth-dice-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* CthulhuBestiary.tsx — creature attribute grid */
+  .cth-bestiary-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* CthulhuNpcCreator.tsx — NPC attribute grids (form + expanded view) */
+  .cth-npc-attr-grid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* CthulhuNpcCreator.tsx — new attack row (name / skill / damage) */
+  .cth-npc-atk-row { grid-template-columns: 1fr !important; }
+
+  /* SheetClient.tsx — manual spell form (name / PM / SAN / tempo) */
+  .cth-spell-form-grid { grid-template-columns: 1fr !important; }
+
+  /* CthulhuInitiative.tsx — add combatant row (name / dex / pv / san / pm) */
+  .cth-initiative-add-grid { grid-template-columns: 1fr !important; }
+
+  /* CthulhuInsanity.tsx — investigator editor row (name / san / max / loss) */
+  .cth-insanity-editor-grid { grid-template-columns: 1fr !important; }
+
+  /* StepAttrs.tsx — attribute roll rows (fixed px columns) */
+  .cth-attr-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    padding: 10px !important;
+  }
+}

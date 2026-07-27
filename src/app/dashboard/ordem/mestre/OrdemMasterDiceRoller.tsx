@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import "../ordem-responsive.css";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -120,7 +121,7 @@ export function OrdemMasterDiceRoller() {
           </div>
 
           {/* Die selector */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 12 }}>
+          <div className="op-master-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 12 }}>
             {DICE_TYPES.map((die) => (
               <button
                 key={die}
