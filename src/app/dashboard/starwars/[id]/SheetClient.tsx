@@ -12,6 +12,7 @@ import { planetSkillBonus, attributeDicePool } from "@/lib/starwars/creation";
 import { getAvailableMilestones, getAbilitiesGroupedByLevel } from "@/lib/starwars/powers/registry";
 import type { ClassAbility, ClassMilestone } from "@/lib/starwars/powers/types";
 import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
+import { ITEMS, ITEM_BY_ID, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory, type StarWarsItem } from "@/lib/starwars/items";
 import { LevelUpModal } from "./LevelUpModal";
 import { StarWarsGuide } from "../mestre/campanha/[id]/StarWarsGuide";
 import { RollResultDie, RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
@@ -31,7 +32,7 @@ const GRADE_COLOR: Record<SkillGrade, string> = {
   inexperiente: "#6b7280", iniciante: "#9ca3af", treinado: "#ffffff", expert: ACCENT_LIGHT, veterano: GOLD, mestre: "#e0524c",
 };
 
-type EquipmentItem = { id: string; name: string; qty: number };
+type EquipmentItem = { id: string; name: string; qty: number; itemId?: string; equipped?: boolean };
 type RollEntry = DiceFxRoll & { rolls: number[]; kept: number; bonus: number };
 type SheetMode = "ficha" | "jogar" | "editar" | "regras";
 
@@ -150,6 +151,105 @@ const vBtnTemp: React.CSSProperties = {
   color: TEMP_BLUE, fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", lineHeight: 1,
   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
 };
+
+// ─── Inventário — item de catálogo (arma/armadura/gadget) ─────────────────────
+
+const ATTR_TEST_LABEL: Record<NonNullable<StarWarsItem["testAttr"]>, string> = {
+  agi: "AGI", forca: "FOR", vig: "VIG", sen: "SEN", misto: "maior AGI/FOR/SEN",
+};
+
+function itemStatLines(item: StarWarsItem): string[] {
+  const lines: string[] = [];
+  if (item.testAttr && item.skill) {
+    lines.push(`Teste: ${ATTR_TEST_LABEL[item.testAttr]} + ${SKILL_BY_ID[item.skill]?.name ?? item.skill}`);
+  }
+  if (item.damage) lines.push(`Dano: ${item.damage}${item.damageType ? ` · ${item.damageType}` : ""}`);
+  if (item.range) lines.push(`Alcance: ${item.range}`);
+  if (item.defenseBonus !== undefined) lines.push(`Defesa +${item.defenseBonus}${item.agiPenalty ? ` · Penalidade AGI ${item.agiPenalty}` : ""}`);
+  return lines;
+}
+
+function OwnedItemCard({
+  entry, onEquip, onQty, onRemove,
+}: {
+  entry: EquipmentItem;
+  onEquip?: (id: string) => void;
+  onQty?: (id: string, qty: number) => void;
+  onRemove?: (id: string) => void;
+}) {
+  const item = entry.itemId ? ITEM_BY_ID[entry.itemId] : undefined;
+  return (
+    <div style={{ padding: "10px 12px", background: entry.equipped ? ACCENT_DIM : "var(--surface)", border: `1px solid ${entry.equipped ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+        <p style={{ fontSize: "0.8rem", color: "var(--text)", fontWeight: 600 }}>
+          {entry.name}{entry.qty > 1 ? ` ×${entry.qty}` : ""}
+        </p>
+        {entry.equipped && <span style={{ fontSize: "0.6rem", fontWeight: 700, color: ACCENT_LIGHT, whiteSpace: "nowrap" }}>EQUIPADO</span>}
+      </div>
+      {item?.category && <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", marginTop: 2 }}>{CATEGORY_LABEL[item.category]}{item.rarity ? ` · ${item.rarity}` : ""}</p>}
+      {item && itemStatLines(item).map((l, i) => <p key={i} style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: 2 }}>{l}</p>)}
+      {item?.special && <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 3, fontStyle: "italic" }}>{item.special}</p>}
+      {(onEquip || onQty || onRemove) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+          {onEquip && item && (
+            <button onClick={() => onEquip(entry.id)} style={{ padding: "3px 9px", background: entry.equipped ? ACCENT_DIM : "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT, borderRadius: 5, cursor: "pointer", fontSize: "0.68rem", fontWeight: 700 }}>
+              {entry.equipped ? "Desequipar" : "Equipar"}
+            </button>
+          )}
+          {onQty && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <button onClick={() => onQty(entry.id, entry.qty - 1)} disabled={entry.qty <= 1} style={{ width: 20, height: 20, borderRadius: 4, background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", cursor: entry.qty <= 1 ? "not-allowed" : "pointer", fontSize: "0.7rem", lineHeight: 1 }}>−</button>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", minWidth: 14, textAlign: "center" }}>{entry.qty}</span>
+              <button onClick={() => onQty(entry.id, entry.qty + 1)} style={{ width: 20, height: 20, borderRadius: 4, background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", cursor: "pointer", fontSize: "0.7rem", lineHeight: 1 }}>+</button>
+            </div>
+          )}
+          {onRemove && (
+            <button onClick={() => onRemove(entry.id)} style={{ padding: "3px 9px", background: "none", border: "1px solid var(--border)", color: "var(--text-subtle)", borderRadius: 5, cursor: "pointer", fontSize: "0.68rem" }}>Remover</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItemCatalogBrowser({ onAdd }: { onAdd: (itemId: string) => void }) {
+  const [search, setSearch] = useState("");
+  const [cat, setCat] = useState<ItemCategory | "todos">("todos");
+  const filtered = ITEMS.filter((it) => {
+    if (cat !== "todos" && it.category !== cat) return false;
+    if (search && !it.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 5, marginBottom: 8 }}>
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar item do catálogo…"
+          style={{ flex: 1, minWidth: 0, padding: "6px 9px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem" }} />
+        <select value={cat} onChange={(e) => setCat(e.target.value as ItemCategory | "todos")}
+          style={{ padding: "6px 7px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.72rem" }}>
+          <option value="todos">Todas categorias</option>
+          {CATEGORY_ORDER.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
+        </select>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 220, overflowY: "auto" }}>
+        {filtered.map((it) => (
+          <div key={it.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 9px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 5 }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: "0.76rem", color: "var(--text)" }}>
+                {it.name} <span style={{ fontSize: "0.64rem", color: "var(--text-subtle)" }}>· {CATEGORY_LABEL[it.category]}</span>
+              </p>
+              <p style={{ fontSize: "0.66rem", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {it.damage ? `${it.damage}${it.damageType ? ` · ${it.damageType}` : ""}` : it.defenseBonus !== undefined ? `Defesa +${it.defenseBonus}` : it.description}
+              </p>
+            </div>
+            <button onClick={() => onAdd(it.id)} style={{ flexShrink: 0, padding: "4px 10px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT, borderRadius: 5, cursor: "pointer", fontSize: "0.74rem", fontWeight: 700 }}>+</button>
+          </div>
+        ))}
+        {filtered.length === 0 && <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", fontStyle: "italic", padding: "8px 0" }}>Nenhum item encontrado.</p>}
+      </div>
+    </div>
+  );
+}
 
 function GradeDot({ grade, onClick }: { grade: SkillGrade; onClick?: () => void }) {
   const color = GRADE_COLOR[grade];
@@ -274,8 +374,31 @@ export function SheetClient({ character }: { character: CharacterProp }) {
     save({ equipment: next });
   }
 
+  function addCatalogItem(itemId: string) {
+    const item = ITEM_BY_ID[itemId];
+    if (!item) return;
+    const existing = equipment.find((e) => e.itemId === itemId);
+    const next = existing
+      ? equipment.map((e) => (e.itemId === itemId ? { ...e, qty: e.qty + 1 } : e))
+      : [...equipment, { id: crypto.randomUUID(), name: item.name, qty: 1, itemId }];
+    setEquipment(next);
+    save({ equipment: next });
+  }
+
   function removeEquipment(id: string) {
     const next = equipment.filter((e) => e.id !== id);
+    setEquipment(next);
+    save({ equipment: next });
+  }
+
+  function setEquipmentQty(id: string, qty: number) {
+    const next = equipment.map((e) => (e.id === id ? { ...e, qty: Math.max(1, qty) } : e));
+    setEquipment(next);
+    save({ equipment: next });
+  }
+
+  function toggleEquipped(id: string) {
+    const next = equipment.map((e) => (e.id === id ? { ...e, equipped: !e.equipped } : e));
     setEquipment(next);
     save({ equipment: next });
   }
@@ -368,6 +491,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
             sheet={sheet} attrs={attrs} skills={skills} generalPowerIds={generalPowerIds}
             classLevels={classLevels} classPowers={classPowers}
             equipment={equipment} addEquipment={addEquipment} removeEquipment={removeEquipment}
+            addCatalogItem={addCatalogItem} setEquipmentQty={setEquipmentQty} toggleEquipped={toggleEquipped}
             adjust={adjust} setTempValue={setTempValue}
             bumpSkillGrade={bumpSkillGrade}
             {...sharedVitals}
@@ -516,14 +640,28 @@ function ViewMode({
           )}
 
           {equipment.length > 0 && (
-            <Panel title="Equipamento">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
-                {equipment.map((item) => (
-                  <div key={item.id} style={{ padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text)", fontWeight: 600 }}>{item.name}</p>
-                    {item.qty > 1 && <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 2 }}>×{item.qty}</p>}
+            <Panel title={`Inventário (${equipment.length})`}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {CATEGORY_ORDER.filter((cat) => equipment.some((e) => e.itemId && ITEM_BY_ID[e.itemId]?.category === cat)).map((cat) => (
+                  <div key={cat}>
+                    <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{CATEGORY_LABEL[cat]}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+                      {equipment.filter((e) => e.itemId && ITEM_BY_ID[e.itemId]?.category === cat).map((e) => (
+                        <OwnedItemCard key={e.id} entry={e} />
+                      ))}
+                    </div>
                   </div>
                 ))}
+                {equipment.some((e) => !e.itemId) && (
+                  <div>
+                    <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Itens personalizados</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
+                      {equipment.filter((e) => !e.itemId).map((e) => (
+                        <OwnedItemCard key={e.id} entry={e} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </Panel>
           )}
@@ -550,7 +688,7 @@ type DiceSides = typeof DICE_SIDES[number];
 
 function PlayMode({
   sheet, attrs, skills, generalPowerIds, classLevels, classPowers,
-  equipment, addEquipment, removeEquipment,
+  equipment, addEquipment, removeEquipment, addCatalogItem, setEquipmentQty, toggleEquipped,
   pvCur, peCur, ppCur, pvTemp, peTemp, ppTemp,
   adjust, setTempValue, bumpSkillGrade,
 }: VitalsProps & {
@@ -558,6 +696,7 @@ function PlayMode({
   generalPowerIds: string[]; classLevels: Record<string, number>;
   classPowers: { level: number; name: string; classId?: string }[];
   equipment: EquipmentItem[]; addEquipment: (name: string, qty: number) => void; removeEquipment: (id: string) => void;
+  addCatalogItem: (itemId: string) => void; setEquipmentQty: (id: string, qty: number) => void; toggleEquipped: (id: string) => void;
   adjust: (field: "pv" | "pe" | "pp", delta: number) => void;
   setTempValue: (field: "pv" | "pe" | "pp", value: number) => void;
   bumpSkillGrade: (skillId: string) => void;
@@ -829,16 +968,18 @@ function PlayMode({
             )}
           </Panel>
 
+          <Panel title="Catálogo de Itens">
+            <ItemCatalogBrowser onAdd={addCatalogItem} />
+          </Panel>
+
           <Panel title={`Inventário (${equipment.length})`}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10, maxHeight: 180, overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10, maxHeight: 320, overflowY: "auto" }}>
               {equipment.map((item) => (
-                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 9px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 5 }}>
-                  <span style={{ fontSize: "0.78rem", color: "var(--text)" }}>{item.name}{item.qty > 1 ? ` ×${item.qty}` : ""}</span>
-                  <button onClick={() => removeEquipment(item.id)} style={{ background: "none", border: "none", color: "var(--text-subtle)", cursor: "pointer" }}>×</button>
-                </div>
+                <OwnedItemCard key={item.id} entry={item} onEquip={toggleEquipped} onQty={setEquipmentQty} onRemove={removeEquipment} />
               ))}
               {equipment.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Sem itens registrados.</p>}
             </div>
+            <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", marginBottom: 6 }}>Item personalizado (fora do catálogo):</p>
             <div style={{ display: "flex", gap: 5 }}>
               <input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Novo item…" style={{ flex: 1, minWidth: 0, padding: "6px 9px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem" }} />
               <input type="number" min={1} value={newItemQty} onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value) || 1))} style={{ width: 44, padding: "6px 5px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem", textAlign: "center" }} />
