@@ -850,6 +850,19 @@ function PlayMode({
       adjust("pe", -abilityPeCost(a));
       return;
     }
+    if (a.dt !== undefined) {
+      // Habilidade utilitária (não-combate): faz o teste normal (1d20 + mod) contra a DT cadastrada e desconta PE.
+      const roll = Math.floor(Math.random() * 20) + 1;
+      const total = roll + mod;
+      const entry: RollEntry = {
+        id: ++rollId.current, label: `Teste: ${a.name} (DT ${a.dt})`, dice: 20, total, rolls: [roll], kept: roll, bonus: mod,
+        isCrit: roll === 20, isFumble: roll === 1,
+      };
+      setLastRoll(entry); setFxRoll(entry);
+      setLog((l) => [entry, ...l].slice(0, 5));
+      adjust("pe", -abilityPeCost(a));
+      return;
+    }
     if (!a.damageDice) return;
     const diceMatch = a.damageDice.match(/^(\d+)d(\d+)$/);
     if (!diceMatch) return;
@@ -925,7 +938,7 @@ function PlayMode({
                     <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                       {all.map((a) => {
                         const affordable = peAvailable >= abilityPeCost(a);
-                        const usable = !!a.damageDice || a.weaponDamage === "sabre";
+                        const usable = !!a.damageDice || a.weaponDamage === "sabre" || a.dt !== undefined;
                         return (
                           <button key={a.name} disabled={usable && !affordable} onClick={() => usable && activateAbility(a)} title={a.description}
                             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "7px 10px", background: "var(--surface)", border: `1px solid ${usable && affordable ? "rgba(224,82,76,0.4)" : "var(--border)"}`, borderRadius: "var(--radius)", color: usable && !affordable ? "var(--text-subtle)" : "var(--text)", cursor: usable ? (affordable ? "pointer" : "not-allowed") : "default", textAlign: "left", opacity: usable && !affordable ? 0.5 : 1 }}>
