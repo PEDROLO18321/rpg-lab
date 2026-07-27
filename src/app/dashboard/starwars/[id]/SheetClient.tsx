@@ -1120,6 +1120,7 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
   });
   const [progress, setProgress] = useState({ level: sheet.level, xp: sheet.xp });
   const [sabreForm, setSabreForm] = useState(sheet.sabreForm ?? "");
+  const [skills, setSkills] = useState<Record<string, SkillGrade>>(() => parse(sheet.skills, {} as Record<string, SkillGrade>));
   const [background, setBackground] = useState({
     organization: initialBackground.organization ?? "", history: initialBackground.history ?? "", objective: initialBackground.objective ?? "",
   });
@@ -1132,6 +1133,13 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
   function setAttr(k: AttrKey, v: number) { setAttrs((a) => ({ ...a, [k]: v })); setSavedLocal(false); }
   function setVital(k: keyof typeof vitals, v: number) { setVitals((s) => ({ ...s, [k]: v })); setSavedLocal(false); }
   function setProg(k: keyof typeof progress, v: number) { setProgress((s) => ({ ...s, [k]: v })); setSavedLocal(false); }
+  function bumpSkillGrade(skillId: string) {
+    const current = skills[skillId] ?? "inexperiente";
+    const idx = SKILL_GRADE_ORDER.indexOf(current);
+    const next = SKILL_GRADE_ORDER[(idx + 1) % SKILL_GRADE_ORDER.length];
+    setSkills((s) => ({ ...s, [skillId]: next }));
+    setSavedLocal(false);
+  }
 
   function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -1169,6 +1177,7 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
           ...vitals,
           level: progress.level, xp: progress.xp,
           sabreForm: sabreForm.trim() || null,
+          skills,
           background,
         }),
       });
@@ -1243,6 +1252,21 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
 
       <EditSection label="Forma de Sabre">
         <EditText label="Forma especialista (se aplicável)" value={sabreForm} onChange={(v) => { setSabreForm(v); setSavedLocal(false); }} />
+      </EditSection>
+
+      <EditSection label="Perícias">
+        <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginBottom: 8 }}>Clique no grau pra avançar (Inexperiente → Treinado → Adepto → Versado → Mestre → volta ao início).</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 4 }}>
+          {SKILLS.map((s) => {
+            const grade = skills[s.id] ?? "inexperiente";
+            return (
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: "var(--radius)", background: grade !== "inexperiente" ? ACCENT_DIM : "transparent" }}>
+                <GradeDot grade={grade} onClick={() => bumpSkillGrade(s.id)} />
+                <span style={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: grade !== "inexperiente" ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{s.name}</span>
+              </div>
+            );
+          })}
+        </div>
       </EditSection>
 
       <EditSection label="Descrição">
