@@ -93,6 +93,41 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
+// ─── Além da Fronteira — perguntas de criação de personagem ───────────────────
+
+const FRONTIER_INTRO =
+  "Você vai participar da exploração do lado da Galáxia que ninguém jamais explorou, e que por muitos, colocada como uma forma irracional de se matar.";
+
+const FRONTIER_QUESTIONS: { key: string; question: string }[] = [
+  { key: "q_motivo", question: "O que o levou a seguir esse caminho?" },
+  { key: "q_objetivo_vida", question: "Qual o maior objetivo da sua vida? Pelo que faria de tudo para conseguir ele?" },
+  { key: "q_medo", question: "O que mais teme? O que faria para proteger quem ama ou para se proteger?" },
+  { key: "q_alguem_importante", question: "Existe alguém importante em sua vida? Ou só você?" },
+  { key: "q_valor_vida", question: "Sua vida é mais importante que qualquer outra vida?" },
+  { key: "q_marco", question: "Qual foi o acontecimento que mais marcou sua história?" },
+];
+
+function AnswerBox({
+  value, onSave, placeholder, rows = 3,
+}: {
+  value: string; onSave: (v: string) => void; placeholder?: string; rows?: number;
+}) {
+  const [v, setV] = useState(value);
+  return (
+    <textarea
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={() => { if (v !== value) onSave(v); }}
+      rows={rows}
+      placeholder={placeholder ?? "Escreva sua resposta…"}
+      style={{
+        width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
+        padding: "10px 12px", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+      }}
+    />
+  );
+}
+
 function Badge({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {
   return (
     <div style={{ padding: "8px 16px", background: "var(--surface)", border: `1px solid ${warn ? "rgba(224,82,76,0.5)" : "var(--border)"}`, borderRadius: "var(--radius-lg)" }}>
@@ -305,6 +340,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
   const [conditions] = useState<string[]>(() => parse(sheet.conditions, [] as string[]));
   const [equipment, setEquipment] = useState<EquipmentItem[]>(() => parse(sheet.equipment, [] as EquipmentItem[]));
   const [skills, setSkills] = useState<Record<string, SkillGrade>>(() => parse(sheet.skills, {} as Record<string, SkillGrade>));
+  const [background, setBackground] = useState<Record<string, string>>(() => parse(sheet.background, {} as Record<string, string>));
 
   // Subir de nível e a aba Editar chamam router.refresh(), que traz um `sheet` novo do
   // servidor — mas os useState acima só leem o valor inicial na montagem. Sem este
@@ -322,6 +358,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
     setPpTemp(sheet.ppTemp ?? 0);
     setSkills(parse(sheet.skills, {} as Record<string, SkillGrade>));
     setEquipment(parse(sheet.equipment, [] as EquipmentItem[]));
+    setBackground(parse(sheet.background, {} as Record<string, string>));
   }
 
   const species = sheet.species ? SPECIES_BY_ID[sheet.species] : undefined;
@@ -329,7 +366,6 @@ export function SheetClient({ character }: { character: CharacterProp }) {
   const classLevels: Record<string, number> = parse(sheet.classes, {});
   const classPowers: { level: number; name: string; classId?: string }[] = parse(sheet.classPowers, []);
   const generalPowerIds: string[] = parse(sheet.generalPowers, []);
-  const background: Record<string, string> = parse(sheet.background, {});
   const attrs: Record<AttrKey, number> = { agi: sheet.agi, int: sheet.int, forca: sheet.forca, vig: sheet.vig, pre: sheet.pre, sen: sheet.sen };
 
   function save(payload: Record<string, unknown>) {
@@ -366,6 +402,12 @@ export function SheetClient({ character }: { character: CharacterProp }) {
     const setTemp = field === "pv" ? setPvTemp : field === "pe" ? setPeTemp : setPpTemp;
     setTemp(v);
     save({ [`${field}Temp`]: v });
+  }
+
+  function setBackgroundField(key: string, value: string) {
+    const next = { ...background, [key]: value };
+    setBackground(next);
+    save({ background: next });
   }
 
   function addEquipment(name: string, qty: number) {
@@ -482,7 +524,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         {mode === "ficha" ? (
           <ViewMode
             sheet={sheet} attrs={attrs} classLevels={classLevels} classPowers={classPowers}
-            generalPowerIds={generalPowerIds} background={background} planet={planet}
+            generalPowerIds={generalPowerIds} background={background} setBackgroundField={setBackgroundField} planet={planet}
             skills={skills} conditions={conditions} equipment={equipment}
             {...sharedVitals}
           />
@@ -518,12 +560,13 @@ export function SheetClient({ character }: { character: CharacterProp }) {
 interface VitalsProps { pvCur: number; peCur: number; ppCur: number; pvTemp: number; peTemp: number; ppTemp: number; }
 
 function ViewMode({
-  sheet, attrs, classLevels, classPowers, generalPowerIds, background, planet, skills, conditions, equipment,
+  sheet, attrs, classLevels, classPowers, generalPowerIds, background, setBackgroundField, planet, skills, conditions, equipment,
   pvCur, peCur, ppCur, pvTemp, peTemp, ppTemp,
 }: VitalsProps & {
   sheet: StarWarsSheetData; attrs: Record<AttrKey, number>; classLevels: Record<string, number>;
   classPowers: { level: number; name: string; classId?: string }[]; generalPowerIds: string[];
-  background: Record<string, string>; planet: (typeof PLANET_BY_ID)[string] | undefined;
+  background: Record<string, string>; setBackgroundField: (key: string, value: string) => void;
+  planet: (typeof PLANET_BY_ID)[string] | undefined;
   skills: Record<string, SkillGrade>; conditions: string[]; equipment: EquipmentItem[];
 }) {
   return (
@@ -675,6 +718,29 @@ function ViewMode({
               </div>
             </Panel>
           )}
+
+          <Panel title="Além da Fronteira">
+            <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.7, marginBottom: 16, fontStyle: "italic" }}>
+              {FRONTIER_INTRO}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {FRONTIER_QUESTIONS.map((q) => (
+                <div key={q.key}>
+                  <p style={{ fontSize: "0.78rem", color: "var(--text)", fontWeight: 600, marginBottom: 6 }}>{q.question}</p>
+                  <AnswerBox value={background[q.key] ?? ""} onSave={(v) => setBackgroundField(q.key, v)} />
+                </div>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel title="Conexões Importantes">
+            <AnswerBox
+              value={background.connections ?? ""}
+              onSave={(v) => setBackgroundField("connections", v)}
+              placeholder="Aliados, mentores, rivais, família, dívidas — quem marca a jornada do seu personagem."
+              rows={4}
+            />
+          </Panel>
         </div>
       </div>
     </div>
