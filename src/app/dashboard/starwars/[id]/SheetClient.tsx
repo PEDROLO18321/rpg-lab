@@ -150,7 +150,8 @@ function VitalCard({
         <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</span>
         {note && <span style={{ fontSize: "0.7rem", fontWeight: 700, color: warn ? "#e0524c" : "var(--text-subtle)" }}>{note}</span>}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {onDelta && <button onClick={() => onDelta(-5)} style={vBtnSmall}>−5</button>}
         {onDelta && <button onClick={() => onDelta(-1)} style={vBtn}>−</button>}
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
@@ -163,6 +164,7 @@ function VitalCard({
           </div>
         </div>
         {onDelta && <button onClick={() => onDelta(1)} style={vBtn}>+</button>}
+        {onDelta && <button onClick={() => onDelta(5)} style={vBtnSmall}>+5</button>}
       </div>
       {onTemp && (
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
@@ -179,6 +181,11 @@ function VitalCard({
 const vBtn: React.CSSProperties = {
   width: 28, height: 28, borderRadius: "50%", background: "var(--surface-2)", border: "1px solid var(--border)",
   color: "var(--text)", fontSize: "1.05rem", fontWeight: 700, cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+};
+const vBtnSmall: React.CSSProperties = {
+  minWidth: 30, height: 22, padding: "0 6px", borderRadius: 999, background: "var(--surface-2)", border: "1px solid var(--border)",
+  color: "var(--text-muted)", fontSize: "0.66rem", fontWeight: 700, cursor: "pointer",
   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
 };
 const vBtnTemp: React.CSSProperties = {
@@ -300,11 +307,17 @@ function GradeDot({ grade, onClick }: { grade: SkillGrade; onClick?: () => void 
   return <button onClick={onClick} title={SKILL_GRADE_LABEL[grade]} style={{ ...style, cursor: "pointer" }}>{GRADE_LETTER[grade]}</button>;
 }
 
+// Regra: habilidades de combate (marcadas `combat: true`) não custam PE por padrão —
+// só habilidades utilitárias/passivas mantêm o custo de PE cadastrado.
+function abilityPeCost(a: ClassAbility | ClassMilestone): number {
+  return a.combat ? 0 : a.peCost;
+}
+
 function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
   const pill: React.CSSProperties = { fontSize: "0.66rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999 };
   return (
     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-      <span style={{ ...pill, color: TEMP_BLUE, background: "rgba(94,200,232,0.1)", border: "1px solid rgba(94,200,232,0.3)" }}>{a.peCost} PE</span>
+      <span style={{ ...pill, color: TEMP_BLUE, background: "rgba(94,200,232,0.1)", border: "1px solid rgba(94,200,232,0.3)" }}>{abilityPeCost(a)} PE</span>
       {a.weaponDamage === "sabre" && (
         <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
           Dano de sabre: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz
@@ -834,7 +847,7 @@ function PlayMode({
       const entry: RollEntry = { id: ++rollId.current, label: `Sabre: ${a.name}`, dice: 6, total, rolls, kept: diceSum, bonus: skillBonus + mod };
       setLastRoll(entry); setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));
-      adjust("pe", -a.peCost);
+      adjust("pe", -abilityPeCost(a));
       return;
     }
     if (!a.damageDice) return;
@@ -848,7 +861,7 @@ function PlayMode({
     const entry: RollEntry = { id: ++rollId.current, label, dice: sides, total, rolls, kept: raw, bonus: mod };
     setLastRoll(entry); setFxRoll(entry);
     setLog((l) => [entry, ...l].slice(0, 5));
-    adjust("pe", -a.peCost);
+    adjust("pe", -abilityPeCost(a));
   }
 
   const ppAvailable = ppCur + ppTemp;
@@ -911,14 +924,14 @@ function PlayMode({
                     </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                       {all.map((a) => {
-                        const affordable = peAvailable >= a.peCost;
+                        const affordable = peAvailable >= abilityPeCost(a);
                         const usable = !!a.damageDice || a.weaponDamage === "sabre";
                         return (
                           <button key={a.name} disabled={usable && !affordable} onClick={() => usable && activateAbility(a)} title={a.description}
                             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "7px 10px", background: "var(--surface)", border: `1px solid ${usable && affordable ? "rgba(224,82,76,0.4)" : "var(--border)"}`, borderRadius: "var(--radius)", color: usable && !affordable ? "var(--text-subtle)" : "var(--text)", cursor: usable ? (affordable ? "pointer" : "not-allowed") : "default", textAlign: "left", opacity: usable && !affordable ? 0.5 : 1 }}>
                             <span style={{ fontSize: "0.78rem" }}>{a.name}</span>
                             <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                              <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{a.peCost} PE</span>
+                              <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{abilityPeCost(a)} PE</span>
                               {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>Sabre 6d6×atr+perícia</span>}
                               {a.damageDice && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                               {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>DT {a.dt}</span>}

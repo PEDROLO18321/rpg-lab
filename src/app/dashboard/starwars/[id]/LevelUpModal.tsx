@@ -194,7 +194,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                     style={{ textAlign: "left", padding: "9px 13px", border: `1px solid ${classPowerName === a.name ? SW.accentBord : "var(--border)"}`, background: classPowerName === a.name ? SW.accentDim : "rgba(255,255,255,0.02)", color: "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
                     <strong style={{ color: classPowerName === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
                     <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
-                      <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
+                      <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.combat ? 0 : a.peCost} PE</span>
                       {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>Sabre: 6d6×atributo+perícia</span>}
                       {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                       {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
