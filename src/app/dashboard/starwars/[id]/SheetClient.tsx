@@ -789,15 +789,12 @@ function PlayMode({
   }
 
   function doGenericRoll() {
-    const faces = selectedDie === 100 ? 10 : selectedDie;
-    const rolls = Array.from({ length: diceQty }, () => Math.floor(Math.random() * faces) + (selectedDie === 100 ? 0 : 1));
-    const raw = selectedDie === 100
-      ? rolls.reduce((a, b) => a + b * 10, 0) || 100
-      : pickMode === "maior" ? Math.max(...rolls) : rolls.reduce((a, b) => a + b, 0);
+    const rolls = Array.from({ length: diceQty }, () => Math.floor(Math.random() * selectedDie) + 1);
+    const raw = pickMode === "maior" ? Math.max(...rolls) : rolls.reduce((a, b) => a + b, 0);
     const total = Math.max(1, raw + mod);
     const label = `${diceQty}D${selectedDie === 100 ? "%" : selectedDie}`;
     const entry: RollEntry = {
-      id: ++rollId.current, label, dice: selectedDie === 100 ? 10 : selectedDie, total,
+      id: ++rollId.current, label, dice: selectedDie, total,
       rolls, kept: raw, bonus: mod, isCrit: selectedDie === 20 && rolls[0] === 20, isFumble: selectedDie === 20 && rolls[0] === 1,
     };
     setLastRoll(entry); setFxRoll(entry);
@@ -976,28 +973,26 @@ function PlayMode({
 
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
               <RollResultDie
-                sides={selectedDie === 100 ? 10 : selectedDie} size={120} roll={fxRoll} color={ACCENT_LIGHT} edgeColor={ACCENT_LIGHT} emissive={ACCENT}
+                sides={selectedDie} size={120} roll={fxRoll} color={ACCENT_LIGHT} edgeColor={ACCENT_LIGHT} emissive={ACCENT}
                 resultColor={ACCENT_LIGHT}
                 label={selectedDie === 100 ? "d%" : undefined}
                 fallback={<div style={{ width: 120, height: 120, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", color: "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>D{selectedDie === 100 ? "%" : selectedDie}</div>}
               />
             </div>
 
-            {selectedDie !== 100 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Qtd</span>
-                  <button onClick={() => setDiceQty((q) => Math.max(1, q - 1))} style={{ width: 24, height: 24, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer" }}>−</button>
-                  <span style={{ minWidth: 20, textAlign: "center", fontSize: "0.82rem", fontWeight: 700, color: ACCENT_LIGHT }}>×{diceQty}</span>
-                  <button onClick={() => setDiceQty((q) => Math.min(20, q + 1))} style={{ width: 24, height: 24, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
-                </div>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {(["soma", "maior"] as const).map((m) => (
-                    <button key={m} onClick={() => setPickMode(m)} style={{ padding: "4px 10px", borderRadius: "var(--radius-xs)", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", textTransform: "uppercase", border: `1px solid ${pickMode === m ? ACCENT_BORD : "var(--border)"}`, background: pickMode === m ? ACCENT_DIM : "var(--surface-2)", color: pickMode === m ? ACCENT_LIGHT : "var(--text-muted)" }}>{m}</button>
-                  ))}
-                </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Qtd</span>
+                <button onClick={() => setDiceQty((q) => Math.max(1, q - 1))} style={{ width: 24, height: 24, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer" }}>−</button>
+                <span style={{ minWidth: 20, textAlign: "center", fontSize: "0.82rem", fontWeight: 700, color: ACCENT_LIGHT }}>×{diceQty}</span>
+                <button onClick={() => setDiceQty((q) => Math.min(20, q + 1))} style={{ width: 24, height: 24, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
               </div>
-            )}
+              <div style={{ display: "flex", gap: 4 }}>
+                {(["soma", "maior"] as const).map((m) => (
+                  <button key={m} onClick={() => setPickMode(m)} style={{ padding: "4px 10px", borderRadius: "var(--radius-xs)", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", textTransform: "uppercase", border: `1px solid ${pickMode === m ? ACCENT_BORD : "var(--border)"}`, background: pickMode === m ? ACCENT_DIM : "var(--surface-2)", color: pickMode === m ? ACCENT_LIGHT : "var(--text-muted)" }}>{m}</button>
+                ))}
+              </div>
+            </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <span style={{ fontSize: "0.74rem", color: "var(--text-muted)", flexShrink: 0 }}>Mod</span>
