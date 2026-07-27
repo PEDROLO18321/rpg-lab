@@ -14,6 +14,7 @@ import { CampaignStory } from "./CampaignStory";
 import { CampaignItems } from "./CampaignItems";
 import { CampaignClues } from "./CampaignClues";
 import { CampaignClocks } from "./CampaignClocks";
+import { CampaignGenerators } from "./CampaignGenerators";
 import { StarWarsGuide } from "./StarWarsGuide";
 import { MasterDiceRoller } from "../../../../tormenta/mestre/MasterDiceRoller";
 
@@ -22,7 +23,7 @@ const ACCENT_LIGHT = "#69a8e0";
 const ACCENT_DIM = "rgba(59,130,196,0.12)";
 const ACCENT_BORD = "rgba(59,130,196,0.28)";
 
-type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "notes" | "guide";
+type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "generators" | "notes" | "guide";
 
 function icon(d: string) {
   return (
@@ -40,6 +41,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: "clues",      label: "Pistas",     icon: icon("M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M21 21l-4.35-4.35") },
   { id: "clocks",     label: "Relógios",   icon: icon("M12 22a10 10 0 1 0 0-20 M12 12l5-3 M12 12V7") },
   { id: "items",      label: "Itens",      icon: icon("M21 8 21 21 3 21 3 8 M1 3h22v5H1z M10 12h4") },
+  { id: "generators", label: "Geradores",  icon: icon("M5 3v4 M3 5h4 M6 17v4 M4 19h4 M13 3l3 6 6 1-5 5 1 7-5-3") },
   { id: "notes",      label: "Notas",      icon: icon("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h8") },
   { id: "guide",      label: "Guia",       icon: icon("M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z") },
 ];
@@ -110,6 +112,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
         {tab === "clues"      && <CampaignClues api={api} />}
         {tab === "clocks"     && <CampaignClocks api={api} />}
         {tab === "items"      && <CampaignItems api={api} />}
+        {tab === "generators" && <CampaignGenerators api={api} />}
         {tab === "notes"      && <SessionNotes api={api} />}
         {tab === "guide"      && <StarWarsGuide />}
       </main>
