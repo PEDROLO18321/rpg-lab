@@ -8,7 +8,7 @@ export const STARWARS_RESOURCES: Record<string, ResourceConfig> = {
   npcs: {
     delegate: "starWarsNpc",
     fields: ["name", "species", "role", "description", "personality", "notes",
-      "pv", "agi", "int", "forca", "vig", "pre", "sen", "attacks"],
+      "pv", "agi", "int", "forca", "vig", "pre", "sen", "attacks", "skills"],
   },
   combatants: {
     delegate: "starWarsCombatant",

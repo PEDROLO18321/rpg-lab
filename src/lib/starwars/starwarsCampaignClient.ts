@@ -1,11 +1,13 @@
 // ─── STAR WARS: ALÉM DA FRONTEIRA — Mestre: cliente de dados (API DB) ────────
 export interface NPCAttack { name: string; bonus: string; damage: string; description: string }
+export interface NPCSkill { skillId: string; value: number }
 
 export interface StarWarsNpc {
   id: string; name: string; species: string; role: string; description: string;
   personality: string; notes: string; pv: number | null;
   agi: number | null; int: number | null; forca: number | null;
   vig: number | null; pre: number | null; sen: number | null; attacks: string;
+  skills: string;
 }
 
 export interface StarWarsCombatant {
