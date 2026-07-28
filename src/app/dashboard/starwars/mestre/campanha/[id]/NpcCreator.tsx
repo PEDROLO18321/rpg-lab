@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
-import type { StarWarsNpc, NPCAttack } from "@/lib/starwars/starwarsCampaignClient";
+import type { StarWarsNpc, NPCAttack, NPCSkill } from "@/lib/starwars/starwarsCampaignClient";
 import { SPECIES } from "@/lib/starwars/species";
 import { CLASSES } from "@/lib/starwars/classes";
+import { SKILLS, SKILL_BY_ID } from "@/lib/starwars/skills";
+import { SKILL_GRADE_LABEL, SKILL_GRADE_BONUS, SKILL_GRADE_ORDER, type SkillGrade } from "@/lib/starwars/data";
 
 const ACCENT = "#3b82c4";
 const ACCENT_LIGHT = "#69a8e0";
@@ -21,6 +23,40 @@ const NAMES = ["Broktar", "Ingram", "Fren", "Dok", "Artorius", "Kadeen", "Rhogar
 function rand<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 function randBetween(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function rollD20() { return Math.floor(Math.random() * 20) + 1; }
+
+function randomSkills(): NPCSkill[] {
+  const count = randBetween(2, 4);
+  const pool = [...SKILLS];
+  const picked: NPCSkill[] = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const [skill] = pool.splice(idx, 1);
+    const grade = rand(SKILL_GRADE_ORDER.slice(0, 4)); // NPC aleatório não passa de Expert
+    picked.push({ skillId: skill.id, value: SKILL_GRADE_BONUS[grade] });
+  }
+  return picked;
+}
+
+/** Perícias de personagens famosos são derivadas do papel/nível, não cadastradas uma a uma — mesmo padrão de regra-no-código usado no resto do sistema. */
+function famousSkills(c: FamousCharacter): NPCSkill[] {
+  const text = `${c.role} ${c.species}`.toLowerCase();
+  const ids: string[] = [];
+  if (c.sen >= 6) ids.push("dominio_forca");
+  if (/jedi|sith|sabre|padawan|duelista|cavaleiro/.test(text)) ids.push("sabres_de_luz", "conhecimento_forca");
+  if (/pilot|contrabandista|copiloto/.test(text)) ids.push("pilotagem_espacial");
+  if (/caçador|assassin|mercenári|sicári/.test(text)) ids.push("pontaria", "furtividade");
+  if (/diplomat|senad|rainha|líder|general|comandante|almirante|oficial/.test(text)) ids.push("diplomacia", "lideranca");
+  if (/droide/.test(text)) ids.push("computacao", "mecanica");
+  if (/engenh|mecân|técnic/.test(text)) ids.push("mecanica");
+  if (/soldado|guerreir|clone/.test(text)) ids.push("atletismo");
+  if (/sucateir|xerife|sobreviv/.test(text)) ids.push("sobrevivencia");
+  if (/cientista/.test(text)) ids.push("ciencias");
+  if (/espião|agente|espia/.test(text)) ids.push("investigacao");
+  if (ids.length === 0) ids.push("percepcao", "intimidacao");
+  const grade: SkillGrade = c.level >= 70 ? "mestre" : c.level >= 50 ? "veterano" : c.level >= 35 ? "expert" : c.level >= 20 ? "treinado" : "iniciante";
+  const unique = Array.from(new Set(ids)).slice(0, 4);
+  return unique.map((skillId) => ({ skillId, value: SKILL_GRADE_BONUS[grade] }));
+}
 
 const RANDOM_ATTACKS: NPCAttack[] = [
   { name: "Vibrolâmina", bonus: "+4", damage: "1d6+2", description: "Corpo a corpo, alcance pessoal" },
@@ -464,21 +500,22 @@ function loadFamous(c: FamousCharacter): NpcForm {
     name: c.name, species: c.species, role: `${c.role} (Nível ${c.level})`,
     description: c.description, personality: c.personality, notes: `Fonte: ${c.source}.`,
     pv: c.pv, agi: c.agi, int: c.int, forca: c.forca, vig: c.vig, pre: c.pre, sen: c.sen,
-    attacks: [],
+    attacks: [], skills: famousSkills(c),
   };
 }
 
-type NpcForm = Omit<StarWarsNpc, "id" | "attacks"> & { attacks: NPCAttack[] };
+type NpcForm = Omit<StarWarsNpc, "id" | "attacks" | "skills"> & { attacks: NPCAttack[]; skills: NPCSkill[] };
 const ATTR_LABELS: { key: "agi" | "int" | "forca" | "vig" | "pre" | "sen"; label: string }[] = [
   { key: "agi", label: "AGI" }, { key: "int", label: "INT" }, { key: "forca", label: "FOR" },
   { key: "vig", label: "VIG" }, { key: "pre", label: "PRE" }, { key: "sen", label: "SEN" },
 ];
 
 function parseAttacks(json: string): NPCAttack[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
-function emptyNpc(): NpcForm { return { name: "", species: "", role: "", description: "", personality: "", notes: "", pv: null, agi: null, int: null, forca: null, vig: null, pre: null, sen: null, attacks: [] }; }
+function parseSkills(json: string): NPCSkill[] { try { const s = JSON.parse(json); return Array.isArray(s) ? s : []; } catch { return []; } }
+function emptyNpc(): NpcForm { return { name: "", species: "", role: "", description: "", personality: "", notes: "", pv: null, agi: null, int: null, forca: null, vig: null, pre: null, sen: null, attacks: [], skills: [] }; }
 function randomNpc(): NpcForm {
   return { name: rand(NAMES), species: rand(SPECIES_NAMES), role: rand(ROLES), description: rand(APPEARANCES), personality: rand(TRAITS), notes: "",
-    pv: randBetween(6, 36), agi: randBetween(1, 4), int: randBetween(1, 4), forca: randBetween(1, 4), vig: randBetween(1, 4), pre: randBetween(1, 4), sen: randBetween(1, 4), attacks: [{ ...rand(RANDOM_ATTACKS) }] };
+    pv: randBetween(6, 36), agi: randBetween(1, 4), int: randBetween(1, 4), forca: randBetween(1, 4), vig: randBetween(1, 4), pre: randBetween(1, 4), sen: randBetween(1, 4), attacks: [{ ...rand(RANDOM_ATTACKS) }], skills: randomSkills() };
 }
 
 export function NpcCreator({ api }: { api: StarWarsApi }) {
@@ -487,19 +524,40 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newAtk, setNewAtk] = useState<NPCAttack>({ name: "", bonus: "", damage: "", description: "" });
+  const [newSkillId, setNewSkillId] = useState("");
+  const [newSkillGrade, setNewSkillGrade] = useState<SkillGrade>("treinado");
   const [addInitTarget, setAddInitTarget] = useState<string | null>(null);
   const [addInitValue, setAddInitValue] = useState("");
+  const [famousSearch, setFamousSearch] = useState("");
+  const [famousRoleFilter, setFamousRoleFilter] = useState<"Todos" | "Canon" | "Legends">("Todos");
 
   function regenerate() { setForm(randomNpc()); }
   function switchMode(m: "random" | "manual" | "famous") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
   async function saveNpc() {
     if (!form.name.trim()) return;
-    await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) });
+    await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks), skills: JSON.stringify(form.skills) });
     setForm(mode === "random" ? randomNpc() : emptyNpc());
   }
   function deleteNpc(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
   function addAttack() { if (!newAtk.name.trim()) return; setForm({ ...form, attacks: [...form.attacks, { ...newAtk }] }); setNewAtk({ name: "", bonus: "", damage: "", description: "" }); }
   function removeAttack(i: number) { setForm({ ...form, attacks: form.attacks.filter((_, j) => j !== i) }); }
+  function addSkill() {
+    if (!newSkillId || form.skills.some((s) => s.skillId === newSkillId)) return;
+    setForm({ ...form, skills: [...form.skills, { skillId: newSkillId, value: SKILL_GRADE_BONUS[newSkillGrade] }] });
+    setNewSkillId("");
+  }
+  function removeSkill(skillId: string) { setForm({ ...form, skills: form.skills.filter((s) => s.skillId !== skillId) }); }
+
+  const filteredFamous = useMemo(() => {
+    return FAMOUS_CHARACTERS.filter((c) => {
+      if (famousRoleFilter !== "Todos" && c.source !== famousRoleFilter) return false;
+      if (famousSearch) {
+        const q = famousSearch.toLowerCase();
+        if (!c.name.toLowerCase().includes(q) && !c.role.toLowerCase().includes(q) && !c.species.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [famousSearch, famousRoleFilter]);
   async function addToInitiative(npc: StarWarsNpc) {
     const initiative = addInitValue !== "" ? Number(addInitValue) : rollD20();
     await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pe: null, maxPe: null, conditions: "[]", isPlayer: false, order: api.campaign.starWarsCombatants.length });
@@ -544,8 +602,19 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
       {mode === "famous" && (
         <div style={{ padding: "20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 20 }}>
           <p style={sectionLabel}>Escolha um personagem <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(Canon e Legends) — carrega os stats abaixo pra ajustar e salvar</span></p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            <input value={famousSearch} onChange={(e) => setFamousSearch(e.target.value)} placeholder="Buscar nome, papel ou espécie..."
+              style={{ flex: 1, minWidth: 180, padding: "8px 12px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem" }} />
+            <select value={famousRoleFilter} onChange={(e) => setFamousRoleFilter(e.target.value as "Todos" | "Canon" | "Legends")}
+              style={{ padding: "8px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", cursor: "pointer" }}>
+              <option value="Todos">Canon e Legends</option>
+              <option value="Canon">Só Canon</option>
+              <option value="Legends">Só Legends</option>
+            </select>
+          </div>
+          <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 10 }}>{filteredFamous.length} de {FAMOUS_CHARACTERS.length} personagens</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8, maxHeight: 360, overflowY: "auto" }}>
-            {[...FAMOUS_CHARACTERS].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
+            {filteredFamous.map((c) => (
               <button key={c.name} onClick={() => setForm(loadFamous(c))} style={{ textAlign: "left", padding: "10px 12px", background: form.name === c.name ? ACCENT_DIM : "var(--surface-2)", border: `1px solid ${form.name === c.name ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)", cursor: "pointer" }}>
                 <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>{c.name}</p>
                 <p style={{ fontSize: "0.7rem", color: ACCENT_LIGHT }}>{c.role} · Nível {c.level}</p>
@@ -575,6 +644,37 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
           <p style={sectionLabel}>Estatísticas de Combate <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
           <div style={{ marginBottom: 12, maxWidth: 200 }}>{numField("PV Máx.", "pv")}</div>
           <div className="sw-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
+        </div>
+
+        <div style={{ borderTop: `1px solid ${ACCENT_BORD}`, paddingTop: 16, marginBottom: 16 }}>
+          <p style={sectionLabel}>Perícias <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional{mode !== "manual" ? " — geradas automaticamente, pode ajustar" : ""})</span></p>
+          {form.skills.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+              {form.skills.map((s) => (
+                <div key={s.skillId} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 6px 5px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "0.8rem", color: "var(--text)" }}>{SKILL_BY_ID[s.skillId]?.name ?? s.skillId}</span>
+                  <span style={{ fontSize: "0.72rem", color: ACCENT_LIGHT, fontWeight: 700 }}>+{s.value}</span>
+                  <button onClick={() => removeSkill(s.skillId)} style={{ padding: "1px 5px", background: "transparent", color: "var(--text-subtle)", border: "none", cursor: "pointer", fontSize: "0.75rem" }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={labelStyle}>Perícia</label>
+              <select value={newSkillId} onChange={(e) => setNewSkillId(e.target.value)} style={inputStyle}>
+                <option value="">Selecionar...</option>
+                {SKILLS.filter((sk) => !form.skills.some((s) => s.skillId === sk.id)).map((sk) => <option key={sk.id} value={sk.id}>{sk.name}</option>)}
+              </select>
+            </div>
+            <div style={{ width: 140 }}>
+              <label style={labelStyle}>Grau</label>
+              <select value={newSkillGrade} onChange={(e) => setNewSkillGrade(e.target.value as SkillGrade)} style={inputStyle}>
+                {SKILL_GRADE_ORDER.map((g) => <option key={g} value={g}>{SKILL_GRADE_LABEL[g]} (+{SKILL_GRADE_BONUS[g]})</option>)}
+              </select>
+            </div>
+            <button onClick={addSkill} disabled={!newSkillId} style={{ padding: "8px 14px", background: newSkillId ? ACCENT_DIM : "var(--surface-2)", color: newSkillId ? ACCENT_LIGHT : "var(--text-subtle)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: newSkillId ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>+ Perícia</button>
+          </div>
         </div>
 
         <div style={{ borderTop: `1px solid ${ACCENT_BORD}`, paddingTop: 16, marginBottom: 16 }}>
@@ -616,6 +716,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
           <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: 4 }}>{npcs.length} NPC{npcs.length !== 1 ? "s" : ""}</p>
           {npcs.map((npc) => {
             const attacks = parseAttacks(npc.attacks);
+            const skills = parseSkills(npc.skills);
             return (
               <div key={npc.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
@@ -664,6 +765,18 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
                       {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>
                     {npc.notes && <div style={{ marginBottom: 10 }}><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Notas</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.notes}</p></div>}
+                    {skills.length > 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Perícias</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {skills.map((s) => (
+                            <span key={s.skillId} style={{ fontSize: "0.76rem", padding: "3px 9px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                              {SKILL_BY_ID[s.skillId]?.name ?? s.skillId} <strong style={{ color: ACCENT_LIGHT }}>+{s.value}</strong>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {attacks.length > 0 && (
                       <div>
                         <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Ataques</p>

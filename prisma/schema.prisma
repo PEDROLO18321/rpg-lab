@@ -971,6 +971,7 @@ model StarWarsNpc {
   pre         Int?
   sen         Int?
   attacks     String   @default("[]") // JSON NPCAttack[]
+  skills      String   @default("[]") // JSON NPCSkill[]
   createdAt   DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
