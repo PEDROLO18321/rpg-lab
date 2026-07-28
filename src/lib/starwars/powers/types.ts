@@ -35,6 +35,8 @@ export interface ClassMilestone {
   peCost: number;
   damageDice?: string;
   weaponDamage?: "sabre";
+  /** Só nas 3 classes-base ligadas à Força, se um marco raro vier a marcar domínio/especialização de forma. */
+  formTag?: "primeiras_formas" | "segundas_formas" | "formas_completas" | "dominio" | "especializacao";
   dt?: number;
   heal?: boolean;
   healOrDamage?: boolean;
