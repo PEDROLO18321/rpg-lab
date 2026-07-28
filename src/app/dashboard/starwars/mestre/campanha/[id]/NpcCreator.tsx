@@ -545,7 +545,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
         <div style={{ padding: "20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 20 }}>
           <p style={sectionLabel}>Escolha um personagem <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(Canon e Legends) — carrega os stats abaixo pra ajustar e salvar</span></p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8, maxHeight: 360, overflowY: "auto" }}>
-            {FAMOUS_CHARACTERS.map((c) => (
+            {[...FAMOUS_CHARACTERS].sort((a, b) => a.name.localeCompare(b.name)).map((c) => (
               <button key={c.name} onClick={() => setForm(loadFamous(c))} style={{ textAlign: "left", padding: "10px 12px", background: form.name === c.name ? ACCENT_DIM : "var(--surface-2)", border: `1px solid ${form.name === c.name ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)", cursor: "pointer" }}>
                 <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>{c.name}</p>
                 <p style={{ fontSize: "0.7rem", color: ACCENT_LIGHT }}>{c.role} · Nível {c.level}</p>
