@@ -122,6 +122,61 @@ const SECTIONS: Section[] = [
     }],
   },
   {
+    id: "escala-dano",
+    icon: "📊",
+    title: "Escala de Dano por Nível",
+    note: "Dano de habilidades de classe e itens equipados sobe com o nível do personagem.",
+    blocks: [
+      {
+        heading: "A fórmula",
+        rows: [
+          { term: "Fórmula", text: "Dano Final = Dano Base × (1 + Nível ÷ 5). \"Base\" é o dano no nível 1 — o valor cadastrado na habilidade ou no item." },
+          { term: "O que escala", text: "Dano de habilidades de classe, de Poderes Gerais (quando tiverem valor numérico) e de itens equipados." },
+          { term: "O que NÃO escala", text: "O golpe de sabre \"cru\" sem Forma (Investida de Sabre, Corte Duplo, Arremesso de Sabre etc.) mantém sua regra própria — 6d6 × maior atributo (AGI/FOR/SEN) + perícia — pra não empilhar dois multiplicadores." },
+          { term: "Dado puro", text: "Dano em dado (ex. 4d6) usa a média do dado como base antes de multiplicar (4d6 = 14). O resultado final é arredondado." },
+          { term: "Sem teto", text: "A fórmula funciona pra qualquer nível, incluindo além de 99, se a mesa permitir." },
+        ],
+      },
+      {
+        heading: "Multiplicador por nível (referência)",
+        rows: [
+          { term: "Nível 1", text: "× 1.2" },
+          { term: "Nível 5", text: "× 2.0" },
+          { term: "Nível 10", text: "× 3.0" },
+          { term: "Nível 20", text: "× 5.0" },
+          { term: "Nível 50", text: "× 11.0" },
+        ],
+      },
+      {
+        heading: "Exemplo: Sabre de Luz (item, base 4d6 ≈ 14)",
+        rows: [
+          { term: "Nível 1", text: "14 × 1.2 = 17" },
+          { term: "Nível 5", text: "14 × 2.0 = 28" },
+          { term: "Nível 10", text: "14 × 3.0 = 42" },
+          { term: "Nível 20", text: "14 × 5.0 = 70" },
+          { term: "Nível 50", text: "14 × 11.0 = 154" },
+        ],
+      },
+      {
+        heading: "Exemplo: Habilidade de Forma de Sabre (base 10)",
+        rows: [
+          { term: "Nível 1", text: "10 × 1.2 = 12" },
+          { term: "Nível 5", text: "10 × 2.0 = 20" },
+          { term: "Nível 10", text: "10 × 3.0 = 30" },
+          { term: "Nível 20", text: "10 × 5.0 = 50" },
+          { term: "Nível 50", text: "10 × 11.0 = 110" },
+        ],
+      },
+      {
+        heading: "Onde consultar em jogo",
+        rows: [
+          { term: "Habilidades de Classe", text: "Área do teste — verifica se o personagem passa no teste necessário (atributo + perícia, ou DT) pra usar o poder/habilidade." },
+          { term: "Área de Danos", text: "Logo abaixo, na aba Jogar: lista o dano de toda habilidade e de todo item equipado já calculado (base → final) no nível atual do personagem." },
+        ],
+      },
+    ],
+  },
+  {
     id: "multiclasse",
     icon: "🔀",
     title: "Multiclasse",

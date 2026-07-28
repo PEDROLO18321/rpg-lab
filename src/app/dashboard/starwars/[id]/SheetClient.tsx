@@ -13,6 +13,7 @@ import { getAvailableMilestones, getAbilitiesGroupedByLevel } from "@/lib/starwa
 import type { ClassAbility, ClassMilestone } from "@/lib/starwars/powers/types";
 import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import { ITEMS, ITEM_BY_ID, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory, type StarWarsItem } from "@/lib/starwars/items";
+import { damageLevelMultiplier, baseDamageValue, scaledDamage } from "@/lib/starwars/damage";
 import { LevelUpModal } from "./LevelUpModal";
 import { StarWarsGuide } from "../mestre/campanha/[id]/StarWarsGuide";
 import { RollResultDie, RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
@@ -893,9 +894,11 @@ function PlayMode({
     const n = parseInt(diceMatch[1], 10), sides = parseInt(diceMatch[2], 10);
     const rolls = Array.from({ length: n }, () => Math.floor(Math.random() * sides) + 1);
     const raw = rolls.reduce((x, y) => x + y, 0);
-    const total = Math.max(0, raw + mod);
+    // Dano de habilidade de classe escala com o nível (Base × (1 + Nível/5)) — ver lib/starwars/damage.ts.
+    const scaled = scaledDamage(raw, sheet.level);
+    const total = Math.max(0, scaled + mod);
     const label = `${a.heal ? "Cura" : "Dano"}: ${a.name}`;
-    const entry: RollEntry = { id: ++rollId.current, label, dice: sides, total, rolls, kept: raw, bonus: mod };
+    const entry: RollEntry = { id: ++rollId.current, label, dice: sides, total, rolls, kept: scaled, bonus: mod };
     setLastRoll(entry); setFxRoll(entry);
     setLog((l) => [entry, ...l].slice(0, 5));
     adjust("pe", -abilityPeCost(a));
@@ -903,6 +906,33 @@ function PlayMode({
 
   const ppAvailable = ppCur + ppTemp;
   const peAvailable = peCur + peTemp;
+
+  // Área de Danos: dano já calculado (base → escalado pelo nível atual) de toda habilidade
+  // com dano numérico e de todo item equipado — ver lib/starwars/damage.ts.
+  type DamageRow = { name: string; baseLabel: string; base: number; scales: boolean };
+  const abilityDamageRows: DamageRow[] = [];
+  for (const [classId, lvl] of Object.entries(classLevels)) {
+    const all: (ClassAbility | ClassMilestone)[] = [...resolveClassAbilities(classId, lvl, classPowers), ...getAvailableMilestones(classId, lvl)];
+    for (const a of all) {
+      if (isSabreForm(a)) {
+        abilityDamageRows.push({ name: a.name, baseLabel: `${SABRE_FORM_DAMAGE}`, base: SABRE_FORM_DAMAGE, scales: true });
+      } else if (a.weaponDamage === "sabre") {
+        abilityDamageRows.push({ name: a.name, baseLabel: "6d6 × atributo + perícia", base: 0, scales: false });
+      } else if (a.damageDice) {
+        const base = baseDamageValue(a.damageDice);
+        if (base !== null) abilityDamageRows.push({ name: `${a.heal ? "Cura" : "Dano"}: ${a.name}`, baseLabel: a.damageDice, base, scales: true });
+      }
+    }
+  }
+  const itemDamageRows: DamageRow[] = equipment
+    .filter((e) => e.equipped && e.itemId)
+    .map((e) => ITEM_BY_ID[e.itemId as string])
+    .filter((item): item is StarWarsItem => !!item?.damage)
+    .map((item) => {
+      const base = baseDamageValue(item.damage as string);
+      return base !== null ? { name: item.name, baseLabel: item.damage as string, base, scales: true } : null;
+    })
+    .filter((r): r is DamageRow => r !== null);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -980,6 +1010,42 @@ function PlayMode({
                   </div>
                 );
               })}
+            </div>
+          </Panel>
+
+          <Panel title="Área de Danos">
+            <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", marginBottom: 12 }}>
+              Nível {sheet.level} → multiplicador <strong style={{ color: ACCENT_LIGHT }}>×{damageLevelMultiplier(sheet.level).toFixed(1)}</strong> (Dano Final = Base × (1 + Nível ÷ 5))
+            </p>
+
+            <p style={{ fontSize: "0.66rem", fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Habilidades</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
+              {abilityDamageRows.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhuma habilidade com dano numérico ainda.</p>}
+              {abilityDamageRows.map((r, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text)" }}>{r.name}</span>
+                  {r.scales ? (
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                      Base {r.baseLabel} → <strong style={{ color: "#e0524c" }}>{scaledDamage(r.base, sheet.level)}</strong>
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontStyle: "italic" }}>{r.baseLabel} — regra própria, não escala</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <p style={{ fontSize: "0.66rem", fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Itens Equipados</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {itemDamageRows.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhum item equipado com dano (equipe algo no Inventário).</p>}
+              {itemDamageRows.map((r, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text)" }}>{r.name}</span>
+                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                    Base {r.baseLabel} → <strong style={{ color: "#e0524c" }}>{scaledDamage(r.base, sheet.level)}</strong>
+                  </span>
+                </div>
+              ))}
             </div>
           </Panel>
 
@@ -1353,7 +1419,7 @@ function RegrasMode() {
             <strong style={{ color: ACCENT_LIGHT }}>Ficha</strong> — visão só-leitura do personagem: atributos, perícias, habilidades de classe já aprendidas, poderes gerais e descrição.
           </p>
           <p style={{ fontSize: "0.84rem", color: "var(--text)", lineHeight: 1.6 }}>
-            <strong style={{ color: ACCENT_LIGHT }}>Jogar</strong> — pra usar em mesa: PV/PE/PP com dano/cura/pontos temporários, rolagem de dados (clique num atributo ou perícia pra rolar com a regra de Star Wars, ou use o roller genérico D4-D%), lista de Poderes Gerais que desconta PP automaticamente, e inventário.
+            <strong style={{ color: ACCENT_LIGHT }}>Jogar</strong> — pra usar em mesa: PV/PE/PP com dano/cura/pontos temporários, rolagem de dados (clique num atributo ou perícia pra rolar com a regra de Star Wars, ou use o roller genérico D4-D%), Habilidades de Classe (área do teste) seguida da Área de Danos (dano já calculado com a escala de nível — ver &quot;Escala de Dano por Nível&quot; abaixo), lista de Poderes Gerais que desconta PP automaticamente, e inventário.
           </p>
           <p style={{ fontSize: "0.84rem", color: "var(--text)", lineHeight: 1.6 }}>
             <strong style={{ color: ACCENT_LIGHT }}>Editar</strong> — correção manual de nome, foto, atributos, PV/PE/PP máximo/atual, nível/XP e descrição. Não concede recursos automáticos — pra subir de nível de verdade, use o botão &quot;Subir de Nível&quot; no topo.

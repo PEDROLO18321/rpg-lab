@@ -2,9 +2,9 @@
 // Usa o mesmo motor de combate já estabelecido no sistema: o teste de Acerto
 // rola o dado do atributo relevante (regra de dado por atributo, ver
 // lib/starwars/creation.ts#attributeDicePool) + bônus de grau da perícia
-// indicada. Dano é dado fixo por item (não escala por nível, ao contrário das
-// habilidades de classe) — a rolagem em si é feita à mesa, com dados de
-// verdade; aqui só ficam os números de referência.
+// indicada. `damage` é o dano BASE (nível 1) do item — quando equipado, escala
+// com o nível do personagem (ver lib/starwars/damage.ts e a Área de Danos na
+// ficha); a rolagem em si é feita à mesa, com dados de verdade.
 
 export type ItemCategory =
   | "melee" | "ranged" | "sabre" | "armor" | "shield"
@@ -167,30 +167,30 @@ export const ITEMS: StarWarsItem[] = [
 
   // ─── SABRES DE LUZ E ARMAS DA FORÇA ─────────────────────────────────────────
   { id: "sabre-luz-padrao", name: "Sabre de luz", category: "sabre", rarity: "Raro", price: 0, weight: 1,
-    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo",
-    special: "Regra fixa do sistema — não usa a tabela de dano por nível. Não é vendido; construído ou herdado.",
+    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6", damageType: "Energia", range: "Corpo a corpo",
+    special: "Não é vendido; construído ou herdado.",
     description: "Arma cerimonial e de combate de usuários da Força, lâmina de plasma contida por campo de energia." },
   { id: "sabre-luz-curto", name: "Sabre de luz curto (shoto)", category: "sabre", rarity: "Raro", price: 0, weight: 0.6,
-    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo",
+    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6", damageType: "Energia", range: "Corpo a corpo",
     special: "Regra fixa do sistema. Mais leve e rápido; costuma ser empunhado como arma secundária.",
     description: "Variante compacta do sabre de luz, popular como segunda lâmina em duelistas de Forma II/Makashi." },
   { id: "sabre-luz-duplo", name: "Sabre de luz duplo", category: "sabre", rarity: "Raro", price: 0, weight: 1.5,
-    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo",
+    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6", damageType: "Energia", range: "Corpo a corpo",
     special: "Regra fixa do sistema. Pode atacar dois alvos adjacentes na mesma ação (2 ações).",
     description: "Duas lâminas nas pontas de um cabo giratório — arma de Forma IV/Ataru." },
   { id: "lanca-forca-sith", name: "Lança de força sith", category: "sabre", rarity: "Incomum", price: 1500, weight: 3,
     testAttr: "sen", skill: "armas_energia", damage: "3d6", damageType: "Energia", range: "Corpo a corpo (alcance 3m)",
     description: "Haste energizada usada por guardas sith e cultistas — não é um sabre de luz de verdade, mas canaliza a Força." },
   { id: "sabre-lanca", name: "Sabre-lança (lightsaber pike)", category: "sabre", rarity: "Raro", price: 0, weight: 2,
-    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo (alcance 2m)",
+    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6", damageType: "Energia", range: "Corpo a corpo (alcance 2m)",
     special: "Regra fixa do sistema. Haste longa dá alcance extra; não é vendido, construído ou herdado.",
     description: "Variante de sabre montada numa haste longa, favorecida por guardiões cerimoniais e duelistas de Forma V." },
   { id: "chicote-luz", name: "Chicote de luz (lightwhip)", category: "sabre", rarity: "Raro", price: 0, weight: 1,
-    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia", range: "Corpo a corpo (alcance 4m)",
+    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6", damageType: "Energia", range: "Corpo a corpo (alcance 4m)",
     special: "Regra fixa do sistema. Extremamente difícil de manejar: –3 no teste de Acerto pra quem não tem a perícia Sabres de Luz em grau Mestre.",
     description: "Lâmina flexível e instável, rara arma de duelistas excêntricos como as Irmãs da Noite de Dathomir." },
   { id: "darksaber", name: "Darksaber", category: "sabre", rarity: "Lendário", price: 0, weight: 0.8,
-    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6 × maior entre AGI/FOR/SEN + perícia Sabres de Luz", damageType: "Energia (lâmina negra)", range: "Corpo a corpo",
+    testAttr: "misto", skill: "sabres_de_luz", damage: "4d6", damageType: "Energia (lâmina negra)", range: "Corpo a corpo",
     special: "Regra fixa do sistema. Arma única e nomeada — só existe um exemplar na campanha; carrega peso político (símbolo de liderança de Mandalore).",
     description: "Lâmina negra forjada por um único Jedi mandaloriano há milênios, empunhada por quem reivindica o direito de governar Mandalore." },
 
