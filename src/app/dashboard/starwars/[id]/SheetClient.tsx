@@ -313,23 +313,28 @@ function abilityPeCost(a: ClassAbility | ClassMilestone): number {
   return a.combat ? 0 : a.peCost;
 }
 
-// Habilidades de Forma de Sabre (Primeiras/Segundas Formas, Formas Completas, Domínio) usam uma
-// rolagem própria — maior atributo entre AGI/FOR/SEN em pool Nd20 + 1d12 + perícia Sabres de Luz —
-// em vez da regra fixa 6d6×atributo do golpe de sabre "cru".
+// Habilidades de Forma de Sabre (Primeiras/Segundas Formas, Formas Completas, Domínio): o Teste
+// é o teste padrão de atributo/perícia do sistema (maior AGI/FOR/SEN + Sabres de Luz); o dano é
+// fixo (10), não rolado — diferente do golpe de sabre "cru", que segue 6d6×atributo+perícia.
 function isSabreForm(a: ClassAbility | ClassMilestone): boolean {
   return a.weaponDamage === "sabre" && !!a.formTag;
 }
+const SABRE_FORM_DAMAGE = 10;
 
 function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
   const pill: React.CSSProperties = { fontSize: "0.66rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999 };
   return (
     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
       <span style={{ ...pill, color: TEMP_BLUE, background: "rgba(94,200,232,0.1)", border: "1px solid rgba(94,200,232,0.3)" }}>{abilityPeCost(a)} PE</span>
-      {a.weaponDamage === "sabre" && (
+      {isSabreForm(a) && (
+        <>
+          <span style={{ ...pill, color: GOLD, background: "rgba(201,148,31,0.1)", border: "1px solid rgba(201,148,31,0.3)" }}>Teste: maior AGI/FOR/SEN + Sabres de Luz</span>
+          <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>Dano: {SABRE_FORM_DAMAGE}</span>
+        </>
+      )}
+      {!isSabreForm(a) && a.weaponDamage === "sabre" && (
         <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
-          {isSabreForm(a)
-            ? "Dano: Nd20 (N = maior AGI/FOR/SEN) + 1d12 + perícia Sabres de Luz"
-            : "Dano de sabre: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz"}
+          Dano de sabre: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz
         </span>
       )}
       {a.damageDice && (
@@ -843,24 +848,12 @@ function PlayMode({
 
   function activateAbility(a: ClassAbility | ClassMilestone) {
     if (isSabreForm(a)) {
-      // Habilidade de Forma: dano, então soma todos os dados (igual todo dano do sistema,
-      // ex. "6d6") — maior atributo entre AGI/FOR/SEN define quantos d20 somar (ex. AGI 3 =
-      // 3d20), + 1d12 + valor total da perícia Sabres de Luz.
+      // Habilidade de Forma: o Teste segue a mesma regra padrão de teste do sistema (Nd20 pelo
+      // maior entre AGI/FOR/SEN + perícia Sabres de Luz — igual a qualquer perícia/atributo).
+      // O dano é fixo em 10, não rolado (ver badge "Dano: 10").
       const sabreSkill = SKILL_BY_ID["sabres_de_luz"];
       const bestAttr = sabreSkill.attrs.reduce((best, k) => (attrs[k] > attrs[best] ? k : best), sabreSkill.attrs[0]);
-      const attrDice = attributeDicePool(attrs[bestAttr]).dice;
-      const attrRolls = Array.from({ length: attrDice }, rollDie);
-      const extraDie = Math.floor(Math.random() * 12) + 1;
-      const rolls = [...attrRolls, extraDie];
-      const diceSum = rolls.reduce((x, y) => x + y, 0);
-      const skillBonus = skillTotal("sabres_de_luz");
-      const total = Math.max(0, diceSum + skillBonus + mod);
-      const entry: RollEntry = {
-        id: ++rollId.current, label: `Forma: ${a.name}`, dice: 20, total,
-        rolls, kept: diceSum, bonus: skillBonus + mod,
-      };
-      setLastRoll(entry); setFxRoll(entry);
-      setLog((l) => [entry, ...l].slice(0, 5));
+      doRoll(`Forma: ${a.name}`, bestAttr, skillTotal("sabres_de_luz") + mod);
       adjust("pe", -abilityPeCost(a));
       return;
     }
@@ -976,7 +969,7 @@ function PlayMode({
                             <span style={{ fontSize: "0.78rem" }}>{a.name}</span>
                             <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
                               <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{abilityPeCost(a)} PE</span>
-                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? "Forma: Nd20+1d12+perícia" : "Sabre 6d6×atr+perícia"}</span>}
+                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? `Teste attr+perícia · Dano ${SABRE_FORM_DAMAGE}` : "Sabre 6d6×atr+perícia"}</span>}
                               {a.damageDice && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                               {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>DT {a.dt}</span>}
                             </span>
