@@ -328,7 +328,7 @@ function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
       {a.weaponDamage === "sabre" && (
         <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
           {isSabreForm(a)
-            ? "Dano: maior AGI/FOR/SEN em Nd20 + 1d12 + perícia Sabres de Luz"
+            ? "Dano: Nd20 (N = maior AGI/FOR/SEN) + 1d12 + perícia Sabres de Luz"
             : "Dano de sabre: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz"}
         </span>
       )}
@@ -843,19 +843,21 @@ function PlayMode({
 
   function activateAbility(a: ClassAbility | ClassMilestone) {
     if (isSabreForm(a)) {
-      // Habilidade de Forma: maior atributo entre AGI/FOR/SEN em pool Nd20 (regra padrão
-      // de dado por atributo) + 1d12 + valor total da perícia Sabres de Luz.
+      // Habilidade de Forma: dano, então soma todos os dados (igual todo dano do sistema,
+      // ex. "6d6") — maior atributo entre AGI/FOR/SEN define quantos d20 somar (ex. AGI 3 =
+      // 3d20), + 1d12 + valor total da perícia Sabres de Luz.
       const sabreSkill = SKILL_BY_ID["sabres_de_luz"];
       const bestAttr = sabreSkill.attrs.reduce((best, k) => (attrs[k] > attrs[best] ? k : best), sabreSkill.attrs[0]);
-      const pool = attributeDicePool(attrs[bestAttr]);
-      const attrRolls = Array.from({ length: pool.dice }, rollDie);
-      const attrKept = pool.take === "highest" ? Math.max(...attrRolls) : Math.min(...attrRolls);
+      const attrDice = attributeDicePool(attrs[bestAttr]).dice;
+      const attrRolls = Array.from({ length: attrDice }, rollDie);
       const extraDie = Math.floor(Math.random() * 12) + 1;
+      const rolls = [...attrRolls, extraDie];
+      const diceSum = rolls.reduce((x, y) => x + y, 0);
       const skillBonus = skillTotal("sabres_de_luz");
-      const total = Math.max(0, attrKept + extraDie + skillBonus + mod);
+      const total = Math.max(0, diceSum + skillBonus + mod);
       const entry: RollEntry = {
         id: ++rollId.current, label: `Forma: ${a.name}`, dice: 20, total,
-        rolls: [...attrRolls, extraDie], kept: attrKept + extraDie, bonus: skillBonus + mod,
+        rolls, kept: diceSum, bonus: skillBonus + mod,
       };
       setLastRoll(entry); setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));
