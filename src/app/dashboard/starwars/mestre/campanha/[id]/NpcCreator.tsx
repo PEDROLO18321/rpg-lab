@@ -30,6 +30,96 @@ const RANDOM_ATTACKS: NPCAttack[] = [
   { name: "Golpe da Força", bonus: "+5", damage: "1d10", description: "À distância curta, empurra o alvo" },
 ];
 
+interface FamousCharacter {
+  name: string; source: "Canon" | "Legends"; species: string; role: string; level: number;
+  pv: number; agi: number; int: number; forca: number; vig: number; pre: number; sen: number;
+  personality: string; description: string;
+}
+
+const FAMOUS_CHARACTERS: FamousCharacter[] = [
+  { name: "Luke Skywalker", source: "Canon", species: "Humano", role: "Cavaleiro Jedi", level: 45,
+    pv: 70, agi: 5, int: 3, forca: 3, vig: 4, pre: 4, sen: 7,
+    personality: "Idealista, compassivo, recusa-se a desistir de quem ama.",
+    description: "Herói da Aliança Rebelde, treinado por Obi-Wan e Yoda, restaurou a Ordem Jedi." },
+  { name: "Darth Vader (Anakin Skywalker)", source: "Canon", species: "Humano", role: "Lorde Sith", level: 70,
+    pv: 140, agi: 4, int: 4, forca: 6, vig: 7, pre: 6, sen: 8,
+    personality: "Implacável, consumido pela raiva e pelo arrependimento.",
+    description: "Ex-Jedi caído ao Lado Sombrio, mão direita do Imperador Palpatine, metade homem metade máquina." },
+  { name: "Imperador Palpatine (Darth Sidious)", source: "Canon", species: "Humano", role: "Senhor Sith / Imperador", level: 90,
+    pv: 120, agi: 1, int: 6, forca: 1, vig: 3, pre: 7, sen: 10,
+    personality: "Manipulador cirúrgico, paciente além da compreensão, sorri enquanto destrói impérios.",
+    description: "Mestre Sith que derrubou a República por dentro e governou a galáxia como Imperador." },
+  { name: "Obi-Wan Kenobi", source: "Canon", species: "Humano", role: "Mestre Jedi", level: 55,
+    pv: 90, agi: 5, int: 5, forca: 3, vig: 4, pre: 5, sen: 7,
+    personality: "Disciplinado, irônico sob pressão, carrega o peso de promessas antigas.",
+    description: "Mestre Jedi que treinou Anakin e depois Luke, sobrevivendo escondido em Tatooine por décadas." },
+  { name: "Yoda", source: "Canon", species: "Espécie desconhecida (mesma de Yoda)", role: "Grão-Mestre Jedi", level: 99,
+    pv: 110, agi: 4, int: 6, forca: 2, vig: 3, pre: 6, sen: 10,
+    personality: "Enigmático, paciente, fala de trás pra frente e pensa em séculos.",
+    description: "Grão-Mestre do Conselho Jedi por 800 anos, um dos usuários da Força mais poderosos já vistos." },
+  { name: "Leia Organa", source: "Canon", species: "Humano", role: "Diplomata / Líder Rebelde", level: 30,
+    pv: 50, agi: 3, int: 5, forca: 2, vig: 3, pre: 7, sen: 3,
+    personality: "Firme, corajosa, nunca perde a compostura mesmo sob tortura.",
+    description: "Princesa de Alderaan, fundadora da Aliança Rebelde e depois da Resistência." },
+  { name: "Han Solo", source: "Canon", species: "Humano", role: "Contrabandista / Piloto", level: 25,
+    pv: 45, agi: 5, int: 3, forca: 3, vig: 4, pre: 5, sen: 0,
+    personality: "Cínico por fora, leal por dentro, sempre tem um plano ruim que meio que funciona.",
+    description: "Contrabandista dono da Millennium Falcon, general da Aliança Rebelde." },
+  { name: "Chewbacca", source: "Canon", species: "Wookiee", role: "Guerreiro / Copiloto", level: 30,
+    pv: 70, agi: 3, int: 2, forca: 7, vig: 6, pre: 3, sen: 0,
+    personality: "Leal até a morte, rosna quando nervoso, nunca deixa um amigo pra trás.",
+    description: "Wookiee de Kashyyyk, copiloto e melhor amigo de Han Solo por décadas." },
+  { name: "Boba Fett", source: "Canon", species: "Humano (clone)", role: "Caçador de Recompensas", level: 40,
+    pv: 80, agi: 6, int: 4, forca: 4, vig: 5, pre: 3, sen: 0,
+    personality: "Profissional frio, cumpre o contrato, nunca subestima o alvo.",
+    description: "Clone de Jango Fett criado sem modificações, o caçador de recompensas mais temido da galáxia." },
+  { name: "Ahsoka Tano", source: "Canon", species: "Togruta", role: "Ex-Padawan Jedi", level: 50,
+    pv: 95, agi: 7, int: 4, forca: 4, vig: 5, pre: 4, sen: 8,
+    personality: "Independente, questiona autoridade, guiada por seu próprio código.",
+    description: "Ex-Padawan de Anakin Skywalker que deixou a Ordem Jedi e sobreviveu à Ordem 66 por conta própria." },
+  { name: "Darth Maul", source: "Canon", species: "Zabrak", role: "Lorde Sith", level: 45,
+    pv: 90, agi: 8, int: 3, forca: 5, vig: 5, pre: 4, sen: 7,
+    personality: "Obcecado por vingança, disciplinado no combate, ódio como combustível.",
+    description: "Aprendiz sith de Darth Sidious, duelista mortal com sabre de luz de lâmina dupla." },
+  { name: "Rey Skywalker", source: "Canon", species: "Humano", role: "Jedi", level: 35,
+    pv: 65, agi: 6, int: 4, forca: 4, vig: 5, pre: 4, sen: 8,
+    personality: "Determinada, teme o próprio potencial, busca pertencimento.",
+    description: "Sucateira de Jakku que descobriu ser neta de Palpatine e se tornou a última Jedi de sua geração." },
+  { name: "Kylo Ren (Ben Solo)", source: "Canon", species: "Humano", role: "Cavaleiro de Ren / Sith", level: 40,
+    pv: 85, agi: 4, int: 4, forca: 6, vig: 5, pre: 5, sen: 7,
+    personality: "Instável, dividido entre a luz e a sombra, raiva mal contida.",
+    description: "Filho de Han Solo e Leia Organa, seduzido ao Lado Sombrio, líder da Primeira Ordem." },
+  { name: "General Grievous", source: "Canon", species: "Cyborg Kaleesh", role: "General Droide", level: 35,
+    pv: 100, agi: 7, int: 3, forca: 6, vig: 6, pre: 3, sen: 0,
+    personality: "Orgulhoso colecionador de sabres de luz, tossidor crônico, covarde quando perde vantagem.",
+    description: "General supremo dos Exércitos de Droides da Confederação, corpo quase todo mecânico." },
+  { name: "Revan", source: "Legends", species: "Humano", role: "Jedi / Senhor Sith", level: 80,
+    pv: 150, agi: 5, int: 6, forca: 5, vig: 5, pre: 6, sen: 9,
+    personality: "Estrategista brilhante, disposto a se sacrificar (ou condenar-se) pela galáxia.",
+    description: "Ex-Jedi que virou Senhor Sith nas Guerras Mandalorianas e depois retornou à Luz — lenda da Guerra Fria Sith." },
+  { name: "Darth Bane", source: "Legends", species: "Humano", role: "Lorde Sith", level: 75,
+    pv: 140, agi: 4, int: 6, forca: 4, vig: 5, pre: 5, sen: 8,
+    personality: "Frio e calculista, acredita que só o mais forte deve sobreviver.",
+    description: "Criador da Regra dos Dois — sempre um mestre e um aprendiz — que guiou os Sith na sombra por mil anos." },
+  { name: "Mara Jade", source: "Legends", species: "Humano", role: "Mão do Imperador / Jedi", level: 45,
+    pv: 85, agi: 7, int: 4, forca: 3, vig: 4, pre: 4, sen: 7,
+    personality: "Afiada, sarcástica, leal a quem conquista sua confiança (o que não é fácil).",
+    description: "Assassina de elite treinada por Palpatine, mais tarde Jedi e esposa de Luke Skywalker." },
+  { name: "Exar Kun", source: "Legends", species: "Humano", role: "Lorde Sith", level: 60,
+    pv: 120, agi: 4, int: 5, forca: 5, vig: 5, pre: 5, sen: 8,
+    personality: "Ambicioso além da razão, seduzido pelo conhecimento sith proibido.",
+    description: "Ex-Cavaleiro Jedi que se tornou Lorde Sith durante as Grandes Guerras Sith, mestre de necromancia da Força." },
+];
+
+function loadFamous(c: FamousCharacter): NpcForm {
+  return {
+    name: c.name, species: c.species, role: `${c.role} (Nível ${c.level})`,
+    description: c.description, personality: c.personality, notes: `Fonte: ${c.source}.`,
+    pv: c.pv, agi: c.agi, int: c.int, forca: c.forca, vig: c.vig, pre: c.pre, sen: c.sen,
+    attacks: [],
+  };
+}
+
 type NpcForm = Omit<StarWarsNpc, "id" | "attacks"> & { attacks: NPCAttack[] };
 const ATTR_LABELS: { key: "agi" | "int" | "forca" | "vig" | "pre" | "sen"; label: string }[] = [
   { key: "agi", label: "AGI" }, { key: "int", label: "INT" }, { key: "forca", label: "FOR" },
@@ -45,7 +135,7 @@ function randomNpc(): NpcForm {
 
 export function NpcCreator({ api }: { api: StarWarsApi }) {
   const npcs = api.campaign.starWarsNpcs;
-  const [mode, setMode] = useState<"random" | "manual">("random");
+  const [mode, setMode] = useState<"random" | "manual" | "famous">("random");
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newAtk, setNewAtk] = useState<NPCAttack>({ name: "", bonus: "", damage: "", description: "" });
@@ -53,7 +143,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
   const [addInitValue, setAddInitValue] = useState("");
 
   function regenerate() { setForm(randomNpc()); }
-  function switchMode(m: "random" | "manual") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
+  function switchMode(m: "random" | "manual" | "famous") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
   async function saveNpc() {
     if (!form.name.trim()) return;
     await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) });
@@ -98,16 +188,31 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: 4, width: "fit-content" }}>
-        {(["random", "manual"] as const).map((m) => (
-          <button key={m} onClick={() => switchMode(m)} style={{ padding: "7px 18px", background: mode === m ? ACCENT_DIM : "transparent", color: mode === m ? ACCENT_LIGHT : "var(--text-muted)", border: mode === m ? `1px solid ${ACCENT_BORD}` : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.82rem", fontWeight: mode === m ? 700 : 500, cursor: "pointer" }}>{m === "random" ? "Aleatório" : "Manual"}</button>
+        {(["random", "manual", "famous"] as const).map((m) => (
+          <button key={m} onClick={() => switchMode(m)} style={{ padding: "7px 18px", background: mode === m ? ACCENT_DIM : "transparent", color: mode === m ? ACCENT_LIGHT : "var(--text-muted)", border: mode === m ? `1px solid ${ACCENT_BORD}` : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.82rem", fontWeight: mode === m ? 700 : 500, cursor: "pointer" }}>{m === "random" ? "Aleatório" : m === "manual" ? "Manual" : "Personagens Famosos"}</button>
         ))}
       </div>
+
+      {mode === "famous" && (
+        <div style={{ padding: "20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 20 }}>
+          <p style={sectionLabel}>Escolha um personagem <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(Canon e Legends) — carrega os stats abaixo pra ajustar e salvar</span></p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 8, maxHeight: 360, overflowY: "auto" }}>
+            {FAMOUS_CHARACTERS.map((c) => (
+              <button key={c.name} onClick={() => setForm(loadFamous(c))} style={{ textAlign: "left", padding: "10px 12px", background: form.name === c.name ? ACCENT_DIM : "var(--surface-2)", border: `1px solid ${form.name === c.name ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)", cursor: "pointer" }}>
+                <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>{c.name}</p>
+                <p style={{ fontSize: "0.7rem", color: ACCENT_LIGHT }}>{c.role} · Nível {c.level}</p>
+                <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>{c.species} · {c.source} · PV {c.pv}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ padding: "24px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 28 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
           {textField("Nome", "name")}
-          {textField("Espécie", "species", { list: mode === "random" ? undefined : SPECIES_NAMES })}
-          {textField("Papel / Classe", "role", { list: mode === "random" ? undefined : ROLES })}
+          {textField("Espécie", "species", { list: mode === "manual" ? SPECIES_NAMES : undefined })}
+          {textField("Papel / Classe", "role", { list: mode === "manual" ? ROLES : undefined })}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Personalidade", "personality")}

@@ -313,6 +313,13 @@ function abilityPeCost(a: ClassAbility | ClassMilestone): number {
   return a.combat ? 0 : a.peCost;
 }
 
+// Habilidades de Forma de Sabre (Primeiras/Segundas Formas, Formas Completas, Domínio) usam uma
+// rolagem própria — maior atributo entre AGI/FOR/SEN em pool Nd20 + 1d12 + perícia Sabres de Luz —
+// em vez da regra fixa 6d6×atributo do golpe de sabre "cru".
+function isSabreForm(a: ClassAbility | ClassMilestone): boolean {
+  return a.weaponDamage === "sabre" && !!a.formTag;
+}
+
 function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
   const pill: React.CSSProperties = { fontSize: "0.66rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999 };
   return (
@@ -320,7 +327,9 @@ function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
       <span style={{ ...pill, color: TEMP_BLUE, background: "rgba(94,200,232,0.1)", border: "1px solid rgba(94,200,232,0.3)" }}>{abilityPeCost(a)} PE</span>
       {a.weaponDamage === "sabre" && (
         <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
-          Dano de sabre: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz
+          {isSabreForm(a)
+            ? "Dano: maior AGI/FOR/SEN em Nd20 + 1d12 + perícia Sabres de Luz"
+            : "Dano de sabre: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz"}
         </span>
       )}
       {a.damageDice && (
@@ -833,6 +842,26 @@ function PlayMode({
   }
 
   function activateAbility(a: ClassAbility | ClassMilestone) {
+    if (isSabreForm(a)) {
+      // Habilidade de Forma: maior atributo entre AGI/FOR/SEN em pool Nd20 (regra padrão
+      // de dado por atributo) + 1d12 + valor total da perícia Sabres de Luz.
+      const sabreSkill = SKILL_BY_ID["sabres_de_luz"];
+      const bestAttr = sabreSkill.attrs.reduce((best, k) => (attrs[k] > attrs[best] ? k : best), sabreSkill.attrs[0]);
+      const pool = attributeDicePool(attrs[bestAttr]);
+      const attrRolls = Array.from({ length: pool.dice }, rollDie);
+      const attrKept = pool.take === "highest" ? Math.max(...attrRolls) : Math.min(...attrRolls);
+      const extraDie = Math.floor(Math.random() * 12) + 1;
+      const skillBonus = skillTotal("sabres_de_luz");
+      const total = Math.max(0, attrKept + extraDie + skillBonus + mod);
+      const entry: RollEntry = {
+        id: ++rollId.current, label: `Forma: ${a.name}`, dice: 20, total,
+        rolls: [...attrRolls, extraDie], kept: attrKept + extraDie, bonus: skillBonus + mod,
+      };
+      setLastRoll(entry); setFxRoll(entry);
+      setLog((l) => [entry, ...l].slice(0, 5));
+      adjust("pe", -abilityPeCost(a));
+      return;
+    }
     if (a.weaponDamage === "sabre") {
       // Regra fixa: dano de sabre nunca segue a escala por círculo — é sempre
       // 6d6 × atributo base (o maior entre AGI/FOR/SEN, mín. 1 pra nunca zerar/inverter
@@ -945,7 +974,7 @@ function PlayMode({
                             <span style={{ fontSize: "0.78rem" }}>{a.name}</span>
                             <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
                               <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{abilityPeCost(a)} PE</span>
-                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>Sabre 6d6×atr+perícia</span>}
+                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? "Forma: Nd20+1d12+perícia" : "Sabre 6d6×atr+perícia"}</span>}
                               {a.damageDice && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                               {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>DT {a.dt}</span>}
                             </span>
