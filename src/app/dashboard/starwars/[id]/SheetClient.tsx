@@ -909,7 +909,7 @@ function PlayMode({
 
   // Área de Danos: dano já calculado (base → escalado pelo nível atual) de toda habilidade
   // com dano numérico e de todo item equipado — ver lib/starwars/damage.ts.
-  type DamageRow = { name: string; baseLabel: string; base: number; scales: boolean };
+  type DamageRow = { name: string; baseLabel: string; base: number; scales: boolean; notation?: string };
   const abilityDamageRows: DamageRow[] = [];
   for (const [classId, lvl] of Object.entries(classLevels)) {
     const all: (ClassAbility | ClassMilestone)[] = [...resolveClassAbilities(classId, lvl, classPowers), ...getAvailableMilestones(classId, lvl)];
@@ -920,7 +920,7 @@ function PlayMode({
         abilityDamageRows.push({ name: a.name, baseLabel: "6d6 × atributo + perícia", base: 0, scales: false });
       } else if (a.damageDice) {
         const base = baseDamageValue(a.damageDice);
-        if (base !== null) abilityDamageRows.push({ name: `${a.heal ? "Cura" : "Dano"}: ${a.name}`, baseLabel: a.damageDice, base, scales: true });
+        if (base !== null) abilityDamageRows.push({ name: `${a.heal ? "Cura" : "Dano"}: ${a.name}`, baseLabel: a.damageDice, base, scales: true, notation: a.damageDice });
       }
     }
   }
@@ -928,11 +928,23 @@ function PlayMode({
     .filter((e) => e.equipped && e.itemId)
     .map((e) => ITEM_BY_ID[e.itemId as string])
     .filter((item): item is StarWarsItem => !!item?.damage)
-    .map((item) => {
+    .map((item): DamageRow | null => {
       const base = baseDamageValue(item.damage as string);
-      return base !== null ? { name: item.name, baseLabel: item.damage as string, base, scales: true } : null;
+      return base !== null ? { name: item.name, baseLabel: item.damage as string, base, scales: true, notation: /^\d+d\d+$/.test(item.damage as string) ? (item.damage as string) : undefined } : null;
     })
     .filter((r): r is DamageRow => r !== null);
+
+  function rollDamageRow(r: DamageRow) {
+    const m = r.notation?.match(/^(\d+)d(\d+)$/);
+    if (!m) return;
+    const n = parseInt(m[1], 10), sides = parseInt(m[2], 10);
+    const rolls = Array.from({ length: n }, () => Math.floor(Math.random() * sides) + 1);
+    const raw = rolls.reduce((x, y) => x + y, 0);
+    const scaled = scaledDamage(raw, sheet.level);
+    const entry: RollEntry = { id: ++rollId.current, label: r.name, dice: sides, total: scaled, rolls, kept: scaled, bonus: 0 };
+    setLastRoll(entry); setFxRoll(entry);
+    setLog((l) => [entry, ...l].slice(0, 5));
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1021,31 +1033,45 @@ function PlayMode({
             <p style={{ fontSize: "0.66rem", fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Habilidades</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
               {abilityDamageRows.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhuma habilidade com dano numérico ainda.</p>}
-              {abilityDamageRows.map((r, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
-                  <span style={{ fontSize: "0.78rem", color: "var(--text)" }}>{r.name}</span>
-                  {r.scales ? (
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                      Base {r.baseLabel} → <strong style={{ color: "#e0524c" }}>{scaledDamage(r.base, sheet.level)}</strong>
+              {abilityDamageRows.map((r, i) => {
+                const Tag = r.notation ? "button" : "div";
+                return (
+                  <Tag key={i} onClick={r.notation ? () => rollDamageRow(r) : undefined} title={r.notation ? "Rolar dano" : undefined}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: `1px solid ${r.notation ? "rgba(224,82,76,0.4)" : "var(--border)"}`, width: "100%", textAlign: "left", cursor: r.notation ? "pointer" : "default", font: "inherit", color: "inherit" }}>
+                    <span style={{ fontSize: "0.78rem", color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>
+                      {r.notation && <span aria-hidden>🎲</span>}
+                      {r.name}
                     </span>
-                  ) : (
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontStyle: "italic" }}>{r.baseLabel} — regra própria, não escala</span>
-                  )}
-                </div>
-              ))}
+                    {r.scales ? (
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                        Base {r.baseLabel} → <strong style={{ color: "#e0524c" }}>{scaledDamage(r.base, sheet.level)}</strong>
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontStyle: "italic" }}>{r.baseLabel} — regra própria, não escala</span>
+                    )}
+                  </Tag>
+                );
+              })}
             </div>
 
             <p style={{ fontSize: "0.66rem", fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>Itens Equipados</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {itemDamageRows.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhum item equipado com dano (equipe algo no Inventário).</p>}
-              {itemDamageRows.map((r, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
-                  <span style={{ fontSize: "0.78rem", color: "var(--text)" }}>{r.name}</span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                    Base {r.baseLabel} → <strong style={{ color: "#e0524c" }}>{scaledDamage(r.base, sheet.level)}</strong>
-                  </span>
-                </div>
-              ))}
+              {itemDamageRows.map((r, i) => {
+                const Tag = r.notation ? "button" : "div";
+                return (
+                  <Tag key={i} onClick={r.notation ? () => rollDamageRow(r) : undefined} title={r.notation ? "Rolar dano" : undefined}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "6px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: `1px solid ${r.notation ? "rgba(224,82,76,0.4)" : "var(--border)"}`, width: "100%", textAlign: "left", cursor: r.notation ? "pointer" : "default", font: "inherit", color: "inherit" }}>
+                    <span style={{ fontSize: "0.78rem", color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>
+                      {r.notation && <span aria-hidden>🎲</span>}
+                      {r.name}
+                    </span>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                      Base {r.baseLabel} → <strong style={{ color: "#e0524c" }}>{scaledDamage(r.base, sheet.level)}</strong>
+                    </span>
+                  </Tag>
+                );
+              })}
             </div>
           </Panel>
 
