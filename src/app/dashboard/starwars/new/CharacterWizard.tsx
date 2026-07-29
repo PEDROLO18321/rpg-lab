@@ -138,7 +138,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse at 50% -10%, rgba(59,130,196,0.08), transparent 60%), ${SW.bg}`, display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column" }}>
       <header style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${SW.panelBorder}`, background: "rgba(5,7,13,0.92)", backdropFilter: "blur(20px)" }}>
         <div className="sw-wizard-header-inner" style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={() => router.back()} style={{ background: "none", border: "none", color: SW.textMuted, fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, padding: 0 }}>
