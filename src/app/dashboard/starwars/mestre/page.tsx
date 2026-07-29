@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { StarWarsMasterDiceRoller } from "./StarWarsMasterDiceRoller";
 import {
   listCampaigns, createCampaign, deleteCampaign,
   type StarWarsCampaignSummary,
@@ -48,7 +49,8 @@ export default function StarWarsMestrePage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse at 50% -10%, rgba(59,130,196,0.07), transparent 60%), #05070d` }}>
+    <div style={{ minHeight: "100vh", background: "transparent" }}>
+      <StarWarsMasterDiceRoller />
       <DashboardNav userName={userName} systemName="Star Wars: Além da Fronteira" systemHref="/dashboard/starwars" backLabel="Star Wars" accentColor="#3b82c4" />
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>

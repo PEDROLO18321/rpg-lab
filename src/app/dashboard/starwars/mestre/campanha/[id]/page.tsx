@@ -16,7 +16,7 @@ import { CampaignClues } from "./CampaignClues";
 import { CampaignClocks } from "./CampaignClocks";
 import { CampaignGenerators } from "./CampaignGenerators";
 import { StarWarsGuide } from "./StarWarsGuide";
-import { MasterDiceRoller } from "../../../../tormenta/mestre/MasterDiceRoller";
+import { StarWarsMasterDiceRoller } from "../../StarWarsMasterDiceRoller";
 
 const ACCENT = "#3b82c4";
 const ACCENT_LIGHT = "#69a8e0";
@@ -78,7 +78,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
-      <MasterDiceRoller />
+      <StarWarsMasterDiceRoller />
       <DashboardNav
         userName={session?.user?.name ?? session?.user?.email ?? "Mestre"}
         systemName={c.name}

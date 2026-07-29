@@ -38,7 +38,7 @@ export default async function StarWarsJogadorPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: `radial-gradient(ellipse at 50% -10%, rgba(59,130,196,0.07), transparent 60%), #05070d` }}>
+    <div style={{ minHeight: "100vh", background: "transparent" }}>
       <DashboardNav
         userName={session.user.name ?? session.user.email ?? "Usuário"}
         systemName="Star Wars: Além da Fronteira"
