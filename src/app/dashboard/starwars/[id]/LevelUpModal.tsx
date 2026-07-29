@@ -331,7 +331,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                     <strong style={{ color: classPowerName === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
                     <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
                       <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
-                      {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Teste attr+perícia · Dano 10" : "Sabre: 6d6×atributo+perícia"}</span>}
+                      {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Teste attr+perícia" : "Sabre: 6d6×atributo+perícia"}</span>}
                       {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                       {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
                     </div>

@@ -323,10 +323,7 @@ function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
       <span style={{ ...pill, color: TEMP_BLUE, background: "rgba(94,200,232,0.1)", border: "1px solid rgba(94,200,232,0.3)" }}>{a.peCost} PE</span>
       {isSabreForm(a) && (
-        <>
-          <span style={{ ...pill, color: GOLD, background: "rgba(201,148,31,0.1)", border: "1px solid rgba(201,148,31,0.3)" }}>Teste: maior AGI/FOR/SEN + Sabres de Luz</span>
-          <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>Dano: {SABRE_FORM_DAMAGE}</span>
-        </>
+        <span style={{ ...pill, color: GOLD, background: "rgba(201,148,31,0.1)", border: "1px solid rgba(201,148,31,0.3)" }}>Teste: maior AGI/FOR/SEN + Sabres de Luz</span>
       )}
       {!isSabreForm(a) && a.weaponDamage === "sabre" && (
         <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
@@ -1006,7 +1003,7 @@ function PlayMode({
                             <span style={{ fontSize: "0.78rem" }}>{a.name}</span>
                             <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
                               <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{a.peCost} PE</span>
-                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? `Teste attr+perícia · Dano ${SABRE_FORM_DAMAGE}` : "Sabre 6d6×atr+perícia"}</span>}
+                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? "Teste attr+perícia" : "Sabre 6d6×atr+perícia"}</span>}
                               {a.damageDice && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                               {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>DT {a.dt}</span>}
                             </span>
