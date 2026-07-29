@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CLASSES, CLASS_BY_ID, ARCHETYPE_LABEL } from "@/lib/starwars/classes";
-import { availableChoiceKinds, isSkillGradeMandatory, canCombineClasses, countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, type LevelUpChoiceKind } from "@/lib/starwars/leveling";
+import { availableChoiceKinds, isSkillGradeMandatory, canCombineClasses, canUnlockPathClass, PATH_CLASS_UNLOCK_LEVEL, countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, type LevelUpChoiceKind } from "@/lib/starwars/leveling";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import { ATTR_KEYS, ATTR_LABEL, SKILL_GRADE_LABEL, nextSkillGrade, type AttrKey, type SkillGrade } from "@/lib/starwars/data";
@@ -14,10 +15,40 @@ type ChoiceKind = "atributo" | "habilidade_classe" | "poder_geral" | "grau_peric
 interface Props {
   characterId: string;
   sheet: {
-    level: number; classes: string; skills: string | null;
+    level: number; classes: string; skills: string | null; unlockedProphecies: string;
   };
   onClose: () => void;
   onDone: () => void;
+}
+
+/** Senha (sem acento, sem diferenciar maiúsculas) → classe de Profecia que ela libera. */
+const PROPHECY_PASSWORDS: Record<string, string> = {
+  luz: "cantico_alvorecer",
+  sombra: "litania_queda",
+};
+
+/** Remove acentos (via decomposição Unicode) e normaliza caixa, pra comparar a senha digitada. */
+function normalizeWord(s: string): string {
+  const decomposed = Array.from(s.normalize("NFD"));
+  const stripped = decomposed.filter((ch) => {
+    const code = ch.codePointAt(0) ?? 0;
+    return code < 0x0300 || code > 0x036f; // fora da faixa de marcas de acentuação combinantes
+  });
+  return stripped.join("").trim().toLowerCase();
+}
+
+/** Fade + slide sutil só no instante em que a classe é liberada nesta sessão do modal. */
+function AnimatedReveal({ children }: { children: React.ReactNode }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
+  return (
+    <div style={{ opacity: shown ? 1 : 0, transform: shown ? "translateY(0)" : "translateY(-6px)", transition: "opacity 0.45s ease, transform 0.45s ease" }}>
+      {children}
+    </div>
+  );
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -25,10 +56,17 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
+  const router = useRouter();
   const classLevels: Record<string, number> = JSON.parse(sheet.classes || "{}");
   const existingClassIds = Object.keys(classLevels);
   const skills: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
   const expertCount = countExpertSkills(skills);
+  const pathReady = canUnlockPathClass(classLevels);
+
+  const [unlockedProphecies, setUnlockedProphecies] = useState<string[]>(() => JSON.parse(sheet.unlockedProphecies || "[]"));
+  const [passwordInputs, setPasswordInputs] = useState<Record<string, string>>({});
+  const [passwordError, setPasswordError] = useState<Record<string, string | null>>({});
+  const [justUnlocked, setJustUnlocked] = useState<Record<string, boolean>>({});
 
   const fromLevel = sheet.level;
   const toLevel = fromLevel + 1;
@@ -53,15 +91,37 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const isNewClass = !!classId && !existingClassIds.includes(classId);
   const nextAbilities = classId ? getAvailableAbilities(classId, (classLevels[classId] ?? 0) + 1).filter((a) => a.level === (classLevels[classId] ?? 0) + 1) : [];
 
-  const newClassOptions = CLASSES.filter((c) => !existingClassIds.includes(c.id)).map((c) => {
-    const combinable = existingClassIds.every((eid) => canCombineClasses(eid, c.id));
-    return {
-      id: c.id,
-      name: c.name,
-      disabled: !combinable || !canAddNewClass,
-      hint: !combinable ? "incompatível" : freeWindow ? "grátis" : `precisa ${expertRequired} Expert`,
-    };
-  });
+  const selectableClasses = CLASSES.filter((c) => !existingClassIds.includes(c.id))
+    .filter((c) => !c.isPathClass || pathReady)
+    .filter((c) => !c.isPropheticClass || unlockedProphecies.includes(c.id))
+    .map((c) => {
+      const combinable = existingClassIds.every((eid) => canCombineClasses(eid, c.id));
+      return {
+        id: c.id,
+        name: c.name,
+        disabled: !combinable || !canAddNewClass,
+        hint: !combinable ? "incompatível" : freeWindow ? "grátis" : `precisa ${expertRequired} Expert`,
+      };
+    });
+  const newClassOptions = selectableClasses.filter((c) => !CLASS_BY_ID[c.id]?.isPathClass && !CLASS_BY_ID[c.id]?.isPropheticClass);
+  const specialOptions = selectableClasses.filter((c) => CLASS_BY_ID[c.id]?.isPathClass || CLASS_BY_ID[c.id]?.isPropheticClass);
+  const lockedProphecyIds = Object.values(PROPHECY_PASSWORDS).filter((id) => !unlockedProphecies.includes(id));
+
+  async function tryUnlockProphecy(prophecyClassId: string) {
+    const typed = normalizeWord(passwordInputs[prophecyClassId] ?? "");
+    if (PROPHECY_PASSWORDS[typed] !== prophecyClassId) {
+      setPasswordError((e) => ({ ...e, [prophecyClassId]: "Senha incorreta." }));
+      return;
+    }
+    setPasswordError((e) => ({ ...e, [prophecyClassId]: null }));
+    setJustUnlocked((j) => ({ ...j, [prophecyClassId]: true }));
+    const next = [...new Set([...unlockedProphecies, prophecyClassId])];
+    setUnlockedProphecies(next);
+    await fetch(`/api/starwars/characters/${characterId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ unlockedProphecies: next }),
+    });
+    router.refresh();
+  }
 
   function selectChoiceKind(kind: ChoiceKind) {
     setChoiceKind(kind);
@@ -151,6 +211,57 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {(specialOptions.length > 0 || lockedProphecyIds.length > 0) && (
+            <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(201,148,31,0.05)", border: `1px solid ${SW.gold}44`, borderRadius: 8 }}>
+              <p style={{ fontSize: "0.66rem", color: SW.gold, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>
+                Especiais — Caminho e Profecia
+              </p>
+
+              {specialOptions.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: lockedProphecyIds.length > 0 ? 12 : 0 }}>
+                  {specialOptions.map((c) => {
+                    const button = (
+                      <button key={c.id} disabled={c.disabled} onClick={() => setClassId(c.id)}
+                        title={c.hint}
+                        style={{ padding: "8px 14px", border: `1px solid ${classId === c.id ? SW.gold : "var(--border)"}`, background: classId === c.id ? "rgba(201,148,31,0.14)" : "rgba(255,255,255,0.02)", color: c.disabled ? SW.textSubtle : classId === c.id ? SW.gold : "var(--text)", cursor: c.disabled ? "not-allowed" : "pointer", opacity: c.disabled ? 0.5 : 1, fontSize: "0.8rem", fontWeight: 700, borderRadius: 6 }}>
+                        + {c.name} <span style={{ fontWeight: 400, color: SW.textSubtle }}>({c.hint})</span>
+                      </button>
+                    );
+                    return justUnlocked[c.id] ? <AnimatedReveal key={c.id}>{button}</AnimatedReveal> : button;
+                  })}
+                </div>
+              )}
+
+              {!pathReady && (
+                <p style={{ fontSize: "0.72rem", color: SW.textSubtle, marginBottom: lockedProphecyIds.length > 0 ? 10 : 0 }}>
+                  O Lado da Luz, O Equilíbrio e O Lado Negro liberam com nível {PATH_CLASS_UNLOCK_LEVEL} em Padawan Jedi, Acólito Sith ou Andarilho da Força.
+                </p>
+              )}
+
+              {lockedProphecyIds.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {lockedProphecyIds.map((id) => (
+                    <div key={id}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          value={passwordInputs[id] ?? ""}
+                          onChange={(e) => setPasswordInputs((p) => ({ ...p, [id]: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === "Enter") tryUnlockProphecy(id); }}
+                          placeholder={`Senha — ${CLASS_BY_ID[id]?.name ?? id}`}
+                          style={{ flex: 1, padding: "7px 10px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.8rem", borderRadius: 6 }}
+                        />
+                        <button onClick={() => tryUnlockProphecy(id)} style={{ padding: "7px 14px", background: "rgba(201,148,31,0.12)", border: `1px solid ${SW.gold}66`, color: SW.gold, cursor: "pointer", fontSize: "0.78rem", fontWeight: 700, borderRadius: 6, whiteSpace: "nowrap" }}>
+                          Revelar
+                        </button>
+                      </div>
+                      {passwordError[id] && <p style={{ fontSize: "0.7rem", color: SW.danger, marginTop: 4 }}>{passwordError[id]}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

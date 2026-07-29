@@ -378,6 +378,7 @@ model StarWarsSheet {
   ppTemp    Int @default(0)
 
   sabreForm String? // forma de sabre especialista escolhida (5º círculo), se aplicável
+  unlockedProphecies String @default("[]") // JSON: string[] (ids das classes de Profecia desbloqueadas por senha — "cantico_alvorecer" | "litania_queda")
 
   skills       String? // JSON: Record<skillId, grau> (inexperiente|iniciante|treinado|expert|veterano|mestre)
   classPowers  String? // JSON: ChosenPower[] (habilidades de classe escolhidas por nível)

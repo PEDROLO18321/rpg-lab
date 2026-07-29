@@ -73,6 +73,7 @@ interface StarWarsSheetData {
   skills: string | null; classPowers: string | null; generalPowers: string | null;
   conditions: string | null; equipment: string | null;
   background: string | null; notes: string | null;
+  unlockedProphecies: string;
 }
 
 interface CharacterProp {
