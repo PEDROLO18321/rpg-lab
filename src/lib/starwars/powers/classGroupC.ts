@@ -64,7 +64,7 @@ export const CLASS_GROUP_C: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Domínio Absoluto", description: "Maestria completa na forma especialista — reação quase automática nela.", combat: false, peCost: 4, dt: 26 },
       { level: 25, name: "Reflexo Perfeito", description: "Deflexão de sabre quase infalível; pode revidar automaticamente.", combat: true, peCost: 4, weaponDamage: "sabre" },
-      { level: 25, name: "Chamado da Luz", description: "A conexão com o Lado da Luz amadureceu — abre caminho para se tornar O Lado da Luz.", combat: false, peCost: 4, dt: 27 },
+      { level: 25, name: "Chamado da Luz", description: "A conexão com o Lado da Luz amadureceu — a Força responde a ele com mais clareza que nunca.", combat: false, peCost: 4, dt: 27 },
       { level: 25, name: "Consagração do Sabre", description: "O sabre brilha mais intenso; dano extra contra alvos do Lado Sombrio.", combat: true, peCost: 4, weaponDamage: "sabre" },
       { level: 35, name: "Tempestade da Luz", description: "Sequência de golpes de sabre e Força que atinge todos ao redor.", combat: true, peCost: 5, weaponDamage: "sabre" },
       { level: 35, name: "Muralha de Luz", description: "Campo de proteção que também empurra e fere inimigos que o tocam.", combat: true, peCost: 5, damageDice: "9d6" },
@@ -102,7 +102,7 @@ export const CLASS_GROUP_C: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Domínio Absoluto", description: "Maestria completa na forma especialista.", combat: false, peCost: 4, dt: 26 },
       { level: 25, name: "Fome de Poder", description: "Cada inimigo abatido aumenta o dano dos próximos golpes.", combat: true, peCost: 4, damageDice: "7d6" },
-      { level: 25, name: "Chamado da Escuridão", description: "A entrega ao Lado Sombrio amadureceu — abre caminho para se tornar O Lado Negro.", combat: false, peCost: 4, dt: 27 },
+      { level: 25, name: "Chamado da Escuridão", description: "A entrega ao Lado Sombrio amadureceu — sua raiva vira uma ferramenta cada vez mais precisa.", combat: false, peCost: 4, dt: 27 },
       { level: 25, name: "Onda de Dor", description: "Explosão de Força carregada de sofrimento que atinge todos ao redor.", combat: true, peCost: 4, damageDice: "8d6" },
       { level: 35, name: "Fúria Absoluta", description: "Estado de combate onde cada golpe aumenta o próximo.", combat: true, peCost: 5, damageDice: "9d6" },
       { level: 35, name: "Corrupção do Sabre", description: "A lâmina passa a causar dano adicional de energia sombria a cada golpe.", combat: true, peCost: 5, weaponDamage: "sabre" },
@@ -140,7 +140,7 @@ export const CLASS_GROUP_C: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Domínio Absoluto", description: "Maestria completa na forma especialista — reação quase automática nela.", combat: false, peCost: 4, dt: 26 },
       { level: 25, name: "Instinto Predatório Total", description: "Percepção quase onisciente de ameaças próximas, mesmo fora do campo de visão.", combat: false, peCost: 4, dt: 26 },
-      { level: 25, name: "Despertar Latente", description: "O potencial bruto amadureceu — abre caminho para se tornar Xamã da Força.", combat: false, peCost: 4, dt: 27 },
+      { level: 25, name: "Despertar Latente", description: "O potencial bruto amadureceu — o instinto pela Força fica mais afiado e consistente.", combat: false, peCost: 4, dt: 27 },
       { level: 25, name: "Fúria da Terra", description: "Libera uma onda de Força bruta em área ao redor, sem refinamento mas devastadora.", combat: true, peCost: 4, damageDice: "8d6" },
       { level: 35, name: "Fúria Sem Controle", description: "Poder bruto cresce a cada golpe recebido ou desferido.", combat: true, peCost: 5, damageDice: "9d6" },
       { level: 35, name: "Corpo Inquebrável", description: "Resistência extrema a dano físico e efeitos debilitantes por tempo curto.", combat: false, peCost: 5, dt: 29 },
