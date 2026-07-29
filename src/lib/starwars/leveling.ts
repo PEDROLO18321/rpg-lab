@@ -82,10 +82,21 @@ export function isFreeMulticlassWindow(fromLevel: number, currentClassCount: num
   return fromLevel === FREE_MULTICLASS_LEVEL - 1 && currentClassCount === 1;
 }
 
-/** Verifica se as duas classes-base ligadas à Força podem coexistir (não podem). */
+/** Verifica se duas classes podem coexistir: nem duas classes-base ligadas à Força, nem duas de Caminho. */
 export function canCombineClasses(classIdA: string, classIdB: string): boolean {
   if (classIdA === classIdB) return false;
-  return !(FORCE_BASE_CLASS_IDS.includes(classIdA) && FORCE_BASE_CLASS_IDS.includes(classIdB));
+  if (FORCE_BASE_CLASS_IDS.includes(classIdA) && FORCE_BASE_CLASS_IDS.includes(classIdB)) return false;
+  const a = CLASS_BY_ID[classIdA], b = CLASS_BY_ID[classIdB];
+  if (a?.isPathClass && b?.isPathClass) return false;
+  return true;
+}
+
+/** Nível mínimo numa classe-base ligada à Força pra liberar as classes de Caminho (O Lado da Luz, O Equilíbrio, O Lado Negro). */
+export const PATH_CLASS_UNLOCK_LEVEL = 40;
+
+/** As classes de Caminho só aparecem como opção quando o personagem tem nível 40+ em Padawan Jedi, Acólito Sith ou Andarilho da Força — em qualquer uma delas. */
+export function canUnlockPathClass(classLevels: Record<string, number>): boolean {
+  return FORCE_BASE_CLASS_IDS.some((id) => (classLevels[id] ?? 0) >= PATH_CLASS_UNLOCK_LEVEL);
 }
 
 /**

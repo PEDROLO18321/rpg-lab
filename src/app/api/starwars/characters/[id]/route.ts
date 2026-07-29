@@ -20,6 +20,7 @@ export async function PATCH(
     skills, classPowers, generalPowers, equipment, weapons, conditions, background, sabreForm,
     name, portraitUrl, planetSkillChoice,
     agi, int, forca, vig, pre, sen, level, xp, pvMax, peMax, ppMax, classes,
+    unlockedProphecies,
   } = body;
 
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
@@ -53,6 +54,7 @@ export async function PATCH(
     ...(equipment     !== undefined ? { equipment: equipment ? JSON.stringify(equipment) : null } : {}),
     ...(conditions    !== undefined ? { conditions: conditions ? JSON.stringify(conditions) : null } : {}),
     ...(background    !== undefined ? { background: background ? JSON.stringify(background) : null } : {}),
+    ...(unlockedProphecies !== undefined ? { unlockedProphecies: JSON.stringify(unlockedProphecies ?? []) } : {}),
   };
 
   const charUpdates: Record<string, unknown> = {};
