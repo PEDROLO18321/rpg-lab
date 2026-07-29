@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CLASSES, CLASS_BY_ID, ARCHETYPE_LABEL } from "@/lib/starwars/classes";
-import { availableChoiceKinds, isSkillGradeMandatory, canCombineClasses, canUnlockPathClass, PATH_CLASS_UNLOCK_LEVEL, countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, type LevelUpChoiceKind } from "@/lib/starwars/leveling";
+import { availableChoiceKinds, isSkillGradeMandatory, canCombineClasses, canUnlockPathClass, PATH_CLASS_UNLOCK_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, MAX_LEVEL, countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, type LevelUpChoiceKind } from "@/lib/starwars/leveling";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import { ATTR_KEYS, ATTR_LABEL, SKILL_GRADE_LABEL, nextSkillGrade, type AttrKey, type SkillGrade } from "@/lib/starwars/data";
@@ -75,7 +75,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const expertRequired = expertSkillsRequiredForNewClass(fromLevel, existingClassIds.length);
   const canAddNewClass = expertCount >= expertRequired;
 
-  const [classId, setClassId] = useState(existingClassIds[0] ?? "");
+  const [classId, setClassId] = useState(() => existingClassIds.find((cid) => (classLevels[cid] ?? 0) < CLASS_LEVEL_CAP) ?? BONUS_LEVEL_ID);
   const [attrKey, setAttrKey] = useState<AttrKey | null>(null);
   const [classPowerName, setClassPowerName] = useState<string | null>(null);
   const [generalPowerId, setGeneralPowerId] = useState<string | null>(null);
@@ -84,12 +84,13 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isBonus = classId === BONUS_LEVEL_ID;
   const kinds: LevelUpChoiceKind[] = availableChoiceKinds(fromLevel, toLevel);
-  const mandatorySkill = isSkillGradeMandatory(toLevel);
+  const mandatorySkill = isSkillGradeMandatory(toLevel, skills);
   const effectiveKind: ChoiceKind | null = mandatorySkill ? "grau_pericia" : choiceKind;
-  const cls = classId ? CLASS_BY_ID[classId] : undefined;
-  const isNewClass = !!classId && !existingClassIds.includes(classId);
-  const nextAbilities = classId ? getAvailableAbilities(classId, (classLevels[classId] ?? 0) + 1).filter((a) => a.level === (classLevels[classId] ?? 0) + 1) : [];
+  const cls = classId && !isBonus ? CLASS_BY_ID[classId] : undefined;
+  const isNewClass = !!classId && !isBonus && !existingClassIds.includes(classId);
+  const nextAbilities = classId && !isBonus ? getAvailableAbilities(classId, (classLevels[classId] ?? 0) + 1).filter((a) => a.level === (classLevels[classId] ?? 0) + 1) : [];
 
   const selectableClasses = CLASSES.filter((c) => !existingClassIds.includes(c.id))
     .filter((c) => !c.isPathClass || pathReady)
@@ -187,12 +188,21 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
         <div>
           <FieldLabel>1. Classe que recebe este nível</FieldLabel>
           <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-            {existingClassIds.map((cid) => (
-              <button key={cid} onClick={() => setClassId(cid)}
-                style={{ padding: "8px 14px", border: `1px solid ${classId === cid ? SW.accentBord : "var(--border)"}`, background: classId === cid ? SW.accentDim : "rgba(255,255,255,0.02)", color: classId === cid ? SW.accentBright : "var(--text)", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, borderRadius: 6 }}>
-                {CLASS_BY_ID[cid]?.name} <span style={{ color: SW.textSubtle, fontWeight: 400 }}>nv. {classLevels[cid]}</span>
-              </button>
-            ))}
+            {existingClassIds.map((cid) => {
+              const atCap = (classLevels[cid] ?? 0) >= CLASS_LEVEL_CAP;
+              return (
+                <button key={cid} disabled={atCap} onClick={() => setClassId(cid)}
+                  title={atCap ? `Nível máximo por classe (${CLASS_LEVEL_CAP}) já atingido — escolha outra classe ou Bônus.` : undefined}
+                  style={{ padding: "8px 14px", border: `1px solid ${classId === cid ? SW.accentBord : "var(--border)"}`, background: classId === cid ? SW.accentDim : "rgba(255,255,255,0.02)", color: atCap ? SW.textSubtle : classId === cid ? SW.accentBright : "var(--text)", cursor: atCap ? "not-allowed" : "pointer", opacity: atCap ? 0.5 : 1, fontSize: "0.8rem", fontWeight: 700, borderRadius: 6 }}>
+                  {CLASS_BY_ID[cid]?.name} <span style={{ color: SW.textSubtle, fontWeight: 400 }}>nv. {classLevels[cid]}{atCap ? " (máx)" : ""}</span>
+                </button>
+              );
+            })}
+            <button onClick={() => setClassId(BONUS_LEVEL_ID)}
+              title="Nível que conta pro total mas não pertence a nenhuma classe — sem PV/PE, sem habilidade de classe."
+              style={{ padding: "8px 14px", border: `1px dashed ${classId === BONUS_LEVEL_ID ? SW.gold : "var(--border)"}`, background: classId === BONUS_LEVEL_ID ? "rgba(201,148,31,0.14)" : "rgba(255,255,255,0.02)", color: classId === BONUS_LEVEL_ID ? SW.gold : "var(--text)", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, borderRadius: 6 }}>
+              ✦ Bônus <span style={{ color: SW.textSubtle, fontWeight: 400 }}>(sem classe)</span>
+            </button>
           </div>
 
           {newClassOptions.length > 0 && (
@@ -268,6 +278,11 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
           {isNewClass && cls && (
             <p style={{ fontSize: "0.76rem", color: SW.gold, marginTop: 8 }}>
               Nova classe: {cls.name} ({ARCHETYPE_LABEL[cls.archetype]}) começa no nível 1 dela — ganha o PV/PE base da classe, não o incremento por nível.
+            </p>
+          )}
+          {isBonus && (
+            <p style={{ fontSize: "0.76rem", color: SW.textSubtle, marginTop: 8 }}>
+              Nível Bônus: soma no nível total (até {MAX_LEVEL}), mas não pertence a nenhuma classe — não ganha PV/PE nem habilidade de classe, só a evolução escolhida abaixo.
             </p>
           )}
         </div>

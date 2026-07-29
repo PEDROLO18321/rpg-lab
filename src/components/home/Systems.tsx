@@ -40,8 +40,8 @@ const SYSTEMS = [
     name: "Star Wars: Além da Fronteira",
     abbr: "Sistema Autoral",
     status: "available" as const,
-    desc: "Sistema de RPG autoral ambientado numa linha do tempo alternativa nas Regiões Desconhecidas. 35 espécies, 25 classes e progressão até o nível 99.",
-    highlights: ["35 espécies e 28 planetas", "25 classes + Formas de Sabre", "Poderes Gerais e PP", "Multiclasse e progressão até nível 99"],
+    desc: "Sistema de RPG autoral ambientado numa linha do tempo alternativa nas Regiões Desconhecidas. 35 espécies, 25 classes e progressão até o nível 1111.",
+    highlights: ["35 espécies e 28 planetas", "25 classes + Formas de Sabre", "Poderes Gerais e PP", "Multiclasse e progressão até nível 1111"],
   },
 ];
 

@@ -285,7 +285,7 @@ const SYSTEMS: Record<string, SystemData> = {
         { label: "Espécies",          value: "35 jogáveis" },
         { label: "Planetas",          value: "28 planetas de origem" },
         { label: "Classes",           value: "25 (20 comuns + 3 de Caminho + 2 de Profecia)" },
-        { label: "Progressão",        value: "Nível 1 a 99" },
+        { label: "Progressão",        value: "Nível total até 1111 (cada classe, individualmente, até nível 40)" },
       ],
       sections: [
         {
@@ -311,11 +311,11 @@ const SYSTEMS: Record<string, SystemData> = {
             "35 espécies jogáveis — de Humanos e Wookiees a Miraluka e Cerean — cada uma com perícias iniciais, modificadores de atributo e um perfil de vida/energia próprio. O Humano é a única exceção às regras: em vez de um modificador fixo, escolhe livremente onde aplicar seus bônus, pagando em identidade o que ganha em flexibilidade.\n\n28 planetas de origem completam a criação, cada um concedendo uma Habilidade Natal — um bônus fixo em perícias ligadas à cultura ou ambiente do mundo natal do personagem.",
         },
         {
-          title: "23 Classes e as Formas de Sabre de Luz",
+          title: "25 Classes e as Formas de Sabre de Luz",
           body:
-            "As classes vão de combatentes marciais (Mandaloriano, Soldado da República, Mercenário) a especialistas versáteis (Engenheiro, Espião, Diplomata) e sensíveis à Força (Padawan Jedi, Acólito Sith, Andarilho da Força — este último um caminho neutro, fora das ordens Jedi e Sith).\n\nAs 3 classes ligadas à Força aprendem as 7 Formas de Sabre clássicas (Shii-Cho, Makashi, Soresu, Ataru, Djem So, Niman, Vaapad) através de um sistema circular de vantagem: cada forma vence exatamente 3 outras e perde para exatamente 3 — nenhuma é objetivamente superior, só situacionalmente.\n\nAo atingir o nível 30, essas 3 classes podem evoluir para versões avançadas — O Lado da Luz, O Lado Negro e Xamã da Força — que abandonam parte do combate físico em favor de poderes da Força quase puros.",
+            "As 20 classes comuns vão de combatentes marciais (Mandaloriano, Soldado da República, Mercenário) a especialistas versáteis (Engenheiro, Espião, Diplomata) e sensíveis à Força (Padawan Jedi, Acólito Sith, Andarilho da Força — este último um caminho neutro, fora das ordens Jedi e Sith). Essas 3 ligadas à Força aprendem as 7 Formas de Sabre clássicas (Shii-Cho, Makashi, Soresu, Ataru, Djem So, Niman, Vaapad) através de um sistema circular de vantagem: cada forma vence exatamente 3 outras e perde para exatamente 3 — nenhuma é objetivamente superior, só situacionalmente.\n\nAo atingir nível 40 em qualquer uma das 3 classes ligadas à Força, o personagem libera 3 Classes de Caminho — O Lado da Luz, O Equilíbrio e O Lado Negro — cada uma com progressão própria de 30 habilidades e só pode ter uma delas. Existem ainda 2 Classes de Profecia — O Cântico do Alvorecer e A Litania da Queda —, ainda mais poderosas, que não são liberadas por nível: só aparecem depois que o jogador descobre e digita a senha da profecia certa em jogo.",
           highlight:
-            "Progressão até o nível 99 — muito além dos 20 níveis comuns em outros sistemas d20.",
+            "Progressão até o nível total 1111 (cada classe, individualmente, até 40) — muito além dos 20 níveis comuns em outros sistemas d20.",
         },
         {
           title: "Poderes Gerais e Multiclasse",

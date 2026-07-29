@@ -2,8 +2,22 @@
 
 import { ARCHETYPE_FORMULA, CLASS_BY_ID, FORCE_BASE_CLASS_IDS } from "./classes";
 import { TIER_BONUS, SPECIES_BY_ID } from "./species";
+import { SKILLS } from "./skills";
+import { SKILL_GRADE_ORDER } from "./data";
 
-export const MAX_LEVEL = 99;
+/** Nível total do personagem (soma dos níveis de todas as classes + bônus sem classe). */
+export const MAX_LEVEL = 1111;
+
+/** Nível máximo que uma única classe pode atingir (multiclasse: cada classe tem seu próprio teto). */
+export const CLASS_LEVEL_CAP = 40;
+
+/**
+ * Sentinela usado no lugar de um classId real quando o jogador escolhe um nível "Bônus":
+ * conta pro nível total (e evolução normal do nível), mas não pertence a nenhuma classe —
+ * não concede PV/PE de arquétipo nem habilidade de classe. Existe pra permitir alcançar o
+ * nível total máximo (1111) mesmo depois que todas as classes possuídas baterem no teto (40).
+ */
+export const BONUS_LEVEL_ID = "__bonus__";
 
 export function ppLevelUpGain(pre: number): number {
   return 1 + pre;
@@ -22,9 +36,21 @@ export function levelUpGain(classId: string, vig: number, sen: number, toLevelIn
   return { pv: f.pvPerLevel + vig, pe: f.pePerLevel + sen };
 }
 
-/** Nível múltiplo de 5 (5, 10, 15...) força "subir grau de perícia" como única escolha do nível. */
-export function isSkillGradeMandatory(toLevel: number): boolean {
-  return toLevel % 5 === 0;
+/** Todas as 25 perícias já estão no grau máximo (Mestre) — não sobra nenhuma pra escolher subir. */
+export function allSkillsAtMaxGrade(skills: Record<string, string>): boolean {
+  const maxGrade = SKILL_GRADE_ORDER[SKILL_GRADE_ORDER.length - 1];
+  return SKILLS.every((s) => skills[s.id] === maxGrade);
+}
+
+/**
+ * Nível total múltiplo de 5 (5, 10, 15...) força "subir grau de perícia" como única escolha
+ * do nível — exceto quando o personagem já tem todas as perícias no grau máximo, caso em que
+ * não há nada pra escolher e a obrigatoriedade cai (senão travaria a progressão pra sempre).
+ * Note que essa regra é sobre o nível TOTAL, não sobre o nível de uma classe específica —
+ * bater 20/30/40 numa classe (5º/6º/7º círculo) não força nada por si só.
+ */
+export function isSkillGradeMandatory(toLevel: number, skills: Record<string, string>): boolean {
+  return toLevel % 5 === 0 && !allSkillsAtMaxGrade(skills);
 }
 
 /** Soma PV/PE/PP "por fatia" — cada nível investido numa classe usa a fórmula daquela classe (multiclasse). */
