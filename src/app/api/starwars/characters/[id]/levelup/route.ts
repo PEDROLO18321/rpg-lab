@@ -52,10 +52,14 @@ export async function POST(
         return NextResponse.json({ error: "Essa classe não pode ser combinada com uma classe ligada à Força que você já tem." }, { status: 400 });
       }
     }
-    const expertCount = countExpertSkills(skills);
-    const required = expertSkillsRequiredForNewClass(fromLevel, existingClassIds.length);
-    if (expertCount < required) {
-      return NextResponse.json({ error: `Esta multiclasse exige ${required} perícias em grau Expert ou acima (você tem ${expertCount}).` }, { status: 400 });
+    // Classes de Caminho e Profecia não exigem perícias Expert — só as gates próprias delas (nível 40 / senha).
+    const isSpecialClass = !!cls?.isPathClass || !!cls?.isPropheticClass;
+    if (!isSpecialClass) {
+      const expertCount = countExpertSkills(skills);
+      const required = expertSkillsRequiredForNewClass(fromLevel, existingClassIds.length);
+      if (expertCount < required) {
+        return NextResponse.json({ error: `Esta multiclasse exige ${required} perícias em grau Expert ou acima (você tem ${expertCount}).` }, { status: 400 });
+      }
     }
   }
 

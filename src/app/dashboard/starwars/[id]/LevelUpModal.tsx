@@ -76,6 +76,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const canAddNewClass = expertCount >= expertRequired;
 
   const [classId, setClassId] = useState(() => existingClassIds.find((cid) => (classLevels[cid] ?? 0) < CLASS_LEVEL_CAP) ?? BONUS_LEVEL_ID);
+  const [specialsOpen, setSpecialsOpen] = useState(() => classId === BONUS_LEVEL_ID);
   const [attrKey, setAttrKey] = useState<AttrKey | null>(null);
   const [classPowerName, setClassPowerName] = useState<string | null>(null);
   const [generalPowerId, setGeneralPowerId] = useState<string | null>(null);
@@ -97,11 +98,12 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
     .filter((c) => !c.isPropheticClass || unlockedProphecies.includes(c.id))
     .map((c) => {
       const combinable = existingClassIds.every((eid) => canCombineClasses(eid, c.id));
+      const special = !!c.isPathClass || !!c.isPropheticClass; // Caminho/Profecia: sem custo de Expert, escolhida ou evoluída
       return {
         id: c.id,
         name: c.name,
-        disabled: !combinable || !canAddNewClass,
-        hint: !combinable ? "incompatível" : freeWindow ? "grátis" : `precisa ${expertRequired} Expert`,
+        disabled: !combinable || (!special && !canAddNewClass),
+        hint: !combinable ? "incompatível" : special ? "grátis — classe especial" : freeWindow ? "grátis" : `precisa ${expertRequired} Expert`,
       };
     });
   const newClassOptions = selectableClasses.filter((c) => !CLASS_BY_ID[c.id]?.isPathClass && !CLASS_BY_ID[c.id]?.isPropheticClass);
@@ -198,14 +200,22 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                 </button>
               );
             })}
-            <button onClick={() => setClassId(BONUS_LEVEL_ID)}
-              title="Nível que conta pro total mas não pertence a nenhuma classe — sem PV/PE, sem habilidade de classe."
-              style={{ padding: "8px 14px", border: `1px dashed ${classId === BONUS_LEVEL_ID ? SW.gold : "var(--border)"}`, background: classId === BONUS_LEVEL_ID ? "rgba(201,148,31,0.14)" : "rgba(255,255,255,0.02)", color: classId === BONUS_LEVEL_ID ? SW.gold : "var(--text)", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, borderRadius: 6 }}>
+            <button onClick={() => {
+              if (specialsOpen) {
+                setSpecialsOpen(false);
+                setClassId(existingClassIds.find((cid) => (classLevels[cid] ?? 0) < CLASS_LEVEL_CAP) ?? "");
+              } else {
+                setSpecialsOpen(true);
+                setClassId(BONUS_LEVEL_ID);
+              }
+            }}
+              title="Nível que conta pro total mas não pertence a nenhuma classe — sem PV/PE, sem habilidade de classe. Também é aqui que aparecem as classes Especiais (Caminho e Profecia)."
+              style={{ padding: "8px 14px", border: `1px dashed ${specialsOpen ? SW.gold : "var(--border)"}`, background: specialsOpen ? "rgba(201,148,31,0.14)" : "rgba(255,255,255,0.02)", color: specialsOpen ? SW.gold : "var(--text)", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, borderRadius: 6 }}>
               ✦ Bônus <span style={{ color: SW.textSubtle, fontWeight: 400 }}>(sem classe)</span>
             </button>
           </div>
 
-          {newClassOptions.length > 0 && (
+          {!specialsOpen && newClassOptions.length > 0 && (
             <div style={{ marginTop: 10 }}>
               <p style={{ fontSize: "0.66rem", color: SW.textSubtle, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
                 Multiclasse {freeWindow
@@ -224,7 +234,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
             </div>
           )}
 
-          {(specialOptions.length > 0 || lockedProphecyIds.length > 0) && (
+          {specialsOpen && (
             <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(201,148,31,0.05)", border: `1px solid ${SW.gold}44`, borderRadius: 8 }}>
               <p style={{ fontSize: "0.66rem", color: SW.gold, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>
                 Especiais — Caminho e Profecia
