@@ -55,22 +55,14 @@ const SECTIONS: Section[] = [
     id: "classes",
     icon: "🛡️",
     title: "Classes e Arquétipos",
-    note: "23 classes: 20 iniciais + 3 avançadas no nível 30.",
+    note: "20 classes.",
     blocks: [
       {
         heading: "Arquétipos (PV/PE por nível)",
         rows: [
           { term: "Marcial", text: "PV 20 (+4/nível), PE 2 (+1/nível). Mandaloriano, Soldado da República, Mercenário, Pirata Espacial, Guarda Planetário, Vigilante, Caçador de Recompensas, Explorador." },
           { term: "Especialista", text: "PV 16 (+3/nível), PE 4 (+2/nível). Engenheiro, Piloto, Espião, Contrabandista, Comerciante, Diplomata, Arqueólogo, Cientista, Médico." },
-          { term: "Sensível à Força", text: "PV 14 (+2/nível), PE 6 (+3/nível). Padawan Jedi, Acólito Sith, Andarilho da Força + evoluções." },
-        ],
-      },
-      {
-        heading: "Classes avançadas (nível 30)",
-        rows: [
-          { term: "O Lado da Luz", text: "Requer Padawan Jedi nível 30. Progressão em graus: 30/40/50/70/99." },
-          { term: "O Lado Negro", text: "Requer Acólito Sith nível 30." },
-          { term: "Xamã da Força", text: "Requer Andarilho da Força nível 30." },
+          { term: "Sensível à Força", text: "PV 14 (+2/nível), PE 6 (+3/nível). Padawan Jedi, Acólito Sith, Andarilho da Força." },
         ],
       },
     ],

@@ -15,7 +15,7 @@ function rand<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length
 
 const SPECIES_NAMES = SPECIES.map((s) => s.name);
 const PLANET_NAMES = PLANETS.map((p) => p.name);
-const CLASS_NAMES = CLASSES.filter((c) => !c.isAdvanced).map((c) => c.name);
+const CLASS_NAMES = CLASSES.map((c) => c.name);
 
 const FIRST = ["Kael", "Rook", "Dax", "Bren", "Kira", "Vash", "Tarn", "Nova", "Riel", "Orin", "Sable", "Zeth", "Mira", "Jaxen", "Talyn", "Corin", "Ashka", "Doven", "Yssa", "Praxis"];
 const LAST = ["Sarn", "Veyne", "Kestrel", "Ordo", "Nightsong", "Vantris", "Ohara", "Drex", "Illarion", "Wex", "Calrissian", "Farro", "Brakka", "Sunder", "Miraj", "Toth"];

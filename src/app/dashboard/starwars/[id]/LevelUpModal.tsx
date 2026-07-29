@@ -53,7 +53,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const isNewClass = !!classId && !existingClassIds.includes(classId);
   const nextAbilities = classId ? getAvailableAbilities(classId, (classLevels[classId] ?? 0) + 1).filter((a) => a.level === (classLevels[classId] ?? 0) + 1) : [];
 
-  const newClassOptions = CLASSES.filter((c) => !c.isAdvanced && !existingClassIds.includes(c.id)).map((c) => {
+  const newClassOptions = CLASSES.filter((c) => !existingClassIds.includes(c.id)).map((c) => {
     const combinable = existingClassIds.every((eid) => canCombineClasses(eid, c.id));
     return {
       id: c.id,

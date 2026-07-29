@@ -1,4 +1,4 @@
-// Star Wars: Além da Fronteira — as 23 classes (20 iniciais + 3 avançadas)
+// Star Wars: Além da Fronteira — as 20 classes
 
 export type Archetype = "marcial" | "especialista" | "sensivel";
 
@@ -22,10 +22,6 @@ export interface StarWarsClass {
   ppModifier: number;
   /** Só as 3 ligadas à Força: aprendem Formas de Sabre. */
   isForceBase?: boolean;
-  /** Só as 3 avançadas: substituem a classe-base a partir do nível 30. */
-  isAdvanced?: boolean;
-  /** Classe-base exigida no nível 30, só pras avançadas. */
-  advancesFrom?: string;
 }
 
 export const CLASSES: StarWarsClass[] = [
@@ -49,12 +45,11 @@ export const CLASSES: StarWarsClass[] = [
   { id: "pirata_espacial", name: "Pirata Espacial", description: "Fora da lei que vive de saques, ataques a cargueiros e atividades criminosas no espaço.", archetype: "marcial", ppModifier: 1 },
   { id: "soldado_republica", name: "Soldado da República", description: "Militar treinado para cumprir missões de combate, defesa e manutenção da paz.", archetype: "marcial", ppModifier: 0 },
   { id: "vigilante", name: "Vigilante", description: "Justiceiro independente que protege pessoas ou comunidades sem responder a governos ou facções.", archetype: "marcial", ppModifier: 1 },
-
-  // Avançadas — desbloqueadas no nível 30, substituem a classe-base
-  { id: "lado_da_luz", name: "O Lado da Luz", description: "O Padawan que atravessou o limiar e se torna um canal quase puro do Lado da Luz.", archetype: "sensivel", ppModifier: 0, isAdvanced: true, advancesFrom: "padawan_jedi" },
-  { id: "lado_negro", name: "O Lado Negro", description: "O Acólito que abraçou por completo o Lado Sombrio, instrumento quase puro de destruição pela Força.", archetype: "sensivel", ppModifier: 0, isAdvanced: true, advancesFrom: "acolito_sith" },
-  { id: "xama_da_forca", name: "Xamã da Força", description: "O Andarilho que aprofundou sua conexão instintiva, canalizando a Força de forma crua e ancestral.", archetype: "sensivel", ppModifier: 1, isAdvanced: true, advancesFrom: "andarilho_forca" },
 ];
+
+// Removidas do sistema (não substituem mais a classe-base no nível 30) — nomes guardados
+// pra referência futura, caso sejam reconstruídas do zero mais pra frente:
+// "O Lado da Luz", "O Lado Negro", "Xamã da Força".
 
 export const CLASS_BY_ID: Record<string, StarWarsClass> = Object.fromEntries(
   CLASSES.map((c) => [c.id, c])

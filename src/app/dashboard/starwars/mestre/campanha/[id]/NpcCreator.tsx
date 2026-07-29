@@ -15,7 +15,7 @@ const ACCENT_BORD = "rgba(59,130,196,0.28)";
 const ACCENT_GLOW = "rgba(59,130,196,0.22)";
 
 const SPECIES_NAMES = SPECIES.map((s) => s.name);
-const ROLES = CLASSES.filter((c) => !c.isAdvanced).map((c) => c.name);
+const ROLES = CLASSES.map((c) => c.name);
 const TRAITS = ["Fala demais sobre assuntos sem importância", "Sempre mantém a palavra, custe o que custar", "Desconfia de estranhos mas é leal aos aliados", "Busca aventura e emoção a todo custo", "É obcecado com créditos e riquezas", "Vive segundo um código de honra rígido", "Prefere agir sozinho e não confia em grupos", "É curioso sobre tudo que vê", "É gentil com os fracos e duro com os poderosos", "Guarda rancor por muito tempo"];
 const APPEARANCES = ["Cicatriz no rosto, olhar frio", "Cabelos brancos apesar de jovem", "Veste roupas simples e surradas", "Usa um amuleto de origem desconhecida", "Alto e robusto, postura marcial", "Baixo e ágil, sempre alerta", "Roupas finas, ar de autoridade", "Olhos de cores diferentes", "Tatuagem tribal no braço", "Sempre encapuzado"];
 const NAMES = ["Broktar", "Ingram", "Fren", "Dok", "Artorius", "Kadeen", "Rhogar", "Gorack", "Reynard", "Golinda", "Lisandra", "Gwen", "Asha", "Niala", "Raven", "Salini", "Aivy", "Sima", "Leona", "Vallen"];

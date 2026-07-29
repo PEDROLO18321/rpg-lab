@@ -151,51 +151,7 @@ export const CLASS_GROUP_C: ClassAbilityTable[] = [
       { level: 99, name: "Despertar Total", description: "Libera toda a Força latente acumulada a vida inteira num único ataque devastador.", combat: false, peCost: 8, dt: 36 },
     ],
   },
-
-  // ─── Classes avançadas (desbloqueiam no nível 30, substituem a classe-base) ─
-  {
-    classId: "lado_da_luz",
-    abilities: [],
-    milestones: [
-      { level: 30, name: "Visão do Caminho", description: "Enxerga possibilidades e consequências próximas de uma decisão em combate.", combat: false, peCost: 4, dt: 27 },
-      { level: 30, name: "Cura da Força", description: "Canaliza a Força para restaurar vitalidade própria ou de um aliado em pleno combate.", combat: true, peCost: 4, damageDice: "8d6", heal: true },
-      { level: 40, name: "Escudo de Luz Absoluto", description: "Bloqueia quase todo dano físico e de energia por um curto período.", combat: true, peCost: 5, damageDice: "10d6" },
-      { level: 40, name: "Compaixão Curativa", description: "Cura em área — todos os aliados próximos recuperam vitalidade.", combat: false, peCost: 5, dt: 30 },
-      { level: 50, name: "Batalha Serena", description: "Cada ataque recebido é lido com clareza total, convertendo-se em contra-ataque quase perfeito.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 50, name: "Voz da Unidade", description: "Dobra a vontade de um alvo fraco sem violência.", combat: false, peCost: 6, dt: 32 },
-      { level: 70, name: "Projeção da Força", description: "Projeta uma imagem de si mesmo, feita de luz pura, que ataca à distância.", combat: true, peCost: 7, damageDice: "15d6" },
-      { level: 70, name: "Barreira Inabalável", description: "Protege todo o grupo com um campo de luz que também revida.", combat: true, peCost: 7, damageDice: "15d6" },
-      { level: 99, name: "Ascensão da Luz", description: "Torna-se um com a Força por um instante — cura, protege e devasta o Lado Sombrio simultaneamente.", combat: false, peCost: 8, dt: 36 },
-    ],
-  },
-  {
-    classId: "lado_negro",
-    abilities: [],
-    milestones: [
-      { level: 30, name: "Visão da Dominação", description: "Enxerga instantaneamente a fraqueza física, emocional ou tática de qualquer alvo.", combat: false, peCost: 4, dt: 27 },
-      { level: 30, name: "Toque da Morte", description: "Drena grande quantidade de vida do alvo com um único toque ou golpe.", combat: true, peCost: 4, damageDice: "8d6" },
-      { level: 40, name: "Tempestade de Relâmpagos", description: "Descarga elétrica de Força em área, causando dano severo e contínuo.", combat: true, peCost: 5, damageDice: "10d6" },
-      { level: 40, name: "Corrupção Absoluta", description: "Enfraquece e corrompe um grupo inteiro de inimigos.", combat: false, peCost: 5, dt: 30 },
-      { level: 50, name: "Fúria Sem Limites", description: "Cada ferimento recebido aumenta drasticamente o dano do próximo ataque.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 50, name: "Domínio da Vontade", description: "Controla a mente de um alvo mais fraco por um curto período.", combat: false, peCost: 6, dt: 32 },
-      { level: 70, name: "Aniquilação", description: "Ataque de área que combina relâmpago e drenagem de vida.", combat: true, peCost: 7, damageDice: "15d6" },
-      { level: 70, name: "Presença Absoluta", description: "Aura de terror que paralisa vários inimigos simultaneamente.", combat: false, peCost: 7, dt: 34 },
-      { level: 99, name: "Império das Trevas", description: "Poder quase equivalente a um Lorde Sith completo, capaz de decidir uma guerra.", combat: false, peCost: 8, dt: 36 },
-    ],
-  },
-  {
-    classId: "xama_da_forca",
-    abilities: [],
-    milestones: [
-      { level: 30, name: "Comunhão com a Força", description: "Percebe o fluxo da Força em tudo ao redor, sem doutrina.", combat: false, peCost: 4, dt: 27 },
-      { level: 30, name: "Cura Instintiva", description: "Cura bruta e imediata, menos refinada que a de um Jedi, mas rápida e eficaz.", combat: true, peCost: 4, damageDice: "8d6", heal: true },
-      { level: 40, name: "Fúria dos Espíritos", description: "Invoca ecos de andarilhos e xamãs antigos para golpear o inimigo junto com ele.", combat: true, peCost: 5, damageDice: "10d6" },
-      { level: 40, name: "Equilíbrio Selvagem", description: "Absorve e resiste tanto dano físico quanto dano da Força simultaneamente.", combat: false, peCost: 5, dt: 30 },
-      { level: 50, name: "Transe de Batalha", description: "Ataques físicos e da Força se fundem de forma imprevisível.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 50, name: "Voz da Natureza", description: "Comanda criaturas e elementos do ambiente para auxiliar em combate ou exploração.", combat: false, peCost: 6, dt: 32 },
-      { level: 70, name: "Tempestade Ancestral", description: "Libera uma área devastadora combinando fúria bruta e Força pura.", combat: true, peCost: 7, damageDice: "15d6" },
-      { level: 70, name: "Vínculo Primordial", description: "Conexão tão profunda com a Força que nada consegue pegá-lo de surpresa.", combat: false, peCost: 7, dt: 34 },
-      { level: 99, name: "O Todo e o Nada", description: "Funde-se completamente com a Força, sem doutrina de Luz ou Sombra.", combat: false, peCost: 8, dt: 36 },
-    ],
-  },
 ];
+
+// Removidas do sistema (ver classes.ts) — nomes guardados pra referência futura:
+// "O Lado da Luz", "O Lado Negro", "Xamã da Força".
