@@ -31,8 +31,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Senhor da Trilha", description: "Domina completamente qualquer ambiente natural em combate.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Fera Desperta", description: "Luta com força e ferocidade sobre-humanas por tempo curto.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Guardião Selvagem", description: "Comanda o ambiente e criaturas ao seu favor em larga escala.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Ira da Fronteira Selvagem", description: "Desencadeia a força total da natureza contra os inimigos.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Guardião Selvagem", description: "Comanda o ambiente e criaturas ao seu favor em larga escala.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Ira da Fronteira Selvagem", description: "Desencadeia a força total da natureza contra os inimigos.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -62,8 +62,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Lei Viva", description: "Torna-se a autoridade máxima e ofensiva do setor.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Muralha Inabalável", description: "Suporta e revida ataques em escala massiva.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Braço da Justiça", description: "Elimina ameaças graves com um só golpe decisivo.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "A Ordem Absoluta", description: "Impõe paz e proteção total, neutralizando qualquer ameaça ao seu redor.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Braço da Justiça", description: "Elimina ameaças graves com um só golpe decisivo.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "A Ordem Absoluta", description: "Impõe paz e proteção total, neutralizando qualquer ameaça ao seu redor.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -93,8 +93,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Caçador Implacável", description: "Torna-se imparável ao perseguir um alvo marcado.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Fúria de Beskar", description: "Ataques consecutivos de altíssimo dano sem pausa.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Lenda de Mandalore", description: "Combate com poder quase mítico, quase impossível de deter.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "O Último Guerreiro", description: "Desencadeia todo o arsenal e força em um ataque final devastador.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Lenda de Mandalore", description: "Combate com poder quase mítico, quase impossível de deter.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "O Último Guerreiro", description: "Desencadeia todo o arsenal e força em um ataque final devastador.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -124,8 +124,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Anjo de Batalha", description: "Cura e sustenta o grupo inteiro em combates prolongados.", combat: true, peCost: 4, damageDice: "7d6", heal: true },
       { level: 35, name: "Bisturi da Morte", description: "Ataques cirúrgicos que ignoram quase toda defesa do alvo.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Mestre da Vida e da Morte", description: "Decide entre curar totalmente ou eliminar com precisão.", combat: true, peCost: 6, damageDice: "12d6", healOrDamage: true },
-      { level: 99, name: "Julgamento Clínico", description: "Um único procedimento que cura o grupo por completo ou elimina um alvo instantaneamente.", combat: true, peCost: 8, damageDice: "18d6", healOrDamage: true },
+      { level: 30, name: "Mestre da Vida e da Morte", description: "Decide entre curar totalmente ou eliminar com precisão.", combat: true, peCost: 6, damageDice: "12d6", healOrDamage: true },
+      { level: 40, name: "Julgamento Clínico", description: "Um único procedimento que cura o grupo por completo ou elimina um alvo instantaneamente.", combat: true, peCost: 8, damageDice: "18d6", healOrDamage: true },
     ],
   },
   {
@@ -155,8 +155,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Lenda dos Contratos", description: "Eficiência de combate aumenta drasticamente em qualquer missão paga.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Arsenal Lendário", description: "Acesso e domínio de armamento de altíssimo poder.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Mercenário Supremo", description: "Um dos combatentes mais temidos e eficientes da galáxia.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Contrato Final", description: "Executa o ataque mais letal de sua carreira, capaz de decidir qualquer conflito.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Mercenário Supremo", description: "Um dos combatentes mais temidos e eficientes da galáxia.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Contrato Final", description: "Executa o ataque mais letal de sua carreira, capaz de decidir qualquer conflito.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -186,8 +186,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Ás Lendário", description: "Torna-se praticamente intocável em combate aéreo/espacial.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Manobra Impossível", description: "Executa ataque que nenhum outro piloto conseguiria replicar.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Senhor dos Céus", description: "Domina completamente qualquer combate aéreo ou espacial.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Voo Final", description: "Executa a manobra ofensiva mais arriscada e poderosa já registrada.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Senhor dos Céus", description: "Domina completamente qualquer combate aéreo ou espacial.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Voo Final", description: "Executa a manobra ofensiva mais arriscada e poderosa já registrada.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -217,8 +217,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Terror das Rotas", description: "Inimigos hesitam ou fogem só de reconhecê-lo.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Fúria Sem Lei Total", description: "Ataques consecutivos de altíssimo dano sem qualquer limite.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Lenda Pirata", description: "Comanda batalhas inteiras com brutalidade e carisma extremos.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Saque Final", description: "Executa o assalto mais violento e lucrativo de sua vida, devastador em combate.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Lenda Pirata", description: "Comanda batalhas inteiras com brutalidade e carisma extremos.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Saque Final", description: "Executa o assalto mais violento e lucrativo de sua vida, devastador em combate.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -248,8 +248,8 @@ export const CLASS_GROUP_B: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Herói de Guerra", description: "Desempenho excepcional inspira e fortalece todo o esquadrão.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Tática Perfeita", description: "Executa manobra de combate quase impossível de contra-atacar.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Lenda Militar", description: "Comanda e vence batalhas praticamente sozinho quando necessário.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Última Linha de Defesa", description: "Um ataque final que pode decidir uma guerra inteira.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Lenda Militar", description: "Comanda e vence batalhas praticamente sozinho quando necessário.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Última Linha de Defesa", description: "Um ataque final que pode decidir uma guerra inteira.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
 ];

@@ -21,7 +21,7 @@ export interface ClassAbility {
   dt?: number;
   /** Cura em vez de dano (raras: ex. Cura da Força, Cura Instintiva). */
   heal?: boolean;
-  /** Cura OU dano à escolha do jogador (Médico nível 50/99). */
+  /** Cura OU dano à escolha do jogador (Médico nível 30/40). */
   healOrDamage?: boolean;
 }
 
@@ -46,7 +46,8 @@ export interface ClassAbilityTable {
   classId: string;
   /** Habilidades dos 5 círculos (níveis 1-20), visíveis desde a criação. */
   abilities: ClassAbility[];
-  /** Marcos (25/35/50/99, ou 25/30/35/40/50/99 nas 3 ligadas à Força) — ocultos até completar o 5º círculo. */
+  /** Marcos nos níveis 25/30/35/40 — ocultos até completar o 5º círculo. Nas 3 classes ligadas à
+   *  Força, os níveis 25 e 40 acumulam mais de um marco (efeito da progressão 30→25 e 99→40). */
   milestones: ClassMilestone[];
 }
 

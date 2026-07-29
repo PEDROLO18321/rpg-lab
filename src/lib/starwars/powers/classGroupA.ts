@@ -31,8 +31,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Ruína Explosiva", description: "Faz o cenário colapsar em cadeia, causando grande dano em área e controlando o campo.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Guardião do Templo", description: "Libera uma ofensiva antiga — droides, torres ou mecanismos de defesa — que atacam inimigos.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Cataclismo Arqueológico", description: "Provoca um colapso massivo ou ativação extrema de relíquia, causando dano devastador.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Relíquia do Fim dos Tempos", description: "Desperta uma arma ou artefato lendário capaz de alterar uma batalha inteira com um único uso.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Cataclismo Arqueológico", description: "Provoca um colapso massivo ou ativação extrema de relíquia, causando dano devastador.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Relíquia do Fim dos Tempos", description: "Desperta uma arma ou artefato lendário capaz de alterar uma batalha inteira com um único uso.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -62,8 +62,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Caça Profissional", description: "Sua pressão ofensiva aumenta muito contra alvos contratados.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Arsenal Personalizado", description: "Seu equipamento de combate ganha modificações únicas e letais.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Lenda do Submundo", description: "Sua reputação faz inimigos hesitarem antes mesmo do primeiro tiro.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Predador Definitivo", description: "Executa uma caçada lendária com potencial de eliminar ou capturar alvos quase impossíveis.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Lenda do Submundo", description: "Sua reputação faz inimigos hesitarem antes mesmo do primeiro tiro.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Predador Definitivo", description: "Executa uma caçada lendária com potencial de eliminar ou capturar alvos quase impossíveis.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -93,8 +93,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Laboratório Autônomo", description: "Passa a criar ofensivas e contramedidas mesmo sob pressão.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Criação Avançada", description: "Gera protótipos altamente letais ou decisivos.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Mente de Fronteira", description: "Encontra soluções agressivas para problemas impossíveis.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Salto do Conhecimento", description: "Produz uma inovação de guerra capaz de mudar uma batalha inteira.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Mente de Fronteira", description: "Encontra soluções agressivas para problemas impossíveis.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Salto do Conhecimento", description: "Produz uma inovação de guerra capaz de mudar uma batalha inteira.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -124,8 +124,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Rede de Distribuição", description: "Sua estrutura passa a sustentar a guerra de forma contínua.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Capital de Guerra", description: "Dinheiro vira vantagem ofensiva e defensiva imediata.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Senhor das Rotas", description: "Controla fluxos estratégicos e corta o inimigo de recursos.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Mão Invisível", description: "Manipula recursos e eventos de forma quase impossível de conter.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Senhor das Rotas", description: "Controla fluxos estratégicos e corta o inimigo de recursos.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Mão Invisível", description: "Manipula recursos e eventos de forma quase impossível de conter.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -155,8 +155,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Corredor Cego", description: "Atravessa bloqueios e inspeções com enorme facilidade.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Nave de Operação", description: "Transforma veículo ou nave em máquina ideal para fuga e transporte clandestino.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Mestre do Submundo", description: "Domina esconderijos, rotas e contatos em grande escala.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Rota Impossível", description: "Abre um caminho secreto quase inacreditável entre mundos ou setores.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Mestre do Submundo", description: "Domina esconderijos, rotas e contatos em grande escala.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Rota Impossível", description: "Abre um caminho secreto quase inacreditável entre mundos ou setores.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -186,8 +186,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Tratado Menor", description: "Formaliza um acordo duradouro com forte valor estratégico.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Embaixador de Campo", description: "Representa seu grupo com legitimidade em qualquer mundo ou facção.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Arquitetura da Paz", description: "Costura alianças amplas e evita guerras grandes.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Voz da Galáxia", description: "Sua diplomacia pode alterar o destino de uma guerra ou civilização.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Arquitetura da Paz", description: "Costura alianças amplas e evita guerras grandes.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Voz da Galáxia", description: "Sua diplomacia pode alterar o destino de uma guerra ou civilização.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -217,8 +217,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Oficina de Combate", description: "Cria e mantém múltiplas unidades ofensivas simultâneas, sustentando a guerra tecnológica.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Protótipo Devastador", description: "Ativa uma arma ou veículo experimental de altíssimo poder de fogo.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Mente Mecânica", description: "Controla, repara e comanda qualquer tecnologia em campo quase instantaneamente.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "Singularidade Tecnológica", description: "Ativa uma criação lendária — arma, droide ou nave — capaz de decidir uma batalha inteira sozinha.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Mente Mecânica", description: "Controla, repara e comanda qualquer tecnologia em campo quase instantaneamente.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "Singularidade Tecnológica", description: "Ativa uma criação lendária — arma, droide ou nave — capaz de decidir uma batalha inteira sozinha.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
   {
@@ -248,8 +248,8 @@ export const CLASS_GROUP_A: ClassAbilityTable[] = [
     milestones: [
       { level: 25, name: "Fantasma Operacional", description: "Infiltra e ataca sem deixar rastro algum.", combat: true, peCost: 4, damageDice: "7d6" },
       { level: 35, name: "Lâmina das Mil Faces", description: "Assume qualquer identidade e ataca com letalidade extrema.", combat: true, peCost: 5, damageDice: "9d6" },
-      { level: 50, name: "Mestre Assassino", description: "Um único golpe pode eliminar quase qualquer alvo.", combat: true, peCost: 6, damageDice: "12d6" },
-      { level: 99, name: "A Sombra Perfeita", description: "Executa uma operação letal que muda o destino de uma facção inteira.", combat: true, peCost: 8, damageDice: "18d6" },
+      { level: 30, name: "Mestre Assassino", description: "Um único golpe pode eliminar quase qualquer alvo.", combat: true, peCost: 6, damageDice: "12d6" },
+      { level: 40, name: "A Sombra Perfeita", description: "Executa uma operação letal que muda o destino de uma facção inteira.", combat: true, peCost: 8, damageDice: "18d6" },
     ],
   },
 ];
