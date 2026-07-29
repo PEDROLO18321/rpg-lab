@@ -25,7 +25,7 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-      <SectionTitle eyebrow="Etapa 4 de 8" title="Classe" desc="Sua classe define papel, arquétipo (Marcial / Especialista / Sensível à Força) e progressão de habilidades até o nível 99." />
+      <SectionTitle eyebrow="Etapa 4 de 8" title="Classe" desc="Sua classe define papel, arquétipo (Marcial / Especialista / Sensível à Força) e progressão de habilidades até o nível 1111." />
 
       <div style={gridAutoFill(175)}>
         {selectable.map((c) => (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { MAX_LEVEL, availableChoiceKinds, isSkillGradeMandatory, levelUpGain, ppLevelUpGain, canCombineClasses, countExpertSkills, expertSkillsRequiredForNewClass } from "@/lib/starwars/leveling";
+import { MAX_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, availableChoiceKinds, isSkillGradeMandatory, levelUpGain, ppLevelUpGain, canCombineClasses, countExpertSkills, expertSkillsRequiredForNewClass } from "@/lib/starwars/leveling";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
@@ -26,18 +26,25 @@ export async function POST(
     return NextResponse.json({ error: `Nível máximo (${MAX_LEVEL}) já alcançado.` }, { status: 400 });
   }
 
-  const body = await req.json().catch(() => ({}));
-  const classId: string = body.classId ?? Object.keys(JSON.parse(sheet.classes || "{}"))[0];
-  const cls = CLASS_BY_ID[classId];
-  if (!cls) return NextResponse.json({ error: "Classe inválida." }, { status: 400 });
-
   const classLevels: Record<string, number> = JSON.parse(sheet.classes || "{}");
   const existingClassIds = Object.keys(classLevels);
-  const isNewClass = !existingClassIds.includes(classId);
-  const fromLevelInClass = classLevels[classId] ?? 0;
+  const skills: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
+
+  const body = await req.json().catch(() => ({}));
+  const classId: string = body.classId ?? existingClassIds[0];
+  const isBonus = classId === BONUS_LEVEL_ID;
+  const cls = isBonus ? undefined : CLASS_BY_ID[classId];
+  if (!isBonus && !cls) return NextResponse.json({ error: "Classe inválida." }, { status: 400 });
+
+  const isNewClass = !isBonus && !existingClassIds.includes(classId);
+  const fromLevelInClass = isBonus ? 0 : classLevels[classId] ?? 0;
   const toLevelInClass = fromLevelInClass + 1;
   const fromLevel = sheet.level;
   const toLevel = fromLevel + 1;
+
+  if (!isBonus && toLevelInClass > CLASS_LEVEL_CAP) {
+    return NextResponse.json({ error: `Nível máximo por classe (${CLASS_LEVEL_CAP}) já atingido nessa classe. Escolha outra classe ou um nível Bônus.` }, { status: 400 });
+  }
 
   if (isNewClass) {
     for (const existing of existingClassIds) {
@@ -45,8 +52,7 @@ export async function POST(
         return NextResponse.json({ error: "Essa classe não pode ser combinada com uma classe ligada à Força que você já tem." }, { status: 400 });
       }
     }
-    const skillsNow: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
-    const expertCount = countExpertSkills(skillsNow);
+    const expertCount = countExpertSkills(skills);
     const required = expertSkillsRequiredForNewClass(fromLevel, existingClassIds.length);
     if (expertCount < required) {
       return NextResponse.json({ error: `Esta multiclasse exige ${required} perícias em grau Expert ou acima (você tem ${expertCount}).` }, { status: 400 });
@@ -54,7 +60,7 @@ export async function POST(
   }
 
   const kinds = availableChoiceKinds(fromLevel, toLevel);
-  const mandatorySkill = isSkillGradeMandatory(toLevel);
+  const mandatorySkill = isSkillGradeMandatory(toLevel, skills);
 
   const attrKey: string | undefined = body.attrKey;
   const classPowerId: string | undefined = body.classPowerId;
@@ -84,6 +90,7 @@ export async function POST(
   }
 
   if (classPowerId) {
+    if (isBonus) return NextResponse.json({ error: "Nível Bônus não pertence a nenhuma classe — não concede habilidade de classe." }, { status: 400 });
     if (!kinds.includes("habilidade_classe")) return NextResponse.json({ error: "Habilidade de classe indisponível nesta transição." }, { status: 400 });
     const ability = getAvailableAbilities(classId, toLevelInClass).find((a) => a.name === classPowerId && a.level === toLevelInClass);
     if (!ability) return NextResponse.json({ error: "Habilidade não disponível para esta classe/nível." }, { status: 400 });
@@ -97,7 +104,6 @@ export async function POST(
     if (!newGeneralPowers.includes(generalPowerId)) newGeneralPowers.push(generalPowerId);
   }
 
-  const skills: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
   if (skillGradeUpId) {
     const current: SkillGrade = skills[skillGradeUpId] ?? "inexperiente";
     const idx = SKILL_GRADE_ORDER.indexOf(current);
@@ -110,12 +116,13 @@ export async function POST(
   const newVig = attrUpdates.vig ?? sheet.vig;
   const newSen = attrUpdates.sen ?? sheet.sen;
   const newPre = attrUpdates.pre ?? sheet.pre;
-  const realGain = levelUpGain(classId, newVig, newSen, toLevelInClass);
+  // Nível Bônus não pertence a nenhuma classe: não ganha PV/PE de arquétipo, só o PP geral do nível.
+  const realGain = isBonus ? { pv: 0, pe: 0 } : levelUpGain(classId, newVig, newSen, toLevelInClass);
   // PP: ganho automático do nível + modificador de PP da nova classe, somado uma única vez
   // (o modificador é cumulativo entre todas as classes possuídas — regra de "Modificador de PP").
-  const realPpGain = ppLevelUpGain(newPre) + (isNewClass ? cls.ppModifier : 0);
+  const realPpGain = ppLevelUpGain(newPre) + (isNewClass && cls ? cls.ppModifier : 0);
 
-  classLevels[classId] = toLevelInClass;
+  if (!isBonus) classLevels[classId] = toLevelInClass;
 
   const updated = await prisma.starWarsSheet.update({
     where: { id },

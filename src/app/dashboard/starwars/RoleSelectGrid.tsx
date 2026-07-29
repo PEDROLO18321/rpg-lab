@@ -10,7 +10,7 @@ const ROLES = [
     id: "jogador",
     label: "Jogador",
     subtitle: "Player Character",
-    desc: "Crie e gerencie seus personagens da galáxia. Espécie, planeta, caminho, classe e progressão até o nível 99.",
+    desc: "Crie e gerencie seus personagens da galáxia. Espécie, planeta, caminho, classe e progressão até o nível 1111.",
     href: "/dashboard/starwars/jogador",
     accentColor: ACCENT,
     accentGlow: "rgba(59,130,196,0.22)",
