@@ -29,8 +29,8 @@ export interface ClassMilestone {
   level: number;
   name: string;
   description: string;
-  /** Marcos das 17 classes sem ligação à Força são sempre combate; nas 3 ligadas à Força
-   *  e nas 3 avançadas, cada marco/grau tem 1 combate + 1 utilitário. */
+  /** Marcos das 17 classes sem ligação à Força são sempre combate; nas 3 ligadas à Força,
+   *  cada marco/grau tem 1 combate + 1 utilitário. */
   combat: boolean;
   peCost: number;
   damageDice?: string;

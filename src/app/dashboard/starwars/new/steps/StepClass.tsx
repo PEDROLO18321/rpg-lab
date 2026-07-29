@@ -11,7 +11,7 @@ interface Props { classId: string | null; classAbilityChoice: string | null; onC
 
 export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
   const cls = classId ? CLASSES.find((c) => c.id === classId) : undefined;
-  const selectable = CLASSES.filter((c) => !c.isAdvanced);
+  const selectable = CLASSES;
   const firstAbilities = cls ? getClassAbilities(cls.id).filter((a) => a.level === 1) : [];
   const grouped = cls ? getAbilitiesGroupedByLevel(cls.id, 25) : [];
   const detailRef = useRef<HTMLDivElement>(null);
