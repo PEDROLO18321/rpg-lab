@@ -3,12 +3,14 @@
 import { CLASS_GROUP_A } from "./classGroupA";
 import { CLASS_GROUP_B } from "./classGroupB";
 import { CLASS_GROUP_C } from "./classGroupC";
+import { CLASS_GROUP_D } from "./classGroupD";
 import type { ClassAbility, ClassAbilityTable, ClassMilestone } from "./types";
 
 export const ALL_CLASS_ABILITY_TABLES: ClassAbilityTable[] = [
   ...CLASS_GROUP_A,
   ...CLASS_GROUP_B,
   ...CLASS_GROUP_C,
+  ...CLASS_GROUP_D,
 ];
 
 export const CLASS_ABILITY_TABLE_BY_ID: Record<string, ClassAbilityTable> = Object.fromEntries(
@@ -47,6 +49,6 @@ export function getAvailableMilestones(classId: string, levelInClass: number): C
   return getClassMilestones(classId).filter((m) => m.level <= levelInClass);
 }
 
-export { CLASS_GROUP_A, CLASS_GROUP_B, CLASS_GROUP_C };
+export { CLASS_GROUP_A, CLASS_GROUP_B, CLASS_GROUP_C, CLASS_GROUP_D };
 export * from "./types";
 export * from "./generalPowers";

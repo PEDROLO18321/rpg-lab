@@ -55,14 +55,28 @@ const SECTIONS: Section[] = [
     id: "classes",
     icon: "🛡️",
     title: "Classes e Arquétipos",
-    note: "20 classes.",
+    note: "25 classes: 20 comuns + 3 de Caminho + 2 de Profecia.",
     blocks: [
       {
         heading: "Arquétipos (PV/PE por nível)",
         rows: [
           { term: "Marcial", text: "PV 20 (+4/nível), PE 2 (+1/nível). Mandaloriano, Soldado da República, Mercenário, Pirata Espacial, Guarda Planetário, Vigilante, Caçador de Recompensas, Explorador." },
           { term: "Especialista", text: "PV 16 (+3/nível), PE 4 (+2/nível). Engenheiro, Piloto, Espião, Contrabandista, Comerciante, Diplomata, Arqueólogo, Cientista, Médico." },
-          { term: "Sensível à Força", text: "PV 14 (+2/nível), PE 6 (+3/nível). Padawan Jedi, Acólito Sith, Andarilho da Força." },
+          { term: "Sensível à Força", text: "PV 14 (+2/nível), PE 6 (+3/nível). Padawan Jedi, Acólito Sith, Andarilho da Força, e as 5 classes de Caminho/Profecia abaixo." },
+        ],
+      },
+      {
+        heading: "Classes de Caminho — O Lado da Luz, O Equilíbrio, O Lado Negro",
+        rows: [
+          { term: "O que são", text: "Classes de definição de caminho, mais poderosas que as comuns e preparadas pra qualquer desafio. Progressão própria e completa: 30 habilidades, uma por nível de 1 a 30 (nível 1 tem 2)." },
+          { term: "Mecânica", text: "Não usam o sistema circular de Formas de Sabre (isso é só das 3 classes-base ligadas à Força) — golpes de sabre aqui usam a regra de sabre cru (6d6 × atributo + perícia, não escala por nível)." },
+        ],
+      },
+      {
+        heading: "Classes de Profecia — O Cântico do Alvorecer, A Litania da Queda",
+        rows: [
+          { term: "O que são", text: "Só aparecem quando o personagem descobre as profecias sobre si mesmo — toda ficha tem uma profecia de Luz e uma de Escuridão. Ainda mais poderosas que as de Caminho." },
+          { term: "Mecânica", text: "10 habilidades cada, liberadas só em níveis pares (2 a 20). Dano/cura em dados maiores que qualquer outra classe do sistema." },
         ],
       },
     ],

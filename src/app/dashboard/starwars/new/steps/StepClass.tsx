@@ -13,7 +13,7 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
   const cls = classId ? CLASSES.find((c) => c.id === classId) : undefined;
   const selectable = CLASSES;
   const firstAbilities = cls ? getClassAbilities(cls.id).filter((a) => a.level === 1) : [];
-  const grouped = cls ? getAbilitiesGroupedByLevel(cls.id, 25) : [];
+  const grouped = cls ? getAbilitiesGroupedByLevel(cls.id, 30) : [];
   const detailRef = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
 

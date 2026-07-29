@@ -284,7 +284,7 @@ const SYSTEMS: Record<string, SystemData> = {
         { label: "Perícias",          value: "25, cada uma ligada a 1-2 atributos" },
         { label: "Espécies",          value: "35 jogáveis" },
         { label: "Planetas",          value: "28 planetas de origem" },
-        { label: "Classes",           value: "20" },
+        { label: "Classes",           value: "25 (20 comuns + 3 de Caminho + 2 de Profecia)" },
         { label: "Progressão",        value: "Nível 1 a 99" },
       ],
       sections: [
