@@ -367,7 +367,10 @@ model StarWarsSheet {
   pre Int @default(1)
   sen Int @default(1)
 
-  pvMax     Int @default(10)
+  pvMax     Int @default(10) // = pvClassSum + pvLevelGain + pvVigMultiplier × vig (recalculado a cada mudança de qualquer termo)
+  pvClassSum      Int @default(0) // soma da base de PV de cada classe (pv1 + vig + bônus de tier, 1x por classe)
+  pvLevelGain     Int @default(0) // soma do ganho de PV por subir de nível (pvPerLevel + vig, por nível além do 1º de cada classe)
+  pvVigMultiplier Int @default(4) // multiplicador de Vigor no PV Máximo — editável, começa em 4
   pvCurrent Int @default(10)
   pvTemp    Int @default(0)
   peMax     Int @default(0) // Pontos de Energia da Força

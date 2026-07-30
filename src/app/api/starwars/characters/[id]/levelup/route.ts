@@ -128,6 +128,16 @@ export async function POST(
 
   if (!isBonus) classLevels[classId] = toLevelInClass;
 
+  // PV Máximo = Pv Soma das Classes + Pv por Subir de Nível + (Multiplicador de Vigor × Vigor).
+  // O ganho de nível (realGain.pv) vai pra "Soma das Classes" no 1º nível de uma classe (a base
+  // dela) e pra "Por Subir de Nível" em todo nível seguinte — mesma divisão que já existia dentro
+  // de levelUpGain. O ganho de PV atual desta subida acompanha o quanto o PV Máximo realmente
+  // mudou (inclui o efeito do multiplicador de Vigor se o atributo subiu neste nível).
+  const newPvClassSum = sheet.pvClassSum + (!isBonus && toLevelInClass === 1 ? realGain.pv : 0);
+  const newPvLevelGain = sheet.pvLevelGain + (!isBonus && toLevelInClass > 1 ? realGain.pv : 0);
+  const newPvMax = newPvClassSum + newPvLevelGain + sheet.pvVigMultiplier * newVig;
+  const pvGainThisLevel = newPvMax - sheet.pvMax;
+
   const updated = await prisma.starWarsSheet.update({
     where: { id },
     data: {
@@ -139,8 +149,10 @@ export async function POST(
       vig: newVig,
       pre: newPre,
       sen: newSen,
-      pvMax: sheet.pvMax + realGain.pv,
-      pvCurrent: sheet.pvCurrent + realGain.pv,
+      pvMax: newPvMax,
+      pvClassSum: newPvClassSum,
+      pvLevelGain: newPvLevelGain,
+      pvCurrent: sheet.pvCurrent + pvGainThisLevel,
       peMax: sheet.peMax + realGain.pe,
       peCurrent: sheet.peCurrent + realGain.pe,
       ppMax: sheet.ppMax + realPpGain,
@@ -155,7 +167,7 @@ export async function POST(
     ok: true,
     summary: {
       newLevel: updated.level,
-      pvGain: realGain.pv,
+      pvGain: pvGainThisLevel,
       peGain: realGain.pe,
       ppGain: realPpGain,
       choiceKinds: kinds,

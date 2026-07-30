@@ -66,7 +66,7 @@ interface StarWarsSheetData {
   id: string; species: string | null; planet: string | null; planetSkillChoice: string | null; path: string | null;
   classes: string; level: number; xp: number;
   agi: number; int: number; forca: number; vig: number; pre: number; sen: number;
-  pvMax: number; pvCurrent: number; pvTemp: number;
+  pvMax: number; pvClassSum: number; pvLevelGain: number; pvVigMultiplier: number; pvCurrent: number; pvTemp: number;
   peMax: number; peCurrent: number; peTemp: number;
   ppMax: number; ppCurrent: number; ppTemp: number;
   sabreForm: string | null;
@@ -1250,7 +1250,8 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
   const [portrait, setPortrait] = useState<string | null>(initialPortrait);
   const [attrs, setAttrs] = useState<Record<AttrKey, number>>({ agi: sheet.agi, int: sheet.int, forca: sheet.forca, vig: sheet.vig, pre: sheet.pre, sen: sheet.sen });
   const [vitals, setVitals] = useState({
-    pvMax: sheet.pvMax, pvCurrent: sheet.pvCurrent, peMax: sheet.peMax, peCurrent: sheet.peCurrent, ppMax: sheet.ppMax, ppCurrent: sheet.ppCurrent,
+    pvClassSum: sheet.pvClassSum, pvLevelGain: sheet.pvLevelGain, pvVigMultiplier: sheet.pvVigMultiplier,
+    pvCurrent: sheet.pvCurrent, peMax: sheet.peMax, peCurrent: sheet.peCurrent, ppMax: sheet.ppMax, ppCurrent: sheet.ppCurrent,
   });
   const [progress, setProgress] = useState({ level: sheet.level, xp: sheet.xp });
   const [sabreForm, setSabreForm] = useState(sheet.sabreForm ?? "");
@@ -1364,8 +1365,23 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
       </EditSection>
 
       <EditSection label="Vitalidade">
+        <div>
+          <p style={{ ...editLabelStyle, marginBottom: 8 }}>PV Máximo — composição</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10, marginBottom: 10 }}>
+            <EditNumber label="Pv Soma das Classes" value={vitals.pvClassSum} onChange={(v) => setVital("pvClassSum", v)} min={0} />
+            <EditNumber label="Pv Por Subir de Nível" value={vitals.pvLevelGain} onChange={(v) => setVital("pvLevelGain", v)} min={0} />
+            <EditNumber label="Multiplicador de Vigor" value={vitals.pvVigMultiplier} onChange={(v) => setVital("pvVigMultiplier", v)} min={0} />
+          </div>
+          <div style={{ padding: "10px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", marginBottom: 14 }}>
+            <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+              PV Máximo final = Soma das Classes + Por Subir de Nível + (Multiplicador × Vigor)
+            </p>
+            <p style={{ fontSize: "1.1rem", fontWeight: 800, color: ACCENT_LIGHT }}>
+              {vitals.pvClassSum} + {vitals.pvLevelGain} + ({vitals.pvVigMultiplier} × {attrs.vig}) = {vitals.pvClassSum + vitals.pvLevelGain + vitals.pvVigMultiplier * attrs.vig}
+            </p>
+          </div>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
-          <EditNumber label="PV Máximo" value={vitals.pvMax} onChange={(v) => setVital("pvMax", v)} min={0} />
           <EditNumber label="PV Atual" value={vitals.pvCurrent} onChange={(v) => setVital("pvCurrent", v)} min={0} />
           <EditNumber label="PE Máximo" value={vitals.peMax} onChange={(v) => setVital("peMax", v)} min={0} />
           <EditNumber label="PE Atual" value={vitals.peCurrent} onChange={(v) => setVital("peCurrent", v)} min={0} />
