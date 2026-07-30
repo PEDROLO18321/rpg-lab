@@ -19,6 +19,12 @@ export const CLASS_LEVEL_CAP = 40;
  */
 export const BONUS_LEVEL_ID = "__bonus__";
 
+/**
+ * PV Máximo = Pv Soma das Classes + Pv por Subir de Nível + (Multiplicador de Vigor × Vigor).
+ * O multiplicador começa neste valor mas é editável por personagem (StarWarsSheet.pvVigMultiplier).
+ */
+export const DEFAULT_PV_VIG_MULTIPLIER = 4;
+
 export function ppLevelUpGain(pre: number): number {
   return 1 + pre;
 }

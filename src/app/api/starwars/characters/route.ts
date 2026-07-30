@@ -6,6 +6,7 @@ import { CLASS_BY_ID } from "@/lib/starwars/classes";
 import { PLANET_BY_ID } from "@/lib/starwars/planets";
 import { finalAttrs as computeFinalAttrs, computeVitals, trainedSkillCount, effectivePlanetSkill } from "@/lib/starwars/creation";
 import { getClassAbilities } from "@/lib/starwars/powers/registry";
+import { DEFAULT_PV_VIG_MULTIPLIER } from "@/lib/starwars/leveling";
 import type { ChosenPower } from "@/lib/starwars/powers/types";
 
 export async function POST(req: NextRequest) {
@@ -79,8 +80,11 @@ export async function POST(req: NextRequest) {
             vig: attrs.vig,
             pre: attrs.pre,
             sen: attrs.sen,
-            pvMax: vitals.pvMax,
-            pvCurrent: vitals.pvMax,
+            pvMax: vitals.pvMax + DEFAULT_PV_VIG_MULTIPLIER * attrs.vig,
+            pvClassSum: vitals.pvMax,
+            pvLevelGain: 0,
+            pvVigMultiplier: DEFAULT_PV_VIG_MULTIPLIER,
+            pvCurrent: vitals.pvMax + DEFAULT_PV_VIG_MULTIPLIER * attrs.vig,
             peMax: vitals.peMax,
             peCurrent: vitals.peMax,
             ppMax: vitals.ppMax,

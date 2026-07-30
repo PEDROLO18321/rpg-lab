@@ -30,7 +30,7 @@ export async function POST(
                 species: s.species, planet: s.planet, planetSkillChoice: s.planetSkillChoice, path: s.path, classes: s.classes,
                 level: s.level, xp: s.xp, humanAttrChoice: s.humanAttrChoice,
                 agi: s.agi, int: s.int, forca: s.forca, vig: s.vig, pre: s.pre, sen: s.sen,
-                pvMax: s.pvMax, pvCurrent: s.pvCurrent, pvTemp: s.pvTemp,
+                pvMax: s.pvMax, pvClassSum: s.pvClassSum, pvLevelGain: s.pvLevelGain, pvVigMultiplier: s.pvVigMultiplier, pvCurrent: s.pvCurrent, pvTemp: s.pvTemp,
                 peMax: s.peMax, peCurrent: s.peCurrent, peTemp: s.peTemp,
                 ppMax: s.ppMax, ppCurrent: s.ppCurrent, ppTemp: s.ppTemp,
                 sabreForm: s.sabreForm,

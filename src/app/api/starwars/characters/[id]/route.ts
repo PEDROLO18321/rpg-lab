@@ -10,20 +10,31 @@ export async function PATCH(
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const character = await prisma.character.findUnique({ where: { id } });
+  const character = await prisma.character.findUnique({ where: { id }, include: { starWarsSheet: true } });
   if (!character) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (character.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const sheet = character.starWarsSheet;
+  if (!sheet) return NextResponse.json({ error: "No sheet" }, { status: 404 });
 
   const body = await req.json();
   const {
     pvCurrent, pvTemp, peCurrent, peTemp, ppCurrent, ppTemp, notes,
     skills, classPowers, generalPowers, equipment, weapons, conditions, background, sabreForm,
     name, portraitUrl, planetSkillChoice,
-    agi, int, forca, vig, pre, sen, level, xp, pvMax, peMax, ppMax, classes,
-    unlockedProphecies,
+    agi, int, forca, vig, pre, sen, level, xp, peMax, ppMax, classes,
+    unlockedProphecies, pvClassSum, pvLevelGain, pvVigMultiplier,
   } = body;
 
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+
+  // PV Máximo = Pv Soma das Classes + Pv por Subir de Nível + (Multiplicador de Vigor × Vigor).
+  // Recalculado sempre que qualquer um dos termos (ou o próprio Vigor) muda nesta requisição.
+  const touchesPvFormula = num(pvClassSum) !== undefined || num(pvLevelGain) !== undefined || num(pvVigMultiplier) !== undefined || num(vig) !== undefined;
+  const effClassSum = num(pvClassSum) ?? sheet.pvClassSum;
+  const effLevelGain = num(pvLevelGain) ?? sheet.pvLevelGain;
+  const effVigMultiplier = num(pvVigMultiplier) ?? sheet.pvVigMultiplier;
+  const effVig = num(vig) ?? sheet.vig;
+  const computedPvMax = effClassSum + effLevelGain + effVigMultiplier * effVig;
 
   const sheetData = {
     ...(num(pvCurrent) !== undefined ? { pvCurrent } : {}),
@@ -40,9 +51,9 @@ export async function PATCH(
     ...(num(sen)       !== undefined ? { sen }       : {}),
     ...(num(level)     !== undefined ? { level }     : {}),
     ...(num(xp)        !== undefined ? { xp }        : {}),
-    ...(num(pvMax)     !== undefined ? { pvMax }     : {}),
     ...(num(peMax)     !== undefined ? { peMax }     : {}),
     ...(num(ppMax)     !== undefined ? { ppMax }     : {}),
+    ...(touchesPvFormula ? { pvMax: computedPvMax, pvClassSum: effClassSum, pvLevelGain: effLevelGain, pvVigMultiplier: effVigMultiplier } : {}),
     ...(notes !== undefined ? { notes } : {}),
     ...(sabreForm !== undefined ? { sabreForm } : {}),
     ...(planetSkillChoice !== undefined ? { planetSkillChoice } : {}),
