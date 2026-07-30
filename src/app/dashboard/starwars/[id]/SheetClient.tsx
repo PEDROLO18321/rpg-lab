@@ -1221,13 +1221,13 @@ function EditSection({ label, children }: { label: string; children: React.React
   );
 }
 
-function EditNumber({ label, value, onChange, min, hint }: { label: string; value: number; onChange: (v: number) => void; min?: number; hint?: string }) {
+function EditNumber({ label, value, onChange, min, hint, readOnly }: { label: string; value: number; onChange: (v: number) => void; min?: number; hint?: string; readOnly?: boolean }) {
   return (
     <div>
       <p style={editLabelStyle}>{label}{hint && <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none" }}> · {hint}</span>}</p>
-      <input type="number" value={value} min={min}
+      <input type="number" value={value} min={min} readOnly={readOnly}
         onChange={(e) => onChange(min !== undefined ? Math.max(min, Number(e.target.value) || 0) : Number(e.target.value) || 0)}
-        style={editInputStyle} />
+        style={readOnly ? { ...editInputStyle, opacity: 0.7, cursor: "not-allowed" } : editInputStyle} />
     </div>
   );
 }
@@ -1374,7 +1374,7 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
           </div>
           <div style={{ padding: "10px 14px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", marginBottom: 14 }}>
             <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-              PV Máximo final = Soma das Classes + Por Subir de Nível + (Multiplicador × Vigor)
+              PV Indicado
             </p>
             <p style={{ fontSize: "1.1rem", fontWeight: 800, color: ACCENT_LIGHT }}>
               {vitals.pvClassSum} + {vitals.pvLevelGain} + ({vitals.pvVigMultiplier} × {attrs.vig}) = {vitals.pvClassSum + vitals.pvLevelGain + vitals.pvVigMultiplier * attrs.vig}
@@ -1382,6 +1382,7 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
           </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+          <EditNumber label="PV Máximo" value={vitals.pvClassSum + vitals.pvLevelGain + vitals.pvVigMultiplier * attrs.vig} onChange={() => {}} readOnly hint="calculado" />
           <EditNumber label="PV Atual" value={vitals.pvCurrent} onChange={(v) => setVital("pvCurrent", v)} min={0} />
           <EditNumber label="PE Máximo" value={vitals.peMax} onChange={(v) => setVital("peMax", v)} min={0} />
           <EditNumber label="PE Atual" value={vitals.peCurrent} onChange={(v) => setVital("peCurrent", v)} min={0} />
