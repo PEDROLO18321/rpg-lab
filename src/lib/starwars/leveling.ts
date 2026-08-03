@@ -77,12 +77,14 @@ export function ppMaxPerTurn(totalLevel: number): number {
   return 3 + Math.ceil(totalLevel / 2);
 }
 
-export type LevelUpChoiceKind = "atributo" | "poder_geral" | "habilidade_classe" | "grau_pericia";
+export type LevelUpChoiceKind = "atributo" | "poder_geral" | "grau_pericia";
 
 /**
- * Bucket do nível: define o que sobe na ficha e qual a evolução daquele nível.
+ * Bucket do nível: define o que sobe na ficha e qual a evolução (além da Habilidade de Classe,
+ * que agora é uma etapa própria — sempre presente, em qualquer nível, se a classe tiver uma
+ * habilidade cadastrada exatamente naquele nível).
  * - "quinto" (múltiplo de 5): sobe Vida + PE + PP; evolução = até 2 perícias sobem de grau + 1 atributo.
- * - "par" (ímpar→par, não múltiplo de 5): sobe só Vida; evolução = Habilidade de Classe.
+ * - "par" (ímpar→par, não múltiplo de 5): sobe só Vida; evolução = Poder Geral.
  * - "impar" (par→ímpar, não múltiplo de 5): sobe só PE + PP; evolução = Poder Geral.
  */
 export type LevelUpBucket = "par" | "impar" | "quinto";
@@ -100,11 +102,10 @@ export function vitalsGrantedAtLevel(bucket: LevelUpBucket): { pv: boolean; pe: 
 }
 
 /**
- * Cadeia de fallback da evolução obrigatória: tenta o 1º item; se não houver opção real
- * disponível (ver checagens específicas no client/API), cai pro próximo da lista.
+ * Cadeia de fallback da evolução obrigatória (par/ímpar, fora do bucket "quinto"): tenta o 1º
+ * item; se não houver opção real disponível, cai pro próximo da lista.
  */
-export const PAR_FALLBACK_CHAIN: LevelUpChoiceKind[] = ["habilidade_classe", "poder_geral", "grau_pericia", "atributo"];
-export const IMPAR_FALLBACK_CHAIN: LevelUpChoiceKind[] = ["poder_geral", "grau_pericia", "atributo"];
+export const LEVEL_FALLBACK_CHAIN: LevelUpChoiceKind[] = ["poder_geral", "grau_pericia", "atributo"];
 
 // ─── Multiclasse ──────────────────────────────────────────────────────────────
 

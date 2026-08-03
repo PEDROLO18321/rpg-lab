@@ -6,7 +6,7 @@ import { CLASSES, CLASS_BY_ID, ARCHETYPE_LABEL } from "@/lib/starwars/classes";
 import {
   canCombineClasses, canUnlockPathClass, PATH_CLASS_UNLOCK_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, MAX_LEVEL,
   countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, levelUpBucket, vitalsGrantedAtLevel,
-  levelUpGain, PAR_FALLBACK_CHAIN, IMPAR_FALLBACK_CHAIN, type LevelUpBucket, type LevelUpChoiceKind,
+  levelUpGain, LEVEL_FALLBACK_CHAIN, type LevelUpBucket, type LevelUpChoiceKind,
 } from "@/lib/starwars/leveling";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
@@ -58,13 +58,13 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 const KIND_LABEL: Record<LevelUpChoiceKind, string> = {
-  habilidade_classe: "Habilidade de Classe",
   poder_geral: "Poder Geral",
   grau_pericia: "Subir Perícia",
   atributo: "+1 Atributo",
 };
 
-const STEP_LABEL = ["Classe", "Vitais", "Evolução", "Finalizar"];
+const STEP_LABEL = ["Classe", "Vitais", "Habilidade", "Evolução", "Finalizar"];
+const LAST_STEP = STEP_LABEL.length - 1;
 
 export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const router = useRouter();
@@ -108,17 +108,16 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   // Habilidade de nível 1 da nova classe (fluxo de multiclasse).
   const newClassFirstAbilities = isNewClass ? getAvailableAbilities(classId, 1).filter((a) => a.level === 1) : [];
 
-  // Habilidade disponível para o nível/classe atual (fluxo normal, não-multiclasse).
+  // Habilidade de Classe cadastrada exatamente neste nível — etapa sempre presente, qualquer bucket.
   const nextAbilities = !isNewClass && !isBonus && cls ? getAvailableAbilities(classId, toLevelInClass).filter((a) => a.level === toLevelInClass) : [];
   const hasHabilidade = nextAbilities.length > 0;
   const hasPoderGeral = GENERAL_POWERS.some((p) => !existingGeneralPowers.includes(p.id));
   const nonMaxSkills = SKILLS.filter((s) => nextSkillGrade(skills[s.id] ?? "inexperiente") !== null);
   const hasGrauPericia = nonMaxSkills.length > 0;
   const availability: Record<LevelUpChoiceKind, boolean> = {
-    habilidade_classe: hasHabilidade, poder_geral: hasPoderGeral, grau_pericia: hasGrauPericia, atributo: true,
+    poder_geral: hasPoderGeral, grau_pericia: hasGrauPericia, atributo: true,
   };
-  const chain = bucket === "par" ? PAR_FALLBACK_CHAIN : IMPAR_FALLBACK_CHAIN;
-  const resolvedKind: LevelUpChoiceKind | null = bucket === "quinto" ? null : chain.find((k) => availability[k]) ?? "atributo";
+  const resolvedKind: LevelUpChoiceKind | null = bucket === "quinto" ? null : LEVEL_FALLBACK_CHAIN.find((k) => availability[k]) ?? "atributo";
 
   const quintoSkillTarget = Math.min(2, nonMaxSkills.length);
 
@@ -161,11 +160,11 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   }
 
   function goNext() {
-    if (step === 0) { setStep(isNewClass ? 3 : 1); return; }
-    setStep((s) => Math.min(s + 1, 3));
+    if (step === 0) { setStep(isNewClass ? LAST_STEP : 1); return; }
+    setStep((s) => Math.min(s + 1, LAST_STEP));
   }
   function goBack() {
-    if (step === 3 && isNewClass) { setStep(0); return; }
+    if (step === LAST_STEP && isNewClass) { setStep(0); return; }
     setStep((s) => Math.max(s - 1, 0));
   }
 
@@ -177,17 +176,17 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
     });
   }
 
-  const canSubmit = isNewClass
-    ? !!classPowerName
-    : bucket === "quinto"
+  const evolutionReady = bucket === "quinto"
     ? !!attrKey && quintoSkillIds.length === quintoSkillTarget
-    : resolvedKind === "habilidade_classe"
-    ? !!classPowerName
     : resolvedKind === "poder_geral"
     ? !!generalPowerId
     : resolvedKind === "grau_pericia"
     ? !!skillGradeUpId
     : !!attrKey;
+
+  const canSubmit = isNewClass
+    ? !!classPowerName
+    : (!hasHabilidade || !!classPowerName) && evolutionReady;
 
   async function submit() {
     setSaving(true);
@@ -196,13 +195,13 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
       const body = isNewClass
         ? { classId, classPowerId: classPowerName }
         : bucket === "quinto"
-        ? { classId, attrKey, skillGradeUpIds: quintoSkillIds }
+        ? { classId, attrKey, skillGradeUpIds: quintoSkillIds, classPowerId: hasHabilidade ? classPowerName : undefined }
         : {
             classId,
             attrKey: resolvedKind === "atributo" ? attrKey : undefined,
-            classPowerId: resolvedKind === "habilidade_classe" ? classPowerName : undefined,
             generalPowerId: resolvedKind === "poder_geral" ? generalPowerId : undefined,
             skillGradeUpId: resolvedKind === "grau_pericia" ? skillGradeUpId : undefined,
+            classPowerId: hasHabilidade ? classPowerName : undefined,
           };
       const res = await fetch(`/api/starwars/characters/${characterId}/levelup`, {
         method: "POST",
@@ -224,7 +223,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
       <div onClick={(e) => e.stopPropagation()} style={{ background: SW.panel, border: `1px solid ${SW.accentBord}`, boxShadow: `0 0 40px ${SW.glow}`, padding: 30, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
           <p style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.accentLight, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>
-            Progressão · Etapa {step + 1} de 4 — {STEP_LABEL[step]}
+            Progressão · Etapa {step + 1} de {STEP_LABEL.length} — {STEP_LABEL[step]}
           </p>
           <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.3rem", fontWeight: 700, color: "var(--text)" }}>
             Nível <span style={{ color: SW.textSubtle }}>{fromLevel}</span> → <span style={{ color: SW.accentBright }}>{toLevel}</span>
@@ -355,6 +354,32 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
 
         {step === 2 && !isNewClass && (
           <div>
+            <FieldLabel>Habilidade de Classe aprendida neste nível</FieldLabel>
+            {hasHabilidade ? (
+              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                {nextAbilities.map((a) => (
+                  <button key={a.name} onClick={() => setClassPowerName(a.name)}
+                    style={{ textAlign: "left", padding: "9px 13px", border: `1px solid ${classPowerName === a.name ? SW.accentBord : "var(--border)"}`, background: classPowerName === a.name ? SW.accentDim : "rgba(255,255,255,0.02)", color: "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
+                    <strong style={{ color: classPowerName === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
+                    <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
+                      <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
+                      {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Sabre: 6d6×atributo+perícia ×2" : "Sabre: 6d6×atributo+perícia"}</span>}
+                      {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
+                      {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: "0.78rem", color: SW.textSubtle, marginTop: 10 }}>
+                {isBonus ? "Nível Bônus não pertence a nenhuma classe — sem habilidade." : "Nenhuma habilidade nova cadastrada para essa classe neste nível."}
+              </p>
+            )}
+          </div>
+        )}
+
+        {step === 3 && !isNewClass && (
+          <div>
             <FieldLabel>Evolução deste nível{bucket !== "quinto" && resolvedKind ? `: ${KIND_LABEL[resolvedKind]}` : ""}</FieldLabel>
 
             {bucket === "quinto" ? (
@@ -395,23 +420,6 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                     {ATTR_KEYS.map((k) => (
                       <button key={k} onClick={() => setAttrKey(k)} style={{ padding: "6px 12px", border: `1px solid ${attrKey === k ? SW.accentBord : "var(--border)"}`, background: attrKey === k ? SW.accentDim : "rgba(255,255,255,0.02)", color: attrKey === k ? SW.accentBright : SW.textMuted, cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
                         {ATTR_LABEL[k]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {resolvedKind === "habilidade_classe" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {nextAbilities.map((a) => (
-                      <button key={a.name} onClick={() => setClassPowerName(a.name)}
-                        style={{ textAlign: "left", padding: "9px 13px", border: `1px solid ${classPowerName === a.name ? SW.accentBord : "var(--border)"}`, background: classPowerName === a.name ? SW.accentDim : "rgba(255,255,255,0.02)", color: "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
-                        <strong style={{ color: classPowerName === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
-                        <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
-                          <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
-                          {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Teste attr+perícia" : "Sabre: 6d6×atributo+perícia"}</span>}
-                          {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
-                          {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
-                        </div>
                       </button>
                     ))}
                   </div>
@@ -467,7 +475,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <div>
             {isNewClass ? (
               <>
@@ -487,9 +495,9 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, fontSize: "0.82rem", color: "var(--text)" }}>
                   <p>Classe: <strong>{isBonus ? "Bônus (sem classe)" : cls?.name}</strong></p>
                   <p>Sobe: {[grants.pv && "Vida", grants.pe && "Energia da Força", grants.pp && "Pontos de Poder"].filter(Boolean).join(", ") || "—"}</p>
+                  <p>Habilidade de Classe: {hasHabilidade ? classPowerName ?? "—" : "nenhuma neste nível"}</p>
                   <p>Evolução: {bucket === "quinto"
                     ? `${quintoSkillIds.map((id) => SKILLS.find((s) => s.id === id)?.name).join(", ")} + ${attrKey ? ATTR_LABEL[attrKey] : "—"}`
-                    : resolvedKind === "habilidade_classe" ? classPowerName ?? "—"
                     : resolvedKind === "poder_geral" ? GENERAL_POWER_BY_ID[generalPowerId ?? ""]?.name ?? "—"
                     : resolvedKind === "grau_pericia" ? SKILLS.find((s) => s.id === skillGradeUpId)?.name ?? "—"
                     : attrKey ? ATTR_LABEL[attrKey] : "—"}
@@ -506,7 +514,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
           <button onClick={step === 0 ? onClose : goBack} style={{ padding: "9px 18px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", color: "var(--text)", cursor: "pointer", fontSize: "0.84rem", borderRadius: 6 }}>
             {step === 0 ? "Cancelar" : "← Voltar"}
           </button>
-          {step < 3 ? (
+          {step < LAST_STEP ? (
             <button onClick={goNext} style={{ padding: "9px 22px", background: `linear-gradient(135deg, ${SW.accentLight} 0%, ${SW.accent} 100%)`, border: "none", color: "#04070c", fontWeight: 800, cursor: "pointer", fontSize: "0.84rem", borderRadius: 6, boxShadow: `0 0 18px ${SW.glow}` }}>
               Próximo →
             </button>

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   MAX_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, levelUpBucket, vitalsGrantedAtLevel,
-  PAR_FALLBACK_CHAIN, IMPAR_FALLBACK_CHAIN, levelUpGain, ppLevelUpGain, canCombineClasses,
+  LEVEL_FALLBACK_CHAIN, levelUpGain, ppLevelUpGain, canCombineClasses,
   countExpertSkills, expertSkillsRequiredForNewClass, type LevelUpChoiceKind,
 } from "@/lib/starwars/leveling";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
@@ -98,7 +98,7 @@ export async function POST(
     const grants = vitalsGrantedAtLevel(bucket);
 
     if (bucket === "quinto") {
-      if (attrKey || classPowerId || generalPowerId) {
+      if (attrKey || generalPowerId) {
         return NextResponse.json({ error: "Nível múltiplo de 5: só aceita subir grau de perícia e +1 atributo." }, { status: 400 });
       }
       const available = nonMaxSkillIds();
@@ -117,21 +117,14 @@ export async function POST(
         skills[sid] = SKILL_GRADE_ORDER[idx + 1];
       }
     } else {
-      const chain = bucket === "par" ? PAR_FALLBACK_CHAIN : IMPAR_FALLBACK_CHAIN;
-      const hasHabilidade = !isBonus && !!cls && getAvailableAbilities(classId, toLevelInClass).some((a) => a.level === toLevelInClass);
       const hasPoderGeral = GENERAL_POWERS.some((p) => !existingGeneralPowers.includes(p.id));
       const hasGrauPericia = nonMaxSkillIds().length > 0;
       const availability: Record<LevelUpChoiceKind, boolean> = {
-        habilidade_classe: hasHabilidade, poder_geral: hasPoderGeral, grau_pericia: hasGrauPericia, atributo: true,
+        poder_geral: hasPoderGeral, grau_pericia: hasGrauPericia, atributo: true,
       };
-      const resolvedKind = chain.find((k) => availability[k])!;
+      const resolvedKind = LEVEL_FALLBACK_CHAIN.find((k) => availability[k])!;
 
-      if (resolvedKind === "habilidade_classe") {
-        if (!classPowerId) return NextResponse.json({ error: "Escolha uma Habilidade de Classe." }, { status: 400 });
-        const ability = getAvailableAbilities(classId, toLevelInClass).find((a) => a.name === classPowerId && a.level === toLevelInClass);
-        if (!ability) return NextResponse.json({ error: "Habilidade não disponível para esta classe/nível." }, { status: 400 });
-        newClassPowers.push({ level: toLevelInClass, id: classPowerId, name: ability.name, source: "classe", classId });
-      } else if (resolvedKind === "poder_geral") {
+      if (resolvedKind === "poder_geral") {
         if (!generalPowerId) return NextResponse.json({ error: "Escolha um Poder Geral." }, { status: 400 });
         const power = GENERAL_POWER_BY_ID[generalPowerId];
         if (!power || existingGeneralPowers.includes(generalPowerId)) return NextResponse.json({ error: "Poder Geral inválido ou já aprendido." }, { status: 400 });
@@ -148,6 +141,18 @@ export async function POST(
         }
         attrUpdates[attrKey] = ((sheet as unknown as Record<string, number>)[attrKey] ?? 0) + 1;
       }
+    }
+
+    // Etapa sempre presente: aprende a Habilidade de Classe cadastrada exatamente neste nível
+    // da classe que recebeu o nível (qualquer bucket) — se não houver nenhuma, não exige nada.
+    const abilityOptions = cls ? getAvailableAbilities(classId, toLevelInClass).filter((a) => a.level === toLevelInClass) : [];
+    if (abilityOptions.length > 0) {
+      if (!classPowerId) return NextResponse.json({ error: "Escolha a Habilidade de Classe aprendida neste nível." }, { status: 400 });
+      const ability = abilityOptions.find((a) => a.name === classPowerId);
+      if (!ability) return NextResponse.json({ error: "Habilidade não disponível para esta classe/nível." }, { status: 400 });
+      newClassPowers.push({ level: toLevelInClass, id: classPowerId, name: ability.name, source: "classe", classId });
+    } else if (classPowerId) {
+      return NextResponse.json({ error: "Nenhuma Habilidade de Classe disponível neste nível." }, { status: 400 });
     }
   }
 
