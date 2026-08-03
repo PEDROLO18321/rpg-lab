@@ -2,7 +2,7 @@
 
 import { ATTR_KEYS, SKILL_GRADE_BONUS, type AttrKey, type SkillGrade, type StarWarsAttrs } from "./data";
 import { SPECIES_BY_ID, TIER_BONUS } from "./species";
-import { CLASS_BY_ID, ARCHETYPE_FORMULA } from "./classes";
+import { CLASS_BY_ID, ARCHETYPE_FORMULA, archetypePv1, archetypePe1 } from "./classes";
 import { PLANET_BY_ID } from "./planets";
 
 /** A perícia da Habilidade Natal exige escolha do jogador quando o planeta lista 2 opções. Com 1 só, não há escolha. */
@@ -87,8 +87,8 @@ export function computeVitals(classId: string, speciesId: string, vig: number, s
 
   const formula = ARCHETYPE_FORMULA[cls.archetype];
   const tierBonus = TIER_BONUS[species.tier];
-  const pvMax = formula.pv1 + tierBonus.pv + vig;
-  const peMax = formula.pe1 + tierBonus.pe + sen;
+  const pvMax = archetypePv1(formula, vig) + tierBonus.pv;
+  const peMax = archetypePe1(formula, sen) + tierBonus.pe;
   const ppMax = 2 + pre + cls.ppModifier;
 
   return { pvMax, peMax, ppMax };

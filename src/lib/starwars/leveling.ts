@@ -1,12 +1,12 @@
 // Star Wars: Além da Fronteira — progressão de nível, multiclasse e limite de PP por turno
 
-import { ARCHETYPE_FORMULA, CLASS_BY_ID, FORCE_BASE_CLASS_IDS } from "./classes";
+import { ARCHETYPE_FORMULA, CLASS_BY_ID, FORCE_BASE_CLASS_IDS, archetypePv1, archetypePvPerLevel, archetypePe1, archetypePePerLevel } from "./classes";
 import { TIER_BONUS, SPECIES_BY_ID } from "./species";
 import { SKILLS } from "./skills";
 import { SKILL_GRADE_ORDER } from "./data";
 
 /** Nível total do personagem (soma dos níveis de todas as classes + bônus sem classe). */
-export const MAX_LEVEL = 1111;
+export const MAX_LEVEL = 2000;
 
 /** Nível máximo que uma única classe pode atingir (multiclasse: cada classe tem seu próprio teto). */
 export const CLASS_LEVEL_CAP = 40;
@@ -15,48 +15,32 @@ export const CLASS_LEVEL_CAP = 40;
  * Sentinela usado no lugar de um classId real quando o jogador escolhe um nível "Bônus":
  * conta pro nível total (e evolução normal do nível), mas não pertence a nenhuma classe —
  * não concede PV/PE de arquétipo nem habilidade de classe. Existe pra permitir alcançar o
- * nível total máximo (1111) mesmo depois que todas as classes possuídas baterem no teto (40).
+ * nível total máximo (2000) mesmo depois que todas as classes possuídas baterem no teto (40).
  */
 export const BONUS_LEVEL_ID = "__bonus__";
-
-/**
- * PV Máximo = Pv Soma das Classes + Pv por Subir de Nível + (Multiplicador de Vigor × Vigor).
- * O multiplicador começa neste valor mas é editável por personagem (StarWarsSheet.pvVigMultiplier).
- */
-export const DEFAULT_PV_VIG_MULTIPLIER = 4;
 
 export function ppLevelUpGain(pre: number): number {
   return 1 + pre;
 }
 
 /**
- * PV/PE ganhos ao subir de nível numa classe específica (soma o atributo de novo, igual ao padrão do sistema).
- * Quando é o 1º nível nessa classe (multiclasse virgem: toLevelInClass === 1), usa a base da classe (pv1/pe1),
- * não o incremento por nível — senão o personagem nasceria com menos PV/PE do que deveria na nova classe.
+ * PV/PE ganhos ao subir de nível numa classe específica (embute Vigor/Sensitividade pela fórmula do
+ * arquétipo). Quando é o 1º nível nessa classe (multiclasse virgem: toLevelInClass === 1), usa a base
+ * da classe (pv1/pe1), não o incremento por nível — senão o personagem nasceria com menos PV/PE do que
+ * deveria na nova classe.
  */
 export function levelUpGain(classId: string, vig: number, sen: number, toLevelInClass: number): { pv: number; pe: number } {
   const cls = CLASS_BY_ID[classId];
   if (!cls) return { pv: 0, pe: 0 };
   const f = ARCHETYPE_FORMULA[cls.archetype];
-  if (toLevelInClass === 1) return { pv: f.pv1 + vig, pe: f.pe1 + sen };
-  return { pv: f.pvPerLevel + vig, pe: f.pePerLevel + sen };
+  if (toLevelInClass === 1) return { pv: archetypePv1(f, vig), pe: archetypePe1(f, sen) };
+  return { pv: archetypePvPerLevel(f, vig), pe: archetypePePerLevel(f, sen) };
 }
 
 /** Todas as 25 perícias já estão no grau máximo (Mestre) — não sobra nenhuma pra escolher subir. */
 export function allSkillsAtMaxGrade(skills: Record<string, string>): boolean {
   const maxGrade = SKILL_GRADE_ORDER[SKILL_GRADE_ORDER.length - 1];
   return SKILLS.every((s) => skills[s.id] === maxGrade);
-}
-
-/**
- * Nível total múltiplo de 5 (5, 10, 15...) força "subir grau de perícia" como única escolha
- * do nível — exceto quando o personagem já tem todas as perícias no grau máximo, caso em que
- * não há nada pra escolher e a obrigatoriedade cai (senão travaria a progressão pra sempre).
- * Note que essa regra é sobre o nível TOTAL, não sobre o nível de uma classe específica —
- * bater 20/30/40 numa classe (5º/6º/7º círculo) não força nada por si só.
- */
-export function isSkillGradeMandatory(toLevel: number, skills: Record<string, string>): boolean {
-  return toLevel % 5 === 0 && !allSkillsAtMaxGrade(skills);
 }
 
 /** Soma PV/PE/PP "por fatia" — cada nível investido numa classe usa a fórmula daquela classe (multiclasse). */
@@ -79,8 +63,8 @@ export function computeTotalVitals(
     const cls = CLASS_BY_ID[classId];
     if (!cls || levels <= 0) continue;
     const f = ARCHETYPE_FORMULA[cls.archetype];
-    pvMax += f.pv1 + vig + (levels - 1) * (f.pvPerLevel + vig);
-    peMax += f.pe1 + sen + (levels - 1) * (f.pePerLevel + sen);
+    pvMax += archetypePv1(f, vig) + (levels - 1) * archetypePvPerLevel(f, vig);
+    peMax += archetypePe1(f, sen) + (levels - 1) * archetypePePerLevel(f, sen);
     ppModifierSum += cls.ppModifier; // modificador de PP é acumulativo entre todas as classes
   }
   ppMax += ppModifierSum;
@@ -95,14 +79,32 @@ export function ppMaxPerTurn(totalLevel: number): number {
 
 export type LevelUpChoiceKind = "atributo" | "poder_geral" | "habilidade_classe" | "grau_pericia";
 
-/** Transições ímpar→par liberam atributo OU habilidade; par→ímpar liberam poder geral OU habilidade. */
-export function availableChoiceKinds(fromLevel: number, toLevel: number): LevelUpChoiceKind[] {
-  const wasOdd = fromLevel % 2 === 1;
-  const kinds: LevelUpChoiceKind[] = ["grau_pericia"]; // sempre disponível
-  if (wasOdd) kinds.push("atributo", "habilidade_classe");
-  else kinds.push("poder_geral", "habilidade_classe");
-  return kinds;
+/**
+ * Bucket do nível: define o que sobe na ficha e qual a evolução daquele nível.
+ * - "quinto" (múltiplo de 5): sobe Vida + PE + PP; evolução = até 2 perícias sobem de grau + 1 atributo.
+ * - "par" (ímpar→par, não múltiplo de 5): sobe só Vida; evolução = Habilidade de Classe.
+ * - "impar" (par→ímpar, não múltiplo de 5): sobe só PE + PP; evolução = Poder Geral.
+ */
+export type LevelUpBucket = "par" | "impar" | "quinto";
+
+export function levelUpBucket(toLevel: number): LevelUpBucket {
+  if (toLevel % 5 === 0) return "quinto";
+  return toLevel % 2 === 0 ? "par" : "impar";
 }
+
+/** O que sobe automaticamente na ficha nesse nível, conforme o bucket. */
+export function vitalsGrantedAtLevel(bucket: LevelUpBucket): { pv: boolean; pe: boolean; pp: boolean } {
+  if (bucket === "quinto") return { pv: true, pe: true, pp: true };
+  if (bucket === "par") return { pv: true, pe: false, pp: false };
+  return { pv: false, pe: true, pp: true };
+}
+
+/**
+ * Cadeia de fallback da evolução obrigatória: tenta o 1º item; se não houver opção real
+ * disponível (ver checagens específicas no client/API), cai pro próximo da lista.
+ */
+export const PAR_FALLBACK_CHAIN: LevelUpChoiceKind[] = ["habilidade_classe", "poder_geral", "grau_pericia", "atributo"];
+export const IMPAR_FALLBACK_CHAIN: LevelUpChoiceKind[] = ["poder_geral", "grau_pericia", "atributo"];
 
 // ─── Multiclasse ──────────────────────────────────────────────────────────────
 

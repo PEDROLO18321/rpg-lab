@@ -45,8 +45,8 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
             <Badge>{ARCHETYPE_LABEL[cls.archetype]}</Badge>
-            <Badge tone="muted">PV {ARCHETYPE_FORMULA[cls.archetype].pv1} (+{ARCHETYPE_FORMULA[cls.archetype].pvPerLevel}/nível)</Badge>
-            <Badge tone="muted">PE {ARCHETYPE_FORMULA[cls.archetype].pe1} (+{ARCHETYPE_FORMULA[cls.archetype].pePerLevel}/nível)</Badge>
+            <Badge tone="muted">PV {ARCHETYPE_FORMULA[cls.archetype].pv1Base}+Vig×{ARCHETYPE_FORMULA[cls.archetype].pv1VigMult} (+{ARCHETYPE_FORMULA[cls.archetype].pvPerLevelBase}+Vig×{ARCHETYPE_FORMULA[cls.archetype].pvPerLevelVigMult}/nível)</Badge>
+            <Badge tone="muted">PE {ARCHETYPE_FORMULA[cls.archetype].pe1Base}+Sen×{ARCHETYPE_FORMULA[cls.archetype].pe1SenMult} (+{ARCHETYPE_FORMULA[cls.archetype].pePerLevelBase}+Sen×{ARCHETYPE_FORMULA[cls.archetype].pePerLevelSenMult}/nível)</Badge>
             <Badge tone="muted">Perícias ×{ARCHETYPE_FORMULA[cls.archetype].skillMultiplier}</Badge>
           </div>
 
