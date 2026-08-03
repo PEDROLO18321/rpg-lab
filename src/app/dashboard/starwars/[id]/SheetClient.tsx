@@ -555,7 +555,6 @@ export function SheetClient({ character }: { character: CharacterProp }) {
             equipment={equipment} addEquipment={addEquipment} removeEquipment={removeEquipment}
             addCatalogItem={addCatalogItem} setEquipmentQty={setEquipmentQty} toggleEquipped={toggleEquipped}
             adjust={adjust} setTempValue={setTempValue}
-            bumpSkillGrade={bumpSkillGrade}
             {...sharedVitals}
           />
         ) : mode === "editar" ? (
@@ -776,7 +775,7 @@ function PlayMode({
   sheet, attrs, skills, generalPowerIds, classLevels, classPowers,
   equipment, addEquipment, removeEquipment, addCatalogItem, setEquipmentQty, toggleEquipped,
   pvCur, peCur, ppCur, pvTemp, peTemp, ppTemp,
-  adjust, setTempValue, bumpSkillGrade,
+  adjust, setTempValue,
 }: VitalsProps & {
   sheet: StarWarsSheetData; attrs: Record<AttrKey, number>; skills: Record<string, SkillGrade>;
   generalPowerIds: string[]; classLevels: Record<string, number>;
@@ -785,7 +784,6 @@ function PlayMode({
   addCatalogItem: (itemId: string) => void; setEquipmentQty: (id: string, qty: number) => void; toggleEquipped: (id: string) => void;
   adjust: (field: "pv" | "pe" | "pp", delta: number) => void;
   setTempValue: (field: "pv" | "pe" | "pp", value: number) => void;
-  bumpSkillGrade: (skillId: string) => void;
 }) {
   const [lastRoll, setLastRoll] = useState<RollEntry | null>(null);
   const [fxRoll, setFxRoll] = useState<RollEntry | null>(null);
@@ -797,6 +795,7 @@ function PlayMode({
   const [selectedDie, setSelectedDie] = useState<DiceSides>(20);
   const [diceQty, setDiceQty] = useState(1);
   const [pickMode, setPickMode] = useState<"soma" | "maior">("soma");
+  const [rollChoice, setRollChoice] = useState<{ skillId: string; chosenAttr?: AttrKey } | null>(null);
 
   function doRoll(label: string, attr: AttrKey, bonus: number) {
     const pool = attributeDicePool(attrs[attr]);
@@ -826,14 +825,29 @@ function PlayMode({
     const planetBonus = planetSkillBonus(sheet.planet, sheet.planetSkillChoice, skillId);
     return SKILL_GRADE_BONUS[grade] + planetBonus;
   }
-  function skillBestAttr(skillId: string): AttrKey {
-    const skill = SKILL_BY_ID[skillId];
-    return skill.attrs.reduce((best, a) => (attrs[a] > attrs[best] ? a : best), skill.attrs[0]);
-  }
   function rollSkillRow(skillId: string) {
     const skill = SKILL_BY_ID[skillId];
     if (!skill) return;
-    doRoll(skill.name, skillBestAttr(skillId), skillTotal(skillId) + mod);
+    if (skill.attrs.length === 1) { finalizeSkillRoll(skillId, skill.attrs[0], false); return; }
+    setRollChoice({ skillId });
+  }
+  function chooseAttrForRoll(attr: AttrKey) {
+    if (!rollChoice) return;
+    if (attr === "sen" && rollChoice.skillId !== "dominio_forca") {
+      setRollChoice({ ...rollChoice, chosenAttr: attr });
+      return;
+    }
+    finalizeSkillRoll(rollChoice.skillId, attr, false);
+    setRollChoice(null);
+  }
+  function choosePeSpend(spend: boolean) {
+    if (!rollChoice?.chosenAttr) return;
+    finalizeSkillRoll(rollChoice.skillId, rollChoice.chosenAttr, spend);
+    setRollChoice(null);
+  }
+  function finalizeSkillRoll(skillId: string, attr: AttrKey, spendPe: boolean) {
+    doRoll(SKILL_BY_ID[skillId].name, attr, skillTotal(skillId) + mod);
+    if (spendPe) adjust("pe", -1);
   }
   function rollAttribute(k: AttrKey) {
     doRoll(ATTR_LABEL[k], k, mod);
@@ -970,7 +984,7 @@ function PlayMode({
                 const total = skillTotal(s.id);
                 return (
                   <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: "var(--radius)", background: grade !== "inexperiente" ? ACCENT_DIM : "transparent" }}>
-                    <GradeDot grade={grade} onClick={() => bumpSkillGrade(s.id)} />
+                    <GradeDot grade={grade} />
                     <button onClick={() => rollSkillRow(s.id)} style={{ flex: 1, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: "0.8rem", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
                       <span style={{ fontSize: "0.68rem", color: total ? ACCENT_LIGHT : "var(--text-subtle)", fontWeight: 700, flexShrink: 0 }}>{total >= 0 ? "+" : ""}{total}</span>
@@ -1185,6 +1199,36 @@ function PlayMode({
       </div>
 
       <RollToast roll={fxRoll} color={ACCENT} edgeColor={ACCENT_LIGHT} emissive="#12202e" />
+
+      {rollChoice && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(5,7,13,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={() => setRollChoice(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: 22, width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", gap: 14 }}>
+            {rollChoice.chosenAttr ? (
+              <>
+                <p style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--text)" }}>Gastar 1 Ponto de Energia da Força?</p>
+                <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)" }}>{SKILL_BY_ID[rollChoice.skillId]?.name} rolada com {ATTR_LABEL[rollChoice.chosenAttr]} (Sensitividade).</p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => choosePeSpend(true)} style={{ flex: 1, padding: "9px 12px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT, borderRadius: "var(--radius)", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem" }}>Sim</button>
+                  <button onClick={() => choosePeSpend(false)} style={{ flex: 1, padding: "9px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: "var(--radius)", cursor: "pointer", fontWeight: 700, fontSize: "0.8rem" }}>Não</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--text)" }}>Rolar {SKILL_BY_ID[rollChoice.skillId]?.name} com qual atributo?</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {SKILL_BY_ID[rollChoice.skillId]?.attrs.map((a) => (
+                    <button key={a} onClick={() => chooseAttrForRoll(a)} style={{ padding: "9px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "var(--radius)", cursor: "pointer", fontWeight: 700, fontSize: "0.82rem", textAlign: "left" }}>
+                      {ATTR_LABEL[a]} <span style={{ color: "var(--text-subtle)", fontWeight: 400 }}>({attrs[a]})</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            <button onClick={() => setRollChoice(null)} style={{ alignSelf: "flex-end", background: "none", border: "none", color: "var(--text-subtle)", fontSize: "0.72rem", cursor: "pointer", padding: 0 }}>Cancelar</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

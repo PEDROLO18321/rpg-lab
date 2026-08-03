@@ -8,6 +8,12 @@ export const ARCHETYPE_LABEL: Record<Archetype, string> = {
   sensivel: "Sensível à Força",
 };
 
+export const ARCHETYPE_DESCRIPTION: Record<Archetype, string> = {
+  marcial: "Focado em combate físico e tático. Especialista em armas, armaduras, atletismo e enfrentamento direto. Excelente em combates convencionais.",
+  especialista: "Mestre em conhecimento técnico, perícias avançadas e resolução de problemas. Ideal para hacking, mecânica, investigação, pilotagem e suporte.",
+  sensivel: "Conectado profundamente à Força. Acesso privilegiado a poderes, Domínio da Força e perícias relacionadas à Sensitividade. Caminho dos Jedi, Sith e outros usuários da Força.",
+};
+
 export const ARCHETYPE_FORMULA: Record<Archetype, { pv1: number; pvPerLevel: number; pe1: number; pePerLevel: number; skillMultiplier: number }> = {
   marcial: { pv1: 20, pvPerLevel: 4, pe1: 2, pePerLevel: 1, skillMultiplier: 1.5 },
   especialista: { pv1: 16, pvPerLevel: 3, pe1: 4, pePerLevel: 2, skillMultiplier: 3 },

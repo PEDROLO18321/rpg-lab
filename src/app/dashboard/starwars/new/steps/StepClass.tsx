@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CLASSES, ARCHETYPE_LABEL, ARCHETYPE_FORMULA } from "@/lib/starwars/classes";
+import { CLASSES, ARCHETYPE_LABEL, ARCHETYPE_FORMULA, ARCHETYPE_DESCRIPTION } from "@/lib/starwars/classes";
 import { getClassAbilities, getAbilitiesGroupedByLevel } from "@/lib/starwars/powers/registry";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import type { WizardData } from "../CharacterWizard";
@@ -25,7 +25,7 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-      <SectionTitle eyebrow="Etapa 4 de 8" title="Classe" desc="Sua classe define papel, arquétipo (Marcial / Especialista / Sensível à Força) e progressão de habilidades até o nível 1111." />
+      <SectionTitle eyebrow="Etapa 3 de 8" title="Classe" desc="Sua classe define papel, arquétipo (Marcial / Especialista / Sensível à Força) e progressão de habilidades até o nível 1111." />
 
       <div style={gridAutoFill(175)}>
         {selectable.map((c) => (
@@ -38,6 +38,10 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
           <div ref={detailRef} style={{ scrollMarginTop: 120 }} />
           <h3 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.1rem", fontWeight: 700, color: SW.accentBright, marginBottom: 8 }}>{cls.name}</h3>
           <p style={{ fontSize: "0.84rem", color: SW.textMuted, lineHeight: 1.65, marginBottom: 12 }}>{cls.description}</p>
+
+          <p style={{ fontSize: "0.8rem", color: SW.textMuted, lineHeight: 1.6, marginBottom: 14, padding: "10px 14px", background: "rgba(59,130,196,0.06)", borderLeft: `2px solid ${SW.accentBord}` }}>
+            <strong style={{ color: SW.accentBright }}>{ARCHETYPE_LABEL[cls.archetype]}:</strong> {ARCHETYPE_DESCRIPTION[cls.archetype]}
+          </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
             <Badge>{ARCHETYPE_LABEL[cls.archetype]}</Badge>

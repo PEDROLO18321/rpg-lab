@@ -1,10 +1,11 @@
 "use client";
 
-import { ATTR_KEYS, ATTR_LABEL, ATTR_CREATION_POINTS, attrPointsRemaining, attrPointsSpent, type StarWarsAttrs } from "@/lib/starwars/data";
+import { ATTR_KEYS, ATTR_LABEL, ATTR_ABBR, ATTR_CREATION_POINTS, attrPointsRemaining, attrPointsSpent, type StarWarsAttrs } from "@/lib/starwars/data";
 import { SPECIES_BY_ID } from "@/lib/starwars/species";
 import { attributeDicePool } from "@/lib/starwars/creation";
+import { SKILLS } from "@/lib/starwars/skills";
 import type { WizardData } from "../CharacterWizard";
-import { SW, SectionTitle, Badge } from "../../ui";
+import { SW, SectionTitle, Badge, gridAutoFill } from "../../ui";
 
 interface Props {
   attrBases: StarWarsAttrs;
@@ -26,7 +27,7 @@ export function StepAttrs({ attrBases, attrsFinal, speciesId, onChange }: Props)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-      <SectionTitle eyebrow="Etapa 5 de 8" title="Atributos" desc={`Distribua ${ATTR_CREATION_POINTS} pontos livremente entre os 6 atributos. O valor Final já inclui o modificador de ${species?.name ?? "espécie"} — pode ficar negativo. Regra de dados: atributo positivo rola N d20 e usa o maior; 0 rola 1d20; negativo rola (|valor|+1) d20 e usa o menor.`} />
+      <SectionTitle eyebrow="Etapa 4 de 8" title="Atributos" desc={`Distribua ${ATTR_CREATION_POINTS} pontos livremente entre os 6 atributos. O valor Final já inclui o modificador de ${species?.name ?? "espécie"} — pode ficar negativo. Regra de rolagem: valor 0 rola 2d20 e usa o menor; valor negativo rola (2 + |valor|) d20 e usa o menor; valor 1 rola 1d20 normal; valor 2 ou mais rola N d20 (N = valor) e usa o maior.`} />
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Badge tone={remaining === 0 ? "success" : "gold"}>{remaining === 0 ? "Todos os pontos distribuídos" : `${remaining} pontos restantes`}</Badge>
@@ -53,6 +54,22 @@ export function StepAttrs({ attrBases, attrsFinal, speciesId, onChange }: Props)
             </div>
           );
         })}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <p style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.textMuted, letterSpacing: "0.09em", textTransform: "uppercase" }}>
+          Perícias por atributo
+        </p>
+        <div style={gridAutoFill(150)}>
+          {ATTR_KEYS.map((k) => (
+            <div key={k} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.015)", border: "1px solid var(--border)" }}>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, color: SW.accentLight, marginBottom: 4 }}>{ATTR_ABBR[k]} · {ATTR_LABEL[k]}</p>
+              <p style={{ fontSize: "0.72rem", color: SW.textSubtle, lineHeight: 1.5 }}>
+                {SKILLS.filter((s) => s.attrs.includes(k)).map((s) => s.name).join(", ")}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -25,10 +25,10 @@ export const ACCENT_BORD  = SW.accentBord;
 const STEPS = [
   { id: "species", label: "Espécie",  num: "01" },
   { id: "planet",  label: "Planeta",  num: "02" },
-  { id: "path",    label: "Caminho",  num: "03" },
-  { id: "class",   label: "Classe",   num: "04" },
-  { id: "attrs",   label: "Atributos", num: "05" },
-  { id: "skills",  label: "Perícias", num: "06" },
+  { id: "class",   label: "Classe",   num: "03" },
+  { id: "attrs",   label: "Atributos", num: "04" },
+  { id: "skills",  label: "Perícias", num: "05" },
+  { id: "path",    label: "Caminho",  num: "06" },
   { id: "desc",    label: "Descrição", num: "07" },
   { id: "review",  label: "Revisão",  num: "08" },
 ];
@@ -105,15 +105,15 @@ export function CharacterWizard({ userId, systemId }: Props) {
       return true;
     }
     if (step === 1) return !!data.planetId && (!planetSkillNeedsChoice(data.planetId) || !!data.planetSkillChoice);
-    if (step === 2) return !!data.pathId;
-    if (step === 3) {
+    if (step === 2) {
       if (!cls) return false;
       const firstAbilities = getClassAbilities(cls.id).filter((a) => a.level === 1);
       if (firstAbilities.length > 1) return !!data.classAbilityChoice;
       return true;
     }
-    if (step === 4) return attrPointsRemaining(data.attrBases ?? DEFAULT_ATTRS) === 0;
-    if (step === 5) return (data.skillChoices?.length ?? 0) === skillCount;
+    if (step === 3) return attrPointsRemaining(data.attrBases ?? DEFAULT_ATTRS) === 0;
+    if (step === 4) return (data.skillChoices?.length ?? 0) === skillCount;
+    if (step === 5) return !!data.pathId;
     return true;
   }, [step, data, species, cls, skillCount]);
 
@@ -183,15 +183,12 @@ export function CharacterWizard({ userId, systemId }: Props) {
           <StepPlanet planetId={data.planetId ?? null} planetSkillChoice={data.planetSkillChoice ?? null} onChange={patch} />
         )}
         {step === 2 && (
-          <StepPath pathId={data.pathId ?? null} onChange={patch} />
-        )}
-        {step === 3 && (
           <StepClass classId={data.classId ?? null} classAbilityChoice={data.classAbilityChoice ?? null} onChange={patch} />
         )}
-        {step === 4 && (
+        {step === 3 && (
           <StepAttrs attrBases={data.attrBases ?? DEFAULT_ATTRS} attrsFinal={attrsFinal} speciesId={data.speciesId ?? null} onChange={patch} />
         )}
-        {step === 5 && (
+        {step === 4 && (
           <StepSkills
             classId={data.classId ?? null}
             speciesId={data.speciesId ?? null}
@@ -201,6 +198,9 @@ export function CharacterWizard({ userId, systemId }: Props) {
             skillChoices={data.skillChoices ?? []}
             onChange={patch}
           />
+        )}
+        {step === 5 && (
+          <StepPath pathId={data.pathId ?? null} onChange={patch} />
         )}
         {step === 6 && (
           <StepDesc desc={data.desc ?? {}} onChange={patch} />
