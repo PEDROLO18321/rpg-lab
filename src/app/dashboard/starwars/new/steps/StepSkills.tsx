@@ -35,7 +35,7 @@ export function StepSkills({ speciesId, planetId, planetSkillChoice, skillCount,
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-      <SectionTitle eyebrow="Etapa 6 de 8" title="Perícias" desc="As perícias da sua espécie e a da Habilidade Natal do seu planeta já vêm treinadas (Iniciante) de graça — a do planeta ainda recebe +5 extra por cima. Escolha o restante." />
+      <SectionTitle eyebrow="Etapa 5 de 8" title="Perícias" desc="As perícias da sua espécie e a da Habilidade Natal do seu planeta já vêm treinadas (Iniciante) de graça — a do planeta ainda recebe +5 extra por cima. Escolha o restante." />
 
       <Badge tone={skillChoices.length === skillCount ? "success" : "gold"}>{skillChoices.length}/{skillCount} selecionadas</Badge>
 

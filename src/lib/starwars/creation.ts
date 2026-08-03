@@ -31,14 +31,16 @@ export function totalSkillBonus(grade: SkillGrade, planetId: string | null | und
   return SKILL_GRADE_BONUS[grade] + planetSkillBonus(planetId, chosenSkillId, skillId);
 }
 
-/** Pool de dados por atributo, mesma regra de Ordem Paranormal — aceita atributo negativo.
- * Atributo positivo: rola N d20 (N = valor do atributo) e usa o MAIOR resultado.
- * Atributo zero: rola 1d20 normal.
- * Atributo negativo: rola (|valor| + 1) d20 e usa o MENOR resultado. */
+/** Pool de dados por atributo — aceita atributo negativo.
+ * Atributo 2+: rola N d20 (N = valor do atributo) e usa o MAIOR resultado.
+ * Atributo 1: rola 1d20 normal.
+ * Atributo 0: rola 2d20 e usa o MENOR resultado.
+ * Atributo negativo: rola (2 + |valor|) d20 e usa o MENOR resultado. */
 export function attributeDicePool(attr: number): { dice: number; take: "highest" | "lowest" } {
-  if (attr > 0) return { dice: attr, take: "highest" };
-  if (attr < 0) return { dice: Math.abs(attr) + 1, take: "lowest" };
-  return { dice: 1, take: "highest" };
+  if (attr >= 2) return { dice: attr, take: "highest" };
+  if (attr === 1) return { dice: 1, take: "highest" };
+  if (attr === 0) return { dice: 2, take: "lowest" };
+  return { dice: 2 + Math.abs(attr), take: "lowest" };
 }
 
 /** Aplica o modificador de espécie (fixo, ou a escolha livre do Humano) aos atributos base do jogador. */

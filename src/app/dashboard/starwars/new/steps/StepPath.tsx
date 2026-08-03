@@ -17,7 +17,7 @@ const PATH_COLOR: Record<Path, string> = { luz: "#8fc4f5", neutro: "#c9941f", so
 export function StepPath({ pathId, onChange }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
-      <SectionTitle eyebrow="Etapa 3 de 8" title="Caminho" desc="O Caminho representa sua filosofia e relação com a Força — não define se você é sensível a ela. Qualquer classe pode seguir qualquer Caminho." />
+      <SectionTitle eyebrow="Etapa 6 de 8" title="Caminho" desc="O Caminho representa sua filosofia e relação com a Força — não define se você é sensível a ela. Qualquer classe pode seguir qualquer Caminho." />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
         {(Object.keys(PATH_LABEL) as Path[]).map((p) => {

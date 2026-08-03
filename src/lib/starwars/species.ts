@@ -21,11 +21,11 @@ export const TIER_LABEL: Record<PvPeTier, string> = {
 };
 
 export const TIER_DESCRIPTION: Record<PvPeTier, string> = {
-  robusto: "Espécie fisicamente resistente: +4 PV (Pontos de Vida) na criação.",
-  robusto_extremo: "Biologia excepcionalmente resistente: +6 PV (Pontos de Vida) na criação.",
-  equilibrado: "Nem tanque nem místico: +2 PV e +1 PE (Energia da Força) na criação.",
-  sensivel: "Afinidade natural com a Força: +3 PE (Energia da Força) na criação.",
-  sensivel_extremo: "Ligação profunda e definidora com a Força: +4 PE (Energia da Força) na criação.",
+  equilibrado: "Espécie versátil e sem extremos. Bom equilíbrio entre físico, mental e social. Ideal para personagens adaptáveis a diversas situações. (+2 PV e +1 PE na criação.)",
+  robusto: "Espécie fisicamente resistente e forte. Bônus naturais em Força e/ou Vigor. Melhor desempenho em combate corpo a corpo e sobrevivência. (+4 PV na criação.)",
+  robusto_extremo: "Versão extrema do robusto. Força e resistência muito acima da média, mas com limitações claras em atributos mentais ou de Sensitividade. (+6 PV na criação.)",
+  sensivel: "Espécie com afinidade natural com a Força. Possui boa conexão com Sensitividade e potencial para poderes, sem ser extremo. (+3 PE na criação.)",
+  sensivel_extremo: "Espécie altamente conectada à Força. Grande potencial em poderes e perícias relacionadas à Sensitividade, porém com fraquezas físicas ou mentais marcantes. (+4 PE na criação.)",
 };
 
 export interface Species {
