@@ -288,13 +288,12 @@ function GradeDot({ grade, onClick }: { grade: SkillGrade; onClick?: () => void 
   return <button onClick={onClick} title={SKILL_GRADE_LABEL[grade]} style={{ ...style, cursor: "pointer" }}>{GRADE_LETTER[grade]}</button>;
 }
 
-// Habilidades de Forma de Sabre (Primeiras/Segundas Formas, Formas Completas, Domínio): o Teste
-// é o teste padrão de atributo/perícia do sistema (maior AGI/FOR/SEN + Sabres de Luz); o dano é
-// fixo (10), não rolado — diferente do golpe de sabre "cru", que segue 6d6×atributo+perícia.
+// Habilidades de Forma de Sabre (Primeiras/Segundas Formas, Formas Completas, Domínio): mesmo
+// cálculo do golpe de sabre "cru" (6d6 × atributo + perícia Sabres de Luz), mas o resultado final
+// é o dobro — Formas são estritamente mais fortes que o golpe cru.
 function isSabreForm(a: ClassAbility | ClassMilestone): boolean {
   return a.weaponDamage === "sabre" && !!a.formTag;
 }
-const SABRE_FORM_DAMAGE = 10;
 
 function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
   const pill: React.CSSProperties = { fontSize: "0.66rem", fontWeight: 700, padding: "2px 8px", borderRadius: 999 };
@@ -302,7 +301,9 @@ function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
       <span style={{ ...pill, color: TEMP_BLUE, background: "rgba(94,200,232,0.1)", border: "1px solid rgba(94,200,232,0.3)" }}>{a.peCost} PE</span>
       {isSabreForm(a) && (
-        <span style={{ ...pill, color: GOLD, background: "rgba(201,148,31,0.1)", border: "1px solid rgba(201,148,31,0.3)" }}>Teste: maior AGI/FOR/SEN + Sabres de Luz</span>
+        <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
+          Dano de sabre ×2: 6d6 × atributo (AGI/FOR/SEN) + perícia Sabres de Luz
+        </span>
       )}
       {!isSabreForm(a) && a.weaponDamage === "sabre" && (
         <span style={{ ...pill, color: "#e0524c", background: "rgba(224,82,76,0.1)", border: "1px solid rgba(224,82,76,0.3)" }}>
@@ -806,12 +807,18 @@ function PlayMode({
 
   function activateAbility(a: ClassAbility | ClassMilestone) {
     if (isSabreForm(a)) {
-      // Habilidade de Forma: o Teste segue a mesma regra padrão de teste do sistema (Nd20 pelo
-      // maior entre AGI/FOR/SEN + perícia Sabres de Luz — igual a qualquer perícia/atributo).
-      // O dano é fixo em 10, não rolado (ver badge "Dano: 10").
+      // Habilidade de Forma: mesmo cálculo do golpe de sabre "cru" (6d6 × atributo + perícia
+      // Sabres de Luz), mas o resultado final é o dobro.
       const sabreSkill = SKILL_BY_ID["sabres_de_luz"];
       const bestAttr = sabreSkill.attrs.reduce((best, k) => (attrs[k] > attrs[best] ? k : best), sabreSkill.attrs[0]);
-      doRoll(`Forma: ${a.name}`, bestAttr, skillTotal("sabres_de_luz") + mod);
+      const attrValue = Math.max(1, attrs[bestAttr]);
+      const rolls = Array.from({ length: 6 }, () => Math.floor(Math.random() * 6) + 1);
+      const diceSum = rolls.reduce((x, y) => x + y, 0);
+      const skillBonus = skillTotal("sabres_de_luz");
+      const total = Math.max(0, (diceSum * attrValue + skillBonus) * 2 + mod);
+      const entry: RollEntry = { id: ++rollId.current, label: `Forma: ${a.name}`, dice: 6, total, rolls, kept: diceSum, bonus: skillBonus + mod };
+      setLastRoll(entry); setFxRoll(entry);
+      setLog((l) => [entry, ...l].slice(0, 5));
       adjust("pe", -a.peCost);
       return;
     }
@@ -872,7 +879,7 @@ function PlayMode({
     const all: (ClassAbility | ClassMilestone)[] = [...resolveClassAbilities(classId, lvl, classPowers), ...getAvailableMilestones(classId, lvl)];
     for (const a of all) {
       if (isSabreForm(a)) {
-        abilityDamageRows.push({ name: a.name, baseLabel: `${SABRE_FORM_DAMAGE}`, base: SABRE_FORM_DAMAGE, scales: true });
+        abilityDamageRows.push({ name: a.name, baseLabel: "6d6 × atributo + perícia ×2", base: 0, scales: false });
       } else if (a.weaponDamage === "sabre") {
         abilityDamageRows.push({ name: a.name, baseLabel: "6d6 × atributo + perícia", base: 0, scales: false });
       } else if (a.damageDice) {
@@ -968,7 +975,7 @@ function PlayMode({
                             <span style={{ fontSize: "0.78rem" }}>{a.name}</span>
                             <span style={{ display: "flex", gap: 5, flexShrink: 0 }}>
                               <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{a.peCost} PE</span>
-                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? "Teste attr+perícia" : "Sabre 6d6×atr+perícia"}</span>}
+                              {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? "Sabre 6d6×atr+perícia ×2" : "Sabre 6d6×atr+perícia"}</span>}
                               {a.damageDice && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
                               {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>DT {a.dt}</span>}
                             </span>
