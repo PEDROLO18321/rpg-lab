@@ -14,11 +14,24 @@ export const ARCHETYPE_DESCRIPTION: Record<Archetype, string> = {
   sensivel: "Conectado profundamente à Força. Acesso privilegiado a poderes, Domínio da Força e perícias relacionadas à Sensitividade. Caminho dos Jedi, Sith e outros usuários da Força.",
 };
 
-export const ARCHETYPE_FORMULA: Record<Archetype, { pv1: number; pvPerLevel: number; pe1: number; pePerLevel: number; skillMultiplier: number }> = {
-  marcial: { pv1: 20, pvPerLevel: 4, pe1: 2, pePerLevel: 1, skillMultiplier: 1.5 },
-  especialista: { pv1: 16, pvPerLevel: 3, pe1: 4, pePerLevel: 2, skillMultiplier: 3 },
-  sensivel: { pv1: 14, pvPerLevel: 2, pe1: 6, pePerLevel: 3, skillMultiplier: 2 },
+export interface ArchetypeFormula {
+  pv1Base: number; pv1VigMult: number;
+  pvPerLevelBase: number; pvPerLevelVigMult: number;
+  pe1Base: number; pe1SenMult: number;
+  pePerLevelBase: number; pePerLevelSenMult: number;
+  skillMultiplier: number;
+}
+
+export const ARCHETYPE_FORMULA: Record<Archetype, ArchetypeFormula> = {
+  marcial: { pv1Base: 18, pv1VigMult: 5, pvPerLevelBase: 5, pvPerLevelVigMult: 4, pe1Base: 2, pe1SenMult: 2, pePerLevelBase: 1, pePerLevelSenMult: 1, skillMultiplier: 1.5 },
+  especialista: { pv1Base: 12, pv1VigMult: 3, pvPerLevelBase: 3, pvPerLevelVigMult: 2, pe1Base: 4, pe1SenMult: 3, pePerLevelBase: 3, pePerLevelSenMult: 2, skillMultiplier: 3 },
+  sensivel: { pv1Base: 15, pv1VigMult: 4, pvPerLevelBase: 4, pvPerLevelVigMult: 3, pe1Base: 6, pe1SenMult: 4, pePerLevelBase: 5, pePerLevelSenMult: 3, skillMultiplier: 2 },
 };
+
+export function archetypePv1(f: ArchetypeFormula, vig: number): number { return f.pv1Base + vig * f.pv1VigMult; }
+export function archetypePvPerLevel(f: ArchetypeFormula, vig: number): number { return f.pvPerLevelBase + vig * f.pvPerLevelVigMult; }
+export function archetypePe1(f: ArchetypeFormula, sen: number): number { return f.pe1Base + sen * f.pe1SenMult; }
+export function archetypePePerLevel(f: ArchetypeFormula, sen: number): number { return f.pePerLevelBase + sen * f.pePerLevelSenMult; }
 
 export interface StarWarsClass {
   id: string;

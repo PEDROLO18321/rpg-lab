@@ -22,19 +22,17 @@ export async function PATCH(
     skills, classPowers, generalPowers, equipment, weapons, conditions, background, sabreForm,
     name, portraitUrl, planetSkillChoice,
     agi, int, forca, vig, pre, sen, level, xp, peMax, ppMax, classes,
-    unlockedProphecies, pvClassSum, pvLevelGain, pvVigMultiplier,
+    unlockedProphecies, pvClassSum, pvLevelGain,
   } = body;
 
   const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
 
-  // PV Máximo = Pv Soma das Classes + Pv por Subir de Nível + (Multiplicador de Vigor × Vigor).
-  // Recalculado sempre que qualquer um dos termos (ou o próprio Vigor) muda nesta requisição.
-  const touchesPvFormula = num(pvClassSum) !== undefined || num(pvLevelGain) !== undefined || num(pvVigMultiplier) !== undefined || num(vig) !== undefined;
+  // PV Máximo = Pv Soma das Classes + Pv por Subir de Nível (ambos já embutem Vigor via as fórmulas de arquétipo).
+  // Recalculado sempre que qualquer um dos termos muda nesta requisição.
+  const touchesPvFormula = num(pvClassSum) !== undefined || num(pvLevelGain) !== undefined;
   const effClassSum = num(pvClassSum) ?? sheet.pvClassSum;
   const effLevelGain = num(pvLevelGain) ?? sheet.pvLevelGain;
-  const effVigMultiplier = num(pvVigMultiplier) ?? sheet.pvVigMultiplier;
-  const effVig = num(vig) ?? sheet.vig;
-  const computedPvMax = effClassSum + effLevelGain + effVigMultiplier * effVig;
+  const computedPvMax = effClassSum + effLevelGain;
 
   const sheetData = {
     ...(num(pvCurrent) !== undefined ? { pvCurrent } : {}),
@@ -53,7 +51,7 @@ export async function PATCH(
     ...(num(xp)        !== undefined ? { xp }        : {}),
     ...(num(peMax)     !== undefined ? { peMax }     : {}),
     ...(num(ppMax)     !== undefined ? { ppMax }     : {}),
-    ...(touchesPvFormula ? { pvMax: computedPvMax, pvClassSum: effClassSum, pvLevelGain: effLevelGain, pvVigMultiplier: effVigMultiplier } : {}),
+    ...(touchesPvFormula ? { pvMax: computedPvMax, pvClassSum: effClassSum, pvLevelGain: effLevelGain } : {}),
     ...(notes !== undefined ? { notes } : {}),
     ...(sabreForm !== undefined ? { sabreForm } : {}),
     ...(planetSkillChoice !== undefined ? { planetSkillChoice } : {}),

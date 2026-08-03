@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { MAX_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, availableChoiceKinds, isSkillGradeMandatory, levelUpGain, ppLevelUpGain, canCombineClasses, countExpertSkills, expertSkillsRequiredForNewClass } from "@/lib/starwars/leveling";
+import {
+  MAX_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, levelUpBucket, vitalsGrantedAtLevel,
+  PAR_FALLBACK_CHAIN, IMPAR_FALLBACK_CHAIN, levelUpGain, ppLevelUpGain, canCombineClasses,
+  countExpertSkills, expertSkillsRequiredForNewClass, type LevelUpChoiceKind,
+} from "@/lib/starwars/leveling";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
-import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
+import { GENERAL_POWER_BY_ID, GENERAL_POWERS } from "@/lib/starwars/powers/generalPowers";
 import { SKILL_GRADE_ORDER, type SkillGrade } from "@/lib/starwars/data";
 import type { ChosenPower } from "@/lib/starwars/powers/types";
 
@@ -46,13 +50,32 @@ export async function POST(
     return NextResponse.json({ error: `Nível máximo por classe (${CLASS_LEVEL_CAP}) já atingido nessa classe. Escolha outra classe ou um nível Bônus.` }, { status: 400 });
   }
 
+  const attrKey: string | undefined = body.attrKey;
+  const classPowerId: string | undefined = body.classPowerId;
+  const generalPowerId: string | undefined = body.generalPowerId;
+  const skillGradeUpId: string | undefined = body.skillGradeUpId;
+  const skillGradeUpIds: string[] = Array.isArray(body.skillGradeUpIds) ? body.skillGradeUpIds : [];
+
+  const existingClassPowers: ChosenPower[] = JSON.parse(sheet.classPowers || "[]");
+  const existingGeneralPowers: string[] = JSON.parse(sheet.generalPowers || "[]");
+  const newClassPowers = [...existingClassPowers];
+  const newGeneralPowers = [...existingGeneralPowers];
+  const attrUpdates: Record<string, number> = {};
+
+  const nonMaxSkillIds = () => {
+    const maxGrade = SKILL_GRADE_ORDER[SKILL_GRADE_ORDER.length - 1];
+    return Object.keys(skills).length === 0
+      ? [] // sem perícias cadastradas ainda — trata como "nenhuma disponível", cai pro próximo fallback
+      : Object.entries(skills).filter(([, g]) => g !== maxGrade).map(([sid]) => sid);
+  };
+
   if (isNewClass) {
+    // ─── Multiclasse: ignora as regras normais de subida — só a habilidade de nível 1 da nova classe. ───
     for (const existing of existingClassIds) {
       if (!canCombineClasses(existing, classId)) {
         return NextResponse.json({ error: "Essa classe não pode ser combinada com uma classe ligada à Força que você já tem." }, { status: 400 });
       }
     }
-    // Classes de Caminho e Profecia não exigem perícias Expert — só as gates próprias delas (nível 40 / senha).
     const isSpecialClass = !!cls?.isPathClass || !!cls?.isPropheticClass;
     if (!isSpecialClass) {
       const expertCount = countExpertSkills(skills);
@@ -61,81 +84,93 @@ export async function POST(
         return NextResponse.json({ error: `Esta multiclasse exige ${required} perícias em grau Expert ou acima (você tem ${expertCount}).` }, { status: 400 });
       }
     }
-  }
-
-  const kinds = availableChoiceKinds(fromLevel, toLevel);
-  const mandatorySkill = isSkillGradeMandatory(toLevel, skills);
-
-  const attrKey: string | undefined = body.attrKey;
-  const classPowerId: string | undefined = body.classPowerId;
-  const generalPowerId: string | undefined = body.generalPowerId;
-  const skillGradeUpId: string | undefined = body.skillGradeUpId;
-
-  // Regra: apenas UMA escolha de evolução por nível. A perícia pode substituir qualquer uma
-  // das outras, mas nunca soma com elas. Em níveis múltiplos de 5, a perícia é obrigatória.
-  const pickedCount = [attrKey, classPowerId, generalPowerId, skillGradeUpId].filter(Boolean).length;
-  if (pickedCount > 1) {
-    return NextResponse.json({ error: "Escolha apenas uma evolução para este nível (atributo, habilidade, poder geral OU perícia)." }, { status: 400 });
-  }
-  if (mandatorySkill && !skillGradeUpId) {
-    return NextResponse.json({ error: `Nível ${toLevel} é múltiplo de 5: a evolução obrigatória deste nível é subir o grau de uma perícia.` }, { status: 400 });
-  }
-
-  const attrUpdates: Record<string, number> = {};
-  const existingClassPowers: ChosenPower[] = JSON.parse(sheet.classPowers || "[]");
-  const existingGeneralPowers: string[] = JSON.parse(sheet.generalPowers || "[]");
-  const newClassPowers = [...existingClassPowers];
-  const newGeneralPowers = [...existingGeneralPowers];
-
-  if (attrKey) {
-    if (!kinds.includes("atributo")) return NextResponse.json({ error: "Atributo só pode subir em transições ímpar→par." }, { status: 400 });
-    if (!["agi", "int", "forca", "vig", "pre", "sen"].includes(attrKey)) return NextResponse.json({ error: "Atributo inválido." }, { status: 400 });
-    attrUpdates[attrKey] = ((sheet as unknown as Record<string, number>)[attrKey] ?? 0) + 1;
-  }
-
-  if (classPowerId) {
-    if (isBonus) return NextResponse.json({ error: "Nível Bônus não pertence a nenhuma classe — não concede habilidade de classe." }, { status: 400 });
-    if (!kinds.includes("habilidade_classe")) return NextResponse.json({ error: "Habilidade de classe indisponível nesta transição." }, { status: 400 });
-    const ability = getAvailableAbilities(classId, toLevelInClass).find((a) => a.name === classPowerId && a.level === toLevelInClass);
-    if (!ability) return NextResponse.json({ error: "Habilidade não disponível para esta classe/nível." }, { status: 400 });
-    newClassPowers.push({ level: toLevelInClass, id: classPowerId, name: ability.name, source: "classe", classId });
-  }
-
-  if (generalPowerId) {
-    if (!kinds.includes("poder_geral")) return NextResponse.json({ error: "Poder Geral só pode ser aprendido em transições par→ímpar." }, { status: 400 });
-    const power = GENERAL_POWER_BY_ID[generalPowerId];
-    if (!power) return NextResponse.json({ error: "Poder Geral inválido." }, { status: 400 });
-    if (!newGeneralPowers.includes(generalPowerId)) newGeneralPowers.push(generalPowerId);
-  }
-
-  if (skillGradeUpId) {
-    const current: SkillGrade = skills[skillGradeUpId] ?? "inexperiente";
-    const idx = SKILL_GRADE_ORDER.indexOf(current);
-    if (idx === -1 || idx === SKILL_GRADE_ORDER.length - 1) {
-      return NextResponse.json({ error: "Perícia já está no grau máximo." }, { status: 400 });
+    if (attrKey || generalPowerId || skillGradeUpId || skillGradeUpIds.length > 0) {
+      return NextResponse.json({ error: "Multiclasse só aceita a habilidade de nível 1 da nova classe." }, { status: 400 });
     }
-    skills[skillGradeUpId] = SKILL_GRADE_ORDER[idx + 1];
+    if (!classPowerId) {
+      return NextResponse.json({ error: "Escolha a habilidade de nível 1 da nova classe." }, { status: 400 });
+    }
+    const ability = getAvailableAbilities(classId, 1).find((a) => a.name === classPowerId && a.level === 1);
+    if (!ability) return NextResponse.json({ error: "Habilidade inválida para o nível 1 dessa classe." }, { status: 400 });
+    newClassPowers.push({ level: 1, id: classPowerId, name: ability.name, source: "classe", classId });
+  } else {
+    const bucket = levelUpBucket(toLevel);
+    const grants = vitalsGrantedAtLevel(bucket);
+
+    if (bucket === "quinto") {
+      if (attrKey || classPowerId || generalPowerId) {
+        return NextResponse.json({ error: "Nível múltiplo de 5: só aceita subir grau de perícia e +1 atributo." }, { status: 400 });
+      }
+      const available = nonMaxSkillIds();
+      const expectedCount = Math.min(2, available.length);
+      const uniqueIds = [...new Set(skillGradeUpIds)];
+      if (uniqueIds.length !== expectedCount || uniqueIds.some((sid) => !available.includes(sid))) {
+        return NextResponse.json({ error: `Nível múltiplo de 5 exige subir o grau de ${expectedCount} perícia(s) não-Mestre.` }, { status: 400 });
+      }
+      if (!attrKey || !["agi", "int", "forca", "vig", "pre", "sen"].includes(attrKey)) {
+        return NextResponse.json({ error: "Nível múltiplo de 5 exige escolher +1 ponto de atributo." }, { status: 400 });
+      }
+      attrUpdates[attrKey] = ((sheet as unknown as Record<string, number>)[attrKey] ?? 0) + 1;
+      for (const sid of uniqueIds) {
+        const current: SkillGrade = skills[sid] ?? "inexperiente";
+        const idx = SKILL_GRADE_ORDER.indexOf(current);
+        skills[sid] = SKILL_GRADE_ORDER[idx + 1];
+      }
+    } else {
+      const chain = bucket === "par" ? PAR_FALLBACK_CHAIN : IMPAR_FALLBACK_CHAIN;
+      const hasHabilidade = !isBonus && !!cls && getAvailableAbilities(classId, toLevelInClass).some((a) => a.level === toLevelInClass);
+      const hasPoderGeral = GENERAL_POWERS.some((p) => !existingGeneralPowers.includes(p.id));
+      const hasGrauPericia = nonMaxSkillIds().length > 0;
+      const availability: Record<LevelUpChoiceKind, boolean> = {
+        habilidade_classe: hasHabilidade, poder_geral: hasPoderGeral, grau_pericia: hasGrauPericia, atributo: true,
+      };
+      const resolvedKind = chain.find((k) => availability[k])!;
+
+      if (resolvedKind === "habilidade_classe") {
+        if (!classPowerId) return NextResponse.json({ error: "Escolha uma Habilidade de Classe." }, { status: 400 });
+        const ability = getAvailableAbilities(classId, toLevelInClass).find((a) => a.name === classPowerId && a.level === toLevelInClass);
+        if (!ability) return NextResponse.json({ error: "Habilidade não disponível para esta classe/nível." }, { status: 400 });
+        newClassPowers.push({ level: toLevelInClass, id: classPowerId, name: ability.name, source: "classe", classId });
+      } else if (resolvedKind === "poder_geral") {
+        if (!generalPowerId) return NextResponse.json({ error: "Escolha um Poder Geral." }, { status: 400 });
+        const power = GENERAL_POWER_BY_ID[generalPowerId];
+        if (!power || existingGeneralPowers.includes(generalPowerId)) return NextResponse.json({ error: "Poder Geral inválido ou já aprendido." }, { status: 400 });
+        newGeneralPowers.push(generalPowerId);
+      } else if (resolvedKind === "grau_pericia") {
+        if (!skillGradeUpId) return NextResponse.json({ error: "Escolha uma perícia pra subir de grau." }, { status: 400 });
+        const current: SkillGrade = skills[skillGradeUpId] ?? "inexperiente";
+        const idx = SKILL_GRADE_ORDER.indexOf(current);
+        if (idx === -1 || idx === SKILL_GRADE_ORDER.length - 1) return NextResponse.json({ error: "Perícia já está no grau máximo." }, { status: 400 });
+        skills[skillGradeUpId] = SKILL_GRADE_ORDER[idx + 1];
+      } else {
+        if (!attrKey || !["agi", "int", "forca", "vig", "pre", "sen"].includes(attrKey)) {
+          return NextResponse.json({ error: "Escolha um atributo." }, { status: 400 });
+        }
+        attrUpdates[attrKey] = ((sheet as unknown as Record<string, number>)[attrKey] ?? 0) + 1;
+      }
+    }
+
+    if (!isBonus) classLevels[classId] = toLevelInClass;
   }
 
   const newVig = attrUpdates.vig ?? sheet.vig;
   const newSen = attrUpdates.sen ?? sheet.sen;
   const newPre = attrUpdates.pre ?? sheet.pre;
-  // Nível Bônus não pertence a nenhuma classe: não ganha PV/PE de arquétipo, só o PP geral do nível.
-  const realGain = isBonus ? { pv: 0, pe: 0 } : levelUpGain(classId, newVig, newSen, toLevelInClass);
-  // PP: ganho automático do nível + modificador de PP da nova classe, somado uma única vez
-  // (o modificador é cumulativo entre todas as classes possuídas — regra de "Modificador de PP").
-  const realPpGain = ppLevelUpGain(newPre) + (isNewClass && cls ? cls.ppModifier : 0);
 
-  if (!isBonus) classLevels[classId] = toLevelInClass;
+  // Multiclasse ignora o bucket do nível e ganha o PV/PE base (nível 1) da nova classe direto.
+  // Bônus nunca ganha PV/PE (não pertence a nenhuma classe), só PP conforme o bucket.
+  const bucket = isNewClass ? null : levelUpBucket(toLevel);
+  const grants = isNewClass ? { pv: true, pe: true, pp: false } : vitalsGrantedAtLevel(bucket!);
 
-  // PV Máximo = Pv Soma das Classes + Pv por Subir de Nível + (Multiplicador de Vigor × Vigor).
-  // O ganho de nível (realGain.pv) vai pra "Soma das Classes" no 1º nível de uma classe (a base
-  // dela) e pra "Por Subir de Nível" em todo nível seguinte — mesma divisão que já existia dentro
-  // de levelUpGain. O ganho de PV atual desta subida acompanha o quanto o PV Máximo realmente
-  // mudou (inclui o efeito do multiplicador de Vigor se o atributo subiu neste nível).
-  const newPvClassSum = sheet.pvClassSum + (!isBonus && toLevelInClass === 1 ? realGain.pv : 0);
-  const newPvLevelGain = sheet.pvLevelGain + (!isBonus && toLevelInClass > 1 ? realGain.pv : 0);
-  const newPvMax = newPvClassSum + newPvLevelGain + sheet.pvVigMultiplier * newVig;
+  const pvGainRaw = isNewClass ? levelUpGain(classId, newVig, newSen, 1).pv : !isBonus && grants.pv ? levelUpGain(classId, newVig, newSen, toLevelInClass).pv : 0;
+  const peGainRaw = isNewClass ? levelUpGain(classId, newVig, newSen, 1).pe : !isBonus && grants.pe ? levelUpGain(classId, newVig, newSen, toLevelInClass).pe : 0;
+  // PP: ganho recorrente por nível só nos buckets que concedem PP (par→ímpar / múltiplo de 5);
+  // multiclasse não concede o recorrente (o nível foi "gasto" na nova classe), só o modificador fixo dela.
+  const realPpGain = (!isNewClass && grants.pp ? ppLevelUpGain(newPre) : 0) + (isNewClass && cls ? cls.ppModifier : 0);
+
+  const newPvClassSum = sheet.pvClassSum + (toLevelInClass === 1 ? pvGainRaw : 0);
+  const newPvLevelGain = sheet.pvLevelGain + (toLevelInClass > 1 ? pvGainRaw : 0);
+  const newPvMax = newPvClassSum + newPvLevelGain;
   const pvGainThisLevel = newPvMax - sheet.pvMax;
 
   const updated = await prisma.starWarsSheet.update({
@@ -153,8 +188,8 @@ export async function POST(
       pvClassSum: newPvClassSum,
       pvLevelGain: newPvLevelGain,
       pvCurrent: sheet.pvCurrent + pvGainThisLevel,
-      peMax: sheet.peMax + realGain.pe,
-      peCurrent: sheet.peCurrent + realGain.pe,
+      peMax: sheet.peMax + peGainRaw,
+      peCurrent: sheet.peCurrent + peGainRaw,
       ppMax: sheet.ppMax + realPpGain,
       ppCurrent: sheet.ppCurrent + realPpGain,
       classPowers: JSON.stringify(newClassPowers),
@@ -168,9 +203,9 @@ export async function POST(
     summary: {
       newLevel: updated.level,
       pvGain: pvGainThisLevel,
-      peGain: realGain.pe,
+      peGain: peGainRaw,
       ppGain: realPpGain,
-      choiceKinds: kinds,
+      bucket,
     },
   });
 }

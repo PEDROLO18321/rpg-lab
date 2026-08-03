@@ -5,11 +5,11 @@ import type { AttrKey } from "./data";
 export type PvPeTier = "robusto" | "robusto_extremo" | "equilibrado" | "sensivel" | "sensivel_extremo";
 
 export const TIER_BONUS: Record<PvPeTier, { pv: number; pe: number }> = {
-  robusto: { pv: 4, pe: 0 },
-  robusto_extremo: { pv: 6, pe: 0 },
-  equilibrado: { pv: 2, pe: 1 },
-  sensivel: { pv: 0, pe: 3 },
-  sensivel_extremo: { pv: 0, pe: 4 },
+  robusto: { pv: 4, pe: 2 },
+  robusto_extremo: { pv: 5, pe: 1 },
+  equilibrado: { pv: 3, pe: 3 },
+  sensivel: { pv: 2, pe: 4 },
+  sensivel_extremo: { pv: 1, pe: 5 },
 };
 
 export const TIER_LABEL: Record<PvPeTier, string> = {
@@ -21,11 +21,11 @@ export const TIER_LABEL: Record<PvPeTier, string> = {
 };
 
 export const TIER_DESCRIPTION: Record<PvPeTier, string> = {
-  equilibrado: "Espécie versátil e sem extremos. Bom equilíbrio entre físico, mental e social. Ideal para personagens adaptáveis a diversas situações. (+2 PV e +1 PE na criação.)",
-  robusto: "Espécie fisicamente resistente e forte. Bônus naturais em Força e/ou Vigor. Melhor desempenho em combate corpo a corpo e sobrevivência. (+4 PV na criação.)",
-  robusto_extremo: "Versão extrema do robusto. Força e resistência muito acima da média, mas com limitações claras em atributos mentais ou de Sensitividade. (+6 PV na criação.)",
-  sensivel: "Espécie com afinidade natural com a Força. Possui boa conexão com Sensitividade e potencial para poderes, sem ser extremo. (+3 PE na criação.)",
-  sensivel_extremo: "Espécie altamente conectada à Força. Grande potencial em poderes e perícias relacionadas à Sensitividade, porém com fraquezas físicas ou mentais marcantes. (+4 PE na criação.)",
+  equilibrado: "Espécie versátil e sem extremos. Bom equilíbrio entre físico, mental e social. Ideal para personagens adaptáveis a diversas situações. (+3 PV e +3 PE na criação.)",
+  robusto: "Espécie fisicamente resistente e forte. Bônus naturais em Força e/ou Vigor. Melhor desempenho em combate corpo a corpo e sobrevivência. (+4 PV e +2 PE na criação.)",
+  robusto_extremo: "Versão extrema do robusto. Força e resistência muito acima da média, mas com limitações claras em atributos mentais ou de Sensitividade. (+5 PV e +1 PE na criação.)",
+  sensivel: "Espécie com afinidade natural com a Força. Possui boa conexão com Sensitividade e potencial para poderes, sem ser extremo. (+2 PV e +4 PE na criação.)",
+  sensivel_extremo: "Espécie altamente conectada à Força. Grande potencial em poderes e perícias relacionadas à Sensitividade, porém com fraquezas físicas ou mentais marcantes. (+1 PV e +5 PE na criação.)",
 };
 
 export interface Species {
