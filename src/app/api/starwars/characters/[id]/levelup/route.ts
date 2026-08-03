@@ -149,9 +149,9 @@ export async function POST(
         attrUpdates[attrKey] = ((sheet as unknown as Record<string, number>)[attrKey] ?? 0) + 1;
       }
     }
-
-    if (!isBonus) classLevels[classId] = toLevelInClass;
   }
+
+  if (!isBonus) classLevels[classId] = toLevelInClass;
 
   const newVig = attrUpdates.vig ?? sheet.vig;
   const newSen = attrUpdates.sen ?? sheet.sen;

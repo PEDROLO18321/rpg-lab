@@ -109,27 +109,6 @@ const FRONTIER_QUESTIONS: { key: string; question: string }[] = [
   { key: "q_marco", question: "Qual foi o acontecimento que mais marcou sua história?" },
 ];
 
-function AnswerBox({
-  value, onSave, placeholder, rows = 3,
-}: {
-  value: string; onSave: (v: string) => void; placeholder?: string; rows?: number;
-}) {
-  const [v, setV] = useState(value);
-  return (
-    <textarea
-      value={v}
-      onChange={(e) => setV(e.target.value)}
-      onBlur={() => { if (v !== value) onSave(v); }}
-      rows={rows}
-      placeholder={placeholder ?? "Escreva sua resposta…"}
-      style={{
-        width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
-        padding: "10px 12px", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
-      }}
-    />
-  );
-}
-
 function Badge({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {
   return (
     <div style={{ padding: "8px 16px", background: "var(--surface)", border: `1px solid ${warn ? "rgba(224,82,76,0.5)" : "var(--border)"}`, borderRadius: "var(--radius-lg)" }}>
@@ -424,12 +403,6 @@ export function SheetClient({ character }: { character: CharacterProp }) {
     save({ [`${field}Temp`]: v });
   }
 
-  function setBackgroundField(key: string, value: string) {
-    const next = { ...background, [key]: value };
-    setBackground(next);
-    save({ background: next });
-  }
-
   function addEquipment(name: string, qty: number) {
     const next = [...equipment, { id: crypto.randomUUID(), name, qty }];
     setEquipment(next);
@@ -544,7 +517,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         {mode === "ficha" ? (
           <ViewMode
             sheet={sheet} attrs={attrs} classLevels={classLevels} classPowers={classPowers}
-            generalPowerIds={generalPowerIds} background={background} setBackgroundField={setBackgroundField} planet={planet}
+            generalPowerIds={generalPowerIds} background={background} planet={planet}
             skills={skills} conditions={conditions} equipment={equipment}
             {...sharedVitals}
           />
@@ -579,12 +552,12 @@ export function SheetClient({ character }: { character: CharacterProp }) {
 interface VitalsProps { pvCur: number; peCur: number; ppCur: number; pvTemp: number; peTemp: number; ppTemp: number; }
 
 function ViewMode({
-  sheet, attrs, classLevels, classPowers, generalPowerIds, background, setBackgroundField, planet, skills, conditions, equipment,
+  sheet, attrs, classLevels, classPowers, generalPowerIds, background, planet, skills, conditions, equipment,
   pvCur, peCur, ppCur, pvTemp, peTemp, ppTemp,
 }: VitalsProps & {
   sheet: StarWarsSheetData; attrs: Record<AttrKey, number>; classLevels: Record<string, number>;
   classPowers: { level: number; name: string; classId?: string }[]; generalPowerIds: string[];
-  background: Record<string, string>; setBackgroundField: (key: string, value: string) => void;
+  background: Record<string, string>;
   planet: (typeof PLANET_BY_ID)[string] | undefined;
   skills: Record<string, SkillGrade>; conditions: string[]; equipment: EquipmentItem[];
 }) {
@@ -738,28 +711,6 @@ function ViewMode({
             </Panel>
           )}
 
-          <Panel title="Além da Fronteira">
-            <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.7, marginBottom: 16, fontStyle: "italic" }}>
-              {FRONTIER_INTRO}
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {FRONTIER_QUESTIONS.map((q) => (
-                <div key={q.key}>
-                  <p style={{ fontSize: "0.78rem", color: "var(--text)", fontWeight: 600, marginBottom: 6 }}>{q.question}</p>
-                  <AnswerBox value={background[q.key] ?? ""} onSave={(v) => setBackgroundField(q.key, v)} />
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Conexões Importantes">
-            <AnswerBox
-              value={background.connections ?? ""}
-              onSave={(v) => setBackgroundField("connections", v)}
-              placeholder="Aliados, mentores, rivais, família, dívidas — quem marca a jornada do seu personagem."
-              rows={4}
-            />
-          </Panel>
         </div>
       </div>
     </div>
@@ -1300,9 +1251,16 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
   const [progress, setProgress] = useState({ level: sheet.level, xp: sheet.xp });
   const [sabreForm, setSabreForm] = useState(sheet.sabreForm ?? "");
   const [skills, setSkills] = useState<Record<string, SkillGrade>>(() => parse(sheet.skills, {} as Record<string, SkillGrade>));
-  const [background, setBackground] = useState({
+  const [background, setBackground] = useState<Record<string, string>>(() => ({
     organization: initialBackground.organization ?? "", history: initialBackground.history ?? "", objective: initialBackground.objective ?? "",
-  });
+    ...Object.fromEntries(FRONTIER_QUESTIONS.map((q) => [q.key, initialBackground[q.key] ?? ""])),
+    connections: initialBackground.connections ?? "",
+  }));
+
+  function setBackgroundField(key: string, v: string) {
+    setBackground((b) => ({ ...b, [key]: v }));
+    setSavedLocal(false);
+  }
 
   const [saving, setSaving] = useState(false);
   const [saved, setSavedLocal] = useState(false);
@@ -1467,6 +1425,17 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
         <EditText label="Organização" value={background.organization} onChange={(v) => { setBackground((b) => ({ ...b, organization: v })); setSavedLocal(false); }} />
         <EditText label="História" value={background.history} onChange={(v) => { setBackground((b) => ({ ...b, history: v })); setSavedLocal(false); }} textarea />
         <EditText label="Objetivo" value={background.objective} onChange={(v) => { setBackground((b) => ({ ...b, objective: v })); setSavedLocal(false); }} textarea />
+      </EditSection>
+
+      <EditSection label="Além da Fronteira">
+        <p style={{ fontSize: "0.78rem", color: "var(--text-subtle)", lineHeight: 1.6, fontStyle: "italic", marginBottom: 4 }}>{FRONTIER_INTRO}</p>
+        {FRONTIER_QUESTIONS.map((q) => (
+          <EditText key={q.key} label={q.question} value={background[q.key] ?? ""} onChange={(v) => setBackgroundField(q.key, v)} textarea />
+        ))}
+      </EditSection>
+
+      <EditSection label="Conexões Importantes">
+        <EditText label="Aliados, mentores, rivais, família, dívidas — quem marca a jornada do seu personagem." value={background.connections ?? ""} onChange={(v) => setBackgroundField("connections", v)} textarea />
       </EditSection>
 
       {error && <p style={{ fontSize: "0.8rem", color: "#e0524c" }}>{error}</p>}
