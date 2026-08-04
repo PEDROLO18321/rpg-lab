@@ -807,15 +807,16 @@ function PlayMode({
 
   function activateAbility(a: ClassAbility | ClassMilestone) {
     if (isSabreForm(a)) {
-      // Habilidade de Forma: mesmo cálculo do golpe de sabre "cru" (6d6 × atributo + perícia
-      // Sabres de Luz), mas o resultado final é o dobro.
+      // Habilidade de Forma: mesmo cálculo do golpe de sabre "cru" (6d6 × atributo, escalado
+      // por nível como qualquer outra habilidade + perícia Sabres de Luz fora da escala), mas
+      // o resultado final é o dobro.
       const sabreSkill = SKILL_BY_ID["sabres_de_luz"];
       const bestAttr = sabreSkill.attrs.reduce((best, k) => (attrs[k] > attrs[best] ? k : best), sabreSkill.attrs[0]);
       const attrValue = Math.max(1, attrs[bestAttr]);
       const rolls = Array.from({ length: 6 }, () => Math.floor(Math.random() * 6) + 1);
       const diceSum = rolls.reduce((x, y) => x + y, 0);
       const skillBonus = skillTotal("sabres_de_luz");
-      const total = Math.max(0, (diceSum * attrValue + skillBonus) * 2 + mod);
+      const total = Math.max(0, (scaledDamage(diceSum * attrValue, sheet.level) + skillBonus) * 2 + mod);
       const entry: RollEntry = { id: ++rollId.current, label: `Forma: ${a.name}`, dice: 6, total, rolls, kept: diceSum, bonus: skillBonus + mod };
       setLastRoll(entry); setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));
@@ -823,16 +824,16 @@ function PlayMode({
       return;
     }
     if (a.weaponDamage === "sabre") {
-      // Regra fixa: dano de sabre nunca segue a escala por círculo — é sempre
-      // 6d6 × atributo base (o maior entre AGI/FOR/SEN, mín. 1 pra nunca zerar/inverter
-      // o dano com atributo 0 ou negativo) + valor total da perícia Sabres de Luz.
+      // Golpe de sabre "cru": 6d6 × atributo base (o maior entre AGI/FOR/SEN, mín. 1 pra nunca
+      // zerar/inverter o dano com atributo 0 ou negativo), escalado por nível como qualquer
+      // outra habilidade de dano — + valor total da perícia Sabres de Luz fora da escala.
       const sabreSkill = SKILL_BY_ID["sabres_de_luz"];
       const bestAttr = sabreSkill.attrs.reduce((best, k) => (attrs[k] > attrs[best] ? k : best), sabreSkill.attrs[0]);
       const attrValue = Math.max(1, attrs[bestAttr]);
       const rolls = Array.from({ length: 6 }, () => Math.floor(Math.random() * 6) + 1);
       const diceSum = rolls.reduce((x, y) => x + y, 0);
       const skillBonus = skillTotal("sabres_de_luz");
-      const total = Math.max(0, diceSum * attrValue + skillBonus + mod);
+      const total = Math.max(0, scaledDamage(diceSum * attrValue, sheet.level) + skillBonus + mod);
       const entry: RollEntry = { id: ++rollId.current, label: `Sabre: ${a.name}`, dice: 6, total, rolls, kept: diceSum, bonus: skillBonus + mod };
       setLastRoll(entry); setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));

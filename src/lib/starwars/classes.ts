@@ -24,7 +24,7 @@ export interface ArchetypeFormula {
 
 export const ARCHETYPE_FORMULA: Record<Archetype, ArchetypeFormula> = {
   marcial: { pv1Base: 18, pv1VigMult: 5, pvPerLevelBase: 5, pvPerLevelVigMult: 4, pe1Base: 2, pe1SenMult: 2, pePerLevelBase: 1, pePerLevelSenMult: 1, skillMultiplier: 1.5 },
-  especialista: { pv1Base: 12, pv1VigMult: 3, pvPerLevelBase: 3, pvPerLevelVigMult: 2, pe1Base: 4, pe1SenMult: 3, pePerLevelBase: 3, pePerLevelSenMult: 2, skillMultiplier: 3 },
+  especialista: { pv1Base: 12, pv1VigMult: 3, pvPerLevelBase: 3, pvPerLevelVigMult: 2, pe1Base: 4, pe1SenMult: 3, pePerLevelBase: 3, pePerLevelSenMult: 2, skillMultiplier: 2 },
   sensivel: { pv1Base: 15, pv1VigMult: 4, pvPerLevelBase: 4, pvPerLevelVigMult: 3, pe1Base: 6, pe1SenMult: 4, pePerLevelBase: 5, pePerLevelSenMult: 3, skillMultiplier: 2 },
 };
 
