@@ -77,35 +77,31 @@ export function ppMaxPerTurn(totalLevel: number): number {
   return 3 + Math.ceil(totalLevel / 2);
 }
 
-export type LevelUpChoiceKind = "atributo" | "poder_geral" | "grau_pericia";
-
 /**
- * Bucket do nível: define o que sobe na ficha e qual a evolução (além da Habilidade de Classe,
- * que agora é uma etapa própria — sempre presente, em qualquer nível, se a classe tiver uma
- * habilidade cadastrada exatamente naquele nível).
- * - "quinto" (múltiplo de 5): sobe Vida + PE + PP; evolução = até 2 perícias sobem de grau + 1 atributo.
- * - "par" (ímpar→par, não múltiplo de 5): sobe só Vida; evolução = Poder Geral.
- * - "impar" (par→ímpar, não múltiplo de 5): sobe só PE + PP; evolução = Poder Geral.
+ * Todo nível sobe Vida + PE + PP (sem exceção, pra classe que recebe o nível). A única
+ * exceção é o nível Bônus (sem classe): não tem PV/PE de arquétipo, só o PP geral.
+ *
+ * Além disso, toda subida de nível tem 1 escolha OBRIGATÓRIA, resolvida nesta ordem:
+ *   1. Habilidade de Classe — se a classe tiver uma cadastrada exatamente nesse nível.
+ *   2. Perícia — senão, treina uma perícia nova ou sobe o grau de uma já treinada.
+ *   3. +1 Atributo — só se nem habilidade nem perícia sobrarem (perícias todas em Mestre).
+ *
+ * Em cima disso, alguns níveis exigem bônus adicionais (também obrigatórios):
+ *   - Múltiplo de 5: mais 1 perícia (nova ou sobe grau) + 1 Poder Geral.
+ *   - Múltiplo de 10: mais +1 Atributo.
+ * (todo múltiplo de 10 também é múltiplo de 5, então acumula os dois.)
+ *
+ * Multiclasse é um evento à parte, isolado dessas regras — ver `isNewClass` na rota de level-up.
  */
-export type LevelUpBucket = "par" | "impar" | "quinto";
+export type MandatoryChoiceKind = "habilidade_classe" | "grau_pericia" | "atributo";
 
-export function levelUpBucket(toLevel: number): LevelUpBucket {
-  if (toLevel % 5 === 0) return "quinto";
-  return toLevel % 2 === 0 ? "par" : "impar";
+export function isMilestone5(toLevel: number): boolean {
+  return toLevel % 5 === 0;
 }
 
-/** O que sobe automaticamente na ficha nesse nível, conforme o bucket. */
-export function vitalsGrantedAtLevel(bucket: LevelUpBucket): { pv: boolean; pe: boolean; pp: boolean } {
-  if (bucket === "quinto") return { pv: true, pe: true, pp: true };
-  if (bucket === "par") return { pv: true, pe: false, pp: false };
-  return { pv: false, pe: true, pp: true };
+export function isMilestone10(toLevel: number): boolean {
+  return toLevel % 10 === 0;
 }
-
-/**
- * Cadeia de fallback da evolução obrigatória (par/ímpar, fora do bucket "quinto"): tenta o 1º
- * item; se não houver opção real disponível, cai pro próximo da lista.
- */
-export const LEVEL_FALLBACK_CHAIN: LevelUpChoiceKind[] = ["poder_geral", "grau_pericia", "atributo"];
 
 // ─── Multiclasse ──────────────────────────────────────────────────────────────
 

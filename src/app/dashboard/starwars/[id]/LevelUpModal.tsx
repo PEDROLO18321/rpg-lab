@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { CLASSES, CLASS_BY_ID, ARCHETYPE_LABEL } from "@/lib/starwars/classes";
 import {
   canCombineClasses, canUnlockPathClass, PATH_CLASS_UNLOCK_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, MAX_LEVEL,
-  countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, levelUpBucket, vitalsGrantedAtLevel,
-  levelUpGain, LEVEL_FALLBACK_CHAIN, type LevelUpBucket, type LevelUpChoiceKind,
+  countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, isMilestone5, isMilestone10,
+  levelUpGain, type MandatoryChoiceKind,
 } from "@/lib/starwars/leveling";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
@@ -57,13 +57,82 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.textMuted, letterSpacing: "0.09em", textTransform: "uppercase" }}>{children}</label>;
 }
 
-const KIND_LABEL: Record<LevelUpChoiceKind, string> = {
-  poder_geral: "Poder Geral",
-  grau_pericia: "Subir Perícia",
+function AttrGrid({ value, onPick }: { value: AttrKey | null; onPick: (k: AttrKey) => void }) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {ATTR_KEYS.map((k) => (
+        <button key={k} onClick={() => onPick(k)} style={{ padding: "6px 12px", border: `1px solid ${value === k ? SW.accentBord : "var(--border)"}`, background: value === k ? SW.accentDim : "rgba(255,255,255,0.02)", color: value === k ? SW.accentBright : SW.textMuted, cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
+          {ATTR_LABEL[k]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function AbilityPicker({ abilities, selected, onPick }: { abilities: ReturnType<typeof getAvailableAbilities>; selected: string | null; onPick: (name: string) => void }) {
+  return (
+    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+      {abilities.map((a) => (
+        <button key={a.name} onClick={() => onPick(a.name)}
+          style={{ textAlign: "left", padding: "9px 13px", border: `1px solid ${selected === a.name ? SW.accentBord : "var(--border)"}`, background: selected === a.name ? SW.accentDim : "rgba(255,255,255,0.02)", color: "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
+          <strong style={{ color: selected === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
+          <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
+            <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
+            {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Sabre: 6d6×atributo+perícia ×2" : "Sabre: 6d6×atributo+perícia"}</span>}
+            {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
+            {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PowerPicker({ selected, onPick, existingGeneralPowers }: { selected: string | null; onPick: (id: string) => void; existingGeneralPowers: string[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {(["basico", "avancado"] as const).map((tier) => (
+        <div key={tier}>
+          <p style={{ fontSize: "0.66rem", fontWeight: 800, color: SW.textSubtle, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
+            {tier === "basico" ? "Básicos" : "Avançados"}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {GENERAL_POWERS.filter((p) => p.tier === tier && !existingGeneralPowers.includes(p.id)).map((p) => {
+              const isSelected = selected === p.id;
+              return (
+                <button key={p.id} onClick={() => onPick(p.id)}
+                  style={{ padding: "6px 12px", border: `1px solid ${isSelected ? SW.accentBord : "var(--border)"}`, background: isSelected ? SW.accentDim : "rgba(255,255,255,0.02)", color: isSelected ? SW.accentBright : "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                  {p.name}
+                  <span style={{ fontSize: "0.68rem", color: isSelected ? SW.accentBright : SW.gold, fontWeight: 700 }}>{p.cost} PP</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      {selected && GENERAL_POWER_BY_ID[selected] && (
+        <div style={{ padding: "11px 14px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6 }}>
+          <p style={{ fontSize: "0.84rem", color: SW.accentBright, fontWeight: 700, marginBottom: 4 }}>
+            {GENERAL_POWER_BY_ID[selected].name}
+            <span style={{ fontWeight: 400, color: SW.textMuted, fontSize: "0.74rem" }}> · {GENERAL_POWER_BY_ID[selected].cost} PP · {GENERAL_POWER_BY_ID[selected].sustain === "sustentado" ? "sustentado" : "instantâneo"}</span>
+          </p>
+          <p style={{ fontSize: "0.8rem", color: "var(--text)", lineHeight: 1.6 }}>{GENERAL_POWER_BY_ID[selected].description}</p>
+          {GENERAL_POWER_BY_ID[selected].prerequisite && (
+            <p style={{ fontSize: "0.72rem", color: SW.gold, marginTop: 6 }}>Pré-requisito: {GENERAL_POWER_BY_ID[selected].prerequisite}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MANDATORY_LABEL: Record<MandatoryChoiceKind, string> = {
+  habilidade_classe: "Habilidade de Classe",
+  grau_pericia: "Perícia",
   atributo: "+1 Atributo",
 };
 
-const STEP_LABEL = ["Classe", "Vitais", "Habilidade", "Evolução", "Finalizar"];
+const STEP_LABEL = ["Classe", "Vitais", "Escolha", "Múltiplo de 5", "Múltiplo de 10", "Finalizar"];
 const LAST_STEP = STEP_LABEL.length - 1;
 
 export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
@@ -85,15 +154,19 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const freeWindow = isFreeMulticlassWindow(fromLevel, existingClassIds.length);
   const expertRequired = expertSkillsRequiredForNewClass(fromLevel, existingClassIds.length);
   const canAddNewClass = expertCount >= expertRequired;
+  const milestone5 = isMilestone5(toLevel);
+  const milestone10 = isMilestone10(toLevel);
 
   const [step, setStep] = useState(0);
   const [classId, setClassId] = useState(() => existingClassIds.find((cid) => (classLevels[cid] ?? 0) < CLASS_LEVEL_CAP) ?? BONUS_LEVEL_ID);
   const [specialsOpen, setSpecialsOpen] = useState(false);
-  const [attrKey, setAttrKey] = useState<AttrKey | null>(null);
   const [classPowerName, setClassPowerName] = useState<string | null>(null);
-  const [generalPowerId, setGeneralPowerId] = useState<string | null>(null);
-  const [skillGradeUpId, setSkillGradeUpId] = useState<string | null>(null);
-  const [quintoSkillIds, setQuintoSkillIds] = useState<string[]>([]);
+  const [mandatorySkillId, setMandatorySkillId] = useState<string | null>(null);
+  const [mandatoryAttrKey, setMandatoryAttrKey] = useState<AttrKey | null>(null);
+  const [milestoneSkillId, setMilestoneSkillId] = useState<string | null>(null);
+  const [milestonePowerId, setMilestonePowerId] = useState<string | null>(null);
+  const [milestoneAttrKey, setMilestoneAttrKey] = useState<AttrKey | null>(null);
+  const [multiclassAttrKey, setMulticlassAttrKey] = useState<AttrKey | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,24 +175,16 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const cls = classId && !isBonus ? CLASS_BY_ID[classId] : undefined;
   const toLevelInClass = isBonus ? 0 : (classLevels[classId] ?? 0) + 1;
 
-  const bucket: LevelUpBucket = levelUpBucket(toLevel);
-  const grants = vitalsGrantedAtLevel(bucket);
-
   // Habilidade de nível 1 da nova classe (fluxo de multiclasse).
   const newClassFirstAbilities = isNewClass ? getAvailableAbilities(classId, 1).filter((a) => a.level === 1) : [];
 
-  // Habilidade de Classe cadastrada exatamente neste nível — etapa sempre presente, qualquer bucket.
+  // Habilidade de Classe cadastrada exatamente neste nível — escolha obrigatória, prioridade 1.
   const nextAbilities = !isNewClass && !isBonus && cls ? getAvailableAbilities(classId, toLevelInClass).filter((a) => a.level === toLevelInClass) : [];
   const hasHabilidade = nextAbilities.length > 0;
-  const hasPoderGeral = GENERAL_POWERS.some((p) => !existingGeneralPowers.includes(p.id));
   const nonMaxSkills = SKILLS.filter((s) => nextSkillGrade(skills[s.id] ?? "inexperiente") !== null);
-  const hasGrauPericia = nonMaxSkills.length > 0;
-  const availability: Record<LevelUpChoiceKind, boolean> = {
-    poder_geral: hasPoderGeral, grau_pericia: hasGrauPericia, atributo: true,
-  };
-  const resolvedKind: LevelUpChoiceKind | null = bucket === "quinto" ? null : LEVEL_FALLBACK_CHAIN.find((k) => availability[k]) ?? "atributo";
+  const hasPoderGeral = GENERAL_POWERS.some((p) => !existingGeneralPowers.includes(p.id));
 
-  const quintoSkillTarget = Math.min(2, nonMaxSkills.length);
+  const mandatoryKind: MandatoryChoiceKind = hasHabilidade ? "habilidade_classe" : nonMaxSkills.length > 0 ? "grau_pericia" : "atributo";
 
   const selectableClasses = CLASSES.filter((c) => !existingClassIds.includes(c.id))
     .filter((c) => !c.isPathClass || pathReady)
@@ -156,52 +221,49 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
 
   function pickClass(id: string) {
     setClassId(id);
-    setAttrKey(null); setClassPowerName(null); setGeneralPowerId(null); setSkillGradeUpId(null); setQuintoSkillIds([]);
+    setClassPowerName(null); setMandatorySkillId(null); setMandatoryAttrKey(null);
+    setMilestoneSkillId(null); setMilestonePowerId(null); setMilestoneAttrKey(null); setMulticlassAttrKey(null);
   }
 
   function goNext() {
     if (step === 0) { setStep(isNewClass ? LAST_STEP : 1); return; }
+    if (step === 1) { setStep(2); return; }
+    if (step === 2) { setStep(milestone5 ? 3 : milestone10 ? 4 : LAST_STEP); return; }
+    if (step === 3) { setStep(milestone10 ? 4 : LAST_STEP); return; }
     setStep((s) => Math.min(s + 1, LAST_STEP));
   }
   function goBack() {
     if (step === LAST_STEP && isNewClass) { setStep(0); return; }
+    if (step === LAST_STEP) { setStep(milestone10 ? 4 : milestone5 ? 3 : 2); return; }
+    if (step === 4) { setStep(milestone5 ? 3 : 2); return; }
+    if (step === 3) { setStep(2); return; }
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  function toggleQuintoSkill(id: string) {
-    setQuintoSkillIds((cur) => {
-      if (cur.includes(id)) return cur.filter((x) => x !== id);
-      if (cur.length >= quintoSkillTarget) return cur;
-      return [...cur, id];
-    });
-  }
-
-  const evolutionReady = bucket === "quinto"
-    ? !!attrKey && quintoSkillIds.length === quintoSkillTarget
-    : resolvedKind === "poder_geral"
-    ? !!generalPowerId
-    : resolvedKind === "grau_pericia"
-    ? !!skillGradeUpId
-    : !!attrKey;
+  const mandatoryReady = mandatoryKind === "habilidade_classe" ? !!classPowerName
+    : mandatoryKind === "grau_pericia" ? !!mandatorySkillId
+    : !!mandatoryAttrKey;
+  const milestone5Ready = !milestone5 || ((nonMaxSkills.length === 0 || !!milestoneSkillId) && (!hasPoderGeral || !!milestonePowerId));
+  const milestone10Ready = !milestone10 || !!milestoneAttrKey;
 
   const canSubmit = isNewClass
-    ? !!classPowerName
-    : (!hasHabilidade || !!classPowerName) && evolutionReady;
+    ? !!classPowerName && !!multiclassAttrKey
+    : mandatoryReady && milestone5Ready && milestone10Ready;
 
   async function submit() {
     setSaving(true);
     setError(null);
     try {
       const body = isNewClass
-        ? { classId, classPowerId: classPowerName }
-        : bucket === "quinto"
-        ? { classId, attrKey, skillGradeUpIds: quintoSkillIds, classPowerId: hasHabilidade ? classPowerName : undefined }
+        ? { classId, classPowerId: classPowerName, multiclassAttrKey }
         : {
             classId,
-            attrKey: resolvedKind === "atributo" ? attrKey : undefined,
-            generalPowerId: resolvedKind === "poder_geral" ? generalPowerId : undefined,
-            skillGradeUpId: resolvedKind === "grau_pericia" ? skillGradeUpId : undefined,
-            classPowerId: hasHabilidade ? classPowerName : undefined,
+            classPowerId: mandatoryKind === "habilidade_classe" ? classPowerName : undefined,
+            mandatorySkillId: mandatoryKind === "grau_pericia" ? mandatorySkillId : undefined,
+            mandatoryAttrKey: mandatoryKind === "atributo" ? mandatoryAttrKey : undefined,
+            milestoneSkillId: milestone5 ? milestoneSkillId : undefined,
+            milestonePowerId: milestone5 ? milestonePowerId : undefined,
+            milestoneAttrKey: milestone10 ? milestoneAttrKey : undefined,
           };
       const res = await fetch(`/api/starwars/characters/${characterId}/levelup`, {
         method: "POST",
@@ -216,6 +278,14 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function skillDropdownOptions(pool: typeof SKILLS) {
+    return pool.map((s) => {
+      const grade: SkillGrade = skills[s.id] ?? "inexperiente";
+      const next = nextSkillGrade(grade);
+      return { value: s.id, label: `${s.name} — ${SKILL_GRADE_LABEL[grade]} → ${next ? SKILL_GRADE_LABEL[next] : "máximo"}`, disabled: !next };
+    });
   }
 
   return (
@@ -326,12 +396,12 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
 
             {isNewClass && cls && (
               <p style={{ fontSize: "0.76rem", color: SW.gold, marginTop: 8 }}>
-                Nova classe: {cls.name} ({ARCHETYPE_LABEL[cls.archetype]}) começa no nível 1 dela — ganha o PV/PE base da classe, e ignora as regras normais de subida (só escolhe a habilidade de nível 1).
+                Nova classe: {cls.name} ({ARCHETYPE_LABEL[cls.archetype]}) começa no nível 1 dela — ganha o PV/PE base da classe, a habilidade de nível 1 e +1 atributo. Evento isolado, ignora as regras normais de subida desse nível.
               </p>
             )}
             {isBonus && (
               <p style={{ fontSize: "0.76rem", color: SW.textSubtle, marginTop: 8 }}>
-                Nível Bônus: soma no nível total (até {MAX_LEVEL}), mas não pertence a nenhuma classe — não ganha PV/PE nem habilidade de classe, só a evolução do bucket abaixo.
+                Nível Bônus: soma no nível total (até {MAX_LEVEL}), mas não pertence a nenhuma classe — sem PV/PE nem Habilidade de Classe, só PP e a evolução de perícia/atributo.
               </p>
             )}
           </div>
@@ -341,152 +411,78 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
           <div>
             <FieldLabel>O que sobe neste nível</FieldLabel>
             <p style={{ fontSize: "0.78rem", color: SW.textMuted, marginTop: 8, marginBottom: 12 }}>
-              Nível {toLevel} é {bucket === "quinto" ? "múltiplo de 5" : bucket === "par" ? "par" : "ímpar"}.
+              Todo nível sobe Vida, Energia da Força e Pontos de Poder.
+              {milestone5 && " Este também é múltiplo de 5."}
+              {milestone10 && " E múltiplo de 10."}
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {grants.pv && <span style={{ padding: "8px 14px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6, color: SW.accentBright, fontSize: "0.82rem", fontWeight: 700 }}>Vida sobe {!isBonus ? levelUpGain(classId, 0, 0, toLevelInClass).pv - 0 : 0}+Vig</span>}
-              {grants.pe && <span style={{ padding: "8px 14px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6, color: SW.accentBright, fontSize: "0.82rem", fontWeight: 700 }}>Energia da Força sobe</span>}
-              {grants.pp && <span style={{ padding: "8px 14px", background: "rgba(201,148,31,0.12)", border: `1px solid ${SW.gold}66`, borderRadius: 6, color: SW.gold, fontSize: "0.82rem", fontWeight: 700 }}>Pontos de Poder sobe</span>}
-              {isBonus && <span style={{ fontSize: "0.78rem", color: SW.textSubtle }}>Nível Bônus: só o PP do bucket sobe, sem Vida/Energia.</span>}
+              {!isBonus && <span style={{ padding: "8px 14px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6, color: SW.accentBright, fontSize: "0.82rem", fontWeight: 700 }}>Vida sobe {levelUpGain(classId, 0, 0, toLevelInClass).pv}+Vig</span>}
+              {!isBonus && <span style={{ padding: "8px 14px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6, color: SW.accentBright, fontSize: "0.82rem", fontWeight: 700 }}>Energia da Força sobe</span>}
+              <span style={{ padding: "8px 14px", background: "rgba(201,148,31,0.12)", border: `1px solid ${SW.gold}66`, borderRadius: 6, color: SW.gold, fontSize: "0.82rem", fontWeight: 700 }}>Pontos de Poder sobe</span>
+              {isBonus && <span style={{ fontSize: "0.78rem", color: SW.textSubtle }}>Nível Bônus: sem Vida/Energia da Força, só PP.</span>}
             </div>
           </div>
         )}
 
         {step === 2 && !isNewClass && (
           <div>
-            <FieldLabel>Habilidade de Classe aprendida neste nível</FieldLabel>
-            {hasHabilidade ? (
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                {nextAbilities.map((a) => (
-                  <button key={a.name} onClick={() => setClassPowerName(a.name)}
-                    style={{ textAlign: "left", padding: "9px 13px", border: `1px solid ${classPowerName === a.name ? SW.accentBord : "var(--border)"}`, background: classPowerName === a.name ? SW.accentDim : "rgba(255,255,255,0.02)", color: "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
-                    <strong style={{ color: classPowerName === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
-                    <div style={{ display: "flex", gap: 6, marginTop: 5 }}>
-                      <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
-                      {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Sabre: 6d6×atributo+perícia ×2" : "Sabre: 6d6×atributo+perícia"}</span>}
-                      {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
-                      {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: "0.78rem", color: SW.textSubtle, marginTop: 10 }}>
-                {isBonus ? "Nível Bônus não pertence a nenhuma classe — sem habilidade." : "Nenhuma habilidade nova cadastrada para essa classe neste nível."}
-              </p>
-            )}
+            <FieldLabel>Escolha obrigatória: {MANDATORY_LABEL[mandatoryKind]}</FieldLabel>
+            <div style={{ marginTop: 10 }}>
+              {mandatoryKind === "habilidade_classe" && (
+                <AbilityPicker abilities={nextAbilities} selected={classPowerName} onPick={setClassPowerName} />
+              )}
+              {mandatoryKind === "grau_pericia" && (
+                <Dropdown value={mandatorySkillId ?? ""} onChange={(v) => setMandatorySkillId(v || null)} options={skillDropdownOptions(SKILLS)} />
+              )}
+              {mandatoryKind === "atributo" && (
+                <>
+                  <p style={{ fontSize: "0.74rem", color: SW.textMuted, marginBottom: 8 }}>Nenhuma Habilidade de Classe nem perícia disponível neste nível (todas em grau Mestre) — sobra atributo.</p>
+                  <AttrGrid value={mandatoryAttrKey} onPick={setMandatoryAttrKey} />
+                </>
+              )}
+            </div>
           </div>
         )}
 
-        {step === 3 && !isNewClass && (
-          <div>
-            <FieldLabel>Evolução deste nível{bucket !== "quinto" && resolvedKind ? `: ${KIND_LABEL[resolvedKind]}` : ""}</FieldLabel>
-
-            {bucket === "quinto" ? (
-              <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <p style={{ fontSize: "0.74rem", color: SW.textMuted, marginBottom: 8 }}>
-                    Suba o grau de {quintoSkillTarget} perícia(s) {quintoSkillTarget === 0 && "(todas já estão no grau máximo)"}
-                  </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {nonMaxSkills.map((s) => {
-                      const grade = skills[s.id] ?? "inexperiente";
-                      const next = nextSkillGrade(grade);
-                      const selected = quintoSkillIds.includes(s.id);
-                      return (
-                        <button key={s.id} onClick={() => toggleQuintoSkill(s.id)}
-                          style={{ padding: "7px 12px", border: `1px solid ${selected ? SW.accentBord : "var(--border)"}`, background: selected ? SW.accentDim : "rgba(255,255,255,0.02)", color: selected ? SW.accentBright : "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
-                          {s.name} <span style={{ color: SW.textSubtle, fontWeight: 400 }}>{SKILL_GRADE_LABEL[grade]} → {next ? SKILL_GRADE_LABEL[next] : "—"}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div>
-                  <p style={{ fontSize: "0.74rem", color: SW.textMuted, marginBottom: 8 }}>+1 ponto de atributo</p>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {ATTR_KEYS.map((k) => (
-                      <button key={k} onClick={() => setAttrKey(k)} style={{ padding: "6px 12px", border: `1px solid ${attrKey === k ? SW.accentBord : "var(--border)"}`, background: attrKey === k ? SW.accentDim : "rgba(255,255,255,0.02)", color: attrKey === k ? SW.accentBright : SW.textMuted, cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
-                        {ATTR_LABEL[k]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
+        {step === 3 && !isNewClass && milestone5 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div>
+              <FieldLabel>Múltiplo de 5 — mais uma Perícia</FieldLabel>
               <div style={{ marginTop: 10 }}>
-                {resolvedKind === "atributo" && (
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {ATTR_KEYS.map((k) => (
-                      <button key={k} onClick={() => setAttrKey(k)} style={{ padding: "6px 12px", border: `1px solid ${attrKey === k ? SW.accentBord : "var(--border)"}`, background: attrKey === k ? SW.accentDim : "rgba(255,255,255,0.02)", color: attrKey === k ? SW.accentBright : SW.textMuted, cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
-                        {ATTR_LABEL[k]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {resolvedKind === "poder_geral" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    {(["basico", "avancado"] as const).map((tier) => (
-                      <div key={tier}>
-                        <p style={{ fontSize: "0.66rem", fontWeight: 800, color: SW.textSubtle, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
-                          {tier === "basico" ? "Básicos" : "Avançados"}
-                        </p>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                          {GENERAL_POWERS.filter((p) => p.tier === tier && !existingGeneralPowers.includes(p.id)).map((p) => {
-                            const selected = generalPowerId === p.id;
-                            return (
-                              <button key={p.id} onClick={() => setGeneralPowerId(p.id)}
-                                style={{ padding: "6px 12px", border: `1px solid ${selected ? SW.accentBord : "var(--border)"}`, background: selected ? SW.accentDim : "rgba(255,255,255,0.02)", color: selected ? SW.accentBright : "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                                {p.name}
-                                <span style={{ fontSize: "0.68rem", color: selected ? SW.accentBright : SW.gold, fontWeight: 700 }}>{p.cost} PP</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-
-                    {generalPowerId && GENERAL_POWER_BY_ID[generalPowerId] && (
-                      <div style={{ padding: "11px 14px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6 }}>
-                        <p style={{ fontSize: "0.84rem", color: SW.accentBright, fontWeight: 700, marginBottom: 4 }}>
-                          {GENERAL_POWER_BY_ID[generalPowerId].name}
-                          <span style={{ fontWeight: 400, color: SW.textMuted, fontSize: "0.74rem" }}> · {GENERAL_POWER_BY_ID[generalPowerId].cost} PP · {GENERAL_POWER_BY_ID[generalPowerId].sustain === "sustentado" ? "sustentado" : "instantâneo"}</span>
-                        </p>
-                        <p style={{ fontSize: "0.8rem", color: "var(--text)", lineHeight: 1.6 }}>{GENERAL_POWER_BY_ID[generalPowerId].description}</p>
-                        {GENERAL_POWER_BY_ID[generalPowerId].prerequisite && (
-                          <p style={{ fontSize: "0.72rem", color: SW.gold, marginTop: 6 }}>Pré-requisito: {GENERAL_POWER_BY_ID[generalPowerId].prerequisite}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {resolvedKind === "grau_pericia" && (
-                  <Dropdown value={skillGradeUpId ?? ""} onChange={(v) => setSkillGradeUpId(v || null)}
-                    options={SKILLS.map((s) => {
-                      const grade: SkillGrade = skills[s.id] ?? "inexperiente";
-                      const next = nextSkillGrade(grade);
-                      return { value: s.id, label: `${s.name} — ${SKILL_GRADE_LABEL[grade]} → ${next ? SKILL_GRADE_LABEL[next] : "máximo"}`, disabled: !next };
-                    })} />
-                )}
+                {nonMaxSkills.length > 0
+                  ? <Dropdown value={milestoneSkillId ?? ""} onChange={(v) => setMilestoneSkillId(v || null)} options={skillDropdownOptions(SKILLS)} />
+                  : <p style={{ fontSize: "0.76rem", color: SW.textSubtle }}>Todas as perícias já estão no grau máximo.</p>}
               </div>
-            )}
+            </div>
+            <div>
+              <FieldLabel>Múltiplo de 5 — Poder Geral</FieldLabel>
+              <div style={{ marginTop: 10 }}>
+                {hasPoderGeral
+                  ? <PowerPicker selected={milestonePowerId} onPick={setMilestonePowerId} existingGeneralPowers={existingGeneralPowers} />
+                  : <p style={{ fontSize: "0.76rem", color: SW.textSubtle }}>Todos os 50 Poderes Gerais já foram aprendidos.</p>}
+              </div>
+            </div>
           </div>
         )}
 
-        {step === 4 && (
+        {step === 4 && !isNewClass && milestone10 && (
+          <div>
+            <FieldLabel>Múltiplo de 10 — mais +1 Atributo</FieldLabel>
+            <div style={{ marginTop: 10 }}>
+              <AttrGrid value={milestoneAttrKey} onPick={setMilestoneAttrKey} />
+            </div>
+          </div>
+        )}
+
+        {step === LAST_STEP && (
           <div>
             {isNewClass ? (
               <>
                 <FieldLabel>Habilidade de nível 1 — {cls?.name}</FieldLabel>
-                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {newClassFirstAbilities.map((a) => (
-                    <button key={a.name} onClick={() => setClassPowerName(a.name)}
-                      style={{ textAlign: "left", padding: "9px 13px", border: `1px solid ${classPowerName === a.name ? SW.accentBord : "var(--border)"}`, background: classPowerName === a.name ? SW.accentDim : "rgba(255,255,255,0.02)", color: "var(--text)", cursor: "pointer", fontSize: "0.78rem", borderRadius: 6 }}>
-                      <strong style={{ color: classPowerName === a.name ? SW.accentBright : "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}
-                    </button>
-                  ))}
+                <AbilityPicker abilities={newClassFirstAbilities} selected={classPowerName} onPick={setClassPowerName} />
+                <FieldLabel>+1 Atributo (bônus de multiclasse)</FieldLabel>
+                <div style={{ marginTop: 10 }}>
+                  <AttrGrid value={multiclassAttrKey} onPick={setMulticlassAttrKey} />
                 </div>
               </>
             ) : (
@@ -494,14 +490,18 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
                 <FieldLabel>Resumo</FieldLabel>
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6, fontSize: "0.82rem", color: "var(--text)" }}>
                   <p>Classe: <strong>{isBonus ? "Bônus (sem classe)" : cls?.name}</strong></p>
-                  <p>Sobe: {[grants.pv && "Vida", grants.pe && "Energia da Força", grants.pp && "Pontos de Poder"].filter(Boolean).join(", ") || "—"}</p>
-                  <p>Habilidade de Classe: {hasHabilidade ? classPowerName ?? "—" : "nenhuma neste nível"}</p>
-                  <p>Evolução: {bucket === "quinto"
-                    ? `${quintoSkillIds.map((id) => SKILLS.find((s) => s.id === id)?.name).join(", ")} + ${attrKey ? ATTR_LABEL[attrKey] : "—"}`
-                    : resolvedKind === "poder_geral" ? GENERAL_POWER_BY_ID[generalPowerId ?? ""]?.name ?? "—"
-                    : resolvedKind === "grau_pericia" ? SKILLS.find((s) => s.id === skillGradeUpId)?.name ?? "—"
-                    : attrKey ? ATTR_LABEL[attrKey] : "—"}
-                  </p>
+                  <p>Sobe: {[!isBonus && "Vida", !isBonus && "Energia da Força", "Pontos de Poder"].filter(Boolean).join(", ")}</p>
+                  <p>{MANDATORY_LABEL[mandatoryKind]}: {
+                    mandatoryKind === "habilidade_classe" ? classPowerName ?? "—"
+                    : mandatoryKind === "grau_pericia" ? SKILLS.find((s) => s.id === mandatorySkillId)?.name ?? "—"
+                    : mandatoryAttrKey ? ATTR_LABEL[mandatoryAttrKey] : "—"
+                  }</p>
+                  {milestone5 && (
+                    <p>Múltiplo de 5: {SKILLS.find((s) => s.id === milestoneSkillId)?.name ?? "—"} + {GENERAL_POWER_BY_ID[milestonePowerId ?? ""]?.name ?? "—"}</p>
+                  )}
+                  {milestone10 && (
+                    <p>Múltiplo de 10: {milestoneAttrKey ? ATTR_LABEL[milestoneAttrKey] : "—"}</p>
+                  )}
                 </div>
               </>
             )}

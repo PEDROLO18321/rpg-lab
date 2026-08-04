@@ -2,9 +2,8 @@
 // Regra: Dano Final = Dano Base × (1 + Nível / 5). "Base" é o dano no nível 1
 // (o valor cadastrado na habilidade/item). Funciona pra qualquer nível, sem teto.
 // Vale para dano de habilidades de classe, Poderes Gerais (quando tiverem valor
-// numérico) e itens equipados. NÃO vale para o golpe de sabre "cru" (Investida de
-// Sabre, Corte Duplo etc.), que mantém sua regra própria (6d6 × atributo + perícia)
-// pra não empilhar dois multiplicadores.
+// numérico), itens equipados, e também a parte de dados (6d6 × atributo) do golpe
+// de sabre — "cru" ou Forma — cujo bônus de perícia Sabres de Luz fica fora da escala.
 
 export function damageLevelMultiplier(level: number): number {
   return 1 + level / 5;

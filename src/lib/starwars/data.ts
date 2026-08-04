@@ -29,6 +29,9 @@ export const BASE_ATTR_VALUE = 0;
 /** Regra: 7 pontos livres na criação, distribuídos entre os 6 atributos. */
 export const ATTR_CREATION_POINTS = 7;
 
+/** Teto por atributo individual na criação — evita o build extremo de "um 7, resto 0". */
+export const ATTR_CREATION_MAX_PER_ATTR = 4;
+
 export function attrPointsSpent(attrs: StarWarsAttrs): number {
   return ATTR_KEYS.reduce((sum, k) => sum + Math.max(0, attrs[k] - BASE_ATTR_VALUE), 0);
 }
@@ -38,7 +41,8 @@ export function attrPointsRemaining(attrs: StarWarsAttrs): number {
 }
 
 export function attrsValid(attrs: StarWarsAttrs): boolean {
-  return attrPointsRemaining(attrs) === 0 && ATTR_KEYS.every((k) => attrs[k] >= 0);
+  return attrPointsRemaining(attrs) === 0
+    && ATTR_KEYS.every((k) => attrs[k] >= 0 && attrs[k] - BASE_ATTR_VALUE <= ATTR_CREATION_MAX_PER_ATTR);
 }
 
 /** Graus de treinamento em perícia — bônus somado ao teste. */

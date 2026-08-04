@@ -69,7 +69,7 @@ const SECTIONS: Section[] = [
         heading: "Classes de Caminho — O Lado da Luz, O Equilíbrio, O Lado Negro",
         rows: [
           { term: "O que são", text: "Classes de definição de caminho, mais poderosas que as comuns e preparadas pra qualquer desafio. Progressão própria e completa: 30 habilidades, uma por nível de 1 a 30 (nível 1 tem 2)." },
-          { term: "Mecânica", text: "Não usam o sistema circular de Formas de Sabre (isso é só das 3 classes-base ligadas à Força) — golpes de sabre aqui usam a regra de sabre cru (6d6 × atributo + perícia, não escala por nível)." },
+          { term: "Mecânica", text: "Não usam o sistema circular de Formas de Sabre (isso é só das 3 classes-base ligadas à Força) — golpes de sabre aqui usam a regra de sabre cru (6d6 × atributo, escalado por nível, + perícia fora da escala)." },
         ],
       },
       {
@@ -137,8 +137,8 @@ const SECTIONS: Section[] = [
         heading: "A fórmula",
         rows: [
           { term: "Fórmula", text: "Dano Final = Dano Base × (1 + Nível ÷ 5). \"Base\" é o dano no nível 1 — o valor cadastrado na habilidade ou no item." },
-          { term: "O que escala", text: "Dano de habilidades de classe, de Poderes Gerais (quando tiverem valor numérico) e de itens equipados." },
-          { term: "O que NÃO escala", text: "O golpe de sabre \"cru\" sem Forma (Investida de Sabre, Corte Duplo, Arremesso de Sabre etc.) e as Habilidades de Forma de Sabre mantêm regra própria — 6d6 × maior atributo (AGI/FOR/SEN) + perícia (Forma: resultado ×2) — pra não empilhar dois multiplicadores." },
+          { term: "O que escala", text: "Dano de habilidades de classe, de Poderes Gerais (quando tiverem valor numérico), de itens equipados, e a parte de dados (6d6 × atributo) do golpe de sabre — \"cru\" ou Forma." },
+          { term: "Golpe de sabre", text: "Regra própria — 6d6 × maior atributo (AGI/FOR/SEN), escalado por nível, + perícia Sabres de Luz fora da escala (Forma: resultado ×2)." },
           { term: "Dado puro", text: "Dano em dado (ex. 4d6) usa a média do dado como base antes de multiplicar (4d6 = 14). O resultado final é arredondado." },
           { term: "Sem teto", text: "A fórmula funciona pra qualquer nível, incluindo além de 99, se a mesa permitir." },
         ],
