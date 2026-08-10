@@ -5,11 +5,12 @@ import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import { SPECIES } from "@/lib/starwars/species";
 import { PLANETS } from "@/lib/starwars/planets";
 import { CLASSES } from "@/lib/starwars/classes";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
 
 function rand<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -65,7 +66,7 @@ export function CampaignGenerators({ api }: { api: StarWarsApi }) {
     setNpc({});
   }
 
-  const card: React.CSSProperties = { background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "18px 20px" };
+  const card: React.CSSProperties = { background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "18px 20px", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` };
   const genBtn: React.CSSProperties = { padding: "8px 16px", background: ACCENT_DIM, color: ACCENT_LIGHT, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" };
   const title: React.CSSProperties = { fontFamily: "var(--font-cinzel), serif", fontSize: "0.92rem", fontWeight: 700, color: "var(--text)", marginBottom: 12 };
   const rerollBtn: React.CSSProperties = { padding: "5px 10px", background: "var(--surface-2)", color: ACCENT_LIGHT, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", flexShrink: 0 };

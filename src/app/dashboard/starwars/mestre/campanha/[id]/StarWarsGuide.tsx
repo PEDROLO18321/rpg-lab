@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { SW } from "../../../ui";
 
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_BORD = SW.accentBord;
 
 interface Row { term: string; text: string }
 interface Block { heading?: string; intro?: string; rows: Row[] }
@@ -191,7 +192,7 @@ const SECTIONS: Section[] = [
 export function StarWarsGuide() {
   const [open, setOpen] = useState<string | null>("atributos");
 
-  const card: React.CSSProperties = { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" };
+  const card: React.CSSProperties = { background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

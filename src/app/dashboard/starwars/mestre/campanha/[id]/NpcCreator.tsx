@@ -7,12 +7,13 @@ import { SPECIES } from "@/lib/starwars/species";
 import { CLASSES } from "@/lib/starwars/classes";
 import { SKILLS, SKILL_BY_ID } from "@/lib/starwars/skills";
 import { SKILL_GRADE_LABEL, SKILL_GRADE_BONUS, SKILL_GRADE_ORDER, type SkillGrade } from "@/lib/starwars/data";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
-const ACCENT_GLOW = "rgba(59,130,196,0.22)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
+const ACCENT_GLOW = SW.glow;
 
 const SPECIES_NAMES = SPECIES.map((s) => s.name);
 const ROLES = CLASSES.map((c) => c.name);
@@ -703,14 +704,14 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: 4, width: "fit-content" }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", padding: 4, width: "fit-content" }}>
         {(["random", "manual", "famous"] as const).map((m) => (
           <button key={m} onClick={() => switchMode(m)} style={{ padding: "7px 18px", background: mode === m ? ACCENT_DIM : "transparent", color: mode === m ? ACCENT_LIGHT : "var(--text-muted)", border: mode === m ? `1px solid ${ACCENT_BORD}` : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.82rem", fontWeight: mode === m ? 700 : 500, cursor: "pointer" }}>{m === "random" ? "Aleatório" : m === "manual" ? "Manual" : "Personagens Famosos"}</button>
         ))}
       </div>
 
       {mode === "famous" && (
-        <div style={{ padding: "20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 20 }}>
+        <div style={{ padding: "20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 20, boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
           <p style={sectionLabel}>Escolha um personagem <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(Canon e Legends) — carrega os stats abaixo pra ajustar e salvar</span></p>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             <input value={famousSearch} onChange={(e) => setFamousSearch(e.target.value)} placeholder="Buscar nome, papel ou espécie..."
@@ -735,7 +736,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
         </div>
       )}
 
-      <div style={{ padding: "24px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 28 }}>
+      <div style={{ padding: "24px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", marginBottom: 28, boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
           {textField("Nome", "name")}
           {textField("Espécie", "species", { list: mode === "manual" ? SPECIES_NAMES : undefined })}
@@ -828,7 +829,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
             const attacks = parseAttacks(npc.attacks);
             const skills = parseSkills(npc.skills);
             return (
-              <div key={npc.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div key={npc.id} style={{ background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "var(--radius)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT_LIGHT, fontSize: "0.9rem", flexShrink: 0 }}>{npc.species?.[0] ?? "N"}</div>

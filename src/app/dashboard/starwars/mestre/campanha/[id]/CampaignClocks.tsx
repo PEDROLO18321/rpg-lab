@@ -3,10 +3,11 @@
 import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsClock } from "@/lib/starwars/starwarsCampaignClient";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_BORD = SW.accentBord;
 
 const KIND_COLOR: Record<StarWarsClock["kind"], string> = { ameaca: "#e0524c", missao: "#7dd3a8", neutro: "#9aa0a6" };
 const KIND_LABEL: Record<StarWarsClock["kind"], string> = { ameaca: "Ameaça", missao: "Missão", neutro: "Neutro" };
@@ -47,7 +48,7 @@ export function CampaignClocks({ api }: { api: StarWarsApi }) {
         <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 4 }}>Acompanhe ameaças, missões ou objetivos avançando segmento a segmento.</p>
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end", padding: "16px 20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
         <div style={{ flex: "2 1 200px" }}><label style={lab}>Nome</label><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: A frota do Império se aproxima" style={{ ...ip, width: "100%" }} /></div>
         <div><label style={lab}>Segmentos</label><select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ ...ip, cursor: "pointer" }}>{SEGMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
         <div><label style={lab}>Tipo</label><select value={kind} onChange={(e) => setKind(e.target.value as StarWarsClock["kind"])} style={{ ...ip, cursor: "pointer" }}>{(["ameaca", "missao", "neutro"] as const).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></div>
@@ -61,7 +62,7 @@ export function CampaignClocks({ api }: { api: StarWarsApi }) {
           {clocks.map((c: StarWarsClock) => {
             const color = KIND_COLOR[c.kind]; const done = c.filled >= c.segments;
             return (
-              <div key={c.id} style={{ padding: "18px 16px", background: "var(--surface)", border: `1px solid ${done ? color : "var(--border)"}`, borderRadius: "var(--radius-xl)", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <div key={c.id} style={{ padding: "18px 16px", background: SW.panel, border: `1px solid ${done ? color : SW.panelBorder}`, borderRadius: "var(--radius-xl)", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, boxShadow: done ? `0 0 20px ${color}33` : "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                   <span style={{ fontSize: "0.66rem", fontWeight: 700, color, background: `${color}1a`, border: `1px solid ${color}55`, borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>{KIND_LABEL[c.kind]}</span>
                   <button onClick={() => api.removeChild("clocks", c.id)} style={{ padding: "2px 6px", background: "transparent", color: "var(--text-subtle)", border: "none", cursor: "pointer", fontSize: "0.8rem" }}>✕</button>

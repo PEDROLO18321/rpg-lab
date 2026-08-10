@@ -3,11 +3,12 @@
 import { useState, useMemo } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import { BESTIARY, MODULE_GROUPS, BOOK_LABEL, type BestiaryBook, type StarWarsCreature, type ThreatLevel } from "@/lib/starwars/bestiary";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
 
 interface Props { api: StarWarsApi; }
 
@@ -77,15 +78,15 @@ export function StarWarsBestiary({ api }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar criatura, NPC ou facção..."
-          style={{ flex: 1, minWidth: 180, padding: "9px 14px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem" }}
+          style={{ flex: 1, minWidth: 180, padding: "9px 14px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem" }}
         />
         <select value={bookFilter} onChange={(e) => setBookFilter(e.target.value as BestiaryBook | "Todos")}
-          style={{ padding: "9px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", cursor: "pointer" }}>
           <option value="Todos">Todos os Livros</option>
           {BOOKS.map((b) => <option key={b} value={b}>{BOOK_LABEL[b]}</option>)}
         </select>
         <select value={threatFilter} onChange={(e) => setThreatFilter(e.target.value as ThreatLevel | "Todos")}
-          style={{ padding: "9px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", cursor: "pointer" }}>
+          style={{ padding: "9px 12px", background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", cursor: "pointer" }}>
           <option value="Todos">Toda Ameaça</option>
           {THREAT_ORDER.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -96,7 +97,7 @@ export function StarWarsBestiary({ api }: Props) {
       </p>
 
       {/* Módulos: especializações Jedi/Sith, loadouts mandalorianos */}
-      <div style={{ marginBottom: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+      <div style={{ marginBottom: 20, background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
         <button onClick={() => setShowModules((v) => !v)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
           <div>
             <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)" }}>🧩 Módulos (Especializações e Loadouts)</p>
@@ -129,7 +130,7 @@ export function StarWarsBestiary({ api }: Props) {
           const isOpen = expanded === c.id;
           const tColor = THREAT_COLOR[c.threat] ?? ACCENT_LIGHT;
           return (
-            <div key={c.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
+            <div key={c.id} style={{ background: SW.panel, border: `1px solid ${isOpen ? ACCENT_BORD : SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <button onClick={() => setExpanded(isOpen ? null : c.id)}
                   style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
