@@ -37,7 +37,7 @@ export function CampaignClues({ api }: { api: StarWarsApi }) {
       </div>
 
       <div style={{ padding: "18px 20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="sw-clue-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
           <div><label style={labelStyle}>Título</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Manifesto de carga selado" style={inputStyle} /></div>
           <div><label style={labelStyle}>Onde/Como foi achada</label><input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Ex: Terminal, NPC X" style={inputStyle} /></div>
         </div>
@@ -84,7 +84,7 @@ function ClueEditor({ api, clue, sessions }: { api: StarWarsApi; clue: StarWarsC
   const commit = (p: Partial<StarWarsClue>) => api.editChild("clues", clue.id, p);
   return (
     <div style={{ padding: "0 16px 16px 16px", borderTop: "1px solid var(--border)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+      <div className="sw-clue-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
         <div><label style={labelStyle}>Título</label><input style={inputStyle} value={d.title} onChange={(e) => set({ title: e.target.value })} onBlur={(e) => commit({ title: e.target.value })} /></div>
         <div><label style={labelStyle}>Vínculo à Sessão</label>
           <select style={{ ...inputStyle, cursor: "pointer" }} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}>

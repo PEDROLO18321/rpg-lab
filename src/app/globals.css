@@ -291,6 +291,19 @@ button:disabled { cursor: not-allowed; }
   .sw-attr-row-trailing { margin-left: 0 !important; width: 100%; justify-content: space-between !important; }
   .sw-levelup-btn { width: 100%; margin-left: 0 !important; justify-content: center; }
   .sw-npc-attack-grid { grid-template-columns: 1fr !important; }
+
+  /* Mestre — Pistas/Itens/História/Iniciativa/NPCs/Bestiário/Guia (área nova, sem cobertura ainda) */
+  .sw-clue-grid { grid-template-columns: 1fr !important; }
+  .sw-item-form-grid { grid-template-columns: 1fr !important; }
+  .sw-story-grid { grid-template-columns: 1fr !important; }
+  .sw-session-editor-grid { grid-template-columns: 1fr !important; }
+  .sw-init-add-grid { grid-template-columns: 1fr !important; }
+  .sw-npc-mode-tabs { flex-wrap: wrap !important; width: 100% !important; }
+  .sw-npc-two-col { grid-template-columns: 1fr !important; }
+  .sw-bestiary-stat-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .sw-bestiary-info-grid { grid-template-columns: 1fr !important; }
+  .sw-guide-row { flex-wrap: wrap !important; }
+  .sw-guide-row-term { width: 100%; min-width: 0 !important; }
 }
 
 /* ── Home/Login/Dashboard: nav e cabeçalhos globais no mobile ────────────── */
@@ -305,4 +318,24 @@ button:disabled { cursor: not-allowed; }
   .sys-sidebar-grid { grid-template-columns: 1fr !important; }
   .sys-sidebar-aside { position: static !important; }
   .home-demo-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── Dashboard: breadcrumb do nav compartilhado (bug real, não só mobile —
+   o span do nome não encolhia, então o ellipsis nunca disparava) ────────── */
+.dashboard-nav-crumb { min-width: 0; flex: 1 1 auto; }
+@media (max-width: 480px) {
+  .dashboard-nav-bar { padding: 0 14px !important; gap: 8px !important; }
+}
+
+@media (max-width: 640px) {
+  /* HomeClient.tsx — AboutSection: mínimo de 320px é maior que a área útil em 375px */
+  .home-about-grid { grid-template-columns: 1fr !important; }
+
+  /* HomeClient.tsx — StatsStrip: imagem de 126px espreme o nome do sistema */
+  .home-stats-card { gap: 14px !important; }
+  .home-stats-card-img { width: 64px !important; height: 64px !important; }
+
+  /* dashboard/page.tsx (Laboratório) — card de sistema empilha em vez de espremer */
+  .dashboard-system-card { flex-direction: column !important; }
+  .dashboard-system-card-img { width: 100% !important; height: 140px !important; }
 }

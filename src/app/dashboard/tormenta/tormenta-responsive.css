@@ -41,4 +41,12 @@
 
   /* InitiativeTracker.tsx — add combatant row (name / iniciativa / pv / pm / defesa) */
   .tm-initiative-add-grid { grid-template-columns: 1fr !important; }
+
+  /* Mestre — Bestiário/NPCs/Pistas/Itens/História/Dados (área de campanha, sem cobertura ainda) */
+  .tm-bestiary-form-row { grid-template-columns: 1fr !important; }
+  .tm-npc-form-row { grid-template-columns: 1fr !important; }
+  .tm-clues-form-grid { grid-template-columns: 1fr !important; }
+  .tm-items-form-grid { grid-template-columns: 1fr !important; }
+  .tm-story-form-grid { grid-template-columns: 1fr !important; }
+  .tm-dice-mod-grid { grid-template-columns: 1fr !important; }
 }

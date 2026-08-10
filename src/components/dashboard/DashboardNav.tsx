@@ -29,6 +29,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
       }}
     >
       <div
+        className="dashboard-nav-bar"
         style={{
           maxWidth: 1100,
           margin: "0 auto",
@@ -60,6 +61,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
           </Link>
           <span style={{ color: "var(--text-subtle)", fontSize: "0.8rem", flexShrink: 0 }}>/</span>
           <span
+            className="dashboard-nav-crumb"
             style={{
               fontSize: "0.82rem",
               fontWeight: 600,

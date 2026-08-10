@@ -45,4 +45,15 @@
 
   /* InitiativeTracker — add combatant row (2fr 1fr 1fr 1fr) */
   .dnd-initiative-form-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* SheetClient (view mode) — Atributos block split 1fr 1fr */
+  .dnd-view-columns { grid-template-columns: 1fr !important; }
+
+  /* Mestre — NpcCreator/Bestiário/Pistas/Itens/História/Dados (área de campanha, sem cobertura ainda) */
+  .dnd-npc-form-row { grid-template-columns: 1fr !important; }
+  .dnd-bestiary-detail-row { grid-template-columns: 1fr !important; }
+  .dnd-clues-form-grid { grid-template-columns: 1fr !important; }
+  .dnd-story-form-grid { grid-template-columns: 1fr !important; }
+  .dnd-items-form-grid { grid-template-columns: 1fr !important; }
+  .dnd-dice-mod-grid { grid-template-columns: 1fr !important; }
 }

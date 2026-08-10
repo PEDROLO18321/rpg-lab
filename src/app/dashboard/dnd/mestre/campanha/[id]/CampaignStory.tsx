@@ -36,7 +36,7 @@ export function CampaignStory({ api }: { api: DndApi }) {
         <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ color: ACCENT_LIGHT }}>📖</span> História da Campanha
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <div className="dnd-story-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div>
             <label style={labelStyle}>Objetivo Principal</label>
             <textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os heróis devem alcançar?" />
@@ -105,7 +105,7 @@ function SessionEditor({ api, session }: { api: DndApi; session: DndGameSession 
   const commit = (p: Partial<DndGameSession>) => api.editChild("sessions", session.id, p);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div className="dnd-story-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div><label style={labelStyle}>Nome da Sessão</label><input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></div>
         <div><label style={labelStyle}>Data da Sessão</label><input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} /></div>
       </div>

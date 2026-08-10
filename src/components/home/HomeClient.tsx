@@ -566,6 +566,7 @@ function StatsStrip() {
         {STRIP_SYSTEMS.map((s) => (
           <Link key={s.id} href={`/system/${s.id}`} style={{ textDecoration:"none" }}>
             <div
+              className="home-stats-card"
               style={{
                 display:"flex", alignItems:"center", gap:24,
                 padding:"18px 28px 18px 18px",
@@ -588,7 +589,7 @@ function StatsStrip() {
                 el.style.boxShadow = "none";
               }}
             >
-              <div style={{ width:126, height:126, borderRadius:"var(--radius-lg)", overflow:"hidden", flexShrink:0, position:"relative" }}>
+              <div className="home-stats-card-img" style={{ width:126, height:126, borderRadius:"var(--radius-lg)", overflow:"hidden", flexShrink:0, position:"relative" }}>
                 <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover" }} sizes="126px" />
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:8, flex:1, minWidth:0 }}>
@@ -698,7 +699,7 @@ function AboutSection() {
           </h2>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:40, marginBottom:56, alignItems:"start" }}>
+        <div className="home-about-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:40, marginBottom:56, alignItems:"start" }}>
           <p style={{ fontSize:"0.94rem", color:"var(--text-muted)", lineHeight:1.85 }}>
             RPG (<em>Role-Playing Game</em>) de mesa é um jogo colaborativo de contar
             histórias. Um grupo de jogadores cria personagens — heróis, investigadores,

@@ -105,7 +105,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
           {textField("Papel / Função", "role", { list: mode === "random" ? undefined : ROLES })}
           {textField("Tendência", "alignment", { list: mode === "random" ? undefined : ALIGNMENTS })}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="dnd-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Traço de Personalidade", "trait")}
           {textField("Aparência", "appearance")}
         </div>
@@ -116,7 +116,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
 
         <div style={{ borderTop: "1px solid var(--border-accent)", paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Estatísticas de Combate <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "hp")}{numField("CA", "ac")}</div>
+          <div className="dnd-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "hp")}{numField("CA", "ac")}</div>
           <div className="dnd-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
         </div>
 
@@ -203,7 +203,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
                         </div>
                       </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div className="dnd-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       {npc.trait && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Traço</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.trait}</p></div>}
                       {npc.appearance && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Aparência</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.appearance}</p></div>}
                     </div>

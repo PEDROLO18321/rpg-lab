@@ -316,7 +316,7 @@ export function Bestiary({ api }: Props) {
           {"senses" in selected && (
             <>
               <div style={{ height: 1, background: "var(--border)", marginBottom: 10 }} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+              <div className="dnd-bestiary-detail-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
                 <div>
                   <p style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>Sentidos</p>
                   <p style={{ fontSize: "0.76rem", color: "var(--text)", lineHeight: 1.5 }}>{(selected as Monster).senses}</p>

@@ -211,7 +211,7 @@ export function CthulhuBestiary({ api }: Props) {
                     ))}
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                  <div className="cth-bestiary-detail-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                     <div style={{ padding: "10px 14px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                       <p style={{ fontSize: "0.62rem", fontWeight: 700, color: "#7d9c3e", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Movimento</p>
                       <p style={{ fontSize: "0.84rem", color: "var(--text-muted)" }}>{creature.mov}</p>
