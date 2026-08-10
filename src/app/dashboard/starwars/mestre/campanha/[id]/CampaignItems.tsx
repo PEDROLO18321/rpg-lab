@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsCampaignItem } from "@/lib/starwars/starwarsCampaignClient";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
 
 type ItemType = StarWarsCampaignItem["type"];
 type ItemRarity = StarWarsCampaignItem["rarity"];
@@ -78,7 +79,7 @@ export function CampaignItems({ api }: { api: StarWarsApi }) {
       </div>
 
       {adding && (
-        <div style={{ background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "20px 24px" }}>
+        <div style={{ background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "20px 24px", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
           <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>Novo Item</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Nome</label><input style={inputStyle} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Ex: Sabre de luz de Kest Vhorrun" autoFocus /></div>
@@ -104,7 +105,7 @@ export function CampaignItems({ api }: { api: StarWarsApi }) {
             const isOpen = expandedId === item.id;
             const rc = rarityColor(item.rarity);
             return (
-              <div key={item.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
+              <div key={item.id} style={{ background: SW.panel, border: `1px solid ${isOpen ? ACCENT_BORD : SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
                 <button onClick={() => setExpandedId(isOpen ? null : item.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "13px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                   <span style={{ width: 10, height: 10, borderRadius: "50%", background: rc, flexShrink: 0, boxShadow: `0 0 6px ${rc}88` }} />
                   <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "var(--text)", flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</span>

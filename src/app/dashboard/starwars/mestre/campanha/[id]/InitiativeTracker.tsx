@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsCombatant } from "@/lib/starwars/starwarsCampaignClient";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
 
 interface Condition { id: string; name: string; desc: string }
 
@@ -107,7 +108,7 @@ export function InitiativeTracker({ api }: { api: StarWarsApi }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 420px", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
+        <div style={{ flex: "1 1 420px", padding: "16px 20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar Combatente</p>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Batedor Stormtrooper" style={inputStyle} />
@@ -141,7 +142,7 @@ export function InitiativeTracker({ api }: { api: StarWarsApi }) {
             const isActive = c.id === activeId;
             const conds = parseConditions(c.conditions);
             return (
-              <div key={c.id} style={{ background: isActive ? ACCENT_DIM : "var(--surface)", border: `1px solid ${isActive ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius-xl)", transition: "all 0.2s", overflow: "hidden" }}>
+              <div key={c.id} style={{ background: isActive ? ACCENT_DIM : SW.panel, border: `1px solid ${isActive ? ACCENT_BORD : SW.panelBorder}`, borderRadius: "var(--radius-xl)", transition: "all 0.2s", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", flexWrap: "wrap" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", background: isActive ? ACCENT : "transparent", border: `2px solid ${isActive ? ACCENT : "var(--border)"}`, flexShrink: 0 }} />
                   <div style={{ minWidth: 36, height: 36, borderRadius: "var(--radius)", background: isActive ? ACCENT_DIM : c.isPlayer ? "rgba(99,179,237,0.1)" : "var(--surface-2)", border: `1px solid ${isActive ? ACCENT_BORD : c.isPlayer ? "rgba(99,179,237,0.25)" : "var(--border)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem", fontWeight: 700, color: isActive ? ACCENT_LIGHT : c.isPlayer ? "#63b3ed" : "var(--text-muted)", flexShrink: 0 }}>{c.initiative}</div>

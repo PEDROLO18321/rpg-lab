@@ -17,11 +17,7 @@ import { CampaignClocks } from "./CampaignClocks";
 import { CampaignGenerators } from "./CampaignGenerators";
 import { StarWarsGuide } from "./StarWarsGuide";
 import { StarWarsMasterDiceRoller } from "../../StarWarsMasterDiceRoller";
-
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+import { SW, SectionTitle } from "../../../ui";
 
 type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "generators" | "notes" | "guide";
 
@@ -67,7 +63,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
     return (
       <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <p style={{ color: "var(--text-muted)", fontSize: "1rem" }}>Campanha não encontrada.</p>
-        <Link href="/dashboard/starwars/mestre" style={{ color: ACCENT_LIGHT, fontSize: "0.86rem", textDecoration: "none" }}>
+        <Link href="/dashboard/starwars/mestre" style={{ color: SW.accentLight, fontSize: "0.86rem", textDecoration: "none" }}>
           ← Voltar ao Painel do Mestre
         </Link>
       </div>
@@ -84,21 +80,20 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
         systemName={c.name}
         systemHref="/dashboard/starwars/mestre"
         backLabel="Campanhas"
-        accentColor="#3b82c4"
+        accentColor={SW.accent}
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
         <div style={{ marginBottom: 32 }}>
-          <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>Star Wars · Mestre</span>
-          <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.3rem, 3vw, 1.8rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>{c.name}</h1>
+          <SectionTitle eyebrow="Star Wars · Mestre" title={c.name} />
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 28, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: 4, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 28, background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: 10, padding: 4, flexWrap: "wrap" }}>
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ flex: "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "9px 14px", background: active ? ACCENT_DIM : "transparent", color: active ? ACCENT_LIGHT : "var(--text-muted)", border: active ? `1px solid ${ACCENT_BORD}` : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.8rem", fontWeight: active ? 700 : 500, cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap" }}>
+                style={{ flex: "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "9px 14px", background: active ? SW.accentDim : "transparent", color: active ? SW.accentLight : SW.textMuted, border: active ? `1px solid ${SW.accentBord}` : "1px solid transparent", borderRadius: 6, fontSize: "0.8rem", fontWeight: active ? 700 : 500, cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap" }}>
                 {t.icon}{t.label}
               </button>
             );

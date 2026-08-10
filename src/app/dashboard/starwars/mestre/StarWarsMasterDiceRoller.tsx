@@ -1,12 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { SW } from "../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
-const ACCENT_GLOW = "rgba(59,130,196,0.22)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
+const ACCENT_GLOW = SW.glow;
 
 const DICE_TYPES = [4, 6, 8, 10, 12, 20, 100] as const;
 type DiceType = typeof DICE_TYPES[number];
@@ -82,11 +83,11 @@ export function StarWarsMasterDiceRoller() {
           style={{
             width: 260,
             padding: "16px",
-            background: "var(--surface)",
+            background: SW.panel,
             border: `1px solid ${ACCENT_BORD}`,
             borderLeft: "none",
             borderRadius: "0 var(--radius-xl) var(--radius-xl) 0",
-            boxShadow: "0 12px 36px rgba(0,0,0,0.35)",
+            boxShadow: `0 12px 36px rgba(0,0,0,0.35), 0 0 24px ${SW.glow}`,
             boxSizing: "border-box",
             opacity: open ? 1 : 0,
             transform: open ? "translateX(0)" : "translateX(-16px)",

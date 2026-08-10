@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsStory, StarWarsGameSession } from "@/lib/starwars/starwarsCampaignClient";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
 
 const EMPTY_STORY: StarWarsStory = { objective: "", purpose: "", generalHistory: "", currentArc: "", mainVillain: "" };
 
@@ -32,7 +33,7 @@ export function CampaignStory({ api }: { api: StarWarsApi }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-      <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "24px 28px" }}>
+      <section style={{ background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 28px", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
         <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ color: ACCENT_LIGHT }}>📖</span> História da Campanha
         </h2>
@@ -78,7 +79,7 @@ export function CampaignStory({ api }: { api: StarWarsApi }) {
             {sessions.map((s) => {
               const isOpen = expandedId === s.id;
               return (
-                <div key={s.id} style={{ background: "var(--surface)", border: `1px solid ${isOpen ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
+                <div key={s.id} style={{ background: SW.panel, border: `1px solid ${isOpen ? ACCENT_BORD : SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
                   <button onClick={() => setExpandedId(isOpen ? null : s.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
                     <span style={{ width: 32, height: 32, borderRadius: "var(--radius)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: ACCENT_LIGHT, flexShrink: 0 }}>{s.number}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>

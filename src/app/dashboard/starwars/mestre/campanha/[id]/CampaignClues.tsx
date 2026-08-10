@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsClue } from "@/lib/starwars/starwarsCampaignClient";
+import { SW } from "../../../ui";
 
-const ACCENT = "#3b82c4";
-const ACCENT_LIGHT = "#69a8e0";
-const ACCENT_DIM = "rgba(59,130,196,0.12)";
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
+const ACCENT = SW.accent;
+const ACCENT_LIGHT = SW.accentLight;
+const ACCENT_DIM = SW.accentDim;
+const ACCENT_BORD = SW.accentBord;
 
 const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" };
 const labelStyle: React.CSSProperties = { display: "block", fontSize: "0.68rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 };
@@ -35,7 +36,7 @@ export function CampaignClues({ api }: { api: StarWarsApi }) {
         <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 4 }}>Marque uma pista como <strong>revelada</strong> para que apareça na tela dos jogadores.</p>
       </div>
 
-      <div style={{ padding: "18px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
+      <div style={{ padding: "18px 20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
           <div><label style={labelStyle}>Título</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Manifesto de carga selado" style={inputStyle} /></div>
           <div><label style={labelStyle}>Onde/Como foi achada</label><input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Ex: Terminal, NPC X" style={inputStyle} /></div>
@@ -57,7 +58,7 @@ export function CampaignClues({ api }: { api: StarWarsApi }) {
           {filtered.map((c: StarWarsClue) => {
             const isOpen = expandedId === c.id;
             return (
-              <div key={c.id} style={{ background: "var(--surface)", border: `1px solid ${c.discovered ? "rgba(125,211,168,0.35)" : "var(--border)"}`, borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div key={c.id} style={{ background: SW.panel, border: `1px solid ${c.discovered ? "rgba(125,211,168,0.35)" : SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px" }}>
                   <button onClick={() => api.editChild("clues", c.id, { discovered: !c.discovered })} title={c.discovered ? "Revelada" : "Oculta"} style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: c.discovered ? "rgba(125,211,168,0.16)" : "var(--surface-2)", border: `1px solid ${c.discovered ? "#7dd3a8" : "var(--border)"}`, color: c.discovered ? "#7dd3a8" : "var(--text-subtle)", fontSize: "0.8rem" }}>{c.discovered ? "👁" : "∅"}</button>
                   <button onClick={() => setExpandedId(isOpen ? null : c.id)} style={{ flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer", minWidth: 0 }}>

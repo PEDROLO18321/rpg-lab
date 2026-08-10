@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
+import { SW } from "../../../ui";
 
-const ACCENT_BORD = "rgba(59,130,196,0.28)";
-const ACCENT = "#3b82c4";
+const ACCENT_BORD = SW.accentBord;
+const ACCENT = SW.accent;
 
 export function SessionNotes({ api }: { api: StarWarsApi }) {
   const [value, setValue] = useState(api.campaign.notes ?? "");
@@ -26,7 +27,7 @@ export function SessionNotes({ api }: { api: StarWarsApi }) {
         onChange={(e) => { setValue(e.target.value); setSaved(false); }}
         onBlur={(e) => commit(e.target.value)}
         placeholder={"Escreva suas notas aqui...\n\n• Segredos descobertos\n• NPCs importantes\n• Próximos eventos\n• Itens entregues/perdidos\n• Ganchos para a próxima sessão"}
-        style={{ width: "100%", minHeight: 420, padding: "20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", color: "var(--text)", fontSize: "0.9rem", lineHeight: 1.8, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", outline: "none" }}
+        style={{ width: "100%", minHeight: 420, padding: "20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", color: "var(--text)", fontSize: "0.9rem", lineHeight: 1.8, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", outline: "none", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)` }}
         onFocus={(e) => (e.currentTarget.style.borderColor = ACCENT)}
       />
       <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginTop: 8, textAlign: "right" }}>{value.length} caracteres · salvo no servidor</p>
