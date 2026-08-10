@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { CLASSES, ARCHETYPE_LABEL, ARCHETYPE_FORMULA, ARCHETYPE_DESCRIPTION } from "@/lib/starwars/classes";
 import { getClassAbilities, getAbilitiesGroupedByLevel } from "@/lib/starwars/powers/registry";
+import { POOL_CLASS_IDS } from "@/lib/starwars/leveling";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import type { WizardData } from "../CharacterWizard";
 import { SW, Panel, SectionTitle, Badge, SelectCard, gridAutoFill } from "../../ui";
@@ -14,6 +15,7 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
   const selectable = CLASSES;
   const firstAbilities = cls ? getClassAbilities(cls.id).filter((a) => a.level === 1) : [];
   const grouped = cls ? getAbilitiesGroupedByLevel(cls.id, 30) : [];
+  const isPoolClass = cls ? POOL_CLASS_IDS.has(cls.id) : false;
   const detailRef = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -53,7 +55,7 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
           {firstAbilities.length > 0 && (
             <div style={{ paddingTop: 14, borderTop: `1px solid ${SW.panelBorder}`, display: "flex", flexDirection: "column", gap: 6 }}>
               <p style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.textMuted, letterSpacing: "0.09em", textTransform: "uppercase" }}>
-                {firstAbilities.length > 1 ? "Escolha 1 habilidade de nível 1" : "Habilidade de nível 1"}
+                {isPoolClass ? "Escolha 1 do Pool de Nível 1" : firstAbilities.length > 1 ? "Escolha 1 habilidade de nível 1" : "Habilidade de nível 1"}
               </p>
               {firstAbilities.length > 1 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -88,7 +90,7 @@ export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10, maxHeight: 360, overflowY: "auto" }}>
                 {grouped.map(({ level, abilities }) => (
                   <div key={level}>
-                    <p style={{ fontSize: "0.66rem", fontWeight: 800, color: SW.gold, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 4 }}>Nível de Classe {level}</p>
+                    <p style={{ fontSize: "0.66rem", fontWeight: 800, color: SW.gold, letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 4 }}>{isPoolClass ? `Pool de Nível ${level}` : `Nível de Classe ${level}`}</p>
                     {abilities.map((a) => (
                       <p key={a.name} style={{ fontSize: "0.78rem", color: SW.textMuted, lineHeight: 1.5, marginBottom: 3 }}>
                         <strong style={{ color: "var(--text)" }}>{a.name}</strong>{a.combat ? <span style={{ color: SW.danger }}> (combate)</span> : null}: {a.description}

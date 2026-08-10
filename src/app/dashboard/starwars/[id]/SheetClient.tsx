@@ -9,8 +9,9 @@ import { CLASS_BY_ID } from "@/lib/starwars/classes";
 import { ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, SKILL_GRADE_LABEL, SKILL_GRADE_BONUS, SKILL_GRADE_ORDER, type AttrKey, type SkillGrade } from "@/lib/starwars/data";
 import { SKILLS, SKILL_BY_ID } from "@/lib/starwars/skills";
 import { planetSkillBonus, attributeDicePool } from "@/lib/starwars/creation";
-import { getAvailableMilestones, getAbilitiesGroupedByLevel } from "@/lib/starwars/powers/registry";
+import { getAvailableMilestones, getAbilitiesGroupedByLevel, getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import type { ClassAbility, ClassMilestone } from "@/lib/starwars/powers/types";
+import { POOL_CLASS_IDS } from "@/lib/starwars/leveling";
 import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import { ITEMS, ITEM_BY_ID, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory, type StarWarsItem } from "@/lib/starwars/items";
 import { damageLevelMultiplier, baseDamageValue, scaledDamage } from "@/lib/starwars/damage";
@@ -46,6 +47,13 @@ function rollDie(): number { return Math.floor(Math.random() * 20) + 1; }
  * as opções daquele nível, pra não esconder informação de personagens já criados.
  */
 function resolveClassAbilities(classId: string, lvl: number, classPowers: { level: number; name: string; classId?: string }[]): ClassAbility[] {
+  // Classes de Pool: `classPowers[].level` é o nível do PERSONAGEM no momento da escolha, não o
+  // tier da habilidade (uma habilidade do pool 1 pode ter sido escolhida no nível-personagem 3)
+  // — então casa só por nome, contra tudo que já abriu (getAvailableAbilities já é cumulativo).
+  if (POOL_CLASS_IDS.has(classId)) {
+    const pickedNames = new Set(classPowers.filter((p) => p.classId === classId).map((p) => p.name));
+    return getAvailableAbilities(classId, lvl).filter((a) => pickedNames.has(a.name));
+  }
   const groups = getAbilitiesGroupedByLevel(classId, lvl);
   const result: ClassAbility[] = [];
   for (const { level, abilities } of groups) {
@@ -316,7 +324,9 @@ function AbilityStats({ a }: { a: ClassAbility | ClassMilestone }) {
         </span>
       )}
       {a.dt !== undefined && (
-        <span style={{ ...pill, color: GOLD, background: "rgba(201,148,31,0.1)", border: "1px solid rgba(201,148,31,0.3)" }}>DT {a.dt}</span>
+        <span style={{ ...pill, color: GOLD, background: "rgba(201,148,31,0.1)", border: "1px solid rgba(201,148,31,0.3)" }}>
+          {a.skillId ? `${SKILL_BY_ID[a.skillId]?.name} · ` : ""}DT {a.dt}
+        </span>
       )}
     </div>
   );
@@ -841,11 +851,14 @@ function PlayMode({
       return;
     }
     if (a.dt !== undefined) {
-      // Habilidade utilitária (não-combate): faz o teste normal (1d20 + mod) contra a DT cadastrada e desconta PE.
+      // Habilidade utilitária (não-combate): 1d20 + perícia declarada (skillId, sistema de Pools)
+      // + mod, contra a DT cadastrada. Habilidades antigas sem skillId caem no 1d20 + mod puro.
       const roll = Math.floor(Math.random() * 20) + 1;
-      const total = roll + mod;
+      const skillBonus = a.skillId ? skillTotal(a.skillId) : 0;
+      const total = roll + skillBonus + mod;
+      const skillLabel = a.skillId ? ` — ${SKILL_BY_ID[a.skillId]?.name}` : "";
       const entry: RollEntry = {
-        id: ++rollId.current, label: `Teste: ${a.name} (DT ${a.dt})`, dice: 20, total, rolls: [roll], kept: roll, bonus: mod,
+        id: ++rollId.current, label: `Teste: ${a.name}${skillLabel} (DT ${a.dt})`, dice: 20, total, rolls: [roll], kept: roll, bonus: skillBonus + mod,
         isCrit: roll === 20, isFumble: roll === 1,
       };
       setLastRoll(entry); setFxRoll(entry);
@@ -978,7 +991,7 @@ function PlayMode({
                               <span style={{ fontSize: "0.68rem", color: TEMP_BLUE, fontWeight: 700 }}>{a.peCost} PE</span>
                               {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{isSabreForm(a) ? "Sabre 6d6×atr+perícia ×2" : "Sabre 6d6×atr+perícia"}</span>}
                               {a.damageDice && <span style={{ fontSize: "0.68rem", color: "#e0524c", fontWeight: 700 }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
-                              {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>DT {a.dt}</span>}
+                              {a.dt !== undefined && <span style={{ fontSize: "0.68rem", color: GOLD, fontWeight: 700 }}>{a.skillId ? `${SKILL_BY_ID[a.skillId]?.name} · ` : ""}DT {a.dt}</span>}
                             </span>
                           </button>
                         );

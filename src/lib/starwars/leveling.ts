@@ -4,6 +4,8 @@ import { ARCHETYPE_FORMULA, CLASS_BY_ID, FORCE_BASE_CLASS_IDS, archetypePv1, arc
 import { TIER_BONUS, SPECIES_BY_ID } from "./species";
 import { SKILLS } from "./skills";
 import { SKILL_GRADE_ORDER } from "./data";
+import { getAvailableAbilities } from "./powers/registry";
+import type { ClassAbility, ChosenPower } from "./powers/types";
 
 /** Nível total do personagem (soma dos níveis de todas as classes + bônus sem classe). */
 export const MAX_LEVEL = 2000;
@@ -148,4 +150,26 @@ export function expertSkillsRequiredForNewClass(fromLevel: number, currentClassC
 /** Conta perícias em grau Expert ou acima (Expert / Veterano / Mestre). */
 export function countExpertSkills(skills: Record<string, string>): number {
   return Object.values(skills).filter((g) => g === "expert" || g === "veterano" || g === "mestre").length;
+}
+
+// ─── Sistema de Pools de Habilidade (13 classes normais) ──────────────────────
+//
+// Diferente do sistema linear antigo (1 habilidade cadastrada por nível exato, ainda em uso pelas
+// 5 classes especiais — Equilíbrio, Lado da Luz, Lado Negro, Cântico do Alvorecer, Litania da
+// Queda), essas 13 classes liberam um POOL de habilidades nos níveis 1/6/11/16 (o campo `level`
+// de cada `ClassAbility` guarda o tier em que ela abre, não um nível linear). Pools nunca fecham
+// — a cada nível o jogador escolhe 1 habilidade entre TODAS as que já abriram e ainda não foram
+// escolhidas naquela classe. `getAvailableAbilities(classId, levelInClass)` já filtra
+// `a.level <= levelInClass` (cumulativo) — ou seja, já retorna exatamente "tudo que já abriu" sem
+// precisar de nenhuma função de agrupamento nova.
+export const POOL_CLASS_IDS = new Set<string>([
+  "acolito_sith", "andarilho_forca", "padawan_jedi",
+  "cientista", "diplomata", "engenheiro", "espiao", "explorador",
+  "mandaloriano", "medico", "piloto", "pirata_espacial", "soldado_republica",
+]);
+
+/** Habilidades já abertas (pool) que ainda não foram escolhidas nessa classe — o que sobra pra "drenar". */
+export function getRemainingPoolAbilities(classId: string, levelInClass: number, classPowers: ChosenPower[]): ClassAbility[] {
+  const pickedNames = new Set(classPowers.filter((p) => p.classId === classId).map((p) => p.name));
+  return getAvailableAbilities(classId, levelInClass).filter((a) => !pickedNames.has(a.name));
 }

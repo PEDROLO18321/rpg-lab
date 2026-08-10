@@ -5,6 +5,7 @@ import {
   MAX_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, isMilestone5, isMilestone10,
   levelUpGain, ppLevelUpGain, canCombineClasses,
   countExpertSkills, expertSkillsRequiredForNewClass,
+  POOL_CLASS_IDS, getRemainingPoolAbilities,
 } from "@/lib/starwars/leveling";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
@@ -112,10 +113,19 @@ export async function POST(
     bumpAttr(multiclassAttrKey);
   } else {
     // ─── Escolha obrigatória: Habilidade de Classe → senão Perícia → senão Atributo. ───
-    const hasHabilidade = !isBonus && !!cls && getAvailableAbilities(classId, toLevelInClass).some((a) => a.level === toLevelInClass);
+    // Classes de Pool (as 13 normais): "disponível" é tudo que já abriu (pool 1/6/11/16, nunca
+    // fecha) e ainda não foi escolhido nessa classe — ver getRemainingPoolAbilities. Classes
+    // especiais (fora do redesenho) continuam no sistema linear antigo: match exato de nível.
+    const isPoolClass = POOL_CLASS_IDS.has(classId);
+    const remainingPoolAbilities = isPoolClass ? getRemainingPoolAbilities(classId, toLevelInClass, existingClassPowers) : [];
+    const hasHabilidade = !isBonus && !!cls && (isPoolClass
+      ? remainingPoolAbilities.length > 0
+      : getAvailableAbilities(classId, toLevelInClass).some((a) => a.level === toLevelInClass));
     if (hasHabilidade) {
       if (!classPowerId) return NextResponse.json({ error: "Escolha a Habilidade de Classe aprendida neste nível." }, { status: 400 });
-      const ability = getAvailableAbilities(classId, toLevelInClass).find((a) => a.name === classPowerId && a.level === toLevelInClass);
+      const ability = isPoolClass
+        ? remainingPoolAbilities.find((a) => a.name === classPowerId)
+        : getAvailableAbilities(classId, toLevelInClass).find((a) => a.name === classPowerId && a.level === toLevelInClass);
       if (!ability) return NextResponse.json({ error: "Habilidade não disponível para esta classe/nível." }, { status: 400 });
       newClassPowers.push({ level: toLevelInClass, id: classPowerId, name: ability.name, source: "classe", classId });
     } else {

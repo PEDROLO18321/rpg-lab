@@ -19,6 +19,8 @@ export interface ClassAbility {
   weaponDamage?: "sabre";
   /** DT fixa que o teste de perícia relevante precisa bater (habilidades não-combate). */
   dt?: number;
+  /** Perícia (id de skills.ts) rolada contra `dt`, nas classes que usam o sistema de Pools. */
+  skillId?: string;
   /** Cura em vez de dano (raras: ex. Cura da Força, Cura Instintiva). */
   heal?: boolean;
   /** Cura OU dano à escolha do jogador (Médico nível 30/40). */
@@ -38,6 +40,8 @@ export interface ClassMilestone {
   /** Só nas 3 classes-base ligadas à Força, se um marco raro vier a marcar domínio/especialização de forma. */
   formTag?: "primeiras_formas" | "segundas_formas" | "formas_completas" | "dominio" | "especializacao";
   dt?: number;
+  /** Perícia (id de skills.ts) rolada contra `dt`, nas classes que usam o sistema de Pools. */
+  skillId?: string;
   heal?: boolean;
   healOrDamage?: boolean;
 }

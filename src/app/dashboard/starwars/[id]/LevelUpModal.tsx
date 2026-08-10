@@ -6,10 +6,11 @@ import { CLASSES, CLASS_BY_ID, ARCHETYPE_LABEL } from "@/lib/starwars/classes";
 import {
   canCombineClasses, canUnlockPathClass, PATH_CLASS_UNLOCK_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, MAX_LEVEL,
   countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, isMilestone5, isMilestone10,
-  levelUpGain, type MandatoryChoiceKind,
+  levelUpGain, type MandatoryChoiceKind, POOL_CLASS_IDS, getRemainingPoolAbilities,
 } from "@/lib/starwars/leveling";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
+import type { ChosenPower } from "@/lib/starwars/powers/types";
 import { ATTR_KEYS, ATTR_LABEL, SKILL_GRADE_LABEL, nextSkillGrade, type AttrKey, type SkillGrade } from "@/lib/starwars/data";
 import { SKILLS } from "@/lib/starwars/skills";
 import { SW, Dropdown } from "../ui";
@@ -18,6 +19,7 @@ interface Props {
   characterId: string;
   sheet: {
     level: number; classes: string; skills: string | null; generalPowers: string | null; unlockedProphecies: string;
+    classPowers?: string | null;
   };
   onClose: () => void;
   onDone: () => void;
@@ -80,7 +82,7 @@ function AbilityPicker({ abilities, selected, onPick }: { abilities: ReturnType<
             <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "#5ec8e8" }}>{a.peCost} PE</span>
             {a.weaponDamage === "sabre" && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.formTag ? "Sabre: 6d6×atributo+perícia ×2" : "Sabre: 6d6×atributo+perícia"}</span>}
             {a.damageDice && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.danger }}>{a.heal ? "Cura" : "Dano"} {a.damageDice}</span>}
-            {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>DT {a.dt}</span>}
+            {a.dt !== undefined && <span style={{ fontSize: "0.66rem", fontWeight: 700, color: SW.gold }}>{a.skillId ? `${SKILLS.find((s) => s.id === a.skillId)?.name} · ` : ""}DT {a.dt}</span>}
           </div>
         </button>
       ))}
@@ -141,6 +143,7 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const existingClassIds = Object.keys(classLevels);
   const skills: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
   const existingGeneralPowers: string[] = JSON.parse(sheet.generalPowers || "[]");
+  const existingClassPowers: ChosenPower[] = JSON.parse(sheet.classPowers || "[]");
   const expertCount = countExpertSkills(skills);
   const pathReady = canUnlockPathClass(classLevels);
 
@@ -178,8 +181,15 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   // Habilidade de nível 1 da nova classe (fluxo de multiclasse).
   const newClassFirstAbilities = isNewClass ? getAvailableAbilities(classId, 1).filter((a) => a.level === 1) : [];
 
-  // Habilidade de Classe cadastrada exatamente neste nível — escolha obrigatória, prioridade 1.
-  const nextAbilities = !isNewClass && !isBonus && cls ? getAvailableAbilities(classId, toLevelInClass).filter((a) => a.level === toLevelInClass) : [];
+  // Habilidade de Classe — escolha obrigatória, prioridade 1. Nas 13 classes de Pool, "disponível"
+  // é tudo que já abriu (pool 1/6/11/16, nunca fecha) e ainda não foi escolhido nessa classe.
+  // Nas classes especiais (sistema antigo), continua sendo match exato do nível.
+  const isPoolClass = !isBonus && POOL_CLASS_IDS.has(classId);
+  const nextAbilities = !isNewClass && !isBonus && cls
+    ? (isPoolClass
+        ? getRemainingPoolAbilities(classId, toLevelInClass, existingClassPowers)
+        : getAvailableAbilities(classId, toLevelInClass).filter((a) => a.level === toLevelInClass))
+    : [];
   const hasHabilidade = nextAbilities.length > 0;
   const nonMaxSkills = SKILLS.filter((s) => nextSkillGrade(skills[s.id] ?? "inexperiente") !== null);
   const hasPoderGeral = GENERAL_POWERS.some((p) => !existingGeneralPowers.includes(p.id));
