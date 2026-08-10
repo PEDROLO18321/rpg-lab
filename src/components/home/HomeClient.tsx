@@ -10,6 +10,7 @@ import dndImg      from "@/assets/systems/D&D.png";
 import cthulhuImg  from "@/assets/systems/CallofCthulhu.png";
 import ordemImg    from "@/assets/systems/OrdemParanormal.png";
 import tormentaImg from "@/assets/systems/Tormenta.png";
+import starWarsImg from "@/assets/systems/StarWars.png";
 
 // ── Data pools ────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ const FEATURES = [
   { title:"Compartilhamento",       desc:"Gere um link único para sua ficha e compartilhe com o mestre ou grupo na hora."                               },
   { title:"Salvo na Nuvem",         desc:"Seus dados sincronizados e seguros. Acesse de qualquer dispositivo sem perder nada."                          },
   { title:"Modo de Jogo",           desc:"Fichas interativas com rolagem de dados, controle de recursos e rastreamento de status em tempo real."         },
-  { title:"Multi-sistema",          desc:"D&D 5e, Call of Cthulhu e Ordem Paranormal disponíveis. Tormenta 20 em desenvolvimento."                     },
+  { title:"Multi-sistema",          desc:"D&D 5e, Call of Cthulhu, Ordem Paranormal, Tormenta 20 e Star Wars: Além da Fronteira — todos disponíveis agora."                     },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -177,6 +178,8 @@ export function HomeClient({ session }: Props) {
       {!isAuthed && (
         <>
           <StatsStrip />
+          <AboutSection />
+          <DemoSection />
           <FeaturesSection />
           <SystemsSection />
           <CtaSection />
@@ -250,7 +253,7 @@ function AuthedHero({ name, classText, classVisible, statuses, flavor, timeData 
 
       <div className="anim-fade-up" style={{ animationDelay:"1s", display:"flex", flexWrap:"wrap", gap:12 }}>
         <GoldBtn href="/dashboard">Laboratório</GoldBtn>
-        <GhostBtn href="/dashboard/dnd/jogador">Meus Personagens</GhostBtn>
+        <GhostBtn href="#systems">Ver sistemas</GhostBtn>
       </div>
     </>
   );
@@ -262,7 +265,7 @@ function PublicContent({ classText, classVisible }: { classText: string; classVi
   return (
     <>
       <div className="anim-fade-up" style={{ animationDelay:"0.05s", display:"inline-flex", alignItems:"center", gap:8, padding:"6px 16px", background:"var(--accent-dim)", border:"1px solid var(--border-accent)", borderRadius:"var(--radius-full)", alignSelf:"flex-start", marginBottom:28 }}>
-        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>D&amp;D 5e · Call of Cthulhu · Ordem Paranormal</span>
+        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>5 sistemas de RPG · D&amp;D · Cthulhu · Ordem · Tormenta · Star Wars</span>
       </div>
 
       <h1 className="anim-fade-up" style={{ animationDelay:"0.12s", fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(2.4rem,4.8vw,4rem)", fontWeight:700, lineHeight:1.08, letterSpacing:"-0.01em", color:"var(--text)", marginBottom:20 }}>
@@ -438,11 +441,12 @@ const SHOWCASE_SYSTEMS = [
   { id:"cthulhu",  name:"Call of Cthulhu",   label:"CoC 7ª Ed.",        image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"ordem",    name:"Ordem Paranormal",   label:"OP RPG",            image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"tormenta", name:"Tormenta 20",        label:"T20",               image:tormentaImg, color:"#a01818", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
+  { id:"starwars", name:"Star Wars: Além da Fronteira", label:"Sistema Autoral", image:starWarsImg, color:"#3b82c4", dot:"#4ade80", statusLabel:"Disponível", available:true  },
 ];
 
 function SystemsShowcase() {
   return (
-    <section style={{ maxWidth:1060, margin:"0 auto", padding:"0 28px 100px" }}>
+    <section id="systems" style={{ maxWidth:1060, margin:"0 auto", padding:"0 28px 100px" }}>
       {/* Header divider */}
       <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:28 }}>
         <div style={{ flex:1, height:1, background:"linear-gradient(to right, transparent, var(--border))" }} />
@@ -555,6 +559,7 @@ const STRIP_SYSTEMS = [
   { id:"cthulhu",  name:"Call of Cthulhu",  image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"ordem",    name:"Ordem Paranormal", image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"tormenta", name:"Tormenta 20",      image:tormentaImg, color:"#a01818", dot:"#4ade80", statusLabel:"Disponível"         },
+  { id:"starwars", name:"Star Wars: Além da Fronteira", image:starWarsImg, color:"#3b82c4", dot:"#4ade80", statusLabel:"Disponível" },
 ];
 
 function StatsStrip() {
@@ -642,26 +647,227 @@ function FeaturesSection() {
 
 function SystemsSection() {
   const systems = [
-    { name:"D&D 5e",              status:"Disponível",       statusColor:"#4ade80"             },
-    { name:"Call of Cthulhu",     status:"Disponível",       statusColor:"#4ade80"             },
-    { name:"Ordem Paranormal",    status:"Disponível",       statusColor:"#4ade80"             },
-    { name:"Tormenta 20",         status:"Planejado",        statusColor:"var(--text-subtle)"  },
+    { id:"dnd",      name:"D&D 5e",              status:"Disponível", statusColor:"#4ade80" },
+    { id:"cthulhu",  name:"Call of Cthulhu",     status:"Disponível", statusColor:"#4ade80" },
+    { id:"ordem",    name:"Ordem Paranormal",    status:"Disponível", statusColor:"#4ade80" },
+    { id:"tormenta", name:"Tormenta 20",         status:"Disponível", statusColor:"#4ade80" },
+    { id:"starwars", name:"Star Wars: Além da Fronteira", status:"Disponível", statusColor:"#4ade80" },
   ];
   return (
     <section id="systems" style={{ padding:"48px 28px 20px" }}>
-      <div style={{ maxWidth:900, margin:"0 auto" }}>
+      <div style={{ maxWidth:1060, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:48 }}>
           <p className="section-label" style={{ marginBottom:12 }}>Sistemas</p>
           <h2 style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(1.5rem,2.8vw,2.2rem)", fontWeight:700, color:"var(--text)" }}>Multi-sistema</h2>
+          <p style={{ fontSize:"0.9rem", color:"var(--text-muted)", marginTop:12, maxWidth:440, margin:"12px auto 0" }}>
+            5 sistemas prontos pra jogar. Clique em qualquer um pra conhecer o universo e as mecânicas.
+          </p>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(190px, 1fr))", gap:16 }}>
           {systems.map((s) => (
-            <div key={s.name} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-xl)", padding:"24px 20px", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
-              <p style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.85rem", fontWeight:700, color:"var(--text)" }}>{s.name}</p>
-              <span style={{ fontSize:"0.64rem", fontWeight:700, color:s.statusColor, padding:"2px 10px", borderRadius:"var(--radius-full)", background:`${s.statusColor}15`, border:`1px solid ${s.statusColor}33` }}>{s.status}</span>
+            <Link key={s.id} href={`/system/${s.id}`} style={{ textDecoration:"none" }}>
+              <div
+                style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-xl)", padding:"24px 20px", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:10, cursor:"pointer", transition:"border-color 0.2s, transform 0.2s, box-shadow 0.2s" }}
+                onMouseEnter={(e) => { const el=e.currentTarget; el.style.borderColor="var(--border-accent)"; el.style.transform="translateY(-3px)"; el.style.boxShadow="0 14px 32px rgba(0,0,0,0.35)"; }}
+                onMouseLeave={(e) => { const el=e.currentTarget; el.style.borderColor="var(--border)"; el.style.transform="translateY(0)"; el.style.boxShadow="none"; }}
+              >
+                <p style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.85rem", fontWeight:700, color:"var(--text)" }}>{s.name}</p>
+                <span style={{ fontSize:"0.64rem", fontWeight:700, color:s.statusColor, padding:"2px 10px", borderRadius:"var(--radius-full)", background:`${s.statusColor}15`, border:`1px solid ${s.statusColor}33` }}>{s.status}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── About / O que é RPG ───────────────────────────────────────────────────────
+
+const HOW_IT_WORKS = [
+  { num:"01", icon:"🧙", title:"Crie sua conta",   desc:"Cadastro gratuito em segundos. Sem cartão de crédito." },
+  { num:"02", icon:"📖", title:"Escolha o sistema", desc:"5 sistemas disponíveis — D&D, Cthulhu, Ordem, Tormenta ou Star Wars." },
+  { num:"03", icon:"📋", title:"Monte sua ficha",   desc:"Preencha os dados do personagem. As mecânicas são calculadas sozinhas." },
+  { num:"04", icon:"🔗", title:"Jogue e compartilhe", desc:"Role dados, acompanhe recursos e compartilhe a ficha com seu grupo." },
+];
+
+function AboutSection() {
+  return (
+    <section id="sobre" style={{ padding:"48px 28px 20px" }}>
+      <div style={{ maxWidth:1060, margin:"0 auto" }}>
+        <div style={{ textAlign:"center", marginBottom:48 }}>
+          <p className="section-label" style={{ marginBottom:12 }}>Sobre</p>
+          <h2 style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(1.6rem,3vw,2.4rem)", fontWeight:700, color:"var(--text)" }}>
+            O que é RPG de mesa?
+          </h2>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:40, marginBottom:56, alignItems:"start" }}>
+          <p style={{ fontSize:"0.94rem", color:"var(--text-muted)", lineHeight:1.85 }}>
+            RPG (<em>Role-Playing Game</em>) de mesa é um jogo colaborativo de contar
+            histórias. Um grupo de jogadores cria personagens — heróis, investigadores,
+            agentes, o que o sistema pedir — e vive aventuras narradas por um Mestre
+            (ou Guardião, ou Narrador, dependendo do sistema). Não existe tabuleiro
+            fixo nem um jeito certo de &ldquo;vencer&rdquo;: o grupo decide o que os
+            personagens fazem, e os dados determinam se dá certo. Cada mesa conta uma
+            história única, que não se repete em lugar nenhum.
+          </p>
+          <p style={{ fontSize:"0.94rem", color:"var(--text-muted)", lineHeight:1.85 }}>
+            Toda essa criatividade esbarra num problema chato: papelada. Cada sistema
+            tem sua própria ficha, suas próprias contas, suas próprias regras de bônus
+            e penalidade. O <strong style={{ color:"var(--text)" }}>RPG Lab</strong> existe
+            pra tirar esse peso das suas costas — a ficha calcula sozinha, guarda tudo
+            na nuvem e libera o grupo inteiro pra focar no que importa: jogar. Quer
+            conhecer um sistema específico?{" "}
+            <a href="#systems" style={{ color:"var(--accent-light)" }}>Veja os 5 disponíveis</a>.
+          </p>
+        </div>
+
+        <p style={{ textAlign:"center", fontSize:"0.68rem", fontWeight:800, color:"var(--text-subtle)", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:20 }}>
+          Como funciona o RPG Lab
+        </p>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:16 }}>
+          {HOW_IT_WORKS.map((s) => (
+            <div key={s.num} style={{ display:"flex", flexDirection:"column", gap:12, padding:"22px 20px", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-lg)" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.7rem", fontWeight:700, color:"var(--accent)", letterSpacing:"0.1em" }}>{s.num}</span>
+                <span style={{ fontSize:"1.15rem" }}>{s.icon}</span>
+              </div>
+              <div>
+                <p style={{ fontSize:"0.88rem", fontWeight:700, color:"var(--text)", marginBottom:5 }}>{s.title}</p>
+                <p style={{ fontSize:"0.8rem", color:"var(--text-muted)", lineHeight:1.6 }}>{s.desc}</p>
+              </div>
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Interactive demo (no login required) ────────────────────────────────────
+
+interface DemoRoll { skillName: string; skillMod: number; dice: number; total: number; rolling: boolean }
+
+function DemoSection() {
+  const [charIdx, setCharIdx] = useState(0);
+  const [roll, setRoll] = useState<DemoRoll | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const char = CHARACTERS[charIdx];
+
+  function rollSkill(skillName: string, skillModStr: string) {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const skillMod = parseInt(skillModStr, 10) || 0;
+    let ticks = 0;
+    const maxTicks = 10 + Math.floor(Math.random() * 6);
+    setRoll({ skillName, skillMod, dice: 0, total: 0, rolling: true });
+    timerRef.current = setInterval(() => {
+      const dice = Math.floor(Math.random() * 20) + 1;
+      ticks++;
+      const done = ticks >= maxTicks;
+      if (done && timerRef.current) clearInterval(timerRef.current);
+      setRoll({ skillName, skillMod, dice, total: dice + skillMod, rolling: !done });
+    }, 65);
+  }
+
+  function pickChar(i: number) {
+    setCharIdx(i);
+    setRoll(null);
+  }
+
+  const isCrit   = !!roll && !roll.rolling && roll.dice === 20;
+  const isFumble = !!roll && !roll.rolling && roll.dice === 1;
+  const resultColor = isCrit ? "var(--accent-light)" : isFumble ? "#ef4444" : "var(--text)";
+
+  return (
+    <section id="demo" style={{ padding:"48px 28px 20px" }}>
+      <div style={{ maxWidth:920, margin:"0 auto" }}>
+        <div style={{ textAlign:"center", marginBottom:36 }}>
+          <p className="section-label" style={{ marginBottom:12 }}>Experimente agora</p>
+          <h2 style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(1.6rem,3vw,2.4rem)", fontWeight:700, color:"var(--text)" }}>
+            Sem cadastro. Sem compromisso.
+          </h2>
+          <p style={{ fontSize:"0.92rem", color:"var(--text-muted)", marginTop:12, maxWidth:460, margin:"12px auto 0" }}>
+            Escolha um personagem pronto e clique numa perícia pra rolar o dado —
+            é exatamente assim que uma ficha do RPG Lab funciona de verdade.
+          </p>
+        </div>
+
+        <div style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center", marginBottom:28 }}>
+          {CHARACTERS.map((c, i) => (
+            <button key={c.name} onClick={() => pickChar(i)}
+              style={{ padding:"6px 14px", fontSize:"0.78rem", fontWeight:600, borderRadius:"var(--radius-full)", cursor:"pointer", background: i===charIdx ? "var(--accent-dim)" : "var(--surface)", border: `1px solid ${i===charIdx ? "var(--border-accent)" : "var(--border)"}`, color: i===charIdx ? "var(--accent-light)" : "var(--text-muted)", transition:"all 0.15s" }}>
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1fr) 300px", gap:20 }} className="home-demo-grid">
+          <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-xl)", padding:"22px 24px" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+              <div>
+                <p style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"1rem", fontWeight:700, color:"var(--text)" }}>{char.name}</p>
+                <p style={{ fontSize:"0.76rem", color:"var(--text-muted)", marginTop:2 }}>{char.subtitle}</p>
+              </div>
+              <div style={{ padding:"3px 10px", background:"var(--accent-dim)", border:"1px solid var(--border-accent)", borderRadius:"var(--radius-full)", fontSize:"0.62rem", fontWeight:700, color:"var(--accent-light)" }}>{char.badge}</div>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:8, marginBottom:18 }}>
+              {char.stats.map((s) => (
+                <div key={s.abbr} style={{ background:"var(--surface-2)", border:"1px solid var(--border)", borderRadius:"var(--radius)", padding:"9px 0", textAlign:"center" }}>
+                  <div style={{ fontSize:"0.58rem", color:"var(--text-subtle)", letterSpacing:"0.08em", marginBottom:3 }}>{s.abbr}</div>
+                  <div style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"1.05rem", fontWeight:700, color:"var(--text)", lineHeight:1 }}>{s.score}</div>
+                  <div style={{ fontSize:"0.68rem", color:"var(--accent-light)", fontWeight:600, marginTop:2 }}>{s.mod}</div>
+                </div>
+              ))}
+            </div>
+
+            <p style={{ fontSize:"0.64rem", fontWeight:800, color:"var(--text-subtle)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8 }}>
+              Perícias — clique pra rolar
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {char.skills.map((sk) => {
+                const active = roll?.skillName === sk.name;
+                return (
+                  <button key={sk.name} onClick={() => rollSkill(sk.name, sk.mod)}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", background: active ? "var(--accent-dim)" : "var(--surface-2)", border:`1px solid ${active ? "var(--border-accent)" : "var(--border)"}`, borderRadius:"var(--radius)", cursor:"pointer", transition:"all 0.15s" }}>
+                    <span style={{ display:"flex", alignItems:"center", gap:7 }}>
+                      <span style={{ width:7, height:7, borderRadius:"50%", background: sk.prof ? "var(--accent)" : "var(--surface-3)", border: sk.prof ? "none" : "1px solid var(--border)" }} />
+                      <span style={{ fontSize:"0.82rem", color:"var(--text-muted)" }}>{sk.name}</span>
+                    </span>
+                    <span style={{ fontSize:"0.82rem", fontWeight:700, color: sk.prof ? "var(--accent-light)" : "var(--text-muted)" }}>{sk.mod}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-xl)", padding:"22px 20px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", minHeight:220 }}>
+            <p style={{ fontSize:"0.64rem", fontWeight:800, color:"var(--text-subtle)", letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:14 }}>Resultado</p>
+            {roll ? (
+              <>
+                <p style={{ fontSize:"0.78rem", color:"var(--text-muted)", marginBottom:8 }}>{roll.skillName}</p>
+                <p style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"2.6rem", fontWeight:900, color:resultColor, lineHeight:1, marginBottom:8 }}>
+                  {roll.rolling ? roll.dice || "—" : roll.total}
+                </p>
+                <p style={{ fontSize:"0.72rem", color:"var(--text-subtle)" }}>
+                  {roll.rolling ? "rolando..." : `d20 (${roll.dice}) ${roll.skillMod >= 0 ? "+" : ""}${roll.skillMod}`}
+                </p>
+                {isCrit && <p style={{ fontSize:"0.68rem", fontWeight:700, color:"var(--accent-light)", marginTop:6, letterSpacing:"0.06em", textTransform:"uppercase" }}>Crítico!</p>}
+                {isFumble && <p style={{ fontSize:"0.68rem", fontWeight:700, color:"#ef4444", marginTop:6, letterSpacing:"0.06em", textTransform:"uppercase" }}>Falha crítica</p>}
+              </>
+            ) : (
+              <p style={{ fontSize:"0.82rem", color:"var(--text-subtle)" }}>Clique numa perícia ao lado pra rolar o dado</p>
+            )}
+          </div>
+        </div>
+
+        <p style={{ textAlign:"center", fontSize:"0.8rem", color:"var(--text-muted)", marginTop:28 }}>
+          Gostou? <Link href="/register" style={{ color:"var(--accent-light)", textDecoration:"none", fontWeight:700 }}>Crie sua conta grátis</Link> e monte a sua própria ficha.
+        </p>
       </div>
     </section>
   );
@@ -724,7 +930,7 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
 
         {!isAuthed && (
           <nav className="hidden md:flex" style={{ gap:2, flex:1, justifyContent:"center" }}>
-            {[["Recursos","#features"],["Sistemas","#systems"]].map(([label, href]) => (
+            {[["Sobre","#sobre"],["Demonstração","#demo"],["Recursos","#features"],["Sistemas","#systems"]].map(([label, href]) => (
               <a key={label} href={href} style={{ padding:"6px 15px", fontSize:"0.865rem", color:"var(--text-muted)", textDecoration:"none", borderRadius:"var(--radius)", transition:"color 0.15s, background 0.15s" }}
                 onMouseEnter={(e) => { e.currentTarget.style.color="var(--text)"; e.currentTarget.style.background="rgba(255,255,255,0.05)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color="var(--text-muted)"; e.currentTarget.style.background="transparent"; }}>
@@ -757,7 +963,7 @@ function TopNav({ isAuthed, userName }: { isAuthed: boolean; userName: string })
                       <p style={{ fontSize:"0.7rem", color:"var(--text-muted)", marginBottom:2 }}>Aventureiro</p>
                       <p style={{ fontSize:"0.86rem", fontWeight:700, color:"var(--text)" }}>{userName}</p>
                     </div>
-                    {[{ href:"/dashboard", label:"Dashboard" },{ href:"/dashboard/dnd/jogador", label:"Meus Personagens" }].map(({ href, label }) => (
+                    {[{ href:"/dashboard", label:"Dashboard" }].map(({ href, label }) => (
                       <Link key={href} href={href} onClick={() => setMenuOpen(false)}
                         style={{ display:"block", padding:"10px 14px", fontSize:"0.86rem", color:"var(--text-muted)", textDecoration:"none", borderBottom:"1px solid var(--border)", transition:"color 0.15s, background 0.15s" }}
                         onMouseEnter={(e) => { const el=e.currentTarget as HTMLAnchorElement; el.style.color="var(--text)"; el.style.background="rgba(255,255,255,0.04)"; }}
