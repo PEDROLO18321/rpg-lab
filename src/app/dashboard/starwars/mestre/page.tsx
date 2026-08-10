@@ -65,7 +65,61 @@ export default function StarWarsMestrePage() {
         )}
 
         {campaigns.length === 0 ? (
-          <p style={{ color: SW.textMuted, fontSize: "0.9rem" }}>Nenhuma campanha ainda. Crie a primeira acima.</p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              padding: "60px 24px",
+              background: SW.panel,
+              border: `1px dashed ${SW.accentBord}`,
+              borderRadius: "var(--radius-xl)",
+              boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)`,
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 52, height: 52,
+                borderRadius: "var(--radius-lg)",
+                background: SW.accentDim,
+                border: `1px solid ${SW.accentBord}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: SW.accentLight, marginBottom: 4,
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+            </div>
+            <h3 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)" }}>
+              Nenhuma campanha ainda
+            </h3>
+            <p style={{ fontSize: "0.84rem", color: SW.textMuted, maxWidth: 340, lineHeight: 1.65 }}>
+              Crie sua primeira campanha para acessar as ferramentas do Mestre — NPCs, bestiário, iniciativa, pistas, relógios e notas.
+            </p>
+            <button
+              onClick={() => setCreating(true)}
+              style={{
+                marginTop: 8,
+                padding: "9px 20px",
+                background: SW.accentDim,
+                color: SW.accentLight,
+                border: `1px solid ${SW.accentBord}`,
+                borderRadius: "var(--radius)",
+                fontSize: "0.84rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(59,130,196,0.22)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = SW.accentDim)}
+            >
+              + Criar campanha
+            </button>
+          </div>
         ) : (
           <div style={gridAutoFill(240)}>
             {campaigns.map((c) => (
