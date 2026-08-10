@@ -103,7 +103,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
           {textField("Gênero", "gender")}
           {textField("Nacionalidade", "nationality")}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="cth-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Personalidade", "personality")}
           {textField("Descrição", "description")}
         </div>
@@ -116,7 +116,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
         <div style={{ borderTop: `1px solid ${ABORD}`, paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Atributos <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
           <div className="cth-npc-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 8, marginBottom: 12 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{numField("PV", "hp")}{numField("SAN", "san")}</div>
+          <div className="cth-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{numField("PV", "hp")}{numField("SAN", "san")}</div>
         </div>
 
         <div style={{ borderTop: `1px solid ${ABORD}`, paddingTop: 16, marginBottom: 16 }}>
@@ -202,7 +202,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
                         </div>
                       </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div className="cth-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: "#7d9c3e", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Personalidade</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
                       {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: "#7d9c3e", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>

@@ -199,6 +199,7 @@ export default function SystemSelectPage() {
               onKeyDown={(e) => e.key === "Enter" && handleSelect(sys)}
               onMouseEnter={() => setHovered(sys.id)}
               onMouseLeave={() => setHovered(null)}
+              className="dashboard-system-card"
               style={{
                 position: "relative",
                 display: "flex",
@@ -219,7 +220,7 @@ export default function SystemSelectPage() {
               }}
             >
               {/* Image (square) */}
-              <div style={{ position: "relative", width: 128, height: 128, flexShrink: 0 }}>
+              <div className="dashboard-system-card-img" style={{ position: "relative", width: 128, height: 128, flexShrink: 0 }}>
                 <Image
                   src={sys.image}
                   alt={sys.name}

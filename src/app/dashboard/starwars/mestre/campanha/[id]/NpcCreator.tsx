@@ -704,7 +704,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", padding: 4, width: "fit-content" }}>
+      <div className="sw-npc-mode-tabs" style={{ display: "flex", gap: 4, marginBottom: 20, background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", padding: 4, width: "fit-content" }}>
         {(["random", "manual", "famous"] as const).map((m) => (
           <button key={m} onClick={() => switchMode(m)} style={{ padding: "7px 18px", background: mode === m ? ACCENT_DIM : "transparent", color: mode === m ? ACCENT_LIGHT : "var(--text-muted)", border: mode === m ? `1px solid ${ACCENT_BORD}` : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.82rem", fontWeight: mode === m ? 700 : 500, cursor: "pointer" }}>{m === "random" ? "Aleatório" : m === "manual" ? "Manual" : "Personagens Famosos"}</button>
         ))}
@@ -742,7 +742,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
           {textField("Espécie", "species", { list: mode === "manual" ? SPECIES_NAMES : undefined })}
           {textField("Papel / Classe", "role", { list: mode === "manual" ? ROLES : undefined })}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="sw-npc-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Personalidade", "personality")}
           {textField("Descrição / Aparência", "description")}
         </div>
@@ -871,7 +871,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
                         </div>
                       </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div className="sw-npc-two-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Personalidade</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
                       {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>

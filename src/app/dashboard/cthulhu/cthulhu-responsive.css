@@ -45,4 +45,15 @@
     gap: 6px !important;
     padding: 10px !important;
   }
+
+  /* SheetClient.tsx (view mode) — Atributos/Perícias split */
+  .cth-view-columns { grid-template-columns: 1fr !important; }
+
+  /* Mestre — NpcCreator/Bestiário/Pistas/Artefatos/Cenário/Dados (área de campanha, sem cobertura ainda) */
+  .cth-npc-form-row { grid-template-columns: 1fr !important; }
+  .cth-bestiary-detail-row { grid-template-columns: 1fr !important; }
+  .cth-clues-form-grid { grid-template-columns: 1fr !important; }
+  .cth-scenario-form-grid { grid-template-columns: 1fr !important; }
+  .cth-artefacts-form-grid { grid-template-columns: 1fr !important; }
+  .cth-dice-mod-grid { grid-template-columns: 1fr !important; }
 }

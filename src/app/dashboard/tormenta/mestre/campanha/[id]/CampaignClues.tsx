@@ -36,7 +36,7 @@ export function CampaignClues({ api }: { api: TormentaApi }) {
       </div>
 
       <div style={{ padding: "18px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="tm-clues-form-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
           <div><label style={labelStyle}>Título</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Carta selada do barão" style={inputStyle} /></div>
           <div><label style={labelStyle}>Onde/Como foi achada</label><input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Ex: Cripta, NPC X" style={inputStyle} /></div>
         </div>
@@ -83,7 +83,7 @@ function ClueEditor({ api, clue, sessions }: { api: TormentaApi; clue: TormentaC
   const commit = (p: Partial<TormentaClue>) => api.editChild("clues", clue.id, p);
   return (
     <div style={{ padding: "0 16px 16px 16px", borderTop: "1px solid var(--border)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+      <div className="tm-clues-form-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
         <div><label style={labelStyle}>Título</label><input style={inputStyle} value={d.title} onChange={(e) => set({ title: e.target.value })} onBlur={(e) => commit({ title: e.target.value })} /></div>
         <div><label style={labelStyle}>Vínculo à Sessão</label>
           <select style={{ ...inputStyle, cursor: "pointer" }} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}>

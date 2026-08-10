@@ -81,7 +81,7 @@ export function CampaignItems({ api }: { api: StarWarsApi }) {
       {adding && (
         <div style={{ background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "20px 24px", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
           <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>Novo Item</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <div className="sw-item-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Nome</label><input style={inputStyle} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Ex: Sabre de luz de Kest Vhorrun" autoFocus /></div>
             <div><label style={labelStyle}>Tipo</label><select style={selectStyle} value={newItem.type} onChange={(e) => setNewItem({ ...newItem, type: e.target.value as ItemType })}>{TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
             <div><label style={labelStyle}>Raridade</label><select style={selectStyle} value={newItem.rarity} onChange={(e) => setNewItem({ ...newItem, rarity: e.target.value as ItemRarity })}>{RARITY_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}</select></div>
@@ -129,7 +129,7 @@ function ItemEditor({ api, item, sessions, onDeleted }: { api: StarWarsApi; item
   const commit = (p: Partial<StarWarsCampaignItem>) => api.editChild("items", item.id, p);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="sw-item-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Nome</label><input style={inputStyle} value={d.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></div>
         <div><label style={labelStyle}>Tipo</label><select style={selectStyle} value={d.type} onChange={(e) => { set({ type: e.target.value as ItemType }); commit({ type: e.target.value as ItemType }); }}>{TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
         <div><label style={labelStyle}>Raridade</label><select style={selectStyle} value={d.rarity} onChange={(e) => { set({ rarity: e.target.value as ItemRarity }); commit({ rarity: e.target.value as ItemRarity }); }}>{RARITY_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}</select></div>

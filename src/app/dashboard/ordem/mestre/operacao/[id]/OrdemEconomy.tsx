@@ -76,7 +76,7 @@ export function OrdemEconomy({ api }: { api: OperacaoApi }) {
       {/* Add reward */}
       <div style={{ padding: "18px 20px", background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)" }}>
         <p style={{ fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>Conceder / Remover Prestígio</p>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 3fr auto", gap: 10, alignItems: "end" }}>
+        <div className="op-economy-reward-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 3fr auto", gap: 10, alignItems: "end" }}>
           <div>
             <label style={labelStyle}>Agente</label>
             {players.length > 0 ? (

@@ -540,7 +540,7 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
         <StatBox label="Bônus Prof." value={`+${PROF_BONUS}`} accent />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+      <div className="dnd-view-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Ability scores */}
           <ViewSection label="Atributos">

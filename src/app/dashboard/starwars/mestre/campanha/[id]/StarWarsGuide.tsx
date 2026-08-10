@@ -231,8 +231,8 @@ export function StarWarsGuide() {
                     {b.intro && <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 10, fontStyle: "italic" }}>{b.intro}</p>}
                     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                       {b.rows.map((r, ri) => (
-                        <div key={ri} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: "0.82rem", lineHeight: 1.5 }}>
-                          <span style={{ fontWeight: 700, color: "var(--text)", minWidth: 156, flexShrink: 0 }}>{r.term}</span>
+                        <div key={ri} className="sw-guide-row" style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: "0.82rem", lineHeight: 1.5 }}>
+                          <span className="sw-guide-row-term" style={{ fontWeight: 700, color: "var(--text)", minWidth: 156, flexShrink: 0 }}>{r.term}</span>
                           <span style={{ color: "var(--text-muted)", flex: 1 }}>{r.text}</span>
                         </div>
                       ))}

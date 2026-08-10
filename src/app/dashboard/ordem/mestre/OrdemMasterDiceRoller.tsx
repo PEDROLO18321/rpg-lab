@@ -146,7 +146,7 @@ export function OrdemMasterDiceRoller() {
           </div>
 
           {/* Quantity + modifier */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div className="op-dice-mod-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.68rem", color: "var(--text-muted)" }}>
               {selectedDie === 20 ? "Qtd (pega maior)" : "Qtd"}
               <select

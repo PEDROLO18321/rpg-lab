@@ -193,7 +193,7 @@ export function OrdemBestiary({ api }: Props) {
                     ))}
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                  <div className="op-bestiary-detail-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                     <div style={{ padding: "10px 14px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                       <p style={{ fontSize: "0.62rem", fontWeight: 700, color: AL, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Deslocamento</p>
                       <p style={{ fontSize: "0.84rem", color: "var(--text-muted)" }}>{creature.displacement}</p>
@@ -207,7 +207,7 @@ export function OrdemBestiary({ api }: Props) {
                   </div>
 
                   {(creature.resistances !== "—" || creature.vulnerabilities !== "—") && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                    <div className="op-bestiary-detail-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                       <div style={{ padding: "10px 14px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                         <p style={{ fontSize: "0.62rem", fontWeight: 700, color: "#7dd3a8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Resistências / Imunidades</p>
                         <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{creature.resistances}</p>

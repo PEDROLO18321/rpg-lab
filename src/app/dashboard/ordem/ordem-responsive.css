@@ -39,4 +39,13 @@
 
   /* OrdemSanity.tsx — editor de agente (Nome/SAN/PV/PM) */
   .op-sanity-editor-grid { grid-template-columns: 1fr !important; }
+
+  /* Mestre — Economia/Bestiário/Pistas/Itens/Cenário/NPCs/Dados (área de campanha, sem cobertura ainda) */
+  .op-economy-reward-grid { grid-template-columns: 1fr !important; }
+  .op-bestiary-detail-row { grid-template-columns: 1fr !important; }
+  .op-clues-form-grid { grid-template-columns: 1fr !important; }
+  .op-items-form-grid { grid-template-columns: 1fr !important; }
+  .op-scenario-form-grid { grid-template-columns: 1fr !important; }
+  .op-npc-form-row { grid-template-columns: 1fr !important; }
+  .op-dice-mod-grid { grid-template-columns: 1fr !important; }
 }

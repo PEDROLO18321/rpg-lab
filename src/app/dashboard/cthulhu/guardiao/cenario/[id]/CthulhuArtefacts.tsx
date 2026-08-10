@@ -64,7 +64,7 @@ export function CthulhuArtefacts({ api }: { api: CthulhuApi }) {
       {adding && (
         <div style={{ background: "var(--surface)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius-xl)", padding: "20px 24px" }}>
           <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>Novo Item / Artefato</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <div className="cth-artefacts-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Nome</label><input style={inputStyle} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Ex: Necronomicon, Amuleto de Cthulhu" autoFocus /></div>
             <div><label style={labelStyle}>Tipo</label><select style={selectStyle} value={newItem.type} onChange={(e) => setNewItem({ ...newItem, type: e.target.value as ItemType })}>{TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
             <div><label style={labelStyle}>Vínculo à Sessão</label><select style={selectStyle} value={newItem.sessionId ?? ""} onChange={(e) => setNewItem({ ...newItem, sessionId: e.target.value || null })}><option value="">Geral (cenário)</option>{sessions.map((s) => <option key={s.id} value={s.id}>Sessão {s.number}{s.name ? ` · ${s.name}` : ""}</option>)}</select></div>
@@ -113,7 +113,7 @@ function ItemEditor({ api, item, sessions, onDeleted }: { api: CthulhuApi; item:
   const commit = (p: Partial<CthulhuCampaignItem>) => api.editChild("items", item.id, p);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="cth-artefacts-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>Nome</label><input style={inputStyle} value={d.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></div>
         <div><label style={labelStyle}>Tipo</label><select style={selectStyle} value={d.type} onChange={(e) => { set({ type: e.target.value as ItemType }); commit({ type: e.target.value as ItemType }); }}>{TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
         <div><label style={labelStyle}>Vínculo</label><select style={selectStyle} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}><option value="">Geral (cenário)</option>{sessions.map((s) => <option key={s.id} value={s.id}>Sessão {s.number}{s.name ? ` · ${s.name}` : ""}</option>)}</select></div>

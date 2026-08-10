@@ -96,7 +96,7 @@ export function OrdemItems({ api }: { api: OperacaoApi }) {
       {adding && (
         <div style={{ background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)", padding: "20px 24px" }}>
           <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>Novo Item</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <div className="op-items-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={labelStyle}>Nome</label>
               <input style={inputStyle} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Ex: Pistola .40, Medalhão Profano, Ritual: Lança de Sangue" autoFocus />
@@ -175,7 +175,7 @@ function ItemEditor({ api, item, sessions, onDeleted }: {
 
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div className="op-items-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={labelStyle}>Nome</label>
           <input style={inputStyle} value={d.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} />

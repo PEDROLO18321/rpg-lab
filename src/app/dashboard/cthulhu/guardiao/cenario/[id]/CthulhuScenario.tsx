@@ -32,7 +32,7 @@ export function CthulhuScenario({ api }: { api: CthulhuApi }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "24px 28px" }}>
         <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}><span style={{ color: A }}>📜</span> Cenário</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <div className="cth-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div><label style={labelStyle}>Objetivo dos Investigadores</label><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que precisam descobrir ou impedir?" /></div>
           <div><label style={labelStyle}>Gancho Inicial</label><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.hook} onChange={(e) => setField({ hook: e.target.value })} onBlur={(e) => commit({ hook: e.target.value })} placeholder="Como são envolvidos? Contrato, desaparecimento..." /></div>
           <div><label style={labelStyle}>Principal Culto / Ameaça</label><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.mainCult} onChange={(e) => setField({ mainCult: e.target.value })} onBlur={(e) => commit({ mainCult: e.target.value })} placeholder="Entidade ou culto central, objetivos, membros-chave..." /></div>
@@ -86,7 +86,7 @@ function SessionEditor({ api, session }: { api: CthulhuApi; session: CthulhuGame
   const commit = (p: Partial<CthulhuGameSession>) => api.editChild("sessions", session.id, p);
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div className="cth-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div><label style={labelStyle}>Nome da Sessão</label><input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></div>
         <div><label style={labelStyle}>Data</label><input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} /></div>
       </div>

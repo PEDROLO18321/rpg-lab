@@ -4,6 +4,7 @@ import "../../../tormenta-responsive.css";
 import { useState } from "react";
 import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 import type { TormentaNpc, NPCAttack } from "@/lib/tormenta/tormentaCampaignClient";
+import { OfficialBestiary } from "./OfficialBestiary";
 
 const ACCENT = "#a01818";
 const ACCENT_LIGHT = "#c94040";
@@ -42,7 +43,7 @@ function randomCreature(): NpcForm {
 
 export function Bestiary({ api }: { api: TormentaApi }) {
   const npcs = api.campaign.tormentaNpcs;
-  const [mode, setMode] = useState<"random" | "manual">("random");
+  const [mode, setMode] = useState<"random" | "manual" | "oficial">("random");
   const [form, setForm] = useState<NpcForm>(randomCreature());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [newAtk, setNewAtk] = useState<NPCAttack>({ name: "", bonus: "", damage: "", description: "" });
@@ -50,7 +51,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
   const [addInitValue, setAddInitValue] = useState("");
 
   function regenerate() { setForm(randomCreature()); }
-  function switchMode(m: "random" | "manual") { setMode(m); setForm(m === "random" ? randomCreature() : emptyCreature()); }
+  function switchMode(m: "random" | "manual" | "oficial") { setMode(m); if (m !== "oficial") setForm(m === "random" ? randomCreature() : emptyCreature()); }
   async function saveCreature() {
     if (!form.name.trim()) return;
     await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) });
@@ -101,18 +102,21 @@ export function Bestiary({ api }: { api: TormentaApi }) {
       </div>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: 4, width: "fit-content" }}>
-        {(["random", "manual"] as const).map((m) => (
-          <button key={m} onClick={() => switchMode(m)} style={{ padding: "7px 18px", background: mode === m ? "rgba(160,24,24,0.12)" : "transparent", color: mode === m ? ACCENT_LIGHT : "var(--text-muted)", border: mode === m ? "1px solid rgba(160,24,24,0.28)" : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.82rem", fontWeight: mode === m ? 700 : 500, cursor: "pointer" }}>{m === "random" ? "Aleatório" : "Manual"}</button>
+        {(["random", "manual", "oficial"] as const).map((m) => (
+          <button key={m} onClick={() => switchMode(m)} style={{ padding: "7px 18px", background: mode === m ? "rgba(160,24,24,0.12)" : "transparent", color: mode === m ? ACCENT_LIGHT : "var(--text-muted)", border: mode === m ? "1px solid rgba(160,24,24,0.28)" : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.82rem", fontWeight: mode === m ? 700 : 500, cursor: "pointer" }}>{m === "random" ? "Aleatório" : m === "manual" ? "Manual" : "Bestiário Oficial"}</button>
         ))}
       </div>
 
+      {mode === "oficial" && <div style={{ marginBottom: 28 }}><OfficialBestiary api={api} /></div>}
+
+      {mode !== "oficial" && (
       <div style={{ padding: "24px", background: "var(--surface)", border: "1px solid rgba(160,24,24,0.28)", borderRadius: "var(--radius-xl)", marginBottom: 28 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
           {textField("Nome", "name")}
           {textField("Tipo de Criatura", "race", { list: mode === "random" ? undefined : CREATURE_TYPES })}
           {textField("Papel de Combate", "role", { list: mode === "random" ? undefined : CREATURE_ROLES })}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="tm-bestiary-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Comportamento", "personality")}
           {textField("Descrição / Aparência", "description")}
         </div>
@@ -123,7 +127,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
 
         <div style={{ borderTop: "1px solid rgba(160,24,24,0.28)", paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Estatísticas de Combate <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "pv")}{numField("Defesa", "defense")}</div>
+          <div className="tm-bestiary-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "pv")}{numField("Defesa", "defense")}</div>
           <div className="tm-attr-grid-6" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
         </div>
 
@@ -158,6 +162,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
           {mode === "random" && <button onClick={regenerate} style={{ padding: "10px 18px", background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "0.86rem", cursor: "pointer" }}>Aleatório</button>}
         </div>
       </div>
+      )}
 
       {npcs.length === 0 ? (
         <p style={{ fontSize: "0.86rem", color: "var(--text-subtle)", textAlign: "center", padding: "32px 0" }}>Nenhuma criatura ou NPC adicionado ainda.</p>
@@ -210,7 +215,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
                         </div>
                       </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div className="tm-bestiary-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Comportamento</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
                       {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>

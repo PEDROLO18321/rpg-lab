@@ -175,7 +175,7 @@ export function StarWarsBestiary({ api }: Props) {
                     {c.faction} · Papel {c.role} · Tamanho {c.size} · Tipo {c.type} · Planeta {c.planet} · Ambiente {c.environment} · Inteligência {c.intelligence} · Tendência {c.disposition}
                   </p>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 14 }}>
+                  <div className="sw-bestiary-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 14 }}>
                     {[["PV", c.pv], ["PE", c.pe], ["Defesa", c.defense], ["Iniciativa", attrMod(c.initiative)], ["Deslocamento", c.speed]].map(([label, val]) => (
                       <div key={label as string} style={{ textAlign: "center", padding: "8px 4px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                         <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</p>
@@ -184,7 +184,7 @@ export function StarWarsBestiary({ api }: Props) {
                     ))}
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginBottom: 14 }}>
+                  <div className="sw-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, marginBottom: 14 }}>
                     {[["AGI", c.attrs.agi], ["INT", c.attrs.int], ["FOR", c.attrs.forc], ["VIG", c.attrs.vig], ["PRE", c.attrs.pre], ["SEN", c.attrs.sen]].map(([label, val]) => (
                       <div key={label as string} style={{ textAlign: "center", padding: "8px 4px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
                         <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</p>
@@ -244,7 +244,7 @@ export function StarWarsBestiary({ api }: Props) {
                     </div>
                   )}
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                  <div className="sw-bestiary-info-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
                     <div>
                       <p style={{ fontSize: "0.62rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>IA de Combate</p>
                       <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{c.ai}</p>

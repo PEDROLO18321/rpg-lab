@@ -110,7 +110,7 @@ export function InitiativeTracker({ api }: { api: StarWarsApi }) {
       <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 420px", padding: "16px 20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Adicionar Combatente</p>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div className="sw-init-add-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
             <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Batedor Stormtrooper" style={inputStyle} />
             <input type="number" value={initVal} onChange={(e) => setInitVal(e.target.value)} placeholder="Inic" title="Iniciativa (vazio = d20)" style={inputStyle} />
             <input type="number" value={pv} onChange={(e) => setPv(e.target.value)} placeholder="PV" style={inputStyle} />

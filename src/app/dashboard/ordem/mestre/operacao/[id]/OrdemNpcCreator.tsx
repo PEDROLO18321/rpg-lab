@@ -151,7 +151,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
           {textField("Gênero", "gender")}
           {textField("Afiliação", "affiliation", { list: mode === "random" ? undefined : AFFILIATIONS })}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="op-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Personalidade", "personality")}
           {textField("Descrição", "description")}
         </div>
@@ -266,7 +266,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
                         </div>
                       </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div className="op-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Personalidade</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
                       {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: A, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>

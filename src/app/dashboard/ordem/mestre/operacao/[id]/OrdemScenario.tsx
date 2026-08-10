@@ -45,7 +45,7 @@ export function OrdemScenario({ api }: { api: OperacaoApi }) {
         <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ color: AL }}>📋</span> Cena da Operação
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+        <div className="op-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div>
             <label style={labelStyle}>Objetivo dos Agentes</label>
             <textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os agentes precisam descobrir ou impedir?" />
@@ -137,7 +137,7 @@ function SessionEditor({ api, session }: { api: OperacaoApi; session: OrdemGameS
 
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div className="op-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div>
           <label style={labelStyle}>Nome da Sessão</label>
           <input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} />

@@ -109,7 +109,7 @@ export function NpcCreator({ api }: { api: TormentaApi }) {
           {textField("Raça", "race", { list: mode === "random" ? undefined : RACES })}
           {textField("Papel / Função", "role", { list: mode === "random" ? undefined : ROLES })}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <div className="tm-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
           {textField("Personalidade", "personality")}
           {textField("Descrição / Aparência", "description")}
         </div>
@@ -120,7 +120,7 @@ export function NpcCreator({ api }: { api: TormentaApi }) {
 
         <div style={{ borderTop: `1px solid ${ACCENT_BORD}`, paddingTop: 16, marginBottom: 16 }}>
           <p style={sectionLabel}>Estatísticas de Combate <span style={{ color: "var(--text-subtle)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(opcional)</span></p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "pv")}{numField("Defesa", "defense")}</div>
+          <div className="tm-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>{numField("PV Máx.", "pv")}{numField("Defesa", "defense")}</div>
           <div className="tm-attr-grid-6" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>{ATTR_LABELS.map(({ key, label }) => numField(label, key))}</div>
         </div>
 
@@ -207,7 +207,7 @@ export function NpcCreator({ api }: { api: TormentaApi }) {
                         </div>
                       </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div className="tm-npc-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                       {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Personalidade</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
                       {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>
