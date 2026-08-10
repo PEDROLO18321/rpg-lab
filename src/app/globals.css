@@ -304,4 +304,5 @@ button:disabled { cursor: not-allowed; }
 @media (max-width: 720px) {
   .sys-sidebar-grid { grid-template-columns: 1fr !important; }
   .sys-sidebar-aside { position: static !important; }
+  .home-demo-grid { grid-template-columns: 1fr !important; }
 }
