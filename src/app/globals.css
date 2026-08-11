@@ -304,6 +304,13 @@ button:disabled { cursor: not-allowed; }
   .sw-bestiary-info-grid { grid-template-columns: 1fr !important; }
   .sw-guide-row { flex-wrap: wrap !important; }
   .sw-guide-row-term { width: 100%; min-width: 0 !important; }
+
+  /* RulesManual.tsx — manual completo de regras (aba Regras da ficha do jogador) */
+  .sw-rules-grid { grid-template-columns: 1fr !important; }
+  .sw-rules-toc { position: static !important; }
+  .sw-rules-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .sw-rules-grade-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .sw-rules-item-filters { flex-wrap: wrap !important; }
 }
 
 /* ── Home/Login/Dashboard: nav e cabeçalhos globais no mobile ────────────── */
