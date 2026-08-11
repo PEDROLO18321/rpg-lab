@@ -16,7 +16,7 @@ import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import { ITEMS, ITEM_BY_ID, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory, type StarWarsItem } from "@/lib/starwars/items";
 import { damageLevelMultiplier, baseDamageValue, scaledDamage } from "@/lib/starwars/damage";
 import { LevelUpModal } from "./LevelUpModal";
-import { StarWarsGuide } from "../mestre/campanha/[id]/StarWarsGuide";
+import { RulesManual } from "./RulesManual";
 import { RollResultDie, RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
 
 // ─── SW accent (azul holo, tom único — igual ao padrão branco/mono da Ordem) ──
@@ -1498,7 +1498,7 @@ function RegrasMode() {
         </div>
       </div>
 
-      <StarWarsGuide />
+      <RulesManual />
     </div>
   );
 }
