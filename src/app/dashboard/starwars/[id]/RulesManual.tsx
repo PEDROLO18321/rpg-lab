@@ -329,7 +329,7 @@ function classTag(c: StarWarsClass): string | null {
 
 function ClassesSection() {
   return (
-    <Section id="classes" title="Classes e Arquétipos" note="25 classes: 20 comuns (3 delas ligadas à Força na base), 3 de Caminho (desbloqueadas no nível 40 numa classe-base de Força) e 2 de Profecia (desbloqueadas ao descobrir a profecia correspondente).">
+    <Section id="classes" title="Classes e Arquétipos" note={`25 classes: 20 comuns (3 delas ligadas à Força na base), 3 de Caminho (desbloqueadas no nível ${PATH_CLASS_UNLOCK_LEVEL} numa classe-base de Força) e 2 de Profecia (desbloqueadas ao descobrir a profecia correspondente). As 5 só ficam disponíveis na subida de nível — não aparecem na criação de personagem.`}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {CLASSES.map((c) => {
           const tag = classTag(c);

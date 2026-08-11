@@ -125,9 +125,9 @@ export function canCombineClasses(classIdA: string, classIdB: string): boolean {
 }
 
 /** Nível mínimo numa classe-base ligada à Força pra liberar as classes de Caminho (O Lado da Luz, O Equilíbrio, O Lado Negro). */
-export const PATH_CLASS_UNLOCK_LEVEL = 40;
+export const PATH_CLASS_UNLOCK_LEVEL = 20;
 
-/** As classes de Caminho só aparecem como opção quando o personagem tem nível 40+ em Padawan Jedi, Acólito Sith ou Andarilho da Força — em qualquer uma delas. */
+/** As classes de Caminho só aparecem como opção quando o personagem tem nível 20+ em Padawan Jedi, Acólito Sith ou Andarilho da Força — em qualquer uma delas. */
 export function canUnlockPathClass(classLevels: Record<string, number>): boolean {
   return FORCE_BASE_CLASS_IDS.some((id) => (classLevels[id] ?? 0) >= PATH_CLASS_UNLOCK_LEVEL);
 }
