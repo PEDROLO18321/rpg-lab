@@ -12,7 +12,7 @@ interface Props { classId: string | null; classAbilityChoice: string | null; onC
 
 export function StepClass({ classId, classAbilityChoice, onChange }: Props) {
   const cls = classId ? CLASSES.find((c) => c.id === classId) : undefined;
-  const selectable = CLASSES;
+  const selectable = CLASSES.filter((c) => !c.isPathClass && !c.isPropheticClass);
   const firstAbilities = cls ? getClassAbilities(cls.id).filter((a) => a.level === 1) : [];
   const grouped = cls ? getAbilitiesGroupedByLevel(cls.id, 30) : [];
   const isPoolClass = cls ? POOL_CLASS_IDS.has(cls.id) : false;
