@@ -12,7 +12,7 @@ import { attributeDicePool } from "@/lib/starwars/creation";
 import { PLANETS } from "@/lib/starwars/planets";
 import { GENERAL_POWERS_BASIC, GENERAL_POWERS_ADVANCED } from "@/lib/starwars/powers/generalPowers";
 import { getAbilitiesGroupedByLevel, getClassMilestones } from "@/lib/starwars/powers/registry";
-import { SABRE_FORMS, FORM_PROGRESSION, DOMINANT_FORMS, SABRE_FORM_BY_ID } from "@/lib/starwars/sabreForms";
+import { SABRE_FORMS, SABRE_FORM_BY_ID } from "@/lib/starwars/sabreForms";
 import { ITEMS, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory } from "@/lib/starwars/items";
 import {
   MAX_LEVEL, CLASS_LEVEL_CAP, FREE_MULTICLASS_LEVEL, EXPERT_SKILLS_PER_MULTICLASS,
@@ -425,19 +425,6 @@ function Sabres() {
             <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 6 }}>{f.style}</p>
             <p style={{ fontSize: "0.68rem", color: "#4ade80" }}>Vence: {f.beats.map((id) => SABRE_FORM_BY_ID[id]?.name).join(", ")}</p>
             <p style={{ fontSize: "0.68rem", color: "#f87171" }}>Perde para: {f.losesTo.map((id) => SABRE_FORM_BY_ID[id]?.name).join(", ")}</p>
-          </div>
-        ))}
-      </div>
-
-      <p style={{ ...label, marginBottom: 8 }}>Progressão de aprendizado por classe-base</p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 10 }}>
-        {Object.entries(FORM_PROGRESSION).map(([classId, circles]) => (
-          <div key={classId} style={{ padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-            <p style={{ fontSize: "0.8rem", fontWeight: 700, color: ACCENT_LIGHT, marginBottom: 6 }}>{CLASSES.find((c) => c.id === classId)?.name ?? classId}</p>
-            {([1, 2, 3] as const).map((circle) => (
-              <p key={circle} style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Círculo {circle}: {circles[circle].map((id) => SABRE_FORM_BY_ID[id]?.name).join(", ")}</p>
-            ))}
-            <p style={{ fontSize: "0.72rem", color: GOLD, marginTop: 4 }}>Dominantes (4º círculo): {DOMINANT_FORMS[classId]?.map((id) => SABRE_FORM_BY_ID[id]?.name).join(", ")}</p>
           </div>
         ))}
       </div>
