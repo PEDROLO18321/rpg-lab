@@ -42,6 +42,15 @@
   /* InitiativeTracker.tsx — add combatant row (name / iniciativa / pv / pm / defesa) */
   .tm-initiative-add-grid { grid-template-columns: 1fr !important; }
 
+  /* Bestiário Oficial — key stats row (CA/PV/ND/Iniciativa, 4 cols) */
+  .tm-bestiary-oficial-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Bestiário Oficial — ability score row (6 cols) */
+  .tm-bestiary-oficial-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Bestiário Oficial — list + detail panel (1fr 360px) stacks */
+  .tm-bestiary-oficial-layout { grid-template-columns: 1fr !important; }
+
   /* Mestre — Bestiário/NPCs/Pistas/Itens/História/Dados (área de campanha, sem cobertura ainda) */
   .tm-bestiary-form-row { grid-template-columns: 1fr !important; }
   .tm-npc-form-row { grid-template-columns: 1fr !important; }
