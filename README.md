@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RPG Lab
 
-## Getting Started
+Laboratório digital de fichas de RPG de mesa — TCC que reúne, numa única plataforma, fichas de personagem interativas e áreas de mestre completas para múltiplos sistemas de RPG.
 
-First, run the development server:
+Sistemas suportados atualmente:
+
+- **Dungeons & Dragons** (5ª Edição)
+- **Tormenta 20**
+- **Ordem Paranormal**
+- **Call of Cthulhu** (7ª Edição)
+
+Cada sistema tem duas áreas principais:
+
+- **Jogador** — criação e gerenciamento de fichas de personagem, com cálculos automáticos (atributos, perícias, magias, combate).
+- **Mestre** — workspace de campanha: NPCs, bestiário, pistas, relógios de tensão, itens, geradores de conteúdo, agenda de sessões, entre outras ferramentas por sistema.
+
+## Stack
+
+- [Next.js 16](https://nextjs.org) (App Router + Turbopack)
+- [Prisma ORM](https://www.prisma.io) + PostgreSQL
+- [NextAuth v5](https://authjs.dev) (credenciais + Google OAuth)
+- [Three.js](https://threejs.org) / React Three Fiber (fundo 3D imersivo)
+
+## Rodando localmente
+
+### 1. Pré-requisitos
+
+- Node.js 20+
+- Um banco PostgreSQL (local ou serviço gerenciado, ex. [Neon](https://neon.tech))
+
+### 2. Instalar dependências
+
+```bash
+npm install
+```
+
+### 3. Variáveis de ambiente
+
+Copie `.env.example` para `.env` e preencha:
+
+```bash
+cp .env.example .env
+```
+
+| Variável | Descrição |
+|---|---|
+| `DATABASE_URL` | Connection string do PostgreSQL |
+| `AUTH_SECRET` | Segredo do NextAuth — gerar com `openssl rand -base64 32` |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Credenciais OAuth do Google (opcional — só necessário para login com Google) |
+
+### 4. Banco de dados
+
+```bash
+npx prisma migrate dev   # cria as tabelas
+npm run seed              # popula dados iniciais (sistemas, classes, perícias etc.)
+```
+
+### 5. Rodar o servidor de desenvolvimento
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Comando | Descrição |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Gera o cliente Prisma e cria o build de produção |
+| `npm run start` | Roda o build de produção |
+| `npm run lint` | ESLint |
+| `npm run seed` | Popula o banco com dados iniciais |

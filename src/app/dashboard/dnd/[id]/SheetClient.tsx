@@ -289,10 +289,11 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         systemHref="/dashboard/dnd/jogador"
         backLabel="Meus Personagens"
         accentColor="#c9941f"
+        onExportPdf={() => window.print()}
       />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
-        <Link href="/dashboard/dnd/jogador" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
+        <Link href="/dashboard/dnd/jogador" className="no-print" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
           ← Meus Personagens
         </Link>
 

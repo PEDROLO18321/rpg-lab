@@ -65,7 +65,7 @@ export default function CthulhuCenarioPage({ params }: { params: Promise<{ id: s
     return (
       <div style={{ minHeight: "100vh", background: "transparent", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <p style={{ color: "var(--text-muted)", fontSize: "1rem" }}>Cenário não encontrado.</p>
-        <Link href="/dashboard/cthulhu/guardiao" style={{ color: A, fontSize: "0.86rem", textDecoration: "none" }}>← Voltar ao Painel do Guardião</Link>
+        <Link href="/dashboard/cthulhu/mestre" style={{ color: A, fontSize: "0.86rem", textDecoration: "none" }}>← Voltar ao Painel do Guardião</Link>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function CthulhuCenarioPage({ params }: { params: Promise<{ id: s
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
       <GuardianDiceRoller />
-      <DashboardNav userName={session?.user?.name ?? session?.user?.email ?? "Guardião"} systemName={c.name} systemHref="/dashboard/cthulhu/guardiao" backLabel="Cenários" accentColor="#6b7a3a" />
+      <DashboardNav userName={session?.user?.name ?? session?.user?.email ?? "Guardião"} systemName={c.name} systemHref="/dashboard/cthulhu/mestre" backLabel="Cenários" accentColor="#6b7a3a" />
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
         <div style={{ marginBottom: 32 }}>

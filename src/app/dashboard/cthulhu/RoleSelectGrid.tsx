@@ -28,7 +28,7 @@ const ROLES = [
     label: "Guardião",
     subtitle: "Keeper of Arcane Lore",
     desc: "Comande o horror. Gerencie cenários, crie NPCs, organize criaturas do Mythos e conduza investigações para a perdição.",
-    href: "/dashboard/cthulhu/guardiao",
+    href: "/dashboard/cthulhu/mestre",
     cta: "Entrar como Guardião",
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

@@ -407,9 +407,10 @@ export function SheetClient({ character }: Props) {
         systemHref="/dashboard/cthulhu/jogador"
         backLabel="Investigadores"
         accentColor={ACCENT}
+        onExportPdf={() => window.print()}
       />
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
+      <div className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
         {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
         <button
           onClick={() => { setDevOpen(true); setDevResults(null); }}
