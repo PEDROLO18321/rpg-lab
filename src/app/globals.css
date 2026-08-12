@@ -50,6 +50,26 @@ html { scroll-behavior: smooth; }
   --radius-full: 9999px;
 }
 
+/* ── Print (export de ficha em PDF via window.print) ─────────────────────── */
+@media print {
+  :root {
+    --bg:          #ffffff;
+    --bg-alt:      #ffffff;
+    --surface:     #ffffff;
+    --surface-2:   #f3f4f6;
+    --surface-3:   #e5e7eb;
+    --border:        #d1d5db;
+    --border-hover:  #9ca3af;
+    --border-accent: #9ca3af;
+    --text:         #0b0f19;
+    --text-muted:   #374151;
+    --text-subtle:  #6b7280;
+  }
+  .no-print, nav { display: none !important; }
+  main { max-width: 100% !important; padding: 0 !important; }
+  a { text-decoration: none !important; }
+}
+
 /* ── Base ──────────────────────────────────────────────────────────────── */
 body {
   background: var(--bg);

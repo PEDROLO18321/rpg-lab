@@ -44,7 +44,7 @@ export function ImmersiveBackground() {
   if (tier === null || tier === "off") return null;
 
   return (
-    <div style={{ opacity, transition: `opacity ${FADE_MS}ms ease-out` }}>
+    <div className="no-print" style={{ opacity, transition: `opacity ${FADE_MS}ms ease-out` }}>
       <AmbientBackground tier={tier} system={system} />
     </div>
   );

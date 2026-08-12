@@ -49,7 +49,7 @@ export default function GuardiaoPage() {
       const id = await createCampaign(name, newEra);
       setNewName("");
       setCreating(false);
-      router.push(`/dashboard/cthulhu/guardiao/cenario/${id}`);
+      router.push(`/dashboard/cthulhu/mestre/cenario/${id}`);
     } finally {
       setBusy(false);
     }
@@ -196,7 +196,7 @@ export default function GuardiaoPage() {
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <Link href={`/dashboard/cthulhu/guardiao/cenario/${c.id}`} style={{ padding: "8px 16px", background: "rgba(125,156,62,0.14)", color: "#a3b86c", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none", transition: "background 0.2s", whiteSpace: "nowrap" }} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(125,156,62,0.22)")} onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(125,156,62,0.14)")}>
+                    <Link href={`/dashboard/cthulhu/mestre/cenario/${c.id}`} style={{ padding: "8px 16px", background: "rgba(125,156,62,0.14)", color: "#a3b86c", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none", transition: "background 0.2s", whiteSpace: "nowrap" }} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(125,156,62,0.22)")} onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(125,156,62,0.14)")}>
                       Abrir →
                     </Link>
                     {confirmDelete === c.id ? (

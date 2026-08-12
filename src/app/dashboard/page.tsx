@@ -170,7 +170,7 @@ export default function SystemSelectPage() {
             lineHeight: 1.7,
           }}
         >
-          Selecione o sistema de RPG que deseja utilizar. Novos sistemas serão adicionados em breve.
+          Selecione o sistema de RPG que deseja utilizar.
         </p>
       </div>
 
@@ -352,18 +352,6 @@ export default function SystemSelectPage() {
         })}
       </div>
 
-      <p
-        style={{
-          marginTop: 40,
-          fontSize: "0.76rem",
-          color: "var(--text-subtle)",
-          textAlign: "center",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        Mais sistemas em desenvolvimento. Fique atento às atualizações.
-      </p>
     </div>
   );
 }

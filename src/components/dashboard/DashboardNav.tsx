@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   userName: string;
@@ -11,10 +11,25 @@ interface Props {
   backLabel?: string;
   /** Cor de destaque do sistema atual (hex) — tinge o avatar do usuário. Sem isso, usa o dourado padrão. */
   accentColor?: string;
+  /** Quando definido, mostra um botão "Exportar PDF" que aciona esta função (ex: `() => window.print()`). */
+  onExportPdf?: () => void;
 }
 
-export function DashboardNav({ userName, systemName, systemHref, backLabel, accentColor }: Props) {
+export function DashboardNav({ userName, systemName, systemHref, backLabel, accentColor, onExportPdf }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
 
   return (
     <nav
@@ -76,10 +91,41 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
           </span>
         </div>
 
-        {/* Right — user menu */}
+        {/* Right — export + user menu */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {onExportPdf && (
+            <button
+              className="no-print"
+              onClick={onExportPdf}
+              aria-label="Exportar ficha em PDF"
+              title="Exportar ficha em PDF"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-full)",
+                padding: "6px 12px",
+                cursor: "pointer",
+                color: "var(--text-muted)",
+                fontSize: "0.78rem",
+                fontWeight: 500,
+                transition: "border-color 0.15s, color 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-hover)"; e.currentTarget.style.color = "var(--text)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            >
+              🖨️ PDF
+            </button>
+          )}
         <div style={{ position: "relative", flexShrink: 0 }}>
           <button
+            ref={menuButtonRef}
             onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Menu do usuário"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
             style={{
               display: "flex",
               alignItems: "center",
@@ -125,6 +171,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
                 onClick={() => setMenuOpen(false)}
               />
               <div
+                role="menu"
                 style={{
                   position: "absolute",
                   top: "calc(100% + 8px)",
@@ -151,6 +198,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
                 </div>
 
                 <button
+                  role="menuitem"
                   onClick={() => signOut({ callbackUrl: "/login" })}
                   style={{
                     width: "100%",
@@ -175,6 +223,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
     </nav>

@@ -470,9 +470,10 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         systemHref="/dashboard/starwars/jogador"
         backLabel="Meus Personagens"
         accentColor={ACCENT}
+        onExportPdf={() => window.print()}
       />
 
-      <div className="sw-mode-tabs-wrap" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
+      <div className="sw-mode-tabs-wrap no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
         <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
           {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
         </span>
