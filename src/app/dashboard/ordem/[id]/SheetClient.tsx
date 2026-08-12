@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import "../ordem-responsive.css";
 
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { RollResultDie, type DiceFxRoll } from "@/components/three/DiceRollFx";
 import {
   ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, type AttrKey,
@@ -207,37 +208,34 @@ export function SheetClient({ character }: { character: AnyChar }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent", paddingBottom: 60 }}>
-      {/* Top bar */}
-      <header style={{ position: "sticky", top: 0, zIndex: 30, borderBottom: "1px solid var(--border)", background: "rgba(7,9,15,0.9)", backdropFilter: "blur(20px)" }}>
-        <div className="op-header-inner" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/dashboard/ordem/jogador" style={{ color: "var(--text-muted)", fontSize: "0.82rem", textDecoration: "none" }}>
-            ← Meus Agentes
-          </Link>
-          <span className="op-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
-            Ordem Paranormal
-          </span>
-          <div className="op-header-modes" style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
-              {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
-            </span>
-            {(["ficha", "jogar", "editar"] as SheetMode[]).map((m) => (
-              <button key={m} onClick={() => setMode(m)} style={{
-                padding: "6px 14px", borderRadius: "var(--radius-lg)",
-                background: mode === m ? ACCENT_DIM : "var(--surface-2)",
-                border: `1px solid ${mode === m ? ACCENT_BORD : "var(--border)"}`,
-                color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
-                fontWeight: mode === m ? 700 : 400, fontSize: "0.82rem", cursor: "pointer",
-                fontFamily: "inherit",
-                boxShadow: mode === m ? `0 0 14px rgba(255,255,255,0.12)` : "none",
-              }}>
-                {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : "Editar"}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
+      <DashboardNav
+        userName={character.user?.name ?? "Agente"}
+        systemName="Ordem Paranormal"
+        systemHref="/dashboard/ordem/jogador"
+        backLabel="Meus Agentes"
+        accentColor={ACCENT}
+      />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+      <div className="op-header-modes" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
+        <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
+          {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
+        </span>
+        {(["ficha", "jogar", "editar"] as SheetMode[]).map((m) => (
+          <button key={m} onClick={() => setMode(m)} style={{
+            padding: "6px 14px", borderRadius: "var(--radius-lg)",
+            background: mode === m ? ACCENT_DIM : "var(--surface-2)",
+            border: `1px solid ${mode === m ? ACCENT_BORD : "var(--border)"}`,
+            color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
+            fontWeight: mode === m ? 700 : 400, fontSize: "0.82rem", cursor: "pointer",
+            fontFamily: "inherit",
+            boxShadow: mode === m ? `0 0 14px rgba(255,255,255,0.12)` : "none",
+          }}>
+            {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : "Editar"}
+          </button>
+        ))}
+      </div>
+
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
         {/* Identity header (always visible) */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
           <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>

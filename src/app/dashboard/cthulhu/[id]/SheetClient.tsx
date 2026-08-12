@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import {
   SKILLS, ATTR_ABBR, ATTR_LABELS, OCCUPATIONS, WEAPONS,
   getSkillBase, half, fifth, calcDamageBonus, calcCorpo,
@@ -54,7 +55,7 @@ type RollEntry =
   | { kind: "damage"; label: string; segments: { label?: string; total: number; expr: string; rolls: number[] }[] }
   | { kind: "raw"; label: string; total: number; expr: string; rolls: number[] };
 
-type Character = { id: string; name: string; portraitUrl: string | null; cthulhuSheet: Sheet; system: { name: string } };
+type Character = { id: string; name: string; portraitUrl: string | null; cthulhuSheet: Sheet; system: { name: string }; user?: { name: string | null } | null };
 
 interface Props { character: Character; }
 
@@ -400,41 +401,35 @@ export function SheetClient({ character }: Props) {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
-      {/* Nav */}
-      <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(9,11,17,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "12px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Link href="/dashboard/cthulhu/jogador" style={{ fontSize: "0.78rem", color: "var(--text-muted)", textDecoration: "none" }}>
-              ← Investigadores
-            </Link>
-            <span style={{ color: "var(--border)" }}>|</span>
-            <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)" }}>
-              {name}
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
-            <button
-              onClick={() => { setDevOpen(true); setDevResults(null); }}
-              style={{ ...pillBtn, background: "var(--surface-2)" }}
-              title="Fase de Desenvolvimento"
-            >
-              📈 Desenvolvimento
-            </button>
-            {editMode ? (
-              <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
-                ✓ Salvar
-              </button>
-            ) : (
-              <button onClick={() => setEditMode(true)} style={{ ...pillBtn, background: "var(--surface-2)" }}>
-                ✎ Editar
-              </button>
-            )}
-          </div>
-        </div>
+      <DashboardNav
+        userName={character.user?.name ?? "Investigador"}
+        systemName="Call of Cthulhu"
+        systemHref="/dashboard/cthulhu/jogador"
+        backLabel="Investigadores"
+        accentColor={ACCENT}
+      />
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
+        {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
+        <button
+          onClick={() => { setDevOpen(true); setDevResults(null); }}
+          style={{ ...pillBtn, background: "var(--surface-2)" }}
+          title="Fase de Desenvolvimento"
+        >
+          📈 Desenvolvimento
+        </button>
+        {editMode ? (
+          <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
+            ✓ Salvar
+          </button>
+        ) : (
+          <button onClick={() => setEditMode(true)} style={{ ...pillBtn, background: "var(--surface-2)" }}>
+            ✎ Editar
+          </button>
+        )}
       </div>
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 260 }}>

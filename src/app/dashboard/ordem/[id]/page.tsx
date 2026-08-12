@@ -15,7 +15,7 @@ export default async function OrdemSheetPage({
 
   const character = await prisma.character.findUnique({
     where: { id },
-    include: { ordemSheet: true, system: true },
+    include: { ordemSheet: true, system: true, user: true },
   });
 
   if (!character || !character.ordemSheet) notFound();

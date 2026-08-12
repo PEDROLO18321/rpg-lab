@@ -15,7 +15,7 @@ export default async function CthulhuSheetPage({
 
   const character = await prisma.character.findUnique({
     where: { id },
-    include: { cthulhuSheet: true, system: true },
+    include: { cthulhuSheet: true, system: true, user: true },
   });
 
   if (!character || !character.cthulhuSheet) notFound();

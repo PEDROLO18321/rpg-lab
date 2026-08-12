@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { SPECIES_BY_ID } from "@/lib/starwars/species";
 import { PLANET_BY_ID } from "@/lib/starwars/planets";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
@@ -463,36 +464,34 @@ export function SheetClient({ character }: { character: CharacterProp }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent", paddingBottom: 60 }}>
-      <header style={{ position: "sticky", top: 0, zIndex: 30, borderBottom: "1px solid var(--border)", background: "rgba(5,7,13,0.9)", backdropFilter: "blur(20px)" }}>
-        <div className="sw-header-inner" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/dashboard/starwars/jogador" style={{ color: "var(--text-muted)", fontSize: "0.82rem", textDecoration: "none" }}>
-            ← Meus Personagens
-          </Link>
-          <span className="sw-header-title" style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.88rem", fontWeight: 700, color: "var(--text)" }}>
-            Star Wars: Além da Fronteira
-          </span>
-          <div className="sw-mode-tabs-wrap" style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
-              {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
-            </span>
-            {(["editar", "ficha", "jogar", "regras"] as SheetMode[]).map((m) => (
-              <button key={m} onClick={() => setMode(m)} style={{
-                padding: "6px 14px", borderRadius: "var(--radius-lg)",
-                background: mode === m ? ACCENT_DIM : "var(--surface-2)",
-                border: `1px solid ${mode === m ? ACCENT_BORD : "var(--border)"}`,
-                color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
-                fontWeight: mode === m ? 700 : 400, fontSize: "0.82rem", cursor: "pointer",
-                fontFamily: "inherit",
-                boxShadow: mode === m ? `0 0 14px ${ACCENT_DIM}` : "none",
-              }}>
-                {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : m === "editar" ? "Editar" : "Regras"}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
+      <DashboardNav
+        userName={character.user?.name ?? "Jogador"}
+        systemName="Star Wars: Além da Fronteira"
+        systemHref="/dashboard/starwars/jogador"
+        backLabel="Meus Personagens"
+        accentColor={ACCENT}
+      />
 
-      <main className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
+      <div className="sw-mode-tabs-wrap" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
+        <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
+          {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
+        </span>
+        {(["editar", "ficha", "jogar", "regras"] as SheetMode[]).map((m) => (
+          <button key={m} onClick={() => setMode(m)} style={{
+            padding: "6px 14px", borderRadius: "var(--radius-lg)",
+            background: mode === m ? ACCENT_DIM : "var(--surface-2)",
+            border: `1px solid ${mode === m ? ACCENT_BORD : "var(--border)"}`,
+            color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
+            fontWeight: mode === m ? 700 : 400, fontSize: "0.82rem", cursor: "pointer",
+            fontFamily: "inherit",
+            boxShadow: mode === m ? `0 0 14px ${ACCENT_DIM}` : "none",
+          }}>
+            {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : m === "editar" ? "Editar" : "Regras"}
+          </button>
+        ))}
+      </div>
+
+      <main className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
           <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>
             {character.portraitUrl
