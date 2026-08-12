@@ -3,23 +3,25 @@
 import { useState, use, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ERA_LABEL } from "@/lib/cthulhu/cthulhuCampaignClient";
 import { useCthulhuCampaign } from "@/lib/cthulhu/useCthulhuCampaign";
-import { CthulhuNpcCreator } from "./CthulhuNpcCreator";
-import { CthulhuInitiative } from "./CthulhuInitiative";
-import { CthulhuSessionNotes } from "./CthulhuSessionNotes";
-import { CthulhuBestiary } from "./CthulhuBestiary";
-import { CthulhuScenario } from "./CthulhuScenario";
-import { CthulhuArtefacts } from "./CthulhuArtefacts";
-import { CthulhuInsanity } from "./CthulhuInsanity";
-import { CthulhuClues } from "./CthulhuClues";
-import { CthulhuClocks } from "./CthulhuClocks";
-import { CthulhuGenerators } from "./CthulhuGenerators";
-import { CthulhuAgenda } from "./CthulhuAgenda";
-import { CthulhuGuide } from "./CthulhuGuide";
 import { GuardianDiceRoller } from "../../GuardianDiceRoller";
+
+const CthulhuNpcCreator = dynamic(() => import("./CthulhuNpcCreator").then((m) => m.CthulhuNpcCreator));
+const CthulhuInitiative = dynamic(() => import("./CthulhuInitiative").then((m) => m.CthulhuInitiative));
+const CthulhuSessionNotes = dynamic(() => import("./CthulhuSessionNotes").then((m) => m.CthulhuSessionNotes));
+const CthulhuBestiary = dynamic(() => import("./CthulhuBestiary").then((m) => m.CthulhuBestiary));
+const CthulhuScenario = dynamic(() => import("./CthulhuScenario").then((m) => m.CthulhuScenario));
+const CthulhuArtefacts = dynamic(() => import("./CthulhuArtefacts").then((m) => m.CthulhuArtefacts));
+const CthulhuInsanity = dynamic(() => import("./CthulhuInsanity").then((m) => m.CthulhuInsanity));
+const CthulhuClues = dynamic(() => import("./CthulhuClues").then((m) => m.CthulhuClues));
+const CthulhuClocks = dynamic(() => import("./CthulhuClocks").then((m) => m.CthulhuClocks));
+const CthulhuGenerators = dynamic(() => import("./CthulhuGenerators").then((m) => m.CthulhuGenerators));
+const CthulhuAgenda = dynamic(() => import("./CthulhuAgenda").then((m) => m.CthulhuAgenda));
+const CthulhuGuide = dynamic(() => import("./CthulhuGuide").then((m) => m.CthulhuGuide));
 
 const A = "#a3b86c";
 const ADIM = "rgba(125,156,62,0.14)";

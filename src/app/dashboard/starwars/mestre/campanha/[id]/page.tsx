@@ -3,21 +3,23 @@
 import { useState, use, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { useStarWarsCampaign } from "@/lib/starwars/useStarWarsCampaign";
-import { NpcCreator } from "./NpcCreator";
-import { StarWarsBestiary } from "./StarWarsBestiary";
-import { InitiativeTracker } from "./InitiativeTracker";
-import { SessionNotes } from "./SessionNotes";
-import { CampaignStory } from "./CampaignStory";
-import { CampaignItems } from "./CampaignItems";
-import { CampaignClues } from "./CampaignClues";
-import { CampaignClocks } from "./CampaignClocks";
-import { CampaignGenerators } from "./CampaignGenerators";
-import { StarWarsGuide } from "./StarWarsGuide";
 import { StarWarsMasterDiceRoller } from "../../StarWarsMasterDiceRoller";
 import { SW, SectionTitle } from "../../../ui";
+
+const NpcCreator = dynamic(() => import("./NpcCreator").then((m) => m.NpcCreator));
+const StarWarsBestiary = dynamic(() => import("./StarWarsBestiary").then((m) => m.StarWarsBestiary));
+const InitiativeTracker = dynamic(() => import("./InitiativeTracker").then((m) => m.InitiativeTracker));
+const SessionNotes = dynamic(() => import("./SessionNotes").then((m) => m.SessionNotes));
+const CampaignStory = dynamic(() => import("./CampaignStory").then((m) => m.CampaignStory));
+const CampaignItems = dynamic(() => import("./CampaignItems").then((m) => m.CampaignItems));
+const CampaignClues = dynamic(() => import("./CampaignClues").then((m) => m.CampaignClues));
+const CampaignClocks = dynamic(() => import("./CampaignClocks").then((m) => m.CampaignClocks));
+const CampaignGenerators = dynamic(() => import("./CampaignGenerators").then((m) => m.CampaignGenerators));
+const StarWarsGuide = dynamic(() => import("./StarWarsGuide").then((m) => m.StarWarsGuide));
 
 type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "generators" | "notes" | "guide";
 
@@ -88,12 +90,12 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
           <SectionTitle eyebrow="Star Wars · Mestre" title={c.name} />
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 28, background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: 10, padding: 4, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 28, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: 4, flexWrap: "wrap" }}>
           {TABS.map((t) => {
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ flex: "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "9px 14px", background: active ? SW.accentDim : "transparent", color: active ? SW.accentLight : SW.textMuted, border: active ? `1px solid ${SW.accentBord}` : "1px solid transparent", borderRadius: 6, fontSize: "0.8rem", fontWeight: active ? 700 : 500, cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap" }}>
+                style={{ flex: "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "9px 14px", background: active ? SW.accentDim : "transparent", color: active ? SW.accentLight : SW.textMuted, border: active ? `1px solid ${SW.accentBord}` : "1px solid transparent", borderRadius: "var(--radius-lg)", fontSize: "0.8rem", fontWeight: active ? 700 : 500, cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap" }}>
                 {t.icon}{t.label}
               </button>
             );

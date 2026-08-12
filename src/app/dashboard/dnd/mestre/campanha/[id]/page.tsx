@@ -3,21 +3,23 @@
 import { useState, use, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { useDndCampaign } from "@/lib/dnd/useDndCampaign";
-import { NpcCreator } from "./NpcCreator";
-import { InitiativeTracker } from "./InitiativeTracker";
-import { SessionNotes } from "./SessionNotes";
-import { Bestiary } from "./Bestiary";
-import { CampaignStory } from "./CampaignStory";
-import { CampaignItems } from "./CampaignItems";
-import { CampaignClues } from "./CampaignClues";
-import { CampaignClocks } from "./CampaignClocks";
-import { CampaignGenerators } from "./CampaignGenerators";
-import { CampaignAgenda } from "./CampaignAgenda";
-import { CampaignGuide } from "./CampaignGuide";
 import { MasterDiceRoller } from "../../MasterDiceRoller";
+
+const NpcCreator = dynamic(() => import("./NpcCreator").then((m) => m.NpcCreator));
+const InitiativeTracker = dynamic(() => import("./InitiativeTracker").then((m) => m.InitiativeTracker));
+const SessionNotes = dynamic(() => import("./SessionNotes").then((m) => m.SessionNotes));
+const Bestiary = dynamic(() => import("./Bestiary").then((m) => m.Bestiary));
+const CampaignStory = dynamic(() => import("./CampaignStory").then((m) => m.CampaignStory));
+const CampaignItems = dynamic(() => import("./CampaignItems").then((m) => m.CampaignItems));
+const CampaignClues = dynamic(() => import("./CampaignClues").then((m) => m.CampaignClues));
+const CampaignClocks = dynamic(() => import("./CampaignClocks").then((m) => m.CampaignClocks));
+const CampaignGenerators = dynamic(() => import("./CampaignGenerators").then((m) => m.CampaignGenerators));
+const CampaignAgenda = dynamic(() => import("./CampaignAgenda").then((m) => m.CampaignAgenda));
+const CampaignGuide = dynamic(() => import("./CampaignGuide").then((m) => m.CampaignGuide));
 
 type Tab = "story" | "items" | "npc" | "initiative" | "clues" | "clocks" | "bestiary" | "generators" | "notes" | "agenda" | "guide";
 

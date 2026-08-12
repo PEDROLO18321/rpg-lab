@@ -269,14 +269,8 @@ button:disabled { cursor: not-allowed; }
    então as classes abaixo levam !important só pra vencer o inline em telas
    pequenas — nada disso afeta desktop) ─────────────────────────────────── */
 @media (max-width: 640px) {
-  .sw-header-inner {
-    height: auto !important;
-    flex-wrap: wrap !important;
-    padding: 10px 14px !important;
-    row-gap: 8px !important;
-  }
-  .sw-header-title { order: 3; width: 100%; text-align: center; font-size: 0.74rem !important; }
-  .sw-mode-tabs-wrap { order: 2; width: 100%; justify-content: center !important; flex-wrap: wrap !important; }
+  /* SheetClient.tsx — linha de modos (Ficha/Jogar/Editar/Regras) abaixo do DashboardNav */
+  .sw-mode-tabs-wrap { justify-content: center !important; flex-wrap: wrap !important; padding-left: 14px !important; padding-right: 14px !important; }
   .sw-mode-tabs-wrap button { flex: 1 1 auto; }
 
   .sw-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 6px !important; }
