@@ -314,7 +314,7 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         systemHref="/dashboard/dnd/jogador"
         backLabel="Meus Personagens"
         accentColor="#c9941f"
-        onExportPdf={() => window.print()}
+        // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
       <main className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
