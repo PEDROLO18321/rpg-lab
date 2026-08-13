@@ -6,17 +6,12 @@ import { SPELLCASTING } from "@/lib/dnd/spells";
 import {
   MAX_LEVEL,
   XP_THRESHOLDS,
-  buildLevelUpPlan,
   averageHpGain,
-  validateAsi,
-  spellChoicesOnLevelUp,
-  maxSpellLevelAt,
   checkMulticlassPrereqs,
 } from "@/lib/dnd/leveling";
 import { SPELLS, spellClassKey } from "@/lib/dnd/spells";
+import { levelUpCharacterOnce, type SheetSnapshot } from "@/lib/dnd/characterService";
 import type { AbilityKey } from "@/lib/dnd/races";
-
-const ABILITIES: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 
 function mod(score: number) {
   return Math.floor((score - 10) / 2);
@@ -185,108 +180,50 @@ export async function POST(
   if (!clsEntry || !cls)
     return NextResponse.json({ error: "Classe do personagem não reconhecida." }, { status: 400 });
 
-  const plan = buildLevelUpPlan(cls.id, sheet.race ?? "", clsEntry.level, cls.hitDie, sheet.level);
-  if (!plan) return NextResponse.json({ error: "Nível máximo já alcançado." }, { status: 400 });
+  const snapshot: SheetSnapshot = {
+    level: sheet.level,
+    xp: sheet.xp,
+    hpMax: sheet.hpMax,
+    hpCurrent: sheet.hpCurrent,
+    str: currentScores.str, dex: currentScores.dex, con: currentScores.con,
+    int: currentScores.int, wis: currentScores.wis, cha: currentScores.cha,
+    race: sheet.race ?? "",
+    classId: cls.id,
+    classLevel: clsEntry.level,
+    hitDie: cls.hitDie,
+    knownSpellNames: known,
+  };
 
-  // ── PV ───────────────────────────────────────────────────────────────────────
-  let hpDie: number;
-  if (hpMode === "roll") {
-    const r = Number(body.hpRoll);
-    if (!Number.isInteger(r) || r < 1 || r > cls.hitDie)
-      return NextResponse.json({ error: `Rolagem de PV inválida (1–${cls.hitDie}).` }, { status: 400 });
-    hpDie = r;
-  } else {
-    hpDie = averageHpGain(cls.hitDie);
+  const result = levelUpCharacterOnce(snapshot, {
+    hpMode,
+    hpRoll: Number(body.hpRoll),
+    asi: body.asi,
+    newSpells: Array.isArray(body.newSpells) ? body.newSpells : [],
+  });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
-
-  // ── ASI ──────────────────────────────────────────────────────────────────────
-  const asiIncreases: Partial<Record<AbilityKey, number>> = {};
-  if (plan.asi) {
-    const raw = body.asi ?? {};
-    for (const k of ABILITIES) {
-      const v = Number(raw[k] ?? 0);
-      if (v > 0) asiIncreases[k] = v;
-    }
-    const err = validateAsi(asiIncreases, currentScores);
-    if (err) return NextResponse.json({ error: err }, { status: 400 });
-  }
-
-  const newScores = { ...currentScores };
-  for (const [k, v] of Object.entries(asiIncreases) as [AbilityKey, number][]) {
-    newScores[k] += v;
-  }
-
-  const conModBefore = mod(currentScores.con);
-  const conModAfter  = mod(newScores.con);
-  const hpGain       = Math.max(1, hpDie + conModAfter);
-  const retroactiveHp = (conModAfter - conModBefore) * plan.fromLevel;
-  const newHpMax = sheet.hpMax + hpGain + retroactiveHp;
-
-  // ── Magias ───────────────────────────────────────────────────────────────────
-  const choices    = spellChoicesOnLevelUp(cls.id, plan.newLevel);
-  const classKey   = spellClassKey(cls.id);
-  const maxSpellLv = maxSpellLevelAt(cls.id, plan.newLevel);
-
-  const requestedIds: string[] = Array.isArray(body.newSpells) ? body.newSpells : [];
-  const newSpellRows: typeof SPELLS = [];
-  let cantripCount = 0;
-  let spellCount   = 0;
-  for (const sid of requestedIds) {
-    const sp = SPELLS.find((s) => s.id === sid);
-    if (!sp) return NextResponse.json({ error: `Magia desconhecida: ${sid}` }, { status: 400 });
-    if (!sp.classes.includes(classKey))
-      return NextResponse.json({ error: `${sp.name} não pertence à lista da sua classe.` }, { status: 400 });
-    if (known.has(sp.name.toLowerCase()))
-      return NextResponse.json({ error: `${sp.name} já é conhecida.` }, { status: 400 });
-    if (sp.level === 0) {
-      cantripCount++;
-      if (cantripCount > choices.cantrips)
-        return NextResponse.json({ error: "Truques escolhidos além do permitido." }, { status: 400 });
-    } else {
-      if (sp.level > maxSpellLv)
-        return NextResponse.json({ error: `${sp.name} é de nível maior que seus espaços (${maxSpellLv}°).` }, { status: 400 });
-      spellCount++;
-      if (spellCount > choices.spells)
-        return NextResponse.json({ error: "Magias escolhidas além do permitido." }, { status: 400 });
-    }
-    known.add(sp.name.toLowerCase());
-    newSpellRows.push(sp);
-  }
-
-  // ── Características ───────────────────────────────────────────────────────────
-  const newFeatures = [
-    ...plan.classFeatures.map((f) => ({ ...f, source: `${cls.name} ${plan.newLevel}°` })),
-    ...plan.raceFeatures.map((f)  => ({ ...f, source: `Raça · ${plan.newLevel}° nível` })),
-  ];
 
   await prisma.$transaction([
     prisma.dndSheet.update({
       where: { id: sheet.id },
-      data: {
-        level:     plan.totalLevelAfter,
-        xp:        Math.max(sheet.xp, XP_THRESHOLDS[plan.totalLevelAfter]),
-        hpMax:     newHpMax,
-        hpCurrent: sheet.hpCurrent + hpGain + retroactiveHp,
-        str: newScores.str, dex: newScores.dex, con: newScores.con,
-        int: newScores.int, wis: newScores.wis, cha: newScores.cha,
-        initiative: mod(newScores.dex),
-      },
+      data: result.sheetUpdate,
     }),
     prisma.dndClass.update({
       where: { id: clsEntry.id },
-      data:  { level: plan.newLevel },
+      data:  { level: result.classLevel },
     }),
-    ...(newFeatures.length > 0
+    ...(result.newFeatures.length > 0
       ? [prisma.dndFeature.createMany({
-          data: newFeatures.map((f) => ({
+          data: result.newFeatures.map((f) => ({
             sheetId: sheet.id,
             name: f.name, source: f.source, description: f.description,
           })),
         })]
       : []),
-    ...(newSpellRows.length > 0
+    ...(result.newSpellRows.length > 0
       ? [prisma.dndSpell.createMany({
-          data: newSpellRows.map((sp) => ({
+          data: result.newSpellRows.map((sp) => ({
             sheetId:     sheet.id,
             spellName:   sp.name,
             level:       sp.level,
@@ -301,26 +238,5 @@ export async function POST(
       : []),
   ]);
 
-  return NextResponse.json({
-    ok: true,
-    summary: {
-      newLevel:         plan.totalLevelAfter,
-      hpGain:           hpGain + retroactiveHp,
-      hpDie,
-      hpMode,
-      conRetroactive:   retroactiveHp,
-      newHpMax,
-      profBonusBefore:  plan.profBonusBefore,
-      profBonusAfter:   plan.profBonusAfter,
-      asiApplied:       asiIncreases,
-      features:         newFeatures,
-      slotsGained:      plan.slotsGained,
-      newMaxSlots:      plan.newMaxSlots,
-      cantripsBefore:   plan.cantripsBefore,
-      cantripsAfter:    plan.cantripsAfter,
-      spellsKnownBefore: plan.spellsKnownBefore,
-      spellsKnownAfter:  plan.spellsKnownAfter,
-      spellsLearned:    newSpellRows.map((sp) => sp.name),
-    },
-  });
+  return NextResponse.json({ ok: true, summary: result.summary });
 }
