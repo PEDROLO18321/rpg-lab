@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CthulhuWizard } from "./CthulhuWizard";
+import { NewCharacterEntry } from "./NewCharacterEntry";
 
 export default async function NewInvestigatorPage() {
   const session = await auth();
@@ -10,5 +10,5 @@ export default async function NewInvestigatorPage() {
   const system = await prisma.system.findUnique({ where: { slug: "cthulhu" } });
   if (!system) redirect("/dashboard/cthulhu");
 
-  return <CthulhuWizard userId={session.user.id} systemId={system.id} />;
+  return <NewCharacterEntry userId={session.user.id} systemId={system.id} />;
 }
