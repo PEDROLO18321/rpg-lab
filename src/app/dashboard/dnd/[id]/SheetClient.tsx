@@ -17,6 +17,7 @@ import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
 import { proficiencyBonus, getMaxSlots, getMulticlassSlots } from "@/lib/dnd/leveling";
 import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
+import { DndPrintSheet } from "./DndPrintSheet";
 import "../dnd-responsive.css";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -273,6 +274,30 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
   // Slot state: must be init after maxSlots is computed
   const [slotsUsed, setSlotsUsed] = useState<SlotState>(() => parseSlots(initial.spellSlotsUsed, maxSlots));
 
+  // ── Derived data for print export ──────────────────────────────────────
+  const PROF_BONUS = proficiencyBonus(initial.level);
+  const strMod = mod(scores.str);
+  const dexMod = mod(scores.dex);
+  const spellAbilityMapPrint: Record<string, AbilityKey> = { "Carisma": "cha", "Sabedoria": "wis", "Inteligência": "int" };
+  const spellAbilityKeyPrint: AbilityKey = spellAbilityMapPrint[spellAbility] ?? "int";
+  const spellAttackBonusPrint = isCaster ? mod(scores[spellAbilityKeyPrint]) + PROF_BONUS : 0;
+  const spellSaveDCPrint = isCaster ? 8 + PROF_BONUS + mod(scores[spellAbilityKeyPrint]) : 0;
+  const weaponAttacksPrint = equipment
+    .filter((e) => e.equipped)
+    .flatMap((e) => {
+      const w = WEAPONS.find((w) => w.name.toLowerCase() === e.itemName.toLowerCase());
+      if (!w) return [];
+      const atkMod = w.finesse
+        ? Math.max(strMod, dexMod) + PROF_BONUS
+        : w.ranged ? dexMod + PROF_BONUS : strMod + PROF_BONUS;
+      const dmgMod = w.finesse ? Math.max(strMod, dexMod) : w.ranged ? dexMod : strMod;
+      return [{ id: e.id, name: e.itemName, w, atkMod, dmgMod }];
+    });
+  const slotsUsedCountPrint = Object.fromEntries(
+    Object.entries(slotsUsed).map(([lvl, arr]) => [lvl, arr.filter(Boolean).length])
+  );
+  const hitDieSidesPrint = parseInt((initial.hitDice ?? "d8").replace(/\d*d/, "")) || 8;
+
   async function patchSheet(data: Record<string, unknown>) {
     await fetch(`/api/dnd/characters/${characterId}/sheet`, {
       method: "PATCH",
@@ -292,8 +317,8 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         onExportPdf={() => window.print()}
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
-        <Link href="/dashboard/dnd/jogador" className="no-print" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
+      <main className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
+        <Link href="/dashboard/dnd/jogador" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
           ← Meus Personagens
         </Link>
 
@@ -414,7 +439,50 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         )}
       </main>
 
-      <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 40 }}>
+      <DndPrintSheet
+        characterName={characterName}
+        playerName={userName}
+        raceName={raceName}
+        classDisplay={classDisplay}
+        level={initial.level}
+        backgroundName={bg?.name ?? initial.background ?? "—"}
+        alignmentLabel={ALIGNMENT_LABELS[initial.alignment ?? ""] ?? initial.alignment ?? "—"}
+        xp={initial.xp}
+        scores={scores}
+        profBonus={PROF_BONUS}
+        proficientSaves={proficientSaves}
+        proficientSkills={proficientSkills}
+        expertiseSkills={expertiseSkills}
+        ac={initial.armorClass}
+        initiative={initial.initiative}
+        speed={initial.speed}
+        hpMax={initial.hpMax}
+        hpCurrent={hpCurrent}
+        hpTemp={hpTemp}
+        hitDiceType={`d${hitDieSidesPrint}`}
+        hitDiceTotal={initial.level}
+        hitDiceAvailable={initial.level - hitDiceUsed}
+        deathSavesSuccess={dsSuccess}
+        deathSavesFailure={dsFailure}
+        inspiration={inspiration}
+        weaponAttacks={weaponAttacksPrint}
+        equipment={equipment}
+        currency={{ cp, sp, ep, gp, pp }}
+        features={initial.features}
+        armorProficiencies={cls?.armorProficiencies ?? []}
+        weaponProficiencies={cls?.weaponProficiencies ?? []}
+        toolProficiencies={cls?.toolProficiencies ?? []}
+        desc={desc}
+        isCaster={isCaster}
+        spellAbilityLabel={spellAbility}
+        spellSaveDC={spellSaveDCPrint}
+        spellAttackBonus={spellAttackBonusPrint}
+        maxSlots={maxSlots}
+        slotsUsedCount={slotsUsedCountPrint}
+        spells={spells}
+      />
+
+      <div className="no-print" style={{ position: "fixed", bottom: 28, right: 28, zIndex: 40 }}>
         <DeleteCharacterButton characterId={characterId} characterName={characterName} />
       </div>
     </div>
