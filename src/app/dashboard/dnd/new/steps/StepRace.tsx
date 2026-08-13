@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Image, { StaticImageData } from "next/image";
 import { RACES, ABILITY_LABELS, formatBonuses } from "@/lib/dnd/races";
 import type { Race, Subrace, AbilityKey } from "@/lib/dnd/races";
+import { ALL_SKILLS } from "@/lib/dnd/skillsData";
 import type { WizardData } from "../CharacterWizard";
 import { Tilt3D } from "@/components/ui/Tilt3D";
 import { RaceMorphSlot } from "@/components/three/RaceMorph";
@@ -21,14 +22,6 @@ import imgMeioOrc    from "@/assets/D&D-Racas/Meio-Orcs.png";
 import imgTiefling   from "@/assets/D&D-Racas/Tiefling.png";
 
 const ABILITY_KEYS: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
-
-const ALL_SKILLS = [
-  "Acrobacia","Adestrar Animais","Arcanismo","Atletismo",
-  "Enganação","História","Intuição","Intimidação",
-  "Investigação","Medicina","Natureza","Percepção",
-  "Atuação","Persuasão","Furtividade","Prestidigitação",
-  "Religião","Sobrevivência",
-];
 
 // Fora do componente: handler de evento usa aleatoriedade sem violar a
 // regra de pureza de render do React Compiler.
