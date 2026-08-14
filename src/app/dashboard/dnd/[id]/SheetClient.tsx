@@ -18,6 +18,7 @@ import { proficiencyBonus, getMaxSlots, getMulticlassSlots } from "@/lib/dnd/lev
 import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
 import { DndPrintSheet } from "./DndPrintSheet";
+import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import "../dnd-responsive.css";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -364,6 +365,7 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
             <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
             <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
             <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>Jogar</ModeBtn>
+            <ExportJsonButton exportUrl={`/api/dnd/characters/${characterId}/export`} characterName={characterName} systemSlug="dnd" />
           </div>
         </div>
 

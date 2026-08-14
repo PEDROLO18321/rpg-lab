@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CharacterWizard } from "./CharacterWizard";
 import { AutoGenerateForm } from "./AutoGenerateForm";
+import { ImportJsonForm } from "@/components/dashboard/ImportJsonForm";
 
 interface Props {
   userId: string;
@@ -37,14 +38,38 @@ const MODES = [
       </svg>
     ),
   },
+  {
+    id: "import" as const,
+    label: "Importar JSON",
+    subtitle: "Trazer de Fora",
+    desc: "Já tem uma ficha de D&D 5e exportada deste site em outro lugar? Envie o arquivo .json e importe o personagem completo.",
+    cta: "Escolher Arquivo",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/>
+      </svg>
+    ),
+  },
 ];
 
 export function NewCharacterEntry({ userId, systemId }: Props) {
-  const [mode, setMode] = useState<"choice" | "manual" | "auto">("choice");
+  const [mode, setMode] = useState<"choice" | "manual" | "auto" | "import">("choice");
   const [hovered, setHovered] = useState<string | null>(null);
 
   if (mode === "manual") return <CharacterWizard userId={userId} systemId={systemId} />;
   if (mode === "auto") return <AutoGenerateForm userId={userId} systemId={systemId} onBack={() => setMode("choice")} />;
+  if (mode === "import")
+    return (
+      <ImportJsonForm
+        systemId={systemId}
+        systemLabel="D&D 5e"
+        expectedFormat="rpglab.dnd.v1"
+        importUrl="/api/dnd/characters/import"
+        redirectBase="/dashboard/dnd"
+        accent="#c9941f"
+        onBack={() => setMode("choice")}
+      />
+    );
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px" }}>

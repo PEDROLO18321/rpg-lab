@@ -5,6 +5,7 @@ import Link from "next/link";
 import "../ordem-responsive.css";
 
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { RollResultDie, type DiceFxRoll } from "@/components/three/DiceRollFx";
 import {
   ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, type AttrKey,
@@ -234,6 +235,12 @@ export function SheetClient({ character }: { character: AnyChar }) {
             {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : "Editar"}
           </button>
         ))}
+        <ExportJsonButton
+          exportUrl={`/api/ordem/characters/${character.id}/export`}
+          characterName={character.name}
+          systemSlug="ordem"
+          style={{ padding: "6px 14px", borderRadius: "var(--radius-lg)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.82rem" }}
+        />
       </div>
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
