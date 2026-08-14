@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import {
   SKILLS, ATTR_ABBR, ATTR_LABELS, OCCUPATIONS, WEAPONS,
   getSkillBase, half, fifth, calcDamageBonus, calcCorpo,
@@ -428,6 +429,7 @@ export function SheetClient({ character }: Props) {
             ✎ Editar
           </button>
         )}
+        <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" style={pillBtn} />
       </div>
 
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>

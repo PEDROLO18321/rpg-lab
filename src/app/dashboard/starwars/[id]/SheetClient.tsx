@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { SPECIES_BY_ID } from "@/lib/starwars/species";
 import { PLANET_BY_ID } from "@/lib/starwars/planets";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
@@ -490,6 +491,12 @@ export function SheetClient({ character }: { character: CharacterProp }) {
             {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : m === "editar" ? "Editar" : "Regras"}
           </button>
         ))}
+        <ExportJsonButton
+          exportUrl={`/api/starwars/characters/${character.id}/export`}
+          characterName={character.name}
+          systemSlug="starwars"
+          style={{ padding: "6px 14px", borderRadius: "var(--radius-lg)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.82rem" }}
+        />
       </div>
 
       <main className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>

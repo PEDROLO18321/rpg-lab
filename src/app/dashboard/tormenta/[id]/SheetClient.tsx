@@ -14,6 +14,7 @@ import { SPELLS } from "@/lib/tormenta/spells";
 import { ATTR_KEYS, ATTR_LABEL, attrMod, SKILLS, SKILL_BY_ID, skillModifier } from "@/lib/tormenta/data";
 import { XP_THRESHOLDS, MAX_LEVEL, type ChosenPower } from "@/lib/tormenta/leveling";
 import { LevelUpModal } from "./LevelUpModal";
+import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 
 const ACCENT       = "#a01818";
 const ACCENT_LIGHT = "#c94040";
@@ -107,6 +108,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
             )}
             <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
             <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
+            <ExportJsonButton exportUrl={`/api/tormenta/characters/${character.id}/export`} characterName={character.name} systemSlug="tormenta" />
           </div>
         </div>
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CthulhuWizard } from "./CthulhuWizard";
 import { AutoGenerateForm } from "./AutoGenerateForm";
+import { ImportJsonForm } from "@/components/dashboard/ImportJsonForm";
 
 interface Props {
   userId: string;
@@ -39,14 +40,38 @@ const MODES = [
       </svg>
     ),
   },
+  {
+    id: "import" as const,
+    label: "Importar JSON",
+    subtitle: "Trazer de Fora",
+    desc: "Já tem uma ficha de Call of Cthulhu exportada deste site em outro lugar? Envie o arquivo .json e importe o investigador completo.",
+    cta: "Escolher Arquivo",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/>
+      </svg>
+    ),
+  },
 ];
 
 export function NewCharacterEntry({ userId, systemId }: Props) {
-  const [mode, setMode] = useState<"choice" | "manual" | "auto">("choice");
+  const [mode, setMode] = useState<"choice" | "manual" | "auto" | "import">("choice");
   const [hovered, setHovered] = useState<string | null>(null);
 
   if (mode === "manual") return <CthulhuWizard userId={userId} systemId={systemId} />;
   if (mode === "auto") return <AutoGenerateForm systemId={systemId} onBack={() => setMode("choice")} />;
+  if (mode === "import")
+    return (
+      <ImportJsonForm
+        systemId={systemId}
+        systemLabel="Call of Cthulhu"
+        expectedFormat="rpglab.cthulhu.v1"
+        importUrl="/api/cthulhu/characters/import"
+        redirectBase="/dashboard/cthulhu"
+        accent={ACCENT_LIGHT}
+        onBack={() => setMode("choice")}
+      />
+    );
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px" }}>
