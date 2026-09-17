@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseJsonField, toJsonFieldOrNull } from "@/lib/characterTransfer";
 import { attrMod, ATTR_KEYS, type AttrKey, type TormentaAttrs } from "@/lib/tormenta/data";
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 import { resolveKeyAttribute } from "@/lib/tormenta/creation";
@@ -12,7 +13,6 @@ import { getAvailablePowers, getFeaturesAtLevel, POWER_BY_ID } from "@/lib/torme
 import { ARMOR_BY_ID, computeTormentaDefense } from "@/lib/tormenta/items";
 import { SPELLS } from "@/lib/tormenta/spells";
 
-const ATTR_COLUMN: Record<AttrKey, string> = { for: "forca", des: "des", con: "con", int: "int", sab: "sab", car: "car" };
 
 function slug(name: string): string {
   return name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -48,7 +48,7 @@ export async function POST(
   const available = new Set(getAvailablePowers(cls.id).map((p) => p.id));
   if (!available.has(chosenPower.id)) return NextResponse.json({ error: "Poder não disponível para esta classe." }, { status: 400 });
 
-  const existingPowers: ChosenPower[] = JSON.parse(sheet.powers ?? "[]");
+  const existingPowers: ChosenPower[] = parseJsonField<ChosenPower[]>(sheet.powers, []);
 
   let attrAmount: number | undefined;
   if (chosenPower.special === "attribute-increase") {
@@ -71,15 +71,15 @@ export async function POST(
   const newPvMax = computePvMax(cls.id, plan.toLevel, conMod);
   const newPmMax = computePmMax(cls.id, plan.toLevel, keyAttrMod);
 
-  const equipment: string[] = JSON.parse(sheet.equipment ?? "[]");
+  const equipment: string[] = parseJsonField<string[]>(sheet.equipment, []);
   const armorId = equipment.find((e) => ARMOR_BY_ID[e]?.category === "leve" || ARMOR_BY_ID[e]?.category === "pesada") ?? null;
   const shieldId = equipment.find((e) => ARMOR_BY_ID[e]?.category === "escudo") ?? null;
   const newDefense = computeTormentaDefense(attrMod(newAttrs.des), armorId, shieldId);
 
   // ── Magias ───────────────────────────────────────────────────────────────────
   const prog = casterProgressionFor(cls);
-  const spellsKnown: string[] = JSON.parse(sheet.spellsKnown ?? "[]");
-  const schoolsChosen: string[] = JSON.parse(sheet.schoolsChosen ?? "[]");
+  const spellsKnown: string[] = parseJsonField<string[]>(sheet.spellsKnown, []);
+  const schoolsChosen: string[] = parseJsonField<string[]>(sheet.schoolsChosen, []);
   const newSpellRows: typeof SPELLS = [];
 
   if (plan.spellsGained > 0) {
@@ -130,8 +130,8 @@ export async function POST(
       pvMax: newPvMax, pvCurrent: Math.min(newPvMax, sheet.pvCurrent + Math.max(0, pvGain)),
       pmMax: newPmMax, pmCurrent: Math.min(newPmMax, sheet.pmCurrent + Math.max(0, pmGain)),
       defense: newDefense,
-      powers: JSON.stringify(newPowers),
-      spellsKnown: newSpellRows.length > 0 ? JSON.stringify([...spellsKnown, ...newSpellRows.map((s) => s.id)]) : sheet.spellsKnown,
+      powers: toJsonFieldOrNull(newPowers),
+      spellsKnown: newSpellRows.length > 0 ? [...spellsKnown, ...newSpellRows.map((s) => s.id)] : spellsKnown,
     },
   });
 

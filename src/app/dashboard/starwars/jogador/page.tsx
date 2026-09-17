@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { parseJsonField } from "@/lib/characterTransfer";
 import { prisma } from "@/lib/prisma";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { StarWarsCharacterCard } from "@/components/dashboard/StarWarsCharacterCard";
@@ -68,7 +69,7 @@ export default async function StarWarsJogadorPage() {
             {characters.map((char) => {
               const sheet = char.starWarsSheet;
               const species = sheet?.species ? SPECIES_BY_ID[sheet.species]?.name ?? null : null;
-              const classLevels: Record<string, number> = sheet?.classes ? JSON.parse(sheet.classes) : {};
+              const classLevels = parseJsonField<Record<string, number>>(sheet?.classes, {});
               const primaryClassId = Object.keys(classLevels)[0];
               const cls = primaryClassId ? CLASS_BY_ID[primaryClassId]?.name ?? null : null;
               return (

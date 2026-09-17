@@ -9,6 +9,7 @@ import {
   CLASS_BY_ID, computeVitals, computeDefense,
   type AttrKey, type TrainDegree, type ClassId, type OrdemAttrs, type Element,
 } from "@/lib/ordem/data";
+import { parseJsonField } from "@/lib/characterTransfer";
 import {
   CLASS_POWERS_BY_CLASS, TRAILS_BY_CLASS, PARANORMAL_POWERS,
 } from "@/lib/ordem/abilities";
@@ -28,9 +29,8 @@ const ACCENT_BORD = "rgba(255,255,255,0.32)";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyChar = any;
 
-function parse<T>(raw: string | null | undefined, fallback: T): T {
-  if (!raw) return fallback;
-  try { return JSON.parse(raw) as T; } catch { return fallback; }
+function parse<T>(raw: unknown, fallback: T): T {
+  return parseJsonField<T>(raw, fallback);
 }
 
 interface Props {

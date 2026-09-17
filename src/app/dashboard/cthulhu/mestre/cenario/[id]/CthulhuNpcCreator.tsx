@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuNpc, CthulhuNPCAttack } from "@/lib/cthulhu/cthulhuCampaignClient";
 import "../../../cthulhu-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const A = "#a3b86c";
 const ABORD = "rgba(125,156,62,0.32)";
@@ -29,7 +30,10 @@ const ATTR_LABELS: { key: "str" | "con" | "siz" | "dex" | "int" | "pow" | "app" 
 
 function rand<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 function randBetween(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-function parseAttacks(json: string): CthulhuNPCAttack[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseAttacks(json: unknown): CthulhuNPCAttack[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as CthulhuNPCAttack[]) : [];
+}
 
 function emptyNpc(): NpcForm { return { name: "", occupation: "", age: null, gender: "", nationality: "", description: "", personality: "", mythosTies: "", notes: "", str: null, con: null, siz: null, dex: null, int: null, pow: null, app: null, edu: null, hp: null, san: null, attacks: [] }; }
 function randomNpc(): NpcForm {
@@ -43,7 +47,7 @@ function randomNpc(): NpcForm {
 }
 
 export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
-  const npcs = api.campaign.cthulhuNpcs;
+  const npcs = api.campaign.npcs;
   const [mode, setMode] = useState<"random" | "manual">("random");
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -53,13 +57,13 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
 
   function regenerate() { setForm(randomNpc()); }
   function switchMode(m: "random" | "manual") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
-  async function saveNpc() { if (!form.name.trim()) return; await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) }); setForm(mode === "random" ? randomNpc() : emptyNpc()); }
+  async function saveNpc() { if (!form.name.trim()) return; await api.addChild("npcs", { ...form }); setForm(mode === "random" ? randomNpc() : emptyNpc()); }
   function deleteNpc(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
   function addAttack() { if (!newAtk.name.trim()) return; setForm({ ...form, attacks: [...form.attacks, { ...newAtk }] }); setNewAtk({ name: "", skill: "", damage: "", description: "" }); }
   function removeAttack(i: number) { setForm({ ...form, attacks: form.attacks.filter((_, j) => j !== i) }); }
   async function addToInitiative(npc: CthulhuNpc) {
     const dex = addInitValue !== "" ? Number(addInitValue) : (npc.dex ?? 50);
-    await api.addChild("combatants", { name: npc.name, dex, hp: npc.hp, maxHp: npc.hp, san: npc.san, maxSan: npc.san, mp: null, maxMp: null, conditions: "[]", isPlayer: false, order: api.campaign.cthulhuCombatants.length });
+    await api.addChild("combatants", { name: npc.name, dex, hp: npc.hp, maxHp: npc.hp, san: npc.san, maxSan: npc.san, mp: null, maxMp: null, conditions: [], isPlayer: false, order: api.campaign.combatants.length });
     setAddInitTarget(null); setAddInitValue("");
   }
 

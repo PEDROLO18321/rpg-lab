@@ -8,7 +8,7 @@
 // personagens de classe única são gerados (sem multiclasse automática).
 
 import { ATTR_KEYS, SKILL_GRADE_ORDER, type AttrKey, type StarWarsAttrs } from "./data";
-import { SPECIES, SPECIES_BY_ID, type Species } from "./species";
+import { SPECIES, type Species } from "./species";
 import { PLANETS } from "./planets";
 import { CLASSES, type Archetype } from "./classes";
 import { SKILLS } from "./skills";

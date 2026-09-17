@@ -5,10 +5,6 @@ import { CharacterWizard } from "./CharacterWizard";
 import { AutoGenerateForm } from "./AutoGenerateForm";
 import { ImportJsonForm } from "@/components/dashboard/ImportJsonForm";
 
-interface Props {
-  userId: string;
-  systemId: string;
-}
 
 const ACCENT = "#3b82c4";
 
@@ -54,16 +50,15 @@ const MODES = [
   },
 ];
 
-export function NewCharacterEntry({ userId, systemId }: Props) {
+export function NewCharacterEntry() {
   const [mode, setMode] = useState<"choice" | "manual" | "auto" | "import">("choice");
   const [hovered, setHovered] = useState<string | null>(null);
 
-  if (mode === "manual") return <CharacterWizard userId={userId} systemId={systemId} />;
-  if (mode === "auto") return <AutoGenerateForm userId={userId} systemId={systemId} onBack={() => setMode("choice")} />;
+  if (mode === "manual") return <CharacterWizard />;
+  if (mode === "auto") return <AutoGenerateForm onBack={() => setMode("choice")} />;
   if (mode === "import")
     return (
       <ImportJsonForm
-        systemId={systemId}
         systemLabel="Star Wars"
         expectedFormat="rpglab.starwars.v1"
         importUrl="/api/starwars/characters/import"

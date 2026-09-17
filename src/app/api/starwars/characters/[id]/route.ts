@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
 
 export async function PATCH(
   req: NextRequest,
@@ -55,15 +56,15 @@ export async function PATCH(
     ...(notes !== undefined ? { notes } : {}),
     ...(sabreForm !== undefined ? { sabreForm } : {}),
     ...(planetSkillChoice !== undefined ? { planetSkillChoice } : {}),
-    ...(classes       !== undefined ? { classes: classes ? JSON.stringify(classes) : "{}" } : {}),
-    ...(skills        !== undefined ? { skills: skills ? JSON.stringify(skills) : null } : {}),
-    ...(classPowers   !== undefined ? { classPowers: classPowers ? JSON.stringify(classPowers) : null } : {}),
-    ...(generalPowers !== undefined ? { generalPowers: generalPowers ? JSON.stringify(generalPowers) : null } : {}),
-    ...(weapons       !== undefined ? { weapons: weapons ? JSON.stringify(weapons) : null } : {}),
-    ...(equipment     !== undefined ? { equipment: equipment ? JSON.stringify(equipment) : null } : {}),
-    ...(conditions    !== undefined ? { conditions: conditions ? JSON.stringify(conditions) : null } : {}),
-    ...(background    !== undefined ? { background: background ? JSON.stringify(background) : null } : {}),
-    ...(unlockedProphecies !== undefined ? { unlockedProphecies: JSON.stringify(unlockedProphecies ?? []) } : {}),
+    ...(classes       !== undefined ? { classes: classes ?? {} } : {}),
+    ...(skills        !== undefined ? { skills: toJsonFieldOrNull(skills) } : {}),
+    ...(classPowers   !== undefined ? { classPowers: toJsonFieldOrNull(classPowers) } : {}),
+    ...(generalPowers !== undefined ? { generalPowers: toJsonFieldOrNull(generalPowers) } : {}),
+    ...(weapons       !== undefined ? { weapons: toJsonFieldOrNull(weapons) } : {}),
+    ...(equipment     !== undefined ? { equipment: toJsonFieldOrNull(equipment) } : {}),
+    ...(conditions    !== undefined ? { conditions: toJsonFieldOrNull(conditions) } : {}),
+    ...(background    !== undefined ? { background: toJsonFieldOrNull(background) } : {}),
+    ...(unlockedProphecies !== undefined ? { unlockedProphecies: unlockedProphecies ?? [] } : {}),
   };
 
   const charUpdates: Record<string, unknown> = {};

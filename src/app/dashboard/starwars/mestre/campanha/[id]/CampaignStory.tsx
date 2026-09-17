@@ -17,8 +17,8 @@ const areaStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", ba
 const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit" };
 
 export function CampaignStory({ api }: { api: StarWarsApi }) {
-  const story = api.campaign.starWarsStory ?? EMPTY_STORY;
-  const sessions = api.campaign.starWarsSessions;
+  const story = api.campaign.story ?? EMPTY_STORY;
+  const sessions = api.campaign.sessions;
   const [draft, setDraft] = useState<StarWarsStory>(story);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

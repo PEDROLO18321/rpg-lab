@@ -53,7 +53,7 @@ export default function OrdemMestrePage() {
     if (!name || busy) return;
     setBusy(true);
     try {
-      const id = await createCampaign(name, newTier);
+      const id = await createCampaign(name, { tier: newTier });
       setNewName("");
       setCreating(false);
       router.push(`/dashboard/ordem/mestre/operacao/${id}`);
@@ -195,8 +195,8 @@ export default function OrdemMestrePage() {
                         </span>
                       </div>
                       <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        {c._count.ordemNpcs} NPC{c._count.ordemNpcs !== 1 ? "s" : ""} · {c._count.ordemCombatants} na ordem
-                        {c._count.ordemSessions ? ` · ${c._count.ordemSessions} sessão${c._count.ordemSessions !== 1 ? "ões" : ""}` : ""}
+                        {c.counts.npcs} NPC{c.counts.npcs !== 1 ? "s" : ""} · {c.counts.combatants} na ordem
+                        {c.counts.sessions ? ` · ${c.counts.sessions} sessão${c.counts.sessions !== 1 ? "ões" : ""}` : ""}
                       </p>
                     </div>
                   </div>

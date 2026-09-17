@@ -40,9 +40,8 @@ export type { OrdemWizardData };
 
 const EMPTY_ATTRS: OrdemWizardData["attrs"] = { agi: 1, for: 1, int: 1, pre: 1, vig: 1 };
 
-interface Props { systemId: string; }
 
-export function CharacterWizard({ systemId }: Props) {
+export function CharacterWizard() {
   const router = useRouter();
   const [step,      setStep]      = useState(0);
   const [data,      setData]      = useState<OrdemWizardData>({
@@ -140,7 +139,6 @@ export function CharacterWizard({ systemId }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemId,
           name:      data.name.trim(),
           origin:    data.originId || null,
           className: data.classId,

@@ -100,8 +100,8 @@ export function Bestiary({ api }: Props) {
     const initiative = initValue !== "" ? Number(initValue) : rollD20();
     await api.addChild("combatants", {
       name: selected.name, initiative, hp: selected.hp, maxHp: selected.hp, tempHp: 0,
-      ac: selected.ac ?? null, conditions: "[]", concentration: false, isPlayer: false,
-      order: api.campaign.dndCombatants.length,
+      ac: selected.ac ?? null, conditions: [], concentration: false, isPlayer: false,
+      order: api.campaign.combatants.length,
     });
     setShowInit(false);
     setInitValue("");

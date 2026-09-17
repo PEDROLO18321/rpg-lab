@@ -1,9 +1,13 @@
 "use client";
 
+// Os retratos de personagem são data-URLs base64 geradas por upload local
+// (FileReader.readAsDataURL). next/image não otimiza data-URLs — usar <img>
+// aqui é a escolha correta, não um descuido.
+/* eslint-disable @next/next/no-img-element */
+
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const ACCENT       = "#3b82c4";
 const ACCENT_LIGHT = "#69a8e0";
 const ACCENT_DIM   = "rgba(59,130,196,0.12)";
 const ACCENT_BORD  = "rgba(59,130,196,0.32)";

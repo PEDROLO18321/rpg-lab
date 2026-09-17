@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
 
 export async function DELETE(
   _req: NextRequest,
@@ -69,12 +70,12 @@ export async function PATCH(
     ...(era         !== undefined ? { era }        : {}),
     ...(notes       !== undefined ? { notes }      : {}),
     ...(equipment   !== undefined ? { equipment }  : {}),
-    ...(skills        !== undefined ? { skills: skills ? JSON.stringify(skills) : null } : {}),
-    ...(skillChecks   !== undefined ? { skillChecks: skillChecks ? JSON.stringify(skillChecks) : null } : {}),
-    ...(insanityData  !== undefined ? { insanityData: insanityData ? JSON.stringify(insanityData) : null } : {}),
-    ...(spellsData    !== undefined ? { spellsData: spellsData ? JSON.stringify(spellsData) : null } : {}),
-    ...(weapons   !== undefined ? { weapons: weapons ? JSON.stringify(weapons) : null } : {}),
-    ...(background !== undefined ? { background: background ? JSON.stringify(background) : null } : {}),
+    ...(skills        !== undefined ? { skills: toJsonFieldOrNull(skills) } : {}),
+    ...(skillChecks   !== undefined ? { skillChecks: toJsonFieldOrNull(skillChecks) } : {}),
+    ...(insanityData  !== undefined ? { insanityData: toJsonFieldOrNull(insanityData) } : {}),
+    ...(spellsData    !== undefined ? { spellsData: toJsonFieldOrNull(spellsData) } : {}),
+    ...(weapons   !== undefined ? { weapons: toJsonFieldOrNull(weapons) } : {}),
+    ...(background !== undefined ? { background: toJsonFieldOrNull(background) } : {}),
   };
 
   const charUpdates: Record<string, unknown> = {};

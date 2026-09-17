@@ -24,8 +24,8 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function OrdemScenario({ api }: { api: OperacaoApi }) {
-  const story = api.campaign.ordemStory ?? EMPTY_STORY;
-  const sessions = api.campaign.ordemSessions;
+  const story = api.campaign.story ?? EMPTY_STORY;
+  const sessions = api.campaign.sessions;
   const [draft, setDraft] = useState<OrdemStory>(story);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

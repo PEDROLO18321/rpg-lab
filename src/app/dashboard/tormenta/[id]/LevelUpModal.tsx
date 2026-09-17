@@ -10,7 +10,8 @@ import {
   buildLevelUpPlan, casterProgressionFor, maxCircleAtLevel, computePvMax, computePmMax,
   nextAttributeIncreaseAmount, type ChosenPower,
 } from "@/lib/tormenta/leveling";
-import { getAvailablePowers, getFeaturesAtLevel, type Power, type PowerCategory } from "@/lib/tormenta/powers/registry";
+import { parseJsonField } from "@/lib/characterTransfer";
+import { getAvailablePowers, getFeaturesAtLevel, type PowerCategory } from "@/lib/tormenta/powers/registry";
 import { ARMOR_BY_ID, computeTormentaDefense } from "@/lib/tormenta/items";
 import { SPELLS } from "@/lib/tormenta/spells";
 
@@ -27,9 +28,8 @@ const CATEGORY_LABEL: Record<PowerCategory | "todos", string> = {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyChar = any;
 
-function parse<T>(raw: string | null | undefined, fallback: T): T {
-  if (!raw) return fallback;
-  try { return JSON.parse(raw) as T; } catch { return fallback; }
+function parse<T>(raw: unknown, fallback: T): T {
+  return parseJsonField<T>(raw, fallback);
 }
 
 export function LevelUpModal({ character, onClose }: { character: AnyChar; onClose: () => void }) {
@@ -49,6 +49,20 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
   const spellsKnown: string[] = parse(sheet.spellsKnown, []);
   const schoolsChosen: string[] = parse(sheet.schoolsChosen, []);
   const equipment: string[] = parse(sheet.equipment, []);
+
+  // Precisa ficar acima do `return` de nível máximo: hooks têm de rodar em toda
+  // renderização, na mesma ordem. O caso `plan === null` é tratado aqui dentro.
+  const eligibleSpells = useMemo(() => {
+    if (!plan || !cls.spellcasting || plan.spellsGained === 0) return [];
+    const progression = casterProgressionFor(cls);
+    const circle = progression ? maxCircleAtLevel(progression, plan.toLevel) : 1;
+    return SPELLS.filter((sp) =>
+      sp.tradition === cls.spellcasting!.tradition &&
+      sp.circle <= circle &&
+      (!cls.spellcasting!.schoolChoiceCount || schoolsChosen.includes(sp.school)) &&
+      !spellsKnown.includes(sp.id),
+    );
+  }, [cls, plan, schoolsChosen, spellsKnown]);
 
   if (!plan) {
     return (
@@ -86,15 +100,6 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
 
   const prog = cls.spellcasting ? casterProgressionFor(cls) : null;
   const maxCircle = prog ? maxCircleAtLevel(prog, plan.toLevel) : 1;
-  const eligibleSpells = useMemo(() => {
-    if (!cls.spellcasting || plan.spellsGained === 0) return [];
-    return SPELLS.filter((s) =>
-      s.tradition === cls.spellcasting!.tradition &&
-      s.circle <= maxCircle &&
-      (!cls.spellcasting!.schoolChoiceCount || schoolsChosen.includes(s.school)) &&
-      !spellsKnown.includes(s.id),
-    );
-  }, [cls, maxCircle, plan.spellsGained, schoolsChosen, spellsKnown]);
 
   const ownedIds = new Set(existingPowers.map((p) => p.id));
   const categories: (PowerCategory | "todos")[] = ["todos", "classe", "combate", "destino", "magia", "tormenta", "concedido"];

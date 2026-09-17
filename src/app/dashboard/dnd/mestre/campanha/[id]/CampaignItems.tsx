@@ -34,8 +34,8 @@ function blankItem() {
 }
 
 export function CampaignItems({ api }: { api: DndApi }) {
-  const items = api.campaign.dndItems;
-  const sessions = api.campaign.dndSessions;
+  const items = api.campaign.items;
+  const sessions = api.campaign.sessions;
   const [filterType, setFilterType] = useState<ItemType | "todos">("todos");
   const [filterSession, setFilterSession] = useState<string>("todos");
   const [adding, setAdding] = useState(false);
@@ -122,7 +122,7 @@ export function CampaignItems({ api }: { api: DndApi }) {
   );
 }
 
-function ItemEditor({ api, item, sessions, onDeleted }: { api: DndApi; item: DndCampaignItem; sessions: DndApi["campaign"]["dndSessions"]; onDeleted: () => void }) {
+function ItemEditor({ api, item, sessions, onDeleted }: { api: DndApi; item: DndCampaignItem; sessions: DndApi["campaign"]["sessions"]; onDeleted: () => void }) {
   const [d, setD] = useState(item);
   const set = (p: Partial<DndCampaignItem>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<DndCampaignItem>) => api.editChild("items", item.id, p);

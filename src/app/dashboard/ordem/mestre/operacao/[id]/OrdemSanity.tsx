@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemSanityRecord } from "@/lib/ordem/ordemCampaignClient";
 import "../../../ordem-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -27,8 +28,9 @@ const labelStyle: React.CSSProperties = { fontSize: "0.7rem", fontWeight: 700, c
 const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 11px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit" };
 const numStyle: React.CSSProperties = { width: 70, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit", textAlign: "center" };
 
-function parseTraumas(json: string): string[] {
-  try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; }
+function parseTraumas(json: unknown): string[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as string[]) : [];
 }
 function computeStatus(currentSan: number, maxSan: number): Status {
   if (currentSan <= 0) return "enlouquecido";
@@ -37,7 +39,7 @@ function computeStatus(currentSan: number, maxSan: number): Status {
 }
 
 export function OrdemSanity({ api }: { api: OperacaoApi }) {
-  const records = api.campaign.ordemSanity;
+  const records = api.campaign.sanity;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [traumaInput, setTraumaInput] = useState("");
 
@@ -53,7 +55,7 @@ export function OrdemSanity({ api }: { api: OperacaoApi }) {
     const lost = delta < 0 ? Math.abs(delta) : 0;
     patch(r.id, { currentSan: next, sessionLoss: r.sessionLoss + lost, status: computeStatus(next, r.maxSan) });
   }
-  function setTraumas(r: OrdemSanityRecord, list: string[]) { patch(r.id, { traumas: JSON.stringify(list) }); }
+  function setTraumas(r: OrdemSanityRecord, list: string[]) { patch(r.id, { traumas: list }); }
   function addTrauma(r: OrdemSanityRecord, value: string) {
     const v = value.trim(); if (!v) return;
     const cur = parseTraumas(r.traumas); if (cur.includes(v)) return;

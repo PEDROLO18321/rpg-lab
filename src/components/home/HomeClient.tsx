@@ -11,6 +11,14 @@ import cthulhuImg  from "@/assets/systems/CallofCthulhu.png";
 import ordemImg    from "@/assets/systems/OrdemParanormal.png";
 import tormentaImg from "@/assets/systems/Tormenta.png";
 
+// Fora do componente: a aleatoriedade roda em handlers de evento, não no
+// render — mantém o componente puro para o React Compiler.
+/** Inteiro em [0, max). */
+function randomInt(max: number): number {
+  return Math.floor(Math.random() * max);
+}
+
+
 // ── Data pools ────────────────────────────────────────────────────────────────
 
 const CHARACTERS = [
@@ -88,8 +96,14 @@ function pickRandom<T>(arr: T[], n: number): T[] {
 function useTypewriter(text: string, speed = 32, delay = 400) {
   const [displayed, setDisplayed] = useState("");
   const [done, setDone]           = useState(false);
+  // Reset durante o render quando o texto muda, em vez de dentro do efeito.
+  const [typedText, setTypedText] = useState(text);
+  if (typedText !== text) {
+    setTypedText(text);
+    setDisplayed("");
+    setDone(false);
+  }
   useEffect(() => {
-    setDisplayed(""); setDone(false);
     let i = 0;
     const start = setTimeout(() => {
       const timer = setInterval(() => {
@@ -121,10 +135,14 @@ export function HomeClient({ session }: Props) {
   const [flavor,       setFlavor]       = useState("");
   const [timeData,     setTimeData]     = useState(getTimeData());
 
+  // Sorteio e hora local só podem ser decididos no cliente: se fossem
+  // calculados no render, o HTML do servidor divergiria do da hidratação.
+  // Este é o caso em que o setState dentro do efeito é a solução correta.
   useEffect(() => {
-    setChar(CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setChar(CHARACTERS[randomInt(CHARACTERS.length)]);
     setStatuses(pickRandom(STATUS_POOL, 3));
-    setFlavor(FLAVOR_TEXTS[Math.floor(Math.random() * FLAVOR_TEXTS.length)]);
+    setFlavor(FLAVOR_TEXTS[randomInt(FLAVOR_TEXTS.length)]);
     setTimeData(getTimeData());
   }, []);
 
@@ -355,59 +373,6 @@ function SheetCard({ char }: { char: Char }) {
 
 // ── Floating d20 (authed only) ────────────────────────────────────────────────
 
-function FloatingDice() {
-  const [value, setValue] = useState<number | null>(null);
-  const [rolling, setRolling] = useState(false);
-
-  function roll() {
-    if (rolling) return;
-    setRolling(true);
-    setValue(null);
-    let ticks = 0;
-    const max = 14 + Math.floor(Math.random() * 8);
-    const timer = setInterval(() => {
-      setValue(Math.floor(Math.random() * 20) + 1);
-      ticks++;
-      if (ticks >= max) {
-        clearInterval(timer);
-        setValue(Math.floor(Math.random() * 20) + 1);
-        setRolling(false);
-      }
-    }, 80);
-  }
-
-  const isCrit   = value === 20;
-  const isFumble = value === 1;
-
-  return (
-    <div style={{ position:"absolute", top:-20, right:-60, display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}>
-      <button
-        onClick={roll}
-        title="Clicar para rolar d20"
-        style={{
-          width:64, height:64, borderRadius:"var(--radius-lg)",
-          background: isCrit ? "rgba(201,148,31,0.2)" : isFumble ? "rgba(239,68,68,0.15)" : "var(--surface-2)",
-          border: `2px solid ${isCrit ? "var(--accent)" : isFumble ? "#ef4444" : "var(--border)"}`,
-          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2,
-          cursor:"pointer",
-          boxShadow: isCrit ? "0 0 24px var(--accent-glow)" : isFumble ? "0 0 16px rgba(239,68,68,0.3)" : "0 4px 16px rgba(0,0,0,0.4)",
-          transition:"transform 0.15s, box-shadow 0.15s",
-          animation: rolling ? "dice-shake 0.08s linear infinite" : "float 4s ease-in-out infinite",
-        }}
-        onMouseEnter={(e) => { if (!rolling) e.currentTarget.style.transform = "scale(1.1)"; }}
-        onMouseLeave={(e) => { if (!rolling) e.currentTarget.style.transform = ""; }}
-      >
-        <span style={{ fontSize:"0.5rem", fontWeight:700, color:"var(--text-subtle)", letterSpacing:"0.12em" }}>D20</span>
-        <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize: value !== null ? "1.3rem" : "0.95rem", fontWeight:900, color: isCrit ? "var(--accent-light)" : isFumble ? "#ef4444" : value !== null ? "var(--text)" : "var(--text-subtle)", lineHeight:1 }}>
-          {value !== null ? value : "—"}
-        </span>
-      </button>
-      <p style={{ fontSize:"0.6rem", fontWeight:700, color: isCrit ? "var(--accent)" : isFumble ? "#ef4444" : "var(--text-subtle)", letterSpacing:"0.08em", textTransform:"uppercase" }}>
-        {isCrit ? "Crítico" : isFumble ? "Falha" : "rolar"}
-      </p>
-    </div>
-  );
-}
 
 // ── Quest board (authed) ──────────────────────────────────────────────────────
 
@@ -759,10 +724,10 @@ function DemoSection() {
     if (timerRef.current) clearInterval(timerRef.current);
     const skillMod = parseInt(skillModStr, 10) || 0;
     let ticks = 0;
-    const maxTicks = 10 + Math.floor(Math.random() * 6);
+    const maxTicks = 10 + randomInt(6);
     setRoll({ skillName, skillMod, dice: 0, total: 0, rolling: true });
     timerRef.current = setInterval(() => {
-      const dice = Math.floor(Math.random() * 20) + 1;
+      const dice = randomInt(20) + 1;
       ticks++;
       const done = ticks >= maxTicks;
       if (done && timerRef.current) clearInterval(timerRef.current);

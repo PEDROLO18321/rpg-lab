@@ -1,44 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { numOr, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { readImportRequest, handleImportError } from "@/lib/characterImport";
+import { LIMITS, intIn, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { MAX_NEX } from "@/lib/ordem/leveling";
 import { FORMAT } from "../[id]/export/route";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json();
-  const { systemId, payload } = body ?? {};
-  if (!systemId || payload?.format !== FORMAT) {
-    return NextResponse.json({ error: "Arquivo inválido para Ordem Paranormal." }, { status: 400 });
-  }
-
-  const char = payload.character ?? {};
-  const s = payload.sheet ?? {};
-  if (typeof char.name !== "string" || !char.name.trim()) {
-    return NextResponse.json({ error: "Nome do agente ausente." }, { status: 400 });
-  }
-
   try {
+    const { userId, systemId, character: char, sheet: s } = await readImportRequest(req, {
+      slug: "ordem",
+      format: FORMAT,
+      label: "Ordem Paranormal",
+      subject: "agente",
+    });
+
     const character = await prisma.character.create({
       data: {
-        userId: session.user.id,
+        userId,
         systemId,
-        name: char.name.trim(),
+        name: (char.name as string).trim(),
         notes: strOrNull(char.notes),
-        portraitUrl: strOrNull(char.portraitUrl),
+        portraitUrl: strOrNull(char.portraitUrl, LIMITS.url),
         ordemSheet: {
           create: {
-            origin: strOrNull(s.origin), className: strOrNull(s.className) ?? "combatente",
-            trail: strOrNull(s.trail), nex: numOr(s.nex, 5), patente: strOrNull(s.patente) ?? "recruta",
-            agi: numOr(s.agi, 1), forca: numOr(s.forca, 1), int: numOr(s.int, 1),
-            pre: numOr(s.pre, 1), vig: numOr(s.vig, 1),
-            pvMax: numOr(s.pvMax, 0), pvCurrent: numOr(s.pvCurrent, 0), pvTemp: numOr(s.pvTemp, 0),
-            peMax: numOr(s.peMax, 0), peCurrent: numOr(s.peCurrent, 0), peTemp: numOr(s.peTemp, 0),
-            sanMax: numOr(s.sanMax, 0), sanCurrent: numOr(s.sanCurrent, 0), sanTemp: numOr(s.sanTemp, 0),
-            defense: numOr(s.defense, 10), movement: numOr(s.movement, 9),
-            prestige: numOr(s.prestige, 0), affinity: strOrNull(s.affinity),
+            origin: strOrNull(s.origin, LIMITS.name),
+            className: strOrNull(s.className, LIMITS.name) ?? "combatente",
+            trail: strOrNull(s.trail, LIMITS.name),
+            nex: intIn(s.nex, 0, MAX_NEX, 5),
+            patente: strOrNull(s.patente, LIMITS.name) ?? "recruta",
+            agi: intIn(s.agi, 0, 20, 1), forca: intIn(s.forca, 0, 20, 1),
+            int: intIn(s.int, 0, 20, 1), pre: intIn(s.pre, 0, 20, 1),
+            vig: intIn(s.vig, 0, 20, 1),
+            pvMax: intIn(s.pvMax, 0, 100_000, 0),
+            pvCurrent: intIn(s.pvCurrent, -1_000, 100_000, 0),
+            pvTemp: intIn(s.pvTemp, 0, 100_000, 0),
+            peMax: intIn(s.peMax, 0, 100_000, 0),
+            peCurrent: intIn(s.peCurrent, 0, 100_000, 0),
+            peTemp: intIn(s.peTemp, 0, 100_000, 0),
+            sanMax: intIn(s.sanMax, 0, 100_000, 0),
+            sanCurrent: intIn(s.sanCurrent, 0, 100_000, 0),
+            sanTemp: intIn(s.sanTemp, 0, 100_000, 0),
+            defense: intIn(s.defense, 0, 200, 10),
+            movement: intIn(s.movement, 0, 1_000, 9),
+            prestige: intIn(s.prestige, 0, 100_000, 0),
+            affinity: strOrNull(s.affinity, LIMITS.name),
             skills: toJsonFieldOrNull(s.skills ?? {}),
             abilities: toJsonFieldOrNull(s.abilities ?? []),
             rituals: toJsonFieldOrNull(s.rituals ?? []),
@@ -55,7 +60,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ id: character.id }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/ordem/characters/import]", err);
-    return NextResponse.json({ error: "Erro ao importar personagem." }, { status: 500 });
+    return handleImportError(err, "[POST /api/ordem/characters/import]");
   }
 }

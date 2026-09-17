@@ -6,11 +6,9 @@ import { CLASSES } from "@/lib/tormenta/classes";
 import { MAX_LEVEL, buildLevelUpPlan, nextAttributeIncreaseAmount, type ChosenPower } from "@/lib/tormenta/leveling";
 import { racialAttrBonus, finalAttrs } from "@/lib/tormenta/creation";
 import { generateLevel1Build, pickLevelUpChoice } from "@/lib/tormenta/autoGenerate";
-import type { AttrKey, TormentaAttrs } from "@/lib/tormenta/data";
+import type { TormentaAttrs } from "@/lib/tormenta/data";
 
 interface Props {
-  userId: string;
-  systemId: string;
   onBack: () => void;
 }
 
@@ -19,7 +17,7 @@ const ACCENT_LIGHT = "#c94040";
 const ACCENT_DIM   = "rgba(160,24,24,0.12)";
 const ACCENT_BORD  = "rgba(160,24,24,0.35)";
 
-export function AutoGenerateForm({ userId, systemId, onBack }: Props) {
+export function AutoGenerateForm({ onBack }: Props) {
   const router = useRouter();
   const [level, setLevel] = useState(1);
   const [charName, setCharName] = useState("");
@@ -36,7 +34,7 @@ export function AutoGenerateForm({ userId, systemId, onBack }: Props) {
       const createRes = await fetch("/api/tormenta/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...build, userId, systemId }),
+        body: JSON.stringify(build),
       });
       const createJson = await createRes.json();
       if (!createRes.ok) throw new Error(createJson.error ?? "Erro ao gerar herói");

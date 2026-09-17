@@ -46,7 +46,7 @@ export default function GuardiaoPage() {
     if (!name || busy) return;
     setBusy(true);
     try {
-      const id = await createCampaign(name, newEra);
+      const id = await createCampaign(name, { era: newEra });
       setNewName("");
       setCreating(false);
       router.push(`/dashboard/cthulhu/mestre/cenario/${id}`);
@@ -190,8 +190,8 @@ export default function GuardiaoPage() {
                         </span>
                       </div>
                       <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        {c._count.cthulhuNpcs} NPC{c._count.cthulhuNpcs !== 1 ? "s" : ""} · {c._count.cthulhuCombatants} na ordem
-                        {c._count.cthulhuSessions ? ` · ${c._count.cthulhuSessions} sessão${c._count.cthulhuSessions !== 1 ? "ões" : ""}` : ""}
+                        {c.counts.npcs} NPC{c.counts.npcs !== 1 ? "s" : ""} · {c.counts.combatants} na ordem
+                        {c.counts.sessions ? ` · ${c.counts.sessions} sessão${c.counts.sessions !== 1 ? "ões" : ""}` : ""}
                       </p>
                     </div>
                   </div>

@@ -5,6 +5,7 @@ import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuCombatant } from "@/lib/cthulhu/cthulhuCampaignClient";
 import { CTHULHU_STATES, CTHULHU_STATE_BY_ID } from "@/lib/cthulhu/states";
 import "../../../cthulhu-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const A = "#a3b86c";
 const ADIM = "rgba(125,156,62,0.14)";
@@ -13,10 +14,13 @@ const ABORD = "rgba(125,156,62,0.32)";
 const btnBase: React.CSSProperties = { height: 26, background: "transparent", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: "pointer", fontSize: "0.72rem", fontWeight: 700, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", color: "var(--text-muted)", transition: "all 0.15s" };
 const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" };
 
-function parseConditions(json: string): string[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseConditions(json: unknown): string[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as string[]) : [];
+}
 
 export function CthulhuInitiative({ api }: { api: CthulhuApi }) {
-  const combatants = api.campaign.cthulhuCombatants;
+  const combatants = api.campaign.combatants;
   const [name, setName] = useState("");
   const [dexVal, setDexVal] = useState("");
   const [hp, setHp] = useState("");
@@ -34,7 +38,7 @@ export function CthulhuInitiative({ api }: { api: CthulhuApi }) {
     const hpNum = hp !== "" ? Number(hp) : null;
     const sanNum = san !== "" ? Number(san) : null;
     const mpNum = mp !== "" ? Number(mp) : null;
-    await api.addChild("combatants", { name: trimmed, dex, hp: hpNum, maxHp: hpNum, san: sanNum, maxSan: sanNum, mp: mpNum, maxMp: mpNum, conditions: "[]", isPlayer, order: combatants.length });
+    await api.addChild("combatants", { name: trimmed, dex, hp: hpNum, maxHp: hpNum, san: sanNum, maxSan: sanNum, mp: mpNum, maxMp: mpNum, conditions: [], isPlayer, order: combatants.length });
     setName(""); setDexVal(""); setHp(""); setSan(""); setMp(""); setIsPlayer(false);
   }
 
@@ -63,7 +67,7 @@ export function CthulhuInitiative({ api }: { api: CthulhuApi }) {
   function toggleCondition(c: CthulhuCombatant, id: string) {
     const cur = parseConditions(c.conditions);
     const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-    api.editChild("combatants", c.id, { conditions: JSON.stringify(next) });
+    api.editChild("combatants", c.id, { conditions: next });
   }
 
   function vital(c: CthulhuCombatant, field: "hp" | "san" | "mp", label: string, baseColor: string) {

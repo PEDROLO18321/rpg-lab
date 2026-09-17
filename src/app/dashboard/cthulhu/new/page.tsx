@@ -10,5 +10,5 @@ export default async function NewInvestigatorPage() {
   const system = await prisma.system.findUnique({ where: { slug: "cthulhu" } });
   if (!system) redirect("/dashboard/cthulhu");
 
-  return <NewCharacterEntry userId={session.user.id} systemId={system.id} />;
+  return <NewCharacterEntry />;
 }

@@ -4,7 +4,7 @@ import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 import { getSpellsForTradition, getSpellsForSchools, type Spell } from "@/lib/tormenta/spells";
 import type { MagicSchool } from "@/lib/tormenta/data";
 import type { WizardData } from "../CharacterWizard";
-import { ACCENT, ACCENT_LIGHT, ACCENT_DIM, ACCENT_BORD } from "../CharacterWizard";
+import { ACCENT_LIGHT, ACCENT_DIM, ACCENT_BORD } from "../CharacterWizard";
 import { Intro } from "./Intro";
 
 interface Props {

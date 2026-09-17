@@ -16,8 +16,8 @@ const areaStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", ba
 const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit" };
 
 export function CampaignStory({ api }: { api: DndApi }) {
-  const story = api.campaign.dndStory ?? EMPTY_STORY;
-  const sessions = api.campaign.dndSessions;
+  const story = api.campaign.story ?? EMPTY_STORY;
+  const sessions = api.campaign.sessions;
   const [draft, setDraft] = useState<DndStory>(story);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

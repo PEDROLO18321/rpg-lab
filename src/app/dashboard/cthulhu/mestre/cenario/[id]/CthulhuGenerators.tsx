@@ -29,7 +29,7 @@ export function CthulhuGenerators({ api }: { api: CthulhuApi }) {
   function push(label: string, value: string) { setRolls((r) => [{ label, value }, ...r].slice(0, 12)); }
   async function saveNpc() {
     if (!npc) return;
-    await api.addChild("npcs", { name: npc.name, personality: npc.trait, mythosTies: `Segredo: ${npc.secret}`, notes: `Motivação: ${npc.motive}.`, attacks: "[]" });
+    await api.addChild("npcs", { name: npc.name, personality: npc.trait, mythosTies: `Segredo: ${npc.secret}`, notes: `Motivação: ${npc.motive}.`, attacks: [] });
     setSaveMsg("✓ NPC adicionado à aba NPCs."); setTimeout(() => setSaveMsg(null), 3000);
   }
 

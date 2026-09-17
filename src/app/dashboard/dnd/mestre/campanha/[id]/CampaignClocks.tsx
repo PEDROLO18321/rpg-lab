@@ -29,7 +29,7 @@ function ClockDial({ segments, filled, color, size = 84 }: { segments: number; f
 }
 
 export function CampaignClocks({ api }: { api: DndApi }) {
-  const clocks = api.campaign.dndClocks;
+  const clocks = api.campaign.clocks;
   const [name, setName] = useState("");
   const [segments, setSegments] = useState(4);
   const [kind, setKind] = useState<DndClock["kind"]>("ameaca");

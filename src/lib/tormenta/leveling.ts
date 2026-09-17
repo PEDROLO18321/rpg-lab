@@ -26,7 +26,7 @@
 
 import { CLASS_BY_ID, type TormentaClass } from "./classes";
 import type { AttrKey } from "./data";
-import type { Power, PowerCategory } from "./powers/types";
+import type { PowerCategory } from "./powers/types";
 
 export const MAX_LEVEL = 20;
 

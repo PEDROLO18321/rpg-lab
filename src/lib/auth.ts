@@ -22,8 +22,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        // Emails são gravados em minúsculas no cadastro — normaliza na busca
+        // para que a caixa digitada no login não impeça o acesso.
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: (credentials.email as string).toLowerCase().trim() },
         });
 
         if (!user || !user.password) throw new InvalidCredentials();

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsCombatant } from "@/lib/starwars/starwarsCampaignClient";
 import { SW } from "../../../ui";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;
@@ -32,10 +33,13 @@ function rollD20() { return Math.floor(Math.random() * 20) + 1; }
 const btnBase: React.CSSProperties = { height: 26, background: "transparent", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: "pointer", fontSize: "0.72rem", fontWeight: 700, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", color: "var(--text-muted)", transition: "all 0.15s" };
 const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" };
 
-function parseConditions(json: string): string[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseConditions(json: unknown): string[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as string[]) : [];
+}
 
 export function InitiativeTracker({ api }: { api: StarWarsApi }) {
-  const combatants = api.campaign.starWarsCombatants;
+  const combatants = api.campaign.combatants;
   const [name, setName] = useState("");
   const [initVal, setInitVal] = useState("");
   const [pv, setPv] = useState("");
@@ -53,7 +57,7 @@ export function InitiativeTracker({ api }: { api: StarWarsApi }) {
     const peNum = pe !== "" ? Number(pe) : null;
     await api.addChild("combatants", {
       name: trimmed, initiative, pv: pvNum, maxPv: pvNum, pe: peNum, maxPe: peNum,
-      conditions: "[]", isPlayer, order: combatants.length,
+      conditions: [], isPlayer, order: combatants.length,
     });
     setName(""); setInitVal(""); setPv(""); setPe(""); setIsPlayer(false);
   }
@@ -83,7 +87,7 @@ export function InitiativeTracker({ api }: { api: StarWarsApi }) {
   function toggleCondition(c: StarWarsCombatant, id: string) {
     const cur = parseConditions(c.conditions);
     const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-    api.editChild("combatants", c.id, { conditions: JSON.stringify(next) });
+    api.editChild("combatants", c.id, { conditions: next });
   }
 
   function vital(c: StarWarsCombatant, field: "pv" | "pe", label: string) {

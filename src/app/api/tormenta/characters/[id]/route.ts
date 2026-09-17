@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
 
 export async function PATCH(
   req: NextRequest,
@@ -43,13 +44,13 @@ export async function PATCH(
     ...(num(defense)   !== undefined ? { defense }   : {}),
     ...(num(movement)  !== undefined ? { movement }  : {}),
     ...(notes !== undefined ? { notes } : {}),
-    ...(skills        !== undefined ? { skills: skills ? JSON.stringify(skills) : null } : {}),
-    ...(spellsKnown   !== undefined ? { spellsKnown: spellsKnown ? JSON.stringify(spellsKnown) : null } : {}),
-    ...(schoolsChosen !== undefined ? { schoolsChosen: schoolsChosen ? JSON.stringify(schoolsChosen) : null } : {}),
-    ...(weapons       !== undefined ? { weapons: weapons ? JSON.stringify(weapons) : null } : {}),
-    ...(equipment     !== undefined ? { equipment: equipment ? JSON.stringify(equipment) : null } : {}),
-    ...(conditions    !== undefined ? { conditions: conditions ? JSON.stringify(conditions) : null } : {}),
-    ...(background    !== undefined ? { background: background ? JSON.stringify(background) : null } : {}),
+    ...(skills        !== undefined ? { skills: toJsonFieldOrNull(skills) } : {}),
+    ...(spellsKnown   !== undefined ? { spellsKnown: toJsonFieldOrNull(spellsKnown) } : {}),
+    ...(schoolsChosen !== undefined ? { schoolsChosen: toJsonFieldOrNull(schoolsChosen) } : {}),
+    ...(weapons       !== undefined ? { weapons: toJsonFieldOrNull(weapons) } : {}),
+    ...(equipment     !== undefined ? { equipment: toJsonFieldOrNull(equipment) } : {}),
+    ...(conditions    !== undefined ? { conditions: toJsonFieldOrNull(conditions) } : {}),
+    ...(background    !== undefined ? { background: toJsonFieldOrNull(background) } : {}),
   };
 
   const charUpdates: Record<string, unknown> = {};

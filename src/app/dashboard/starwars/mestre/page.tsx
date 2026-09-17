@@ -126,7 +126,7 @@ export default function StarWarsMestrePage() {
               <Panel key={c.id} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
                 <h3 onClick={() => router.push(`/dashboard/starwars/mestre/campanha/${c.id}`)} style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", cursor: "pointer" }}>{c.name}</h3>
                 <p style={{ fontSize: "0.76rem", color: SW.textMuted }}>
-                  {c._count.starWarsNpcs} NPCs · {c._count.starWarsCombatants} combatentes · {c._count.starWarsSessions} sessões
+                  {c.counts.npcs} NPCs · {c.counts.combatants} combatentes · {c.counts.sessions} sessões
                 </p>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => router.push(`/dashboard/starwars/mestre/campanha/${c.id}`)} style={{ flex: 1, padding: "8px 12px", background: SW.accentDim, border: `1px solid ${SW.accentBord}`, borderRadius: 6, color: SW.accentLight, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>Abrir</button>

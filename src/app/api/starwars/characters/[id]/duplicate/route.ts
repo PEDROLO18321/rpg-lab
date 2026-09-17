@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { jsonIn } from "@/lib/characterTransfer";
 
 export async function POST(
   _req: NextRequest,
@@ -27,16 +28,16 @@ export async function POST(
         ? {
             starWarsSheet: {
               create: {
-                species: s.species, planet: s.planet, planetSkillChoice: s.planetSkillChoice, path: s.path, classes: s.classes,
-                level: s.level, xp: s.xp, humanAttrChoice: s.humanAttrChoice,
+                species: s.species, planet: s.planet, planetSkillChoice: s.planetSkillChoice, path: s.path, classes: jsonIn(s.classes),
+                level: s.level, xp: s.xp, humanAttrChoice: jsonIn(s.humanAttrChoice),
                 agi: s.agi, int: s.int, forca: s.forca, vig: s.vig, pre: s.pre, sen: s.sen,
                 pvMax: s.pvMax, pvClassSum: s.pvClassSum, pvLevelGain: s.pvLevelGain, pvCurrent: s.pvCurrent, pvTemp: s.pvTemp,
                 peMax: s.peMax, peCurrent: s.peCurrent, peTemp: s.peTemp,
                 ppMax: s.ppMax, ppCurrent: s.ppCurrent, ppTemp: s.ppTemp,
                 sabreForm: s.sabreForm,
-                skills: s.skills, classPowers: s.classPowers, generalPowers: s.generalPowers,
-                weapons: s.weapons, equipment: s.equipment, conditions: s.conditions,
-                background: s.background, notes: s.notes,
+                skills: jsonIn(s.skills), classPowers: jsonIn(s.classPowers), generalPowers: jsonIn(s.generalPowers),
+                weapons: jsonIn(s.weapons), equipment: jsonIn(s.equipment), conditions: jsonIn(s.conditions),
+                background: jsonIn(s.background), notes: s.notes,
               },
             },
           }

@@ -30,7 +30,7 @@ function ClockDial({ segments, filled, color, size = 84 }: { segments: number; f
 }
 
 export function CampaignClocks({ api }: { api: StarWarsApi }) {
-  const clocks = api.campaign.starWarsClocks;
+  const clocks = api.campaign.clocks;
   const [name, setName] = useState("");
   const [segments, setSegments] = useState(4);
   const [kind, setKind] = useState<StarWarsClock["kind"]>("ameaca");

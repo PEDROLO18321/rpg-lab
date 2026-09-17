@@ -17,8 +17,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function OrdemClues({ api }: { api: OperacaoApi }) {
-  const clues = api.campaign.ordemClues;
-  const sessions = api.campaign.ordemSessions;
+  const clues = api.campaign.clues;
+  const sessions = api.campaign.sessions;
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [source, setSource] = useState("");
@@ -94,7 +94,7 @@ export function OrdemClues({ api }: { api: OperacaoApi }) {
   );
 }
 
-function ClueEditor({ api, clue, sessions }: { api: OperacaoApi; clue: OrdemClue; sessions: OperacaoApi["campaign"]["ordemSessions"] }) {
+function ClueEditor({ api, clue, sessions }: { api: OperacaoApi; clue: OrdemClue; sessions: OperacaoApi["campaign"]["sessions"] }) {
   const [d, setD] = useState(clue);
   const set = (p: Partial<OrdemClue>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<OrdemClue>) => api.editChild("clues", clue.id, p);

@@ -317,7 +317,7 @@ export default function MestrePage() {
                         {c.name}
                       </p>
                       <p style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        {c._count.dndNpcs} NPC{c._count.dndNpcs !== 1 ? "s" : ""} · {c._count.dndCombatants} combatente{c._count.dndCombatants !== 1 ? "s" : ""}
+                        {c.counts.npcs} NPC{c.counts.npcs !== 1 ? "s" : ""} · {c.counts.combatants} combatente{c.counts.combatants !== 1 ? "s" : ""}
                       </p>
                     </div>
                   </div>

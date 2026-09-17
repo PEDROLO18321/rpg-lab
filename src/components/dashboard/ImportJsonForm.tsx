@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Props {
-  systemId: string;
   systemLabel: string;
   expectedFormat: string;
   importUrl: string;
@@ -13,7 +12,7 @@ interface Props {
   onBack: () => void;
 }
 
-export function ImportJsonForm({ systemId, systemLabel, expectedFormat, importUrl, redirectBase, accent, onBack }: Props) {
+export function ImportJsonForm({ systemLabel, expectedFormat, importUrl, redirectBase, accent, onBack }: Props) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -50,7 +49,7 @@ export function ImportJsonForm({ systemId, systemLabel, expectedFormat, importUr
       const res = await fetch(importUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemId, payload }),
+        body: JSON.stringify({ payload }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erro ao importar personagem");

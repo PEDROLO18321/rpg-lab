@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { authedSystemContext } from "@/lib/apiAuth";
 import { ATTR_KEYS, type StarWarsAttrs, type AttrKey } from "@/lib/starwars/data";
 import { SPECIES_BY_ID } from "@/lib/starwars/species";
 import { CLASS_BY_ID } from "@/lib/starwars/classes";
@@ -9,17 +11,20 @@ import { getClassAbilities } from "@/lib/starwars/powers/registry";
 import type { ChosenPower } from "@/lib/starwars/powers/types";
 
 export async function POST(req: NextRequest) {
+  const ctx = await authedSystemContext("starwars");
+  if (!ctx.ok) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
+
   try {
     const body = await req.json();
     const {
-      userId, systemId, charName,
+      charName,
       speciesId, humanChoice,
       planetId, planetSkillChoice, pathId, classId, classAbilityChoice,
       attrBases, skillChoices,
       desc,
     } = body;
 
-    if (!userId || !systemId || !charName?.trim() || !speciesId || !planetId || !pathId || !classId) {
+    if (!charName?.trim() || !speciesId || !planetId || !pathId || !classId) {
       return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
     }
 
@@ -59,8 +64,8 @@ export async function POST(req: NextRequest) {
 
     const character = await prisma.character.create({
       data: {
-        userId,
-        systemId,
+        userId: ctx.userId,
+        systemId: ctx.systemId,
         name: charName.trim(),
         notes: null,
         starWarsSheet: {
@@ -69,10 +74,10 @@ export async function POST(req: NextRequest) {
             planet: planetId,
             planetSkillChoice: chosenPlanetSkill,
             path: pathId,
-            classes: JSON.stringify({ [classId]: 1 }),
+            classes: { [classId]: 1 },
             level: 1,
             xp: 0,
-            humanAttrChoice: humanChoice ? JSON.stringify(humanChoice) : null,
+            humanAttrChoice: toJsonFieldOrNull(humanChoice),
             agi: attrs.agi,
             int: attrs.int,
             forca: attrs.forca,
@@ -87,10 +92,10 @@ export async function POST(req: NextRequest) {
             peCurrent: vitals.peMax,
             ppMax: vitals.ppMax,
             ppCurrent: vitals.ppMax,
-            skills: JSON.stringify(skillsData),
-            classPowers: JSON.stringify(classPowers),
-            generalPowers: JSON.stringify([]),
-            background: desc ? JSON.stringify(desc) : null,
+            skills: skillsData,
+            classPowers: toJsonFieldOrNull(classPowers),
+            generalPowers: [],
+            background: toJsonFieldOrNull(desc),
           },
         },
       },

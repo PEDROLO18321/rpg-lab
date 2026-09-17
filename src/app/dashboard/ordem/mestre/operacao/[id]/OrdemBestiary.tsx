@@ -5,6 +5,14 @@ import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import { BESTIARY, ORDEM_ALLIES, type Element, type OrdemCreature } from "@/lib/ordem/bestiary";
 import "../../../ordem-responsive.css";
 
+// Fora do componente: a aleatoriedade roda em handlers de evento, não no
+// render — mantém o componente puro para o React Compiler.
+/** Rolagem de 1d20. */
+function rollD20(): number {
+  return Math.floor(Math.random() * 20) + 1;
+}
+
+
 const AL = "#e8e8ef";
 const AD = "rgba(255,255,255,0.1)";
 const AB = "rgba(255,255,255,0.28)";
@@ -44,11 +52,11 @@ export function OrdemBestiary({ api }: Props) {
   const [showAllies, setShowAllies] = useState(false);
 
   async function addToInitiative(creature: OrdemCreature) {
-    const init = addInit !== "" ? Number(addInit) : creature.agi + Math.floor(Math.random() * 20) + 1;
+    const init = addInit !== "" ? Number(addInit) : creature.agi + rollD20();
     await api.addChild("combatants", {
       name: creature.name, init, pv: creature.pv, maxPv: creature.pv,
       pe: null, maxPe: null, san: null, maxSan: null, rd: 0, isPlayer: false,
-      conditions: "[]", order: api.campaign.ordemCombatants.length,
+      conditions: [], order: api.campaign.combatants.length,
     });
     setAddTarget(null);
     setAddInit("");

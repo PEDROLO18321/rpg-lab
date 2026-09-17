@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
 
 export async function DELETE(
   _req: NextRequest,
@@ -69,14 +70,14 @@ export async function PATCH(
     ...(origin    !== undefined ? { origin }    : {}),
     ...(className !== undefined ? { className } : {}),
     ...(notes     !== undefined ? { notes }     : {}),
-    ...(skills     !== undefined ? { skills:     skills     ? JSON.stringify(skills)     : null } : {}),
-    ...(abilities  !== undefined ? { abilities:  abilities  ? JSON.stringify(abilities)  : null } : {}),
-    ...(rituals    !== undefined ? { rituals:    rituals    ? JSON.stringify(rituals)    : null } : {}),
-    ...(inventory  !== undefined ? { inventory:  inventory  ? JSON.stringify(inventory)  : null } : {}),
-    ...(weapons    !== undefined ? { weapons:    weapons    ? JSON.stringify(weapons)    : null } : {}),
-    ...(background !== undefined ? { background: background ? JSON.stringify(background) : null } : {}),
-    ...(conditions !== undefined ? { conditions: conditions ? JSON.stringify(conditions) : null } : {}),
-    ...(insanity   !== undefined ? { insanity:   insanity   ? JSON.stringify(insanity)   : null } : {}),
+    ...(skills     !== undefined ? { skills:     toJsonFieldOrNull(skills) } : {}),
+    ...(abilities  !== undefined ? { abilities:  toJsonFieldOrNull(abilities) } : {}),
+    ...(rituals    !== undefined ? { rituals:    toJsonFieldOrNull(rituals) } : {}),
+    ...(inventory  !== undefined ? { inventory:  toJsonFieldOrNull(inventory) } : {}),
+    ...(weapons    !== undefined ? { weapons:    toJsonFieldOrNull(weapons) } : {}),
+    ...(background !== undefined ? { background: toJsonFieldOrNull(background) } : {}),
+    ...(conditions !== undefined ? { conditions: toJsonFieldOrNull(conditions) } : {}),
+    ...(insanity   !== undefined ? { insanity:   toJsonFieldOrNull(insanity) } : {}),
   };
 
   const charUpdates: Record<string, unknown> = {};

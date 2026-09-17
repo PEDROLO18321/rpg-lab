@@ -7,7 +7,6 @@ import { emptyProgression } from "@/lib/ordem/leveling";
 import { generateLevel1Build, pickNexUpgrade, type OrdemSnapshot } from "@/lib/ordem/autoGenerate";
 
 interface Props {
-  systemId: string;
   onBack: () => void;
 }
 
@@ -15,7 +14,7 @@ const ACCENT      = "#ffffff";
 const ACCENT_DIM  = "rgba(255,255,255,0.14)";
 const ACCENT_BORD = "rgba(255,255,255,0.32)";
 
-export function AutoGenerateForm({ systemId, onBack }: Props) {
+export function AutoGenerateForm({ onBack }: Props) {
   const router = useRouter();
   const [nex, setNex] = useState(5);
   const [charName, setCharName] = useState("");
@@ -35,7 +34,7 @@ export function AutoGenerateForm({ systemId, onBack }: Props) {
       const createRes = await fetch("/api/ordem/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...build, systemId }),
+        body: JSON.stringify(build),
       });
       const createJson = await createRes.json();
       if (!createRes.ok) throw new Error(createJson.error ?? "Erro ao gerar agente");

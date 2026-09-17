@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DndApi } from "@/lib/dnd/useDndCampaign";
 import type { DndNpc, NPCAttack } from "@/lib/dnd/dndCampaignClient";
 import "../../../dnd-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const RACES = ["Humano", "Elfo", "Anão", "Halfling", "Gnomo", "Meio-Elfo", "Meio-Orc", "Tiefling", "Draconato", "Aasimar", "Orc", "Goblin"];
 const ROLES = ["Aldeão", "Guarda da Cidade", "Mercador", "Sacerdote", "Taberneiro", "Ladrão", "Nobre", "Mago", "Guerreiro", "Ladino", "Ferreiro", "Fazendeiro", "Curandeiro", "Explorador", "Espião", "Cultista", "Mendigo", "Artesão", "Pescador", "Soldado", "Cavaleiro", "Mensageiro", "Bardo", "Herói"];
@@ -31,7 +32,10 @@ const ATTR_LABELS: { key: "str" | "dex" | "con" | "int" | "wis" | "cha"; label: 
   { key: "int", label: "INT" }, { key: "wis", label: "SAB" }, { key: "cha", label: "CAR" },
 ];
 
-function parseAttacks(json: string): NPCAttack[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseAttacks(json: unknown): NPCAttack[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as NPCAttack[]) : [];
+}
 function emptyNpc(): NpcForm { return { name: "", race: "", role: "", alignment: "", trait: "", appearance: "", notes: "", hp: null, ac: null, str: null, dex: null, con: null, int: null, wis: null, cha: null, attacks: [] }; }
 function randomNpc(): NpcForm {
   return { name: rand(NAMES), race: rand(RACES), role: rand(ROLES), alignment: rand(ALIGNMENTS), trait: rand(TRAITS), appearance: rand(APPEARANCES), notes: "",
@@ -39,7 +43,7 @@ function randomNpc(): NpcForm {
 }
 
 export function NpcCreator({ api }: { api: DndApi }) {
-  const npcs = api.campaign.dndNpcs;
+  const npcs = api.campaign.npcs;
   const [mode, setMode] = useState<"random" | "manual">("random");
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -51,7 +55,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
   function switchMode(m: "random" | "manual") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
   async function saveNpc() {
     if (!form.name.trim()) return;
-    await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) });
+    await api.addChild("npcs", { ...form });
     setForm(mode === "random" ? randomNpc() : emptyNpc());
   }
   function deleteNpc(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
@@ -59,7 +63,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
   function removeAttack(i: number) { setForm({ ...form, attacks: form.attacks.filter((_, j) => j !== i) }); }
   async function addToInitiative(npc: DndNpc) {
     const initiative = addInitValue !== "" ? Number(addInitValue) : rollD20();
-    await api.addChild("combatants", { name: npc.name, initiative, hp: npc.hp, maxHp: npc.hp, tempHp: 0, ac: npc.ac, conditions: "[]", concentration: false, isPlayer: false, order: api.campaign.dndCombatants.length });
+    await api.addChild("combatants", { name: npc.name, initiative, hp: npc.hp, maxHp: npc.hp, tempHp: 0, ac: npc.ac, conditions: [], concentration: false, isPlayer: false, order: api.campaign.combatants.length });
     setAddInitTarget(null); setAddInitValue("");
   }
 

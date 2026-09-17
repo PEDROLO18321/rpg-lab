@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuInsanityRecord } from "@/lib/cthulhu/cthulhuCampaignClient";
 import "../../../cthulhu-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const G = "#7d9c3e";
 const GL = "#a3b86c";
@@ -34,7 +35,10 @@ const labelStyle: React.CSSProperties = { fontSize: "0.7rem", fontWeight: 700, c
 const inputStyle: React.CSSProperties = { width: "100%", padding: "8px 11px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit" };
 const numStyle: React.CSSProperties = { width: 70, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit", textAlign: "center" };
 
-function parseTags(json: string): string[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseTags(json: unknown): string[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as string[]) : [];
+}
 // Indefinida: perdeu 1/5+ da SAN que tinha no início da sessão (não da SAN máxima).
 function computeStatus(sessionLoss: number, sanAtSessionStart: number): Status {
   if (sessionLoss >= Math.floor(sanAtSessionStart / 5)) return "indef_insane";
@@ -43,7 +47,7 @@ function computeStatus(sessionLoss: number, sanAtSessionStart: number): Status {
 }
 
 export function CthulhuInsanity({ api }: { api: CthulhuApi }) {
-  const records = api.campaign.cthulhuInsanity;
+  const records = api.campaign.insanity;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [phobiaInput, setPhobiaInput] = useState("");
   const [maniaInput, setManiaInput] = useState("");
@@ -62,7 +66,7 @@ export function CthulhuInsanity({ api }: { api: CthulhuApi }) {
     const sanAtSessionStart = r.currentSan + r.sessionLoss;
     patch(r.id, { currentSan: next, sessionLoss: newLoss, status: computeStatus(newLoss, sanAtSessionStart) });
   }
-  function setTags(r: CthulhuInsanityRecord, field: "phobias" | "manias", list: string[]) { patch(r.id, { [field]: JSON.stringify(list) }); }
+  function setTags(r: CthulhuInsanityRecord, field: "phobias" | "manias", list: string[]) { patch(r.id, { [field]: list }); }
   function addTag(r: CthulhuInsanityRecord, field: "phobias" | "manias", value: string) {
     const v = value.trim(); if (!v) return;
     const cur = parseTags(r[field]); if (cur.includes(v)) return;

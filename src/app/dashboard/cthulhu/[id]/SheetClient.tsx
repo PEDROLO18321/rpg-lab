@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import Link from "next/link";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import {
   SKILLS, ATTR_ABBR, ATTR_LABELS, OCCUPATIONS, WEAPONS,
   getSkillBase, half, fifth, calcDamageBonus, calcCorpo,
-  resolveCheck, rollWeaponDamage, rollExpr, rollImprovement, CHECK_LABELS,
+  resolveCheck, rollWeaponDamage, rollImprovement, CHECK_LABELS,
   type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon,
 } from "@/lib/cthulhu/data";
+import { parseJsonField } from "@/lib/characterTransfer";
 import "../cthulhu-responsive.css";
 
 const ACCENT       = "#7d9c3e";
@@ -84,8 +84,8 @@ export function SheetClient({ character }: Props) {
   const [sanTemp, setSanTemp] = useState(s.sanTemp ?? 0);
   const [pmTemp,  setPmTemp]  = useState(s.pmTemp  ?? 0);
 
-  const [skillPoints, setSkillPoints] = useState<Record<string, number>>(s.skills ? JSON.parse(s.skills) : {});
-  const [marked, setMarked] = useState<string[]>(s.skillChecks ? JSON.parse(s.skillChecks) : []);
+  const [skillPoints, setSkillPoints] = useState<Record<string, number>>(() => parseJsonField<Record<string, number>>(s.skills, {}));
+  const [marked, setMarked] = useState<string[]>(() => parseJsonField<string[]>(s.skillChecks, []));
 
   const [editMode, setEditMode] = useState(false);
   const [saving,   setSaving]   = useState(false);
@@ -94,8 +94,8 @@ export function SheetClient({ character }: Props) {
 
   const [portrait,       setPortrait]       = useState<string | null>(character.portraitUrl ?? null);
   const [equipmentText,  setEquipmentText]  = useState(s.equipment ?? "");
-  const [weaponIds,      setWeaponIds]      = useState<string[]>(s.weapons ? JSON.parse(s.weapons) : []);
-  const [editBg,         setEditBg]         = useState<Record<string, string>>(s.background ? JSON.parse(s.background) : {});
+  const [weaponIds,      setWeaponIds]      = useState<string[]>(() => parseJsonField<string[]>(s.weapons, []));
+  const [editBg,         setEditBg]         = useState<Record<string, string>>(() => parseJsonField<Record<string, string>>(s.background, {}));
   const [weaponPickerOpen, setWeaponPickerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -108,7 +108,7 @@ export function SheetClient({ character }: Props) {
   type InsanityData = { sessionLoss: number; status: "normal" | "temp_insane" | "indef_insane"; phobias: string[]; manias: string[]; notes: string };
   const PHOBIAS_LIST = ["Acrofobia (alturas)", "Agorafobia (espaços abertos)", "Aracnofobia (aranhas)", "Claustrofobia (espaços fechados)", "Cinofobia (cães)", "Entomofobia (insetos)", "Hematofobia (sangue)", "Hidrofobia (água profunda)", "Necrofobia (cadáveres)", "Noctifobia (escuridão)", "Ofidiofobia (cobras)", "Talassofobia (oceano profundo)", "Xenofobia (estranhos/alienígenas)", "Medo de fogo", "Medo de sons estranhos", "Medo de símbolos do Mythos"];
   const MANIAS_LIST  = ["Ablutomania (lavagem compulsiva)", "Aritmomania (contar objetos)", "Bibliofilia (coletar livros)", "Cleptomania (roubar)", "Dipsomania (beber álcool)", "Fascínio por fogo", "Fascínio por símbolos ocultos", "Grafofilia (escrever compulsivamente)", "Hipocondria", "Obsessão por datas e horários", "Obsessão por um Grande Antigo", "Paranoia generalizada", "Sadismo", "Xenofilia (fascínio por estranhos)"];
-  const parseInsanity = (): InsanityData => { try { return s.insanityData ? JSON.parse(s.insanityData) : { sessionLoss: 0, status: "normal", phobias: [], manias: [], notes: "" }; } catch { return { sessionLoss: 0, status: "normal", phobias: [], manias: [], notes: "" }; } };
+  const parseInsanity = (): InsanityData => parseJsonField<InsanityData>(s.insanityData, { sessionLoss: 0, status: "normal", phobias: [], manias: [], notes: "" });
   const [insanity, setInsanityRaw] = useState<InsanityData>(parseInsanity);
   const [phobiaInput, setPhobiaInput] = useState("");
   const [maniaInput, setManiaInput] = useState("");
@@ -137,7 +137,7 @@ export function SheetClient({ character }: Props) {
   }
 
   type CthulhuSpell = { id: string; name: string; mpCost: number; sanCost: string; castingTime: string; notes: string };
-  const parseSpells = (): CthulhuSpell[] => { try { return s.spellsData ? JSON.parse(s.spellsData) : []; } catch { return []; } };
+  const parseSpells = (): CthulhuSpell[] => parseJsonField<CthulhuSpell[]>(s.spellsData, []);
   const [spells, setSpellsRaw] = useState<CthulhuSpell[]>(parseSpells);
   const [spellOpen, setSpellOpen] = useState<"closed" | "manual" | "grimoire">("closed");
   const [spellForm, setSpellForm] = useState<Omit<CthulhuSpell, "id">>({ name: "", mpCost: 1, sanCost: "1", castingTime: "1 rodada", notes: "" });

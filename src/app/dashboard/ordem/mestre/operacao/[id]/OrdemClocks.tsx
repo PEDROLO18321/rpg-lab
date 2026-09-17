@@ -37,7 +37,7 @@ function ClockDial({ segments, filled, color, size = 84 }: { segments: number; f
 }
 
 export function OrdemClocks({ api }: { api: OperacaoApi }) {
-  const clocks = api.campaign.ordemClocks;
+  const clocks = api.campaign.clocks;
   const [name, setName] = useState("");
   const [segments, setSegments] = useState(4);
   const [kind, setKind] = useState<OrdemClock["kind"]>("ameaca");

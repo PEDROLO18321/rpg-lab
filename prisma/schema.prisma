@@ -137,8 +137,8 @@ model DndSheet {
   gp Int @default(0)
   pp Int @default(0)
 
-  conditions     String? // JSON: string[]
-  spellSlotsUsed String? // JSON: {"1": 0, "2": 0, ...} slots used per level
+  conditions     Json? // JSON: string[]
+  spellSlotsUsed Json? // JSON: {"1": 0, "2": 0, ...} slots used per level
   spellAbility   String? // atributo de conjuração escolhido (sobrepõe o padrão da classe)
 
   classes   DndClass[]
@@ -240,14 +240,14 @@ model TormentaSheet {
   movement Int @default(9)
   money    Int @default(0) // T$
 
-  skills        String? // JSON: Record<skillId, boolean> (treinada)
-  schoolsChosen String? // JSON: string[] (Bardo/Druida — 3 escolas)
-  spellsKnown   String? // JSON: string[] (ids de magia)
-  powers        String? // JSON: ChosenPower[] (poderes escolhidos ao subir de nível, ver lib/tormenta/leveling.ts)
-  weapons       String? // JSON: item list
-  equipment     String? // JSON: item list (armadura, escudo, itens gerais)
-  conditions    String? // JSON: string[]
-  background    String? // JSON: { appearance, personality, history, objective }
+  skills        Json? // JSON: Record<skillId, boolean> (treinada)
+  schoolsChosen Json? // JSON: string[] (Bardo/Druida — 3 escolas)
+  spellsKnown   Json? // JSON: string[] (ids de magia)
+  powers        Json? // JSON: ChosenPower[] (poderes escolhidos ao subir de nível, ver lib/tormenta/leveling.ts)
+  weapons       Json? // JSON: item list
+  equipment     Json? // JSON: item list (armadura, escudo, itens gerais)
+  conditions    Json? // JSON: string[]
+  background    Json? // JSON: { appearance, personality, history, objective }
   notes         String?
 }
 
@@ -286,16 +286,16 @@ model CthulhuSheet {
   pmTemp  Int @default(0)
 
   // Desenvolvimento: ids de perícias marcadas como usadas com sucesso (JSON string[])
-  skillChecks String?
+  skillChecks Json?
 
   // Dados complexos como JSON
-  skills       String? // JSON: Record<string, number>
-  background   String? // JSON: { ideology?, people?, places?, items?, traits?, keyConn? }
-  weapons      String? // JSON: weapon list
+  skills       Json? // JSON: Record<string, number>
+  background   Json? // JSON: { ideology?, people?, places?, items?, traits?, keyConn? }
+  weapons      Json? // JSON: weapon list
   equipment    String? // JSON: item list
   notes        String?
-  insanityData String? // JSON: { sessionLoss, status, phobias, manias, notes }
-  spellsData   String? // JSON: CthulhuSpell[]
+  insanityData Json? // JSON: { sessionLoss, status, phobias, manias, notes }
+  spellsData   Json? // JSON: CthulhuSpell[]
 }
 
 // ─── ORDEM PARANORMAL RPG ────────────────────────────────────────────────────
@@ -334,14 +334,14 @@ model OrdemSheet {
   affinity String? // elemento de afinidade (NEX 50%+)
 
   // Dados complexos como JSON (espelha CthulhuSheet)
-  skills     String? // JSON: Record<skillId, "treinado"|"veterano"|"expert">
-  abilities  String? // JSON: Ability[] (poderes de classe/origem/trilha)
-  rituals    String? // JSON: Ritual[]
-  inventory  String? // JSON: Item[]
-  weapons    String? // JSON: Weapon[]
-  background String? // JSON: { name, gender, age, appearance, personality, history, objective }
-  conditions String? // JSON: string[]
-  insanity   String? // JSON: { traumas, phobias, manias, notes }
+  skills     Json? // JSON: Record<skillId, "treinado"|"veterano"|"expert">
+  abilities  Json? // JSON: Ability[] (poderes de classe/origem/trilha)
+  rituals    Json? // JSON: Ritual[]
+  inventory  Json? // JSON: Item[]
+  weapons    Json? // JSON: Weapon[]
+  background Json? // JSON: { name, gender, age, appearance, personality, history, objective }
+  conditions Json? // JSON: string[]
+  insanity   Json? // JSON: { traumas, phobias, manias, notes }
   notes      String?
 }
 
@@ -355,10 +355,10 @@ model StarWarsSheet {
   planet   String? // slug do planeta de origem
   planetSkillChoice String? // perícia escolhida pelo jogador pra receber o +5 da Habilidade Natal (quando o planeta lista 2 opções)
   path     String? // "luz" | "neutro" | "sombrio"
-  classes  String  @default("{}") // JSON: Record<classId, level> (multiclasse)
+  classes  Json  @default("{}") // JSON: Record<classId, level> (multiclasse)
   level    Int     @default(1) // nível total (soma das classes)
   xp       Int     @default(0)
-  humanAttrChoice String? // JSON: atributos escolhidos pelo Humano (+2/+2/+1/+1/+1/-1)
+  humanAttrChoice Json? // JSON: atributos escolhidos pelo Humano (+2/+2/+1/+1/+1/-1)
 
   agi Int @default(1)
   int Int @default(1)
@@ -380,15 +380,15 @@ model StarWarsSheet {
   ppTemp    Int @default(0)
 
   sabreForm String? // forma de sabre especialista escolhida (5º círculo), se aplicável
-  unlockedProphecies String @default("[]") // JSON: string[] (ids das classes de Profecia desbloqueadas por senha — "cantico_alvorecer" | "litania_queda")
+  unlockedProphecies Json @default("[]") // JSON: string[] (ids das classes de Profecia desbloqueadas por senha — "cantico_alvorecer" | "litania_queda")
 
-  skills       String? // JSON: Record<skillId, grau> (inexperiente|iniciante|treinado|expert|veterano|mestre)
-  classPowers  String? // JSON: ChosenPower[] (habilidades de classe escolhidas por nível)
-  generalPowers String? // JSON: string[] (ids de Poderes Gerais aprendidos)
-  equipment    String? // JSON: item list
-  weapons      String? // JSON: weapon list
-  conditions   String? // JSON: string[]
-  background   String? // JSON: { organization, appearance, personality, history, objective }
+  skills       Json? // JSON: Record<skillId, grau> (inexperiente|iniciante|treinado|expert|veterano|mestre)
+  classPowers  Json? // JSON: ChosenPower[] (habilidades de classe escolhidas por nível)
+  generalPowers Json? // JSON: string[] (ids de Poderes Gerais aprendidos)
+  equipment    Json? // JSON: item list
+  weapons      Json? // JSON: weapon list
+  conditions   Json? // JSON: string[]
+  background   Json? // JSON: { organization, appearance, personality, history, objective }
   notes        String?
 }
 
@@ -489,7 +489,7 @@ model DndNpc {
   int        Int?
   wis        Int?
   cha        Int?
-  attacks    String   @default("[]") // JSON NPCAttack[]
+  attacks    Json   @default("[]") // JSON NPCAttack[]
   createdAt  DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -505,7 +505,7 @@ model DndCombatant {
   maxHp         Int?
   tempHp        Int     @default(0)
   ac            Int?
-  conditions    String  @default("[]") // JSON string[]
+  conditions    Json  @default("[]") // JSON string[]
   concentration Boolean @default(false)
   isPlayer      Boolean @default(false)
   order         Int     @default(0)
@@ -601,7 +601,7 @@ model CthulhuNpc {
   edu         Int?
   hp          Int?
   san         Int?
-  attacks     String   @default("[]") // JSON CthulhuNPCAttack[]
+  attacks     Json   @default("[]") // JSON CthulhuNPCAttack[]
   createdAt   DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -619,7 +619,7 @@ model CthulhuCombatant {
   maxSan      Int?
   mp          Int?
   maxMp       Int?
-  conditions  String  @default("[]") // JSON string[]
+  conditions  Json  @default("[]") // JSON string[]
   isPlayer    Boolean @default(false)
   order       Int     @default(0)
 
@@ -661,8 +661,8 @@ model CthulhuInsanityRecord {
   maxSan           Int     @default(0)
   sessionLoss      Int     @default(0)
   status           String  @default("normal") // normal|temp_insane|indef_insane
-  phobias          String  @default("[]") // JSON string[]
-  manias           String  @default("[]") // JSON string[]
+  phobias          Json  @default("[]") // JSON string[]
+  manias           Json  @default("[]") // JSON string[]
   notes            String  @default("")
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -730,7 +730,7 @@ model OrdemNpc {
   pe             Int?
   san            Int?
   defense        Int?
-  attacks        String   @default("[]") // JSON: OrdemNPCAttack[]
+  attacks        Json   @default("[]") // JSON: OrdemNPCAttack[]
   createdAt      DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -750,7 +750,7 @@ model OrdemCombatant {
   maxSan      Int?
   rd          Int     @default(0) // redução de dano
   isPlayer    Boolean @default(false)
-  conditions  String  @default("[]") // JSON: string[] (ids de condição)
+  conditions  Json  @default("[]") // JSON: string[] (ids de condição)
   order       Int     @default(0)
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -791,7 +791,7 @@ model OrdemSanityRecord {
   maxSan      Int     @default(0)
   sessionLoss Int     @default(0)
   status      String  @default("normal") // normal|perturbado|enlouquecido
-  traumas     String  @default("[]") // JSON: string[]
+  traumas     Json  @default("[]") // JSON: string[]
   notes       String  @default("")
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -867,7 +867,7 @@ model TormentaNpc {
   int         Int?
   sab         Int?
   car         Int?
-  attacks     String   @default("[]") // JSON NPCAttack[]
+  attacks     Json   @default("[]") // JSON NPCAttack[]
   createdAt   DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -884,7 +884,7 @@ model TormentaCombatant {
   pm          Int?
   maxPm       Int?
   defense     Int?
-  conditions  String  @default("[]") // JSON string[]
+  conditions  Json  @default("[]") // JSON string[]
   isPlayer    Boolean @default(false)
   order       Int     @default(0)
 
@@ -973,8 +973,8 @@ model StarWarsNpc {
   vig         Int?
   pre         Int?
   sen         Int?
-  attacks     String   @default("[]") // JSON NPCAttack[]
-  skills      String   @default("[]") // JSON NPCSkill[]
+  attacks     Json   @default("[]") // JSON NPCAttack[]
+  skills      Json   @default("[]") // JSON NPCSkill[]
   createdAt   DateTime @default(now())
 
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
@@ -990,7 +990,7 @@ model StarWarsCombatant {
   maxPv       Int?
   pe          Int?
   maxPe       Int?
-  conditions  String  @default("[]") // JSON string[]
+  conditions  Json  @default("[]") // JSON string[]
   isPlayer    Boolean @default(false)
   order       Int     @default(0)
 

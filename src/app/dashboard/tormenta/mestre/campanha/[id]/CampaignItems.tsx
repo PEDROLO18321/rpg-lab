@@ -34,8 +34,8 @@ function blankItem() {
 }
 
 export function CampaignItems({ api }: { api: TormentaApi }) {
-  const items = api.campaign.tormentaItems;
-  const sessions = api.campaign.tormentaSessions;
+  const items = api.campaign.items;
+  const sessions = api.campaign.sessions;
   const [filterType, setFilterType] = useState<ItemType | "todos">("todos");
   const [filterSession, setFilterSession] = useState<string>("todos");
   const [adding, setAdding] = useState(false);
@@ -122,7 +122,7 @@ export function CampaignItems({ api }: { api: TormentaApi }) {
   );
 }
 
-function ItemEditor({ api, item, sessions, onDeleted }: { api: TormentaApi; item: TormentaCampaignItem; sessions: TormentaApi["campaign"]["tormentaSessions"]; onDeleted: () => void }) {
+function ItemEditor({ api, item, sessions, onDeleted }: { api: TormentaApi; item: TormentaCampaignItem; sessions: TormentaApi["campaign"]["sessions"]; onDeleted: () => void }) {
   const [d, setD] = useState(item);
   const set = (p: Partial<TormentaCampaignItem>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<TormentaCampaignItem>) => api.editChild("items", item.id, p);

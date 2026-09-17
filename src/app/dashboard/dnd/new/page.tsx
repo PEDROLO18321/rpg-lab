@@ -10,5 +10,5 @@ export default async function NewCharacterPage() {
   const system = await prisma.system.findUnique({ where: { slug: "dnd" } });
   if (!system) redirect("/dashboard/dnd");
 
-  return <NewCharacterEntry userId={session.user.id} systemId={system.id} />;
+  return <NewCharacterEntry />;
 }

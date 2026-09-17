@@ -23,8 +23,8 @@ const labelStyle: React.CSSProperties = { fontSize: "0.7rem", fontWeight: 700, c
 function blankItem() { return { name: "", description: "", type: "misc" as ItemType, mythos: false, sessionId: null as string | null }; }
 
 export function CthulhuArtefacts({ api }: { api: CthulhuApi }) {
-  const items = api.campaign.cthulhuItems;
-  const sessions = api.campaign.cthulhuSessions;
+  const items = api.campaign.items;
+  const sessions = api.campaign.sessions;
   const [filterType, setFilterType] = useState<ItemType | "todos">("todos");
   const [filterSession, setFilterSession] = useState<string>("todos");
   const [filterMythos, setFilterMythos] = useState<"todos" | "mythos" | "normal">("todos");
@@ -107,7 +107,7 @@ export function CthulhuArtefacts({ api }: { api: CthulhuApi }) {
   );
 }
 
-function ItemEditor({ api, item, sessions, onDeleted }: { api: CthulhuApi; item: CthulhuCampaignItem; sessions: CthulhuApi["campaign"]["cthulhuSessions"]; onDeleted: () => void }) {
+function ItemEditor({ api, item, sessions, onDeleted }: { api: CthulhuApi; item: CthulhuCampaignItem; sessions: CthulhuApi["campaign"]["sessions"]; onDeleted: () => void }) {
   const [d, setD] = useState(item);
   const set = (p: Partial<CthulhuCampaignItem>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<CthulhuCampaignItem>) => api.editChild("items", item.id, p);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { jsonIn } from "@/lib/characterTransfer";
 
 export async function POST(
   _req: NextRequest,
@@ -33,9 +34,9 @@ export async function POST(
                 pvMax: s.pvMax, pvCurrent: s.pvCurrent, pvTemp: s.pvTemp,
                 pmMax: s.pmMax, pmCurrent: s.pmCurrent, pmTemp: s.pmTemp,
                 defense: s.defense, movement: s.movement, money: s.money,
-                skills: s.skills, schoolsChosen: s.schoolsChosen, spellsKnown: s.spellsKnown,
-                weapons: s.weapons, equipment: s.equipment, conditions: s.conditions,
-                background: s.background, notes: s.notes,
+                skills: jsonIn(s.skills), schoolsChosen: jsonIn(s.schoolsChosen), spellsKnown: jsonIn(s.spellsKnown),
+                weapons: jsonIn(s.weapons), equipment: jsonIn(s.equipment), conditions: jsonIn(s.conditions),
+                background: jsonIn(s.background), notes: s.notes,
               },
             },
           }

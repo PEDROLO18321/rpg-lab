@@ -5,6 +5,7 @@ import type { DndApi } from "@/lib/dnd/useDndCampaign";
 import type { DndCombatant } from "@/lib/dnd/dndCampaignClient";
 import { DND_CONDITIONS, DND_CONDITION_BY_ID } from "@/lib/dnd/conditions";
 import "../../../dnd-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT = "var(--accent)";
 const ACCENT_LIGHT = "var(--accent-light)";
@@ -16,10 +17,13 @@ function rollD20() { return Math.floor(Math.random() * 20) + 1; }
 const btnBase: React.CSSProperties = { height: 26, background: "transparent", border: "1px solid var(--border)", borderRadius: "var(--radius)", cursor: "pointer", fontSize: "0.72rem", fontWeight: 700, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", color: "var(--text-muted)", transition: "all 0.15s" };
 const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" };
 
-function parseConditions(json: string): string[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseConditions(json: unknown): string[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as string[]) : [];
+}
 
 export function InitiativeTracker({ api }: { api: DndApi }) {
-  const combatants = api.campaign.dndCombatants;
+  const combatants = api.campaign.combatants;
   const [name, setName] = useState("");
   const [initVal, setInitVal] = useState("");
   const [hp, setHp] = useState("");
@@ -36,7 +40,7 @@ export function InitiativeTracker({ api }: { api: DndApi }) {
     const hpNum = hp !== "" ? Number(hp) : null;
     await api.addChild("combatants", {
       name: trimmed, initiative, hp: hpNum, maxHp: hpNum, tempHp: 0,
-      ac: ac !== "" ? Number(ac) : null, conditions: "[]", concentration: false, isPlayer, order: combatants.length,
+      ac: ac !== "" ? Number(ac) : null, conditions: [], concentration: false, isPlayer, order: combatants.length,
     });
     setName(""); setInitVal(""); setHp(""); setAc(""); setIsPlayer(false);
   }
@@ -69,7 +73,7 @@ export function InitiativeTracker({ api }: { api: DndApi }) {
   function toggleCondition(c: DndCombatant, id: string) {
     const cur = parseConditions(c.conditions);
     const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-    api.editChild("combatants", c.id, { conditions: JSON.stringify(next) });
+    api.editChild("combatants", c.id, { conditions: next });
   }
 
   return (

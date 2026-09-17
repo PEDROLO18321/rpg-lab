@@ -5,6 +5,7 @@ import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemNpc, OrdemNPCAttack } from "@/lib/ordem/ordemCampaignClient";
 import { randomOrdemName } from "@/lib/ordem/names";
 import "../../../ordem-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -53,8 +54,9 @@ const ATTR_LABELS: { key: "agi" | "forca" | "int" | "pre" | "vig"; label: string
 function rand<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 function randBetween(min: number, max: number) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-function parseAttacks(json: string): OrdemNPCAttack[] {
-  try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; }
+function parseAttacks(json: unknown): OrdemNPCAttack[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as OrdemNPCAttack[]) : [];
 }
 
 function emptyNpc(): NpcForm {
@@ -75,7 +77,7 @@ function randomNpc(): NpcForm {
 }
 
 export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
-  const npcs = api.campaign.ordemNpcs;
+  const npcs = api.campaign.npcs;
   const [mode, setMode] = useState<"random" | "manual">("random");
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
 
   async function saveNpc() {
     if (!form.name.trim()) return;
-    await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) });
+    await api.addChild("npcs", { ...form });
     setForm(mode === "random" ? randomNpc() : emptyNpc());
   }
   function deleteNpc(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
@@ -99,7 +101,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
     const init = addInitValue !== "" ? Number(addInitValue) : (npc.agi ?? 1) + Math.floor(Math.random() * 20) + 1;
     await api.addChild("combatants", {
       name: npc.name, init, pv: npc.pv, maxPv: npc.pv, pe: npc.pe, maxPe: npc.pe,
-      san: npc.san, maxSan: npc.san, rd: 0, isPlayer: false, conditions: "[]", order: api.campaign.ordemCombatants.length,
+      san: npc.san, maxSan: npc.san, rd: 0, isPlayer: false, conditions: [], order: api.campaign.combatants.length,
     });
     setAddInitTarget(null); setAddInitValue("");
   }

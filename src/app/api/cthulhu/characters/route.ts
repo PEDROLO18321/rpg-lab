@@ -1,28 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authedSystemContext } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
 
 export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await authedSystemContext("cthulhu");
+  if (!ctx.ok) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
 
+  try {
     const body = await req.json();
     const {
-      systemId, name, era, age,
+      name, era, age,
       atribFor, atribCon, atribTam, atribDes, atribApa, atribInt, atribPod, atribEdu,
       sanCurrent, sanMax, pvMax, pvCurrent, luck, mov, pmCurrent,
       occupation, skills, background, notes, weapons, equipment,
     } = body;
 
-    if (!systemId || !name?.trim())
+    if (!name?.trim())
       return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
 
     const character = await prisma.character.create({
       data: {
-        userId:   session.user.id,
-        systemId,
+        userId:   ctx.userId,
+        systemId: ctx.systemId,
         name:     name.trim(),
         notes:    notes ?? null,
         cthulhuSheet: {
@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
             luck:       luck ?? 50,
             mov:        mov ?? 8,
             pmCurrent:  pmCurrent ?? Math.floor((atribPod ?? 50) / 5),
-            skills:     skills ? JSON.stringify(skills) : null,
-            background: background ? JSON.stringify(background) : null,
-            weapons:    weapons && weapons.length ? JSON.stringify(weapons) : null,
+            skills:     toJsonFieldOrNull(skills),
+            background: toJsonFieldOrNull(background),
+            weapons:    toJsonFieldOrNull(weapons && weapons.length ? weapons : null),
             equipment:  equipment?.trim() ? equipment.trim() : null,
           },
         },

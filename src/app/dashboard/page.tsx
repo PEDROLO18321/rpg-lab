@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -113,7 +114,7 @@ export default function SystemSelectPage() {
     >
       {/* Home button */}
       <div style={{ position: "absolute", top: 20, left: 24, zIndex: 10 }}>
-        <a
+        <Link
           href="/"
           style={{
             display: "flex",
@@ -129,7 +130,7 @@ export default function SystemSelectPage() {
           }}
         >
           ← Início
-        </a>
+        </Link>
       </div>
 
       {/* ambient glow */}

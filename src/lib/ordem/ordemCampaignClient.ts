@@ -1,4 +1,5 @@
 // ─── ORDEM PARANORMAL — Mestre: cliente de dados (API DB) ─────────────────────
+import { campaignClient, type CampaignCounts } from "@/lib/campaign/client";
 // Substitui o antigo ordemCampaignStorage (localStorage) por chamadas à API.
 // Os tipos espelham os modelos Prisma da operação.
 
@@ -12,14 +13,14 @@ export interface OrdemNpc {
   affiliation: string; description: string; personality: string; paranormalTies: string;
   notes: string; agi: number | null; forca: number | null; int: number | null;
   pre: number | null; vig: number | null; pv: number | null; pe: number | null;
-  san: number | null; defense: number | null; attacks: string; // JSON OrdemNPCAttack[]
+  san: number | null; defense: number | null; attacks: OrdemNPCAttack[];
 }
 
 export interface OrdemCombatant {
   id: string; characterId: string | null; name: string; init: number;
   pv: number | null; maxPv: number | null; pe: number | null; maxPe: number | null;
   san: number | null; maxSan: number | null; rd: number; isPlayer: boolean;
-  conditions: string; // JSON string[]
+  conditions: string[];
   order: number;
 }
 
@@ -37,7 +38,7 @@ export interface OrdemItem {
 export interface OrdemSanityRecord {
   id: string; characterId: string | null; agentName: string; currentSan: number;
   maxSan: number; sessionLoss: number; status: "normal" | "perturbado" | "enlouquecido";
-  traumas: string; notes: string; // traumas = JSON string[]
+  traumas: string[]; notes: string;
 }
 
 export interface OrdemClue {
@@ -63,20 +64,20 @@ export interface OrdemStory {
 export interface OrdemCampaign {
   id: string; name: string; tier: Tier; inviteCode: string;
   nextSessionAt: string | null; notes: string | null; createdAt: string;
-  ordemStory: OrdemStory | null;
-  ordemNpcs: OrdemNpc[];
-  ordemCombatants: OrdemCombatant[];
-  ordemSessions: OrdemGameSession[];
-  ordemItems: OrdemItem[];
-  ordemSanity: OrdemSanityRecord[];
-  ordemClues: OrdemClue[];
-  ordemClocks: OrdemClock[];
-  ordemRewards: OrdemReward[];
+  story: OrdemStory | null;
+  npcs: OrdemNpc[];
+  combatants: OrdemCombatant[];
+  sessions: OrdemGameSession[];
+  items: OrdemItem[];
+  sanity: OrdemSanityRecord[];
+  clues: OrdemClue[];
+  clocks: OrdemClock[];
+  rewards: OrdemReward[];
 }
 
 export interface CampaignSummary {
   id: string; name: string; tier: Tier; nextSessionAt: string | null; createdAt: string;
-  _count: { ordemNpcs: number; ordemCombatants: number; ordemSessions: number };
+  counts: CampaignCounts;
 }
 
 export const TIER_LABEL: Record<Tier, string> = {
@@ -94,66 +95,13 @@ export const MEMBRANA_STATES: { id: MembranaState; label: string; color: string;
   { id: "rompida",    label: "Rompida",    color: "#8b0000", effect: "Estado hipotético, nunca registrado. Ausência total de regras — um lugar tocado diretamente pelo Outro Lado." },
 ];
 
-// ── Helpers de fetch ──────────────────────────────────────────────────────────
-async function jsonOrThrow(res: Response) {
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? "Erro na requisição.");
-  return data;
-}
-
-const BASE = "/api/ordem/campaigns";
-
-export async function listCampaigns(): Promise<CampaignSummary[]> {
-  const d = await jsonOrThrow(await fetch(BASE));
-  return d.campaigns;
-}
-
-export async function getCampaign(id: string): Promise<OrdemCampaign> {
-  const d = await jsonOrThrow(await fetch(`${BASE}/${id}`));
-  return d.campaign;
-}
-
-export async function createCampaign(name: string, tier: Tier): Promise<string> {
-  const d = await jsonOrThrow(await fetch(BASE, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, tier }),
-  }));
-  return d.id;
-}
-
-export async function deleteCampaign(id: string): Promise<void> {
-  await jsonOrThrow(await fetch(`${BASE}/${id}`, { method: "DELETE" }));
-}
-
-export async function patchCampaign(
-  id: string,
-  data: Partial<{ name: string; tier: Tier; notes: string; nextSessionAt: string | null; story: Partial<OrdemStory> }>,
-): Promise<void> {
-  await jsonOrThrow(await fetch(`${BASE}/${id}`, {
-    method: "PATCH", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  }));
-}
-
 export type ResourceName =
   | "npcs" | "combatants" | "sessions" | "items" | "sanity" | "clues" | "clocks" | "rewards";
 
-export async function createChild<T>(campaignId: string, resource: ResourceName, data: Record<string, unknown>): Promise<T> {
-  const d = await jsonOrThrow(await fetch(`${BASE}/${campaignId}/${resource}`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  }));
-  return d.item as T;
-}
+export const ordemClient =
+  campaignClient<OrdemCampaign, CampaignSummary, ResourceName, { tier: Tier }>("ordem");
 
-export async function updateChild<T>(campaignId: string, resource: ResourceName, itemId: string, data: Record<string, unknown>): Promise<T> {
-  const d = await jsonOrThrow(await fetch(`${BASE}/${campaignId}/${resource}/${itemId}`, {
-    method: "PATCH", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  }));
-  return d.item as T;
-}
-
-export async function deleteChild(campaignId: string, resource: ResourceName, itemId: string): Promise<void> {
-  await jsonOrThrow(await fetch(`${BASE}/${campaignId}/${resource}/${itemId}`, { method: "DELETE" }));
-}
+export const {
+  listCampaigns, getCampaign, createCampaign, deleteCampaign, patchCampaign,
+  createChild, updateChild, deleteChild,
+} = ordemClient;

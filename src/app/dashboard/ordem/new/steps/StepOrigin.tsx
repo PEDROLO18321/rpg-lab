@@ -4,7 +4,7 @@ import type { OrdemWizardData } from "../CharacterWizard";
 import { Intro } from "./StepAttrs";
 import { ORIGINS, ORIGIN_BY_ID } from "@/lib/ordem/origins";
 import { SKILLS, SKILL_BY_ID } from "@/lib/ordem/data";
-import { PARANORMAL_POWERS, PARANORMAL_POWER_BY_ID } from "@/lib/ordem/abilities";
+import { PARANORMAL_POWERS } from "@/lib/ordem/abilities";
 
 const BORD_SEL = "rgba(255,255,255,0.55)";
 const BG_SEL = "rgba(255,255,255,0.1)";

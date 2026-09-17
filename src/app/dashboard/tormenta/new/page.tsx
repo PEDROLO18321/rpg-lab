@@ -10,5 +10,5 @@ export default async function NewTormentaCharacterPage() {
   const system = await prisma.system.findUnique({ where: { slug: "tormenta20" } });
   if (!system) redirect("/dashboard/tormenta");
 
-  return <NewCharacterEntry userId={session.user.id} systemId={system.id} />;
+  return <NewCharacterEntry />;
 }

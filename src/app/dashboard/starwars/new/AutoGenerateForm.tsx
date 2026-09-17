@@ -13,8 +13,6 @@ const MAX_AUTO_LEVEL = 40;
 const SELECTABLE_CLASSES = CLASSES.filter((c) => !c.isPathClass && !c.isPropheticClass);
 
 interface Props {
-  userId: string;
-  systemId: string;
   onBack: () => void;
 }
 
@@ -22,7 +20,7 @@ const ACCENT      = "#3b82c4";
 const ACCENT_DIM  = "rgba(59,130,196,0.12)";
 const ACCENT_BORD = "rgba(59,130,196,0.35)";
 
-export function AutoGenerateForm({ userId, systemId, onBack }: Props) {
+export function AutoGenerateForm({ onBack }: Props) {
   const router = useRouter();
   const [level, setLevel] = useState(1);
   const [charName, setCharName] = useState("");
@@ -39,7 +37,7 @@ export function AutoGenerateForm({ userId, systemId, onBack }: Props) {
       const createRes = await fetch("/api/starwars/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...build.payload, userId, systemId }),
+        body: JSON.stringify(build.payload),
       });
       const createJson = await createRes.json();
       if (!createRes.ok) throw new Error(createJson.error ?? "Erro ao gerar personagem");

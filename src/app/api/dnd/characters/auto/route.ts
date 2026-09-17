@@ -1,24 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authedSystemContext } from "@/lib/apiAuth";
 import { MAX_LEVEL } from "@/lib/dnd/leveling";
 import { createCharacter } from "@/lib/dnd/characterService";
 import { generateLevel1Build, buildAutoLevelPlan } from "@/lib/dnd/autoGenerate";
 
 export async function POST(req: NextRequest) {
+  const ctx = await authedSystemContext("dnd");
+  if (!ctx.ok) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
+
   try {
     const body = await req.json();
-    const { userId, systemId, level, charName, classId } = body;
+    const { level, charName, classId } = body;
 
-    if (!userId || !systemId) {
-      return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
-    }
     const lvl = Number(level);
     if (!Number.isInteger(lvl) || lvl < 1 || lvl > MAX_LEVEL) {
       return NextResponse.json({ error: `Nível deve ser entre 1 e ${MAX_LEVEL}.` }, { status: 400 });
     }
 
     const build = generateLevel1Build({ level: lvl, charName, classId });
-    const created = await createCharacter({ ...build, userId, systemId });
+    const created = await createCharacter({ ...build, userId: ctx.userId, systemId: ctx.systemId });
     if (!created.ok) {
       return NextResponse.json({ error: created.error }, { status: created.status });
     }

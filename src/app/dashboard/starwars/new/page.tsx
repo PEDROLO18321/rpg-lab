@@ -10,5 +10,5 @@ export default async function NewStarWarsCharacterPage() {
   const system = await prisma.system.findUnique({ where: { slug: "starwars" } });
   if (!system) redirect("/dashboard/starwars");
 
-  return <NewCharacterEntry userId={session.user.id} systemId={system.id} />;
+  return <NewCharacterEntry />;
 }

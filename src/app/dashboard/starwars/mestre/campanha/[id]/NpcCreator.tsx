@@ -8,6 +8,7 @@ import { CLASSES } from "@/lib/starwars/classes";
 import { SKILLS, SKILL_BY_ID } from "@/lib/starwars/skills";
 import { SKILL_GRADE_LABEL, SKILL_GRADE_BONUS, SKILL_GRADE_ORDER, type SkillGrade } from "@/lib/starwars/data";
 import { SW } from "../../../ui";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;
@@ -621,8 +622,14 @@ const ATTR_LABELS: { key: "agi" | "int" | "forca" | "vig" | "pre" | "sen"; label
   { key: "vig", label: "VIG" }, { key: "pre", label: "PRE" }, { key: "sen", label: "SEN" },
 ];
 
-function parseAttacks(json: string): NPCAttack[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
-function parseSkills(json: string): NPCSkill[] { try { const s = JSON.parse(json); return Array.isArray(s) ? s : []; } catch { return []; } }
+function parseAttacks(json: unknown): NPCAttack[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as NPCAttack[]) : [];
+}
+function parseSkills(json: unknown): NPCSkill[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as NPCSkill[]) : [];
+}
 function emptyNpc(): NpcForm { return { name: "", species: "", role: "", description: "", personality: "", notes: "", pv: null, agi: null, int: null, forca: null, vig: null, pre: null, sen: null, attacks: [], skills: [] }; }
 function randomNpc(): NpcForm {
   return { name: rand(NAMES), species: rand(SPECIES_NAMES), role: rand(ROLES), description: rand(APPEARANCES), personality: rand(TRAITS), notes: "",
@@ -630,7 +637,7 @@ function randomNpc(): NpcForm {
 }
 
 export function NpcCreator({ api }: { api: StarWarsApi }) {
-  const npcs = api.campaign.starWarsNpcs;
+  const npcs = api.campaign.npcs;
   const [mode, setMode] = useState<"random" | "manual" | "famous">("random");
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -646,7 +653,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
   function switchMode(m: "random" | "manual" | "famous") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
   async function saveNpc() {
     if (!form.name.trim()) return;
-    await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks), skills: JSON.stringify(form.skills) });
+    await api.addChild("npcs", { ...form });
     setForm(mode === "random" ? randomNpc() : emptyNpc());
   }
   function deleteNpc(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
@@ -671,7 +678,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
   }, [famousSearch, famousRoleFilter]);
   async function addToInitiative(npc: StarWarsNpc) {
     const initiative = addInitValue !== "" ? Number(addInitValue) : rollD20();
-    await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pe: null, maxPe: null, conditions: "[]", isPlayer: false, order: api.campaign.starWarsCombatants.length });
+    await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pe: null, maxPe: null, conditions: [], isPlayer: false, order: api.campaign.combatants.length });
     setAddInitTarget(null); setAddInitValue("");
   }
 

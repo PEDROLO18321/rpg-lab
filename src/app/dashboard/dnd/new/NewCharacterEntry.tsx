@@ -5,10 +5,6 @@ import { CharacterWizard } from "./CharacterWizard";
 import { AutoGenerateForm } from "./AutoGenerateForm";
 import { ImportJsonForm } from "@/components/dashboard/ImportJsonForm";
 
-interface Props {
-  userId: string;
-  systemId: string;
-}
 
 const MODES = [
   {
@@ -52,16 +48,15 @@ const MODES = [
   },
 ];
 
-export function NewCharacterEntry({ userId, systemId }: Props) {
+export function NewCharacterEntry() {
   const [mode, setMode] = useState<"choice" | "manual" | "auto" | "import">("choice");
   const [hovered, setHovered] = useState<string | null>(null);
 
-  if (mode === "manual") return <CharacterWizard userId={userId} systemId={systemId} />;
-  if (mode === "auto") return <AutoGenerateForm userId={userId} systemId={systemId} onBack={() => setMode("choice")} />;
+  if (mode === "manual") return <CharacterWizard />;
+  if (mode === "auto") return <AutoGenerateForm onBack={() => setMode("choice")} />;
   if (mode === "import")
     return (
       <ImportJsonForm
-        systemId={systemId}
         systemLabel="D&D 5e"
         expectedFormat="rpglab.dnd.v1"
         importUrl="/api/dnd/characters/import"

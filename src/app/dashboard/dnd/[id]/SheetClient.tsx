@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
+import { parseJsonField } from "@/lib/characterTransfer";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
@@ -87,8 +88,8 @@ export type SheetRow = {
   armorClass: number; initiative: number; speed: number;
   inspiration: boolean;
   cp: number; sp: number; ep: number; gp: number; pp: number;
-  conditions: string | null;
-  spellSlotsUsed: string | null;
+  conditions: unknown;
+  spellSlotsUsed: unknown;
   spellAbility: string | null;
   classes: { id: string; className: string; subclass: string | null; level: number }[];
   skills: { id: string; skillName: string; proficient: boolean; expertise: boolean }[];
@@ -162,17 +163,17 @@ const dndVBtnTemp: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
 };
 
-function parseConditions(raw: string | null): string[] {
-  if (!raw) return [];
-  try { return JSON.parse(raw); } catch { return []; }
+function parseConditions(raw: unknown): string[] {
+  const a = parseJsonField<unknown>(raw, []);
+  return Array.isArray(a) ? (a as string[]) : [];
 }
 
-function parseSlots(raw: string | null, maxPerLevel: Record<string, number>): SlotState {
+function parseSlots(raw: unknown, maxPerLevel: Record<string, number>): SlotState {
   const make = (max: number) => Array.from({ length: max }, () => false);
   const empty = Object.fromEntries(Object.entries(maxPerLevel).map(([k, v]) => [k, make(v)]));
-  if (!raw) return empty;
+  if (raw === null || raw === undefined) return empty;
   try {
-    const data = JSON.parse(raw);
+    const data = parseJsonField<Record<string, unknown>>(raw, {});
     return Object.fromEntries(
       Object.entries(maxPerLevel).map(([level, max]) => {
         const stored = data[level];
@@ -211,10 +212,14 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
   // re-sincroniza os estados que o level-up altera (magias novas no grimório,
   // PV ganho) sem precisar de F5. patchSheet persiste cada mudança local
   // antes, então o servidor é a fonte de verdade.
-  useEffect(() => {
+  // Ajuste de estado durante o render (padrão oficial do React para "estado
+  // derivado de prop que mudou") — evita o render extra de um useEffect.
+  const [syncedFrom, setSyncedFrom] = useState(initial);
+  if (syncedFrom !== initial) {
+    setSyncedFrom(initial);
     setSpells(initial.spells);
     setHpCurrent(initial.hpCurrent);
-  }, [initial]);
+  }
 
   // Lib data
   const [raceId, subraceId] = (initial.race ?? "").split("/");
@@ -541,7 +546,6 @@ interface ViewProps {
 function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, bg, desc, portraitUrl, proficientSaves, proficientSkills, hpCurrent, hpTemp, gp, equipment }: ViewProps) {
   const PROF_BONUS = proficiencyBonus(sheet.level);
   const passivePerception = 10 + mod(scores.wis) + (proficientSkills.has("Percepção") ? PROF_BONUS : 0);
-  const subclassEntry = cls?.subclasses?.find((s) => s.id === sheet.classes[0]?.subclass || s.name === sheet.classes[0]?.subclass);
   const cantrips = sheet.spells.filter((s) => s.level === 0);
   const spells1  = sheet.spells.filter((s) => s.level > 0);
 
@@ -1024,7 +1028,7 @@ function EditMode({
           <EditNumber label="XP"          value={combat.xp}         onChange={(v) => setCombatField("xp", v)} />
         </div>
         <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 8, lineHeight: 1.5 }}>
-          Alterar o Nível aqui não concede recursos automáticos — use "Subir de Nível" para isso. Este campo é só para correções manuais.
+          Alterar o Nível aqui não concede recursos automáticos — use &ldquo;Subir de Nível&rdquo; para isso. Este campo é só para correções manuais.
         </p>
       </EditSection>
 
@@ -1299,7 +1303,7 @@ interface PlayProps {
 }
 
 function PlayMode({
-  characterId, sheet, scores, cls, proficientSaves, proficientSkills, expertiseSkills,
+  characterId, sheet, scores, cls, proficientSkills, expertiseSkills,
   isCaster, spellConfig, maxSlots,
   spells, setSpells, spellAbility, setSpellAbility,
   hpCurrent, setHpCurrent, hpTemp, setHpTemp,
@@ -1340,7 +1344,7 @@ function PlayMode({
       hitDiceUsed: 0,
       deathSavesSuccess: 0,
       deathSavesFailure: 0,
-      spellSlotsUsed: JSON.stringify({}),
+      spellSlotsUsed: {},
     });
   }
 
@@ -1533,7 +1537,7 @@ function PlayMode({
     setHitDiceUsed(newUsed); patchSheet({ hitDiceUsed: newUsed });
     const newSlots: SlotState = {};
     Object.entries(maxSlots).forEach(([k, max]) => { newSlots[k] = Array.from({ length: max }, () => false); });
-    setSlotsUsed(newSlots); patchSheet({ spellSlotsUsed: JSON.stringify(newSlots) });
+    setSlotsUsed(newSlots); patchSheet({ spellSlotsUsed: newSlots });
     setDsSuccess(0); setDsFailure(0); patchSheet({ deathSavesSuccess: 0, deathSavesFailure: 0 });
     setRestMode("none");
   }
@@ -1545,7 +1549,7 @@ function PlayMode({
     next[index] = !next[index];
     const newState = { ...slotsUsed, [level]: next };
     setSlotsUsed(newState);
-    patchSheet({ spellSlotsUsed: JSON.stringify(newState) });
+    patchSheet({ spellSlotsUsed: newState });
   }
 
   // ── Inventory ─────────────────────────────────────────────────────────────
@@ -1732,7 +1736,7 @@ function PlayMode({
             {conditions.map((c) => (
               <span
                 key={c}
-                onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: JSON.stringify(v) }); }}
+                onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
                 style={{
                   fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: "var(--radius-xs)", cursor: "pointer",
                   background: `${CONDITION_COLOR[c] ?? "#555"}33`,
@@ -2429,7 +2433,7 @@ function PlayMode({
                     key={c}
                     onClick={() => {
                       const v = [...conditions, c];
-                      setConditions(v); patchSheet({ conditions: JSON.stringify(v) });
+                      setConditions(v); patchSheet({ conditions: v });
                       setShowConditionPicker(false);
                     }}
                     style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", cursor: "pointer", fontFamily: "inherit" }}
@@ -2446,7 +2450,7 @@ function PlayMode({
                 {conditions.map((c) => (
                   <span
                     key={c}
-                    onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: JSON.stringify(v) }); }}
+                    onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
                     style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-xs)", cursor: "pointer", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", userSelect: "none" }}
                     title="Clique para remover"
                   >
@@ -2934,7 +2938,7 @@ function TraitGroup({ label, items, color = "var(--text-subtle)" }: { label: str
   );
 }
 
-function SpellTag({ name, school }: { name: string; school: string | null }) {
+function SpellTag({ name }: { name: string; school: string | null }) {
   return (
     <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--accent-light)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>
       {name}

@@ -38,8 +38,8 @@ function blankItem() {
 }
 
 export function OrdemItems({ api }: { api: OperacaoApi }) {
-  const items = api.campaign.ordemItems;
-  const sessions = api.campaign.ordemSessions;
+  const items = api.campaign.items;
+  const sessions = api.campaign.sessions;
 
   const [filterType, setFilterType] = useState<ItemType | "todos">("todos");
   const [filterSession, setFilterSession] = useState<string>("todos");
@@ -167,7 +167,7 @@ export function OrdemItems({ api }: { api: OperacaoApi }) {
 
 function ItemEditor({ api, item, sessions, onDeleted }: {
   api: OperacaoApi; item: OrdemItem;
-  sessions: OperacaoApi["campaign"]["ordemSessions"]; onDeleted: () => void;
+  sessions: OperacaoApi["campaign"]["sessions"]; onDeleted: () => void;
 }) {
   const [d, setD] = useState(item);
   const set = (p: Partial<OrdemItem>) => setD((c) => ({ ...c, ...p }));

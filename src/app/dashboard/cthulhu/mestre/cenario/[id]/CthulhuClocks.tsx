@@ -28,7 +28,7 @@ function ClockDial({ segments, filled, color, size = 84 }: { segments: number; f
 }
 
 export function CthulhuClocks({ api }: { api: CthulhuApi }) {
-  const clocks = api.campaign.cthulhuClocks;
+  const clocks = api.campaign.clocks;
   const [name, setName] = useState("");
   const [segments, setSegments] = useState(4);
   const [kind, setKind] = useState<CthulhuClock["kind"]>("ameaca");

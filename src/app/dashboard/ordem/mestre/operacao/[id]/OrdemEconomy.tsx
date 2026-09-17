@@ -19,8 +19,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function OrdemEconomy({ api }: { api: OperacaoApi }) {
-  const rewards = api.campaign.ordemRewards;
-  const players = api.campaign.ordemCombatants.filter((c) => c.isPlayer);
+  const rewards = api.campaign.rewards;
+  const players = api.campaign.combatants.filter((c) => c.isPlayer);
 
   const [agentName, setAgentName] = useState("");
   const [prestige, setPrestige] = useState("");

@@ -78,7 +78,7 @@ export function StepEquipment({ classId, backgroundId, equipmentChoices, onChang
 
 /* ── Equipment block (class or background) ── */
 function EquipmentBlock({
-  icon, title, items, prefix, choices, onPatch, accent,
+ title, items, prefix, choices, onPatch, accent,
 }: {
   icon:    string;
   title:   string;
@@ -200,7 +200,7 @@ function FixedRow({ text, accent }: { text: string; accent?: boolean }) {
 
 /* ── Choice row ── */
 function ChoiceRow({
-  choices, prefix, idx, selected, subChoices, onSelect, onSubSelect, accent,
+  choices, prefix, idx, selected, subChoices, onSelect, onSubSelect,
 }: {
   choices:     EquipmentChoice[];
   prefix:      string;

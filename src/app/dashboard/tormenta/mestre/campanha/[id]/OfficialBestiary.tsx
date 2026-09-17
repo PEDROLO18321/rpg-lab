@@ -11,7 +11,6 @@ interface OfficialCreature {
   skills: string; abilitiesRaw: string; treasure: string;
 }
 
-const ACCENT = "#a01818";
 const ACCENT_LIGHT = "#c94040";
 
 const ATTR_KEYS: { key: keyof OfficialCreature["attrs"]; label: string }[] = [
@@ -93,7 +92,7 @@ export function OfficialBestiary({ api }: { api: TormentaApi }) {
       defense: c.ca,
       forca: toNum(c.attrs.for), des: toNum(c.attrs.des), con: toNum(c.attrs.con),
       int: toNum(c.attrs.int), sab: toNum(c.attrs.sab), car: toNum(c.attrs.car),
-      attacks: JSON.stringify(attacks),
+      attacks,
     });
     setAdded((prev) => new Set(prev).add(c.name));
   }

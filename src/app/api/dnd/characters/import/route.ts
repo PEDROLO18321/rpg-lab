@@ -1,112 +1,111 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { numOr, strOrNull, boolOr, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { readImportRequest, handleImportError } from "@/lib/characterImport";
+import { ImportError, LIMITS, intIn, strOrNull, boolOr, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { MAX_LEVEL } from "@/lib/dnd/leveling";
 import { FORMAT } from "../[id]/export/route";
 
+/** Teto de linhas por coleção filha — impede um arquivo inflar o banco. */
+const MAX_ROWS = 500;
+
+function rows(v: unknown, field: string): Record<string, unknown>[] {
+  if (!Array.isArray(v)) return [];
+  if (v.length > MAX_ROWS) {
+    throw new ImportError(`Arquivo rejeitado: "${field}" tem mais de ${MAX_ROWS} itens.`);
+  }
+  return v.filter((x): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x));
+}
+
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json();
-  const { systemId, payload } = body ?? {};
-  if (!systemId || payload?.format !== FORMAT) {
-    return NextResponse.json({ error: "Arquivo inválido para D&D 5e." }, { status: 400 });
-  }
-
-  const char = payload.character ?? {};
-  const s = payload.sheet ?? {};
-  if (typeof char.name !== "string" || !char.name.trim()) {
-    return NextResponse.json({ error: "Nome do personagem ausente." }, { status: 400 });
-  }
-
-  const classes = Array.isArray(s.classes)
-    ? s.classes
-        .filter((c: unknown): c is Record<string, unknown> => !!c && typeof c === "object")
-        .map((c: Record<string, unknown>) => ({
-          className: strOrNull(c.className) ?? "",
-          subclass: strOrNull(c.subclass),
-          level: numOr(c.level, 1),
-        }))
-        .filter((c: { className: string }) => c.className)
-    : [];
-
-  const seenSkills = new Set<string>();
-  const skills = Array.isArray(s.skills)
-    ? s.skills
-        .filter((k: unknown): k is Record<string, unknown> => !!k && typeof k === "object")
-        .map((k: Record<string, unknown>) => ({
-          skillName: strOrNull(k.skillName) ?? "",
-          proficient: boolOr(k.proficient, false),
-          expertise: boolOr(k.expertise, false),
-        }))
-        .filter((k: { skillName: string }) => k.skillName && !seenSkills.has(k.skillName) && seenSkills.add(k.skillName))
-    : [];
-
-  const spells = Array.isArray(s.spells)
-    ? s.spells
-        .filter((sp: unknown): sp is Record<string, unknown> => !!sp && typeof sp === "object")
-        .map((sp: Record<string, unknown>) => ({
-          spellName: strOrNull(sp.spellName) ?? "",
-          level: numOr(sp.level, 0),
-          school: strOrNull(sp.school),
-          prepared: boolOr(sp.prepared, false),
-          description: strOrNull(sp.description),
-          components: strOrNull(sp.components),
-          castingTime: strOrNull(sp.castingTime),
-          duration: strOrNull(sp.duration),
-          range: strOrNull(sp.range),
-        }))
-        .filter((sp: { spellName: string }) => sp.spellName)
-    : [];
-
-  const equipment = Array.isArray(s.equipment)
-    ? s.equipment
-        .filter((e: unknown): e is Record<string, unknown> => !!e && typeof e === "object")
-        .map((e: Record<string, unknown>) => ({
-          itemName: strOrNull(e.itemName) ?? "",
-          quantity: numOr(e.quantity, 1),
-          weight: typeof e.weight === "number" ? e.weight : null,
-          equipped: boolOr(e.equipped, false),
-          description: strOrNull(e.description),
-        }))
-        .filter((e: { itemName: string }) => e.itemName)
-    : [];
-
-  const features = Array.isArray(s.features)
-    ? s.features
-        .filter((f: unknown): f is Record<string, unknown> => !!f && typeof f === "object")
-        .map((f: Record<string, unknown>) => ({
-          name: strOrNull(f.name) ?? "",
-          source: strOrNull(f.source),
-          description: strOrNull(f.description),
-        }))
-        .filter((f: { name: string }) => f.name)
-    : [];
-
   try {
+    const { userId, systemId, character: char, sheet: s } = await readImportRequest(req, {
+      slug: "dnd",
+      format: FORMAT,
+      label: "D&D 5e",
+    });
+
+    const classes = rows(s.classes, "classes")
+      .map((c) => ({
+        className: strOrNull(c.className, LIMITS.name) ?? "",
+        subclass: strOrNull(c.subclass, LIMITS.name),
+        level: intIn(c.level, 1, MAX_LEVEL, 1),
+      }))
+      .filter((c) => c.className);
+
+    const seenSkills = new Set<string>();
+    const skills = rows(s.skills, "skills")
+      .map((k) => ({
+        skillName: strOrNull(k.skillName, LIMITS.name) ?? "",
+        proficient: boolOr(k.proficient, false),
+        expertise: boolOr(k.expertise, false),
+      }))
+      .filter((k) => k.skillName && !seenSkills.has(k.skillName) && seenSkills.add(k.skillName));
+
+    const spells = rows(s.spells, "spells")
+      .map((sp) => ({
+        spellName: strOrNull(sp.spellName, LIMITS.name) ?? "",
+        level: intIn(sp.level, 0, 9, 0),
+        school: strOrNull(sp.school, LIMITS.name),
+        prepared: boolOr(sp.prepared, false),
+        description: strOrNull(sp.description),
+        components: strOrNull(sp.components, LIMITS.name),
+        castingTime: strOrNull(sp.castingTime, LIMITS.name),
+        duration: strOrNull(sp.duration, LIMITS.name),
+        range: strOrNull(sp.range, LIMITS.name),
+      }))
+      .filter((sp) => sp.spellName);
+
+    const equipment = rows(s.equipment, "equipment")
+      .map((e) => ({
+        itemName: strOrNull(e.itemName, LIMITS.name) ?? "",
+        quantity: intIn(e.quantity, 0, 100_000, 1),
+        weight: typeof e.weight === "number" && Number.isFinite(e.weight) ? e.weight : null,
+        equipped: boolOr(e.equipped, false),
+        description: strOrNull(e.description),
+      }))
+      .filter((e) => e.itemName);
+
+    const features = rows(s.features, "features")
+      .map((f) => ({
+        name: strOrNull(f.name, LIMITS.name) ?? "",
+        source: strOrNull(f.source, LIMITS.name),
+        description: strOrNull(f.description),
+      }))
+      .filter((f) => f.name);
+
     const character = await prisma.character.create({
       data: {
-        userId: session.user.id,
+        userId,
         systemId,
-        name: char.name.trim(),
+        name: (char.name as string).trim(),
         notes: strOrNull(char.notes),
-        portraitUrl: strOrNull(char.portraitUrl),
+        portraitUrl: strOrNull(char.portraitUrl, LIMITS.url),
         dndSheet: {
           create: {
-            race: strOrNull(s.race), background: strOrNull(s.background), alignment: strOrNull(s.alignment),
-            xp: numOr(s.xp, 0), level: numOr(s.level, 1),
-            str: numOr(s.str, 10), dex: numOr(s.dex, 10), con: numOr(s.con, 10),
-            int: numOr(s.int, 10), wis: numOr(s.wis, 10), cha: numOr(s.cha, 10),
-            hpMax: numOr(s.hpMax, 10), hpCurrent: numOr(s.hpCurrent, 10), hpTemp: numOr(s.hpTemp, 0),
-            hitDice: strOrNull(s.hitDice), hitDiceUsed: numOr(s.hitDiceUsed, 0),
-            deathSavesSuccess: numOr(s.deathSavesSuccess, 0), deathSavesFailure: numOr(s.deathSavesFailure, 0),
-            armorClass: numOr(s.armorClass, 10), initiative: numOr(s.initiative, 0), speed: numOr(s.speed, 30),
+            race: strOrNull(s.race, LIMITS.name),
+            background: strOrNull(s.background, LIMITS.name),
+            alignment: strOrNull(s.alignment, LIMITS.name),
+            xp: intIn(s.xp, 0, 1_000_000, 0),
+            level: intIn(s.level, 1, MAX_LEVEL, 1),
+            str: intIn(s.str, 1, 30, 10), dex: intIn(s.dex, 1, 30, 10), con: intIn(s.con, 1, 30, 10),
+            int: intIn(s.int, 1, 30, 10), wis: intIn(s.wis, 1, 30, 10), cha: intIn(s.cha, 1, 30, 10),
+            hpMax: intIn(s.hpMax, 0, 100_000, 10),
+            hpCurrent: intIn(s.hpCurrent, -1_000, 100_000, 10),
+            hpTemp: intIn(s.hpTemp, 0, 100_000, 0),
+            hitDice: strOrNull(s.hitDice, LIMITS.name),
+            hitDiceUsed: intIn(s.hitDiceUsed, 0, MAX_LEVEL, 0),
+            deathSavesSuccess: intIn(s.deathSavesSuccess, 0, 3, 0),
+            deathSavesFailure: intIn(s.deathSavesFailure, 0, 3, 0),
+            armorClass: intIn(s.armorClass, 0, 100, 10),
+            initiative: intIn(s.initiative, -50, 100, 0),
+            speed: intIn(s.speed, 0, 1_000, 30),
             inspiration: boolOr(s.inspiration, false),
-            cp: numOr(s.cp, 0), sp: numOr(s.sp, 0), ep: numOr(s.ep, 0), gp: numOr(s.gp, 0), pp: numOr(s.pp, 0),
+            cp: intIn(s.cp, 0, 10_000_000, 0), sp: intIn(s.sp, 0, 10_000_000, 0),
+            ep: intIn(s.ep, 0, 10_000_000, 0), gp: intIn(s.gp, 0, 10_000_000, 0),
+            pp: intIn(s.pp, 0, 10_000_000, 0),
             conditions: toJsonFieldOrNull(s.conditions ?? []),
             spellSlotsUsed: toJsonFieldOrNull(s.spellSlotsUsed ?? {}),
-            spellAbility: strOrNull(s.spellAbility),
+            spellAbility: strOrNull(s.spellAbility, LIMITS.name),
             classes: { create: classes },
             skills: { create: skills },
             spells: { create: spells },
@@ -119,7 +118,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ id: character.id }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/dnd/characters/import]", err);
-    return NextResponse.json({ error: "Erro ao importar personagem." }, { status: 500 });
+    return handleImportError(err, "[POST /api/dnd/characters/import]");
   }
 }

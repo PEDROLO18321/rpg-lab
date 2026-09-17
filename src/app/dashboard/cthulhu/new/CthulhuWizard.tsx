@@ -47,9 +47,8 @@ export interface WizardData {
   weapons:          string[];
 }
 
-interface Props { userId: string; systemId: string; }
 
-export function CthulhuWizard({ userId, systemId }: Props) {
+export function CthulhuWizard() {
   const router = useRouter();
   const [step,      setStep]      = useState(0);
   const [data,      setData]      = useState<Partial<WizardData>>({});
@@ -111,7 +110,6 @@ export function CthulhuWizard({ userId, systemId }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemId,
           name:       data.name.trim(),
           era:        data.era ?? "1920s",
           age,

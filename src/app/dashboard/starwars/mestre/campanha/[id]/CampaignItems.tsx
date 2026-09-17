@@ -35,8 +35,8 @@ function blankItem() {
 }
 
 export function CampaignItems({ api }: { api: StarWarsApi }) {
-  const items = api.campaign.starWarsItems;
-  const sessions = api.campaign.starWarsSessions;
+  const items = api.campaign.items;
+  const sessions = api.campaign.sessions;
   const [filterType, setFilterType] = useState<ItemType | "todos">("todos");
   const [filterSession, setFilterSession] = useState<string>("todos");
   const [adding, setAdding] = useState(false);
@@ -123,7 +123,7 @@ export function CampaignItems({ api }: { api: StarWarsApi }) {
   );
 }
 
-function ItemEditor({ api, item, sessions, onDeleted }: { api: StarWarsApi; item: StarWarsCampaignItem; sessions: StarWarsApi["campaign"]["starWarsSessions"]; onDeleted: () => void }) {
+function ItemEditor({ api, item, sessions, onDeleted }: { api: StarWarsApi; item: StarWarsCampaignItem; sessions: StarWarsApi["campaign"]["sessions"]; onDeleted: () => void }) {
   const [d, setD] = useState(item);
   const set = (p: Partial<StarWarsCampaignItem>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<StarWarsCampaignItem>) => api.editChild("items", item.id, p);

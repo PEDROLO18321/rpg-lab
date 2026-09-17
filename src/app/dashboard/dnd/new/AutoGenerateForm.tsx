@@ -6,12 +6,10 @@ import { CLASSES } from "@/lib/dnd/classes";
 import { MAX_LEVEL } from "@/lib/dnd/leveling";
 
 interface Props {
-  userId: string;
-  systemId: string;
   onBack: () => void;
 }
 
-export function AutoGenerateForm({ userId, systemId, onBack }: Props) {
+export function AutoGenerateForm({ onBack }: Props) {
   const router = useRouter();
   const [level, setLevel] = useState(1);
   const [charName, setCharName] = useState("");
@@ -27,7 +25,7 @@ export function AutoGenerateForm({ userId, systemId, onBack }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId, systemId, level,
+          level,
           charName: charName.trim() || undefined,
           classId: classId || undefined,
         }),

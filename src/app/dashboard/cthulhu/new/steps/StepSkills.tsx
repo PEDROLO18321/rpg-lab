@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  OCCUPATIONS, SKILLS, calcOccupationPoints, getSkillBase, getSkillsForEra,
+  OCCUPATIONS, calcOccupationPoints, getSkillBase, getSkillsForEra,
   type Occupation,
 } from "@/lib/cthulhu/data";
 import type { WizardData } from "../CthulhuWizard";

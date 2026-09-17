@@ -8,6 +8,7 @@ import {
   countExpertSkills, expertSkillsRequiredForNewClass, isFreeMulticlassWindow, isMilestone5, isMilestone10,
   levelUpGain, type MandatoryChoiceKind, POOL_CLASS_IDS, getRemainingPoolAbilities,
 } from "@/lib/starwars/leveling";
+import { parseJsonField } from "@/lib/characterTransfer";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import type { ChosenPower } from "@/lib/starwars/powers/types";
@@ -139,15 +140,15 @@ const LAST_STEP = STEP_LABEL.length - 1;
 
 export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   const router = useRouter();
-  const classLevels: Record<string, number> = JSON.parse(sheet.classes || "{}");
+  const classLevels = parseJsonField<Record<string, number>>(sheet.classes, {});
   const existingClassIds = Object.keys(classLevels);
-  const skills: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
-  const existingGeneralPowers: string[] = JSON.parse(sheet.generalPowers || "[]");
-  const existingClassPowers: ChosenPower[] = JSON.parse(sheet.classPowers || "[]");
+  const skills = parseJsonField<Record<string, SkillGrade>>(sheet.skills, {});
+  const existingGeneralPowers = parseJsonField<string[]>(sheet.generalPowers, []);
+  const existingClassPowers = parseJsonField<ChosenPower[]>(sheet.classPowers, []);
   const expertCount = countExpertSkills(skills);
   const pathReady = canUnlockPathClass(classLevels);
 
-  const [unlockedProphecies, setUnlockedProphecies] = useState<string[]>(() => JSON.parse(sheet.unlockedProphecies || "[]"));
+  const [unlockedProphecies, setUnlockedProphecies] = useState<string[]>(() => parseJsonField<string[]>(sheet.unlockedProphecies, []));
   const [passwordInputs, setPasswordInputs] = useState<Record<string, string>>({});
   const [passwordError, setPasswordError] = useState<Record<string, string | null>>({});
   const [justUnlocked, setJustUnlocked] = useState<Record<string, boolean>>({});

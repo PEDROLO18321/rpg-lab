@@ -5,9 +5,6 @@ import { CharacterWizard } from "./CharacterWizard";
 import { AutoGenerateForm } from "./AutoGenerateForm";
 import { ImportJsonForm } from "@/components/dashboard/ImportJsonForm";
 
-interface Props {
-  systemId: string;
-}
 
 const ACCENT = "#ffffff";
 
@@ -53,16 +50,15 @@ const MODES = [
   },
 ];
 
-export function NewCharacterEntry({ systemId }: Props) {
+export function NewCharacterEntry() {
   const [mode, setMode] = useState<"choice" | "manual" | "auto" | "import">("choice");
   const [hovered, setHovered] = useState<string | null>(null);
 
-  if (mode === "manual") return <CharacterWizard systemId={systemId} />;
-  if (mode === "auto") return <AutoGenerateForm systemId={systemId} onBack={() => setMode("choice")} />;
+  if (mode === "manual") return <CharacterWizard />;
+  if (mode === "auto") return <AutoGenerateForm onBack={() => setMode("choice")} />;
   if (mode === "import")
     return (
       <ImportJsonForm
-        systemId={systemId}
         systemLabel="Ordem Paranormal"
         expectedFormat="rpglab.ordem.v1"
         importUrl="/api/ordem/characters/import"

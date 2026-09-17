@@ -11,10 +11,11 @@ import { ORIGIN_BY_ID } from "@/lib/tormenta/origins";
 import { GOD_BY_ID } from "@/lib/tormenta/gods";
 import { WEAPON_BY_ID } from "@/lib/tormenta/items";
 import { SPELLS } from "@/lib/tormenta/spells";
-import { ATTR_KEYS, ATTR_LABEL, attrMod, SKILLS, SKILL_BY_ID, skillModifier } from "@/lib/tormenta/data";
+import { ATTR_KEYS, ATTR_LABEL, attrMod, SKILLS, skillModifier } from "@/lib/tormenta/data";
 import { XP_THRESHOLDS, MAX_LEVEL, type ChosenPower } from "@/lib/tormenta/leveling";
 import { LevelUpModal } from "./LevelUpModal";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT       = "#a01818";
 const ACCENT_LIGHT = "#c94040";
@@ -24,9 +25,8 @@ const ACCENT_BORD  = "rgba(160,24,24,0.32)";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyChar = any;
 
-function parse<T>(raw: string | null | undefined, fallback: T): T {
-  if (!raw) return fallback;
-  try { return JSON.parse(raw) as T; } catch { return fallback; }
+function parse<T>(raw: unknown, fallback: T): T {
+  return parseJsonField<T>(raw, fallback);
 }
 
 interface Background { appearance?: string; personality?: string; history?: string; objective?: string }

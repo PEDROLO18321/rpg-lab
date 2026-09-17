@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
@@ -20,6 +19,15 @@ import { damageLevelMultiplier, baseDamageValue, scaledDamage } from "@/lib/star
 import { LevelUpModal } from "./LevelUpModal";
 import { RulesManual } from "./RulesManual";
 import { RollResultDie, RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { parseJsonField } from "@/lib/characterTransfer";
+
+// Fora do componente: a aleatoriedade roda em handlers de evento, não no
+// render — mantém o componente puro para o React Compiler.
+/** Rolagem de 1d20. */
+function rollD20(): number {
+  return Math.floor(Math.random() * 20) + 1;
+}
+
 
 // ─── SW accent (azul holo, tom único — igual ao padrão branco/mono da Ordem) ──
 const ACCENT       = "#5d9ed6";
@@ -67,9 +75,8 @@ function resolveClassAbilities(classId: string, lvl: number, classPowers: { leve
   return result;
 }
 
-function parse<T>(raw: string | null, fallback: T): T {
-  if (!raw) return fallback;
-  try { const v = JSON.parse(raw); return v ?? fallback; } catch { return fallback; }
+function parse<T>(raw: unknown, fallback: T): T {
+  return parseJsonField<T>(raw, fallback);
 }
 
 interface StarWarsSheetData {
@@ -451,15 +458,6 @@ export function SheetClient({ character }: { character: CharacterProp }) {
     save({ equipment: next });
   }
 
-  function bumpSkillGrade(skillId: string) {
-    // atalho de mestre/jogador pra corrigir grau manualmente (não substitui subir de nível)
-    const current = skills[skillId] ?? "inexperiente";
-    const idx = SKILL_GRADE_ORDER.indexOf(current);
-    const next = SKILL_GRADE_ORDER[(idx + 1) % SKILL_GRADE_ORDER.length];
-    const nextSkills = { ...skills, [skillId]: next };
-    setSkills(nextSkills);
-    save({ skills: nextSkills });
-  }
 
   const sharedVitals = { pvCur, peCur, ppCur, pvTemp, peTemp, ppTemp };
 
@@ -860,7 +858,7 @@ function PlayMode({
     if (a.dt !== undefined) {
       // Habilidade utilitária (não-combate): 1d20 + perícia declarada (skillId, sistema de Pools)
       // + mod, contra a DT cadastrada. Habilidades antigas sem skillId caem no 1d20 + mod puro.
-      const roll = Math.floor(Math.random() * 20) + 1;
+      const roll = rollD20();
       const skillBonus = a.skillId ? skillTotal(a.skillId) : 0;
       const total = roll + skillBonus + mod;
       const skillLabel = a.skillId ? ` — ${SKILL_BY_ID[a.skillId]?.name}` : "";

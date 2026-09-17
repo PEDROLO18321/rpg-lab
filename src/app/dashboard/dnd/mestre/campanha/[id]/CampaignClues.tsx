@@ -13,8 +13,8 @@ const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(
 const labelStyle: React.CSSProperties = { display: "block", fontSize: "0.68rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 };
 
 export function CampaignClues({ api }: { api: DndApi }) {
-  const clues = api.campaign.dndClues;
-  const sessions = api.campaign.dndSessions;
+  const clues = api.campaign.clues;
+  const sessions = api.campaign.sessions;
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [source, setSource] = useState("");
@@ -77,7 +77,7 @@ export function CampaignClues({ api }: { api: DndApi }) {
   );
 }
 
-function ClueEditor({ api, clue, sessions }: { api: DndApi; clue: DndClue; sessions: DndApi["campaign"]["dndSessions"] }) {
+function ClueEditor({ api, clue, sessions }: { api: DndApi; clue: DndClue; sessions: DndApi["campaign"]["sessions"] }) {
   const [d, setD] = useState(clue);
   const set = (p: Partial<DndClue>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<DndClue>) => api.editChild("clues", clue.id, p);

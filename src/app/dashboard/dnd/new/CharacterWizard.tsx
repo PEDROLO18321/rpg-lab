@@ -62,12 +62,8 @@ export interface WizardData {
   selectedLanguages:    string[];
 }
 
-interface Props {
-  userId:   string;
-  systemId: string;
-}
 
-export function CharacterWizard({ userId, systemId }: Props) {
+export function CharacterWizard() {
   const router  = useRouter();
   const [step,  setStep]  = useState(0);
   const [data,  setData]  = useState<Partial<WizardData>>({});
@@ -171,7 +167,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
       const res = await fetch("/api/dnd/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, userId, systemId }),
+        body: JSON.stringify(data),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erro ao salvar");

@@ -1,44 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { numOr, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { readImportRequest, handleImportError } from "@/lib/characterImport";
+import { LIMITS, intIn, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { MAX_LEVEL } from "@/lib/tormenta/leveling";
 import { FORMAT } from "../[id]/export/route";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json();
-  const { systemId, payload } = body ?? {};
-  if (!systemId || payload?.format !== FORMAT) {
-    return NextResponse.json({ error: "Arquivo inválido para Tormenta 20." }, { status: 400 });
-  }
-
-  const char = payload.character ?? {};
-  const s = payload.sheet ?? {};
-  if (typeof char.name !== "string" || !char.name.trim()) {
-    return NextResponse.json({ error: "Nome do personagem ausente." }, { status: 400 });
-  }
-
   try {
+    const { userId, systemId, character: char, sheet: s } = await readImportRequest(req, {
+      slug: "tormenta20",
+      format: FORMAT,
+      label: "Tormenta 20",
+    });
+
     const character = await prisma.character.create({
       data: {
-        userId: session.user.id,
+        userId,
         systemId,
-        name: char.name.trim(),
+        name: (char.name as string).trim(),
         notes: strOrNull(char.notes),
-        portraitUrl: strOrNull(char.portraitUrl),
+        portraitUrl: strOrNull(char.portraitUrl, LIMITS.url),
         tormentaSheet: {
           create: {
-            race: strOrNull(s.race), raceVariant: strOrNull(s.raceVariant),
-            className: strOrNull(s.className), path: strOrNull(s.path),
-            origin: strOrNull(s.origin), godId: strOrNull(s.godId),
-            level: numOr(s.level, 1), xp: numOr(s.xp, 0),
-            forca: numOr(s.forca, 10), des: numOr(s.des, 10), con: numOr(s.con, 10),
-            int: numOr(s.int, 10), sab: numOr(s.sab, 10), car: numOr(s.car, 10),
-            pvMax: numOr(s.pvMax, 10), pvCurrent: numOr(s.pvCurrent, 10), pvTemp: numOr(s.pvTemp, 0),
-            pmMax: numOr(s.pmMax, 10), pmCurrent: numOr(s.pmCurrent, 10), pmTemp: numOr(s.pmTemp, 0),
-            defense: numOr(s.defense, 10), movement: numOr(s.movement, 9), money: numOr(s.money, 0),
+            race: strOrNull(s.race, LIMITS.name),
+            raceVariant: strOrNull(s.raceVariant, LIMITS.name),
+            className: strOrNull(s.className, LIMITS.name),
+            path: strOrNull(s.path, LIMITS.name),
+            origin: strOrNull(s.origin, LIMITS.name),
+            godId: strOrNull(s.godId, LIMITS.name),
+            level: intIn(s.level, 1, MAX_LEVEL, 1),
+            xp: intIn(s.xp, 0, 1_000_000, 0),
+            forca: intIn(s.forca, -10, 50, 10), des: intIn(s.des, -10, 50, 10),
+            con: intIn(s.con, -10, 50, 10), int: intIn(s.int, -10, 50, 10),
+            sab: intIn(s.sab, -10, 50, 10), car: intIn(s.car, -10, 50, 10),
+            pvMax: intIn(s.pvMax, 0, 100_000, 10),
+            pvCurrent: intIn(s.pvCurrent, -1_000, 100_000, 10),
+            pvTemp: intIn(s.pvTemp, 0, 100_000, 0),
+            pmMax: intIn(s.pmMax, 0, 100_000, 10),
+            pmCurrent: intIn(s.pmCurrent, 0, 100_000, 10),
+            pmTemp: intIn(s.pmTemp, 0, 100_000, 0),
+            defense: intIn(s.defense, 0, 200, 10),
+            movement: intIn(s.movement, 0, 1_000, 9),
+            money: intIn(s.money, 0, 100_000_000, 0),
             skills: toJsonFieldOrNull(s.skills ?? {}),
             schoolsChosen: toJsonFieldOrNull(s.schoolsChosen ?? []),
             spellsKnown: toJsonFieldOrNull(s.spellsKnown ?? []),
@@ -55,7 +58,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ id: character.id }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/tormenta/characters/import]", err);
-    return NextResponse.json({ error: "Erro ao importar personagem." }, { status: 500 });
+    return handleImportError(err, "[POST /api/tormenta/characters/import]");
   }
 }

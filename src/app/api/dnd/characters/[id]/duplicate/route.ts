@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { jsonIn } from "@/lib/characterTransfer";
 
 /** Duplica o personagem com ficha completa (classes, perícias, magias, equipamento, características). */
 export async function POST(
@@ -49,8 +50,8 @@ export async function POST(
                 armorClass: s.armorClass, initiative: s.initiative, speed: s.speed,
                 inspiration: s.inspiration,
                 cp: s.cp, sp: s.sp, ep: s.ep, gp: s.gp, pp: s.pp,
-                conditions: s.conditions,
-                spellSlotsUsed: s.spellSlotsUsed,
+                conditions: jsonIn(s.conditions),
+                spellSlotsUsed: jsonIn(s.spellSlotsUsed),
                 classes: {
                   create: s.classes.map((c) => ({
                     className: c.className, subclass: c.subclass, level: c.level,

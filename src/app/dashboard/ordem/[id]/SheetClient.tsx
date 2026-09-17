@@ -1,8 +1,13 @@
 "use client";
 
+// Os retratos de personagem são data-URLs base64 geradas por upload local
+// (FileReader.readAsDataURL). next/image não otimiza data-URLs — usar <img>
+// aqui é a escolha correta, não um descuido.
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useRef, useCallback } from "react";
-import Link from "next/link";
 import "../ordem-responsive.css";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
@@ -75,9 +80,8 @@ const SANITY_STATUS_COLOR: Record<ReturnType<typeof sanityStatus>, string> = {
 
 interface InsanityData { traumas: string[]; notes: string; }
 
-function parse<T>(raw: string | null | undefined, fallback: T): T {
-  if (!raw) return fallback;
-  try { return JSON.parse(raw) as T; } catch { return fallback; }
+function parse<T>(raw: unknown, fallback: T): T {
+  return parseJsonField<T>(raw, fallback);
 }
 
 interface RollLog extends RollResult { id: number; label: string; }
@@ -684,7 +688,7 @@ interface PlayProps extends SharedProps {
   save: (payload: Record<string, unknown>) => void;
 }
 
-function PlayMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, log, sanStatus, lifeStat, setPv, setPe, setSan, setNotes, setSkillAttrFor, rollSkillRow, rollAttribute, rollDamage, pushLog, save }: PlayProps) {
+function PlayMode({ sheet, origin, attrs, nex, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, log, sanStatus, lifeStat, setPv, setPe, setSan, setNotes, setSkillAttrFor, rollSkillRow, rollAttribute, rollDamage, pushLog, save }: PlayProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Vitals editable */}

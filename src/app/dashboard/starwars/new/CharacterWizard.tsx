@@ -58,9 +58,8 @@ export interface WizardData {
 const DEFAULT_ATTRS: StarWarsAttrs = { agi: 0, int: 0, forca: 0, vig: 0, pre: 0, sen: 0 };
 const DEFAULT_HUMAN_CHOICE = { plus2: [] as AttrKey[], plus1: [] as AttrKey[], minus1: [] as AttrKey[] };
 
-interface Props { userId: string; systemId: string }
 
-export function CharacterWizard({ userId, systemId }: Props) {
+export function CharacterWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Partial<WizardData>>({ attrBases: DEFAULT_ATTRS, humanChoice: DEFAULT_HUMAN_CHOICE });
@@ -124,7 +123,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
       const res = await fetch("/api/starwars/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, userId, systemId }),
+        body: JSON.stringify(data),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erro ao salvar");

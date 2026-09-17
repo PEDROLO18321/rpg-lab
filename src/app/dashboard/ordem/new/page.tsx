@@ -10,5 +10,5 @@ export default async function NewAgentPage() {
   const system = await prisma.system.findUnique({ where: { slug: "ordem" } });
   if (!system) redirect("/dashboard/ordem");
 
-  return <NewCharacterEntry systemId={system.id} />;
+  return <NewCharacterEntry />;
 }

@@ -654,8 +654,9 @@ function AbilityCard({
         transition: "border-color 0.2s",
       }}
     >
-      {/* Header: abbrev + full name */}
-      <div style={{ textAlign: "center" }}>
+      {/* Header: abbrev + full name. A descrição do atributo vem como tooltip —
+          o jogador entende para que serve cada um sem precisar do livro. */}
+      <div style={{ textAlign: "center" }} title={ABILITY_DESC[abilityKey]}>
         <p style={{ fontSize: "0.64rem", fontWeight: 900, color: isHigh && showControls ? "var(--accent)" : "var(--text-muted)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
           {ABILITY_SHORT[abilityKey]}
         </p>

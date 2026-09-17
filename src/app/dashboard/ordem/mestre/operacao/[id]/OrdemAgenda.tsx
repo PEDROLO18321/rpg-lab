@@ -21,7 +21,7 @@ export function OrdemAgenda({ api }: { api: OperacaoApi }) {
   function clear() { setValue(""); api.patch({ nextSessionAt: null }); }
 
   const next = api.campaign.nextSessionAt ? new Date(api.campaign.nextSessionAt) : null;
-  const sessionsWithDate = api.campaign.ordemSessions.filter((s) => s.sessionDate);
+  const sessionsWithDate = api.campaign.sessions.filter((s) => s.sessionDate);
 
   const card: React.CSSProperties = { background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)", padding: "20px 22px" };
   const labelStyle: React.CSSProperties = { display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 };

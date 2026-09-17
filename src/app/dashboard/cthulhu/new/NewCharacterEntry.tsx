@@ -5,10 +5,6 @@ import { CthulhuWizard } from "./CthulhuWizard";
 import { AutoGenerateForm } from "./AutoGenerateForm";
 import { ImportJsonForm } from "@/components/dashboard/ImportJsonForm";
 
-interface Props {
-  userId: string;
-  systemId: string;
-}
 
 const ACCENT_LIGHT = "#a3b86c";
 
@@ -54,16 +50,15 @@ const MODES = [
   },
 ];
 
-export function NewCharacterEntry({ userId, systemId }: Props) {
+export function NewCharacterEntry() {
   const [mode, setMode] = useState<"choice" | "manual" | "auto" | "import">("choice");
   const [hovered, setHovered] = useState<string | null>(null);
 
-  if (mode === "manual") return <CthulhuWizard userId={userId} systemId={systemId} />;
-  if (mode === "auto") return <AutoGenerateForm systemId={systemId} onBack={() => setMode("choice")} />;
+  if (mode === "manual") return <CthulhuWizard />;
+  if (mode === "auto") return <AutoGenerateForm onBack={() => setMode("choice")} />;
   if (mode === "import")
     return (
       <ImportJsonForm
-        systemId={systemId}
         systemLabel="Call of Cthulhu"
         expectedFormat="rpglab.cthulhu.v1"
         importUrl="/api/cthulhu/characters/import"

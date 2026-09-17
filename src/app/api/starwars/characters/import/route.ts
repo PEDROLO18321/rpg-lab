@@ -1,47 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { numOr, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { readImportRequest, handleImportError } from "@/lib/characterImport";
+import { LIMITS, intIn, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { MAX_LEVEL } from "@/lib/starwars/leveling";
 import { FORMAT } from "../[id]/export/route";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json();
-  const { systemId, payload } = body ?? {};
-  if (!systemId || payload?.format !== FORMAT) {
-    return NextResponse.json({ error: "Arquivo inválido para Star Wars." }, { status: 400 });
-  }
-
-  const char = payload.character ?? {};
-  const s = payload.sheet ?? {};
-  if (typeof char.name !== "string" || !char.name.trim()) {
-    return NextResponse.json({ error: "Nome do personagem ausente." }, { status: 400 });
-  }
-
   try {
+    const { userId, systemId, character: char, sheet: s } = await readImportRequest(req, {
+      slug: "starwars",
+      format: FORMAT,
+      label: "Star Wars",
+    });
+
     const character = await prisma.character.create({
       data: {
-        userId: session.user.id,
+        userId,
         systemId,
-        name: char.name.trim(),
+        name: (char.name as string).trim(),
         notes: strOrNull(char.notes),
-        portraitUrl: strOrNull(char.portraitUrl),
+        portraitUrl: strOrNull(char.portraitUrl, LIMITS.url),
         starWarsSheet: {
           create: {
-            species: strOrNull(s.species), planet: strOrNull(s.planet),
-            planetSkillChoice: strOrNull(s.planetSkillChoice), path: strOrNull(s.path),
+            species: strOrNull(s.species, LIMITS.name),
+            planet: strOrNull(s.planet, LIMITS.name),
+            planetSkillChoice: strOrNull(s.planetSkillChoice, LIMITS.name),
+            path: strOrNull(s.path, LIMITS.name),
             classes: toJsonFieldOrNull(s.classes ?? {}) ?? "{}",
-            level: numOr(s.level, 1), xp: numOr(s.xp, 0),
+            level: intIn(s.level, 1, MAX_LEVEL, 1),
+            xp: intIn(s.xp, 0, 100_000_000, 0),
             humanAttrChoice: toJsonFieldOrNull(s.humanAttrChoice ?? null),
-            agi: numOr(s.agi, 1), int: numOr(s.int, 1), forca: numOr(s.forca, 1),
-            vig: numOr(s.vig, 1), pre: numOr(s.pre, 1), sen: numOr(s.sen, 1),
-            pvMax: numOr(s.pvMax, 10), pvClassSum: numOr(s.pvClassSum, 0), pvLevelGain: numOr(s.pvLevelGain, 0),
-            pvCurrent: numOr(s.pvCurrent, 10), pvTemp: numOr(s.pvTemp, 0),
-            peMax: numOr(s.peMax, 0), peCurrent: numOr(s.peCurrent, 0), peTemp: numOr(s.peTemp, 0),
-            ppMax: numOr(s.ppMax, 0), ppCurrent: numOr(s.ppCurrent, 0), ppTemp: numOr(s.ppTemp, 0),
-            sabreForm: strOrNull(s.sabreForm),
+            agi: intIn(s.agi, 0, 10_000, 1), int: intIn(s.int, 0, 10_000, 1),
+            forca: intIn(s.forca, 0, 10_000, 1), vig: intIn(s.vig, 0, 10_000, 1),
+            pre: intIn(s.pre, 0, 10_000, 1), sen: intIn(s.sen, 0, 10_000, 1),
+            pvMax: intIn(s.pvMax, 0, 10_000_000, 10),
+            pvClassSum: intIn(s.pvClassSum, 0, 10_000_000, 0),
+            pvLevelGain: intIn(s.pvLevelGain, 0, 10_000_000, 0),
+            pvCurrent: intIn(s.pvCurrent, -100_000, 10_000_000, 10),
+            pvTemp: intIn(s.pvTemp, 0, 10_000_000, 0),
+            peMax: intIn(s.peMax, 0, 10_000_000, 0),
+            peCurrent: intIn(s.peCurrent, 0, 10_000_000, 0),
+            peTemp: intIn(s.peTemp, 0, 10_000_000, 0),
+            ppMax: intIn(s.ppMax, 0, 10_000_000, 0),
+            ppCurrent: intIn(s.ppCurrent, 0, 10_000_000, 0),
+            ppTemp: intIn(s.ppTemp, 0, 10_000_000, 0),
+            sabreForm: strOrNull(s.sabreForm, LIMITS.name),
             unlockedProphecies: toJsonFieldOrNull(s.unlockedProphecies ?? []) ?? "[]",
             skills: toJsonFieldOrNull(s.skills ?? {}),
             classPowers: toJsonFieldOrNull(s.classPowers ?? []),
@@ -58,7 +61,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ id: character.id }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/starwars/characters/import]", err);
-    return NextResponse.json({ error: "Erro ao importar personagem." }, { status: 500 });
+    return handleImportError(err, "[POST /api/starwars/characters/import]");
   }
 }

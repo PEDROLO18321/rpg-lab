@@ -65,9 +65,8 @@ export interface WizardData {
 
 const DEFAULT_ATTRS: TormentaAttrs = { for: 10, des: 10, con: 10, int: 10, sab: 10, car: 10 };
 
-interface Props { userId: string; systemId: string }
 
-export function CharacterWizard({ userId, systemId }: Props) {
+export function CharacterWizard() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Partial<WizardData>>({ attrBases: DEFAULT_ATTRS });
@@ -138,7 +137,7 @@ export function CharacterWizard({ userId, systemId }: Props) {
       const res = await fetch("/api/tormenta/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, userId, systemId }),
+        body: JSON.stringify(data),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erro ao salvar");

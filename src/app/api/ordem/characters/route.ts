@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authedSystemContext } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
 import { computeVitals, computeDefense, BASE_MOVEMENT, type ClassId } from "@/lib/ordem/data";
 
 export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await authedSystemContext("ordem");
+  if (!ctx.ok) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
 
+  try {
     const body = await req.json();
     const {
-      systemId, name, origin, className, trail, nex,
+      name, origin, className, trail, nex,
       attrs, skills, abilities, rituals, inventory, weapons, background, notes,
       paranormalPower,
     } = body;
 
-    if (!systemId || !name?.trim())
+    if (!name?.trim())
       return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
     if (!className)
       return NextResponse.json({ error: "Classe obrigatória." }, { status: 400 });
@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
 
     const character = await prisma.character.create({
       data: {
-        userId:   session.user.id,
-        systemId,
+        userId:   ctx.userId,
+        systemId: ctx.systemId,
         name:     name.trim(),
         notes:    notes ?? null,
         ordemSheet: {
@@ -52,16 +52,12 @@ export async function POST(req: NextRequest) {
             sanCurrent: vitals.sanMax,
             defense:   computeDefense(agi),
             movement:  BASE_MOVEMENT,
-            skills:    skills    ? JSON.stringify(skills)    : null,
-            abilities: abilities
-              ? JSON.stringify(abilities)
-              : paranormalPower
-                ? JSON.stringify({ paranormalPower })
-                : null,
-            rituals:   rituals   ? JSON.stringify(rituals)   : null,
-            inventory: inventory ? JSON.stringify(inventory) : null,
-            weapons:   weapons && weapons.length ? JSON.stringify(weapons) : null,
-            background: background ? JSON.stringify(background) : null,
+            skills:    toJsonFieldOrNull(skills),
+            abilities: toJsonFieldOrNull(abilities ?? (paranormalPower ? { paranormalPower } : null)),
+            rituals:   toJsonFieldOrNull(rituals),
+            inventory: toJsonFieldOrNull(inventory),
+            weapons:   toJsonFieldOrNull(weapons && weapons.length ? weapons : null),
+            background: toJsonFieldOrNull(background),
           },
         },
       },

@@ -4,6 +4,7 @@ import "../../../tormenta-responsive.css";
 import { useState } from "react";
 import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 import type { TormentaNpc, NPCAttack } from "@/lib/tormenta/tormentaCampaignClient";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT = "#a01818";
 const ACCENT_LIGHT = "#c94040";
@@ -36,7 +37,10 @@ const ATTR_LABELS: { key: "forca" | "des" | "con" | "int" | "sab" | "car"; label
   { key: "int", label: "INT" }, { key: "sab", label: "SAB" }, { key: "car", label: "CAR" },
 ];
 
-function parseAttacks(json: string): NPCAttack[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseAttacks(json: unknown): NPCAttack[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as NPCAttack[]) : [];
+}
 function emptyNpc(): NpcForm { return { name: "", race: "", role: "", description: "", personality: "", notes: "", pv: null, defense: null, forca: null, des: null, con: null, int: null, sab: null, car: null, attacks: [] }; }
 function randomNpc(): NpcForm {
   return { name: rand(NAMES), race: rand(RACES), role: rand(ROLES), description: rand(APPEARANCES), personality: rand(TRAITS), notes: "",
@@ -44,7 +48,7 @@ function randomNpc(): NpcForm {
 }
 
 export function NpcCreator({ api }: { api: TormentaApi }) {
-  const npcs = api.campaign.tormentaNpcs;
+  const npcs = api.campaign.npcs;
   const [mode, setMode] = useState<"random" | "manual">("random");
   const [form, setForm] = useState<NpcForm>(randomNpc());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export function NpcCreator({ api }: { api: TormentaApi }) {
   function switchMode(m: "random" | "manual") { setMode(m); setForm(m === "random" ? randomNpc() : emptyNpc()); }
   async function saveNpc() {
     if (!form.name.trim()) return;
-    await api.addChild("npcs", { ...form, attacks: JSON.stringify(form.attacks) });
+    await api.addChild("npcs", { ...form });
     setForm(mode === "random" ? randomNpc() : emptyNpc());
   }
   function deleteNpc(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
@@ -64,7 +68,7 @@ export function NpcCreator({ api }: { api: TormentaApi }) {
   function removeAttack(i: number) { setForm({ ...form, attacks: form.attacks.filter((_, j) => j !== i) }); }
   async function addToInitiative(npc: TormentaNpc) {
     const initiative = addInitValue !== "" ? Number(addInitValue) : rollD20();
-    await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pm: null, maxPm: null, defense: npc.defense, conditions: "[]", isPlayer: false, order: api.campaign.tormentaCombatants.length });
+    await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pm: null, maxPm: null, defense: npc.defense, conditions: [], isPlayer: false, order: api.campaign.combatants.length });
     setAddInitTarget(null); setAddInitValue("");
   }
 

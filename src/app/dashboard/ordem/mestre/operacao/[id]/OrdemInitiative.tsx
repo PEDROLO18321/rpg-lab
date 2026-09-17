@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemCombatant } from "@/lib/ordem/ordemCampaignClient";
 import { CONDITIONS, CONDITION_BY_ID, CATEGORY_COLOR } from "@/lib/ordem/conditions";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -20,12 +21,13 @@ const inputStyle: React.CSSProperties = {
   color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box",
 };
 
-function parseConditions(json: string): string[] {
-  try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; }
+function parseConditions(json: unknown): string[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as string[]) : [];
 }
 
 export function OrdemInitiative({ api }: { api: OperacaoApi }) {
-  const combatants = api.campaign.ordemCombatants;
+  const combatants = api.campaign.combatants;
   const [name, setName] = useState("");
   const [initVal, setInitVal] = useState("");
   const [pv, setPv] = useState("");
@@ -47,7 +49,7 @@ export function OrdemInitiative({ api }: { api: OperacaoApi }) {
     await api.addChild("combatants", {
       name: trimmed, init, pv: pvNum, maxPv: pvNum, pe: peNum, maxPe: peNum,
       san: sanNum, maxSan: sanNum, rd: rd !== "" ? Number(rd) : 0, isPlayer,
-      conditions: "[]", order: combatants.length,
+      conditions: [], order: combatants.length,
     });
     setName(""); setInitVal(""); setPv(""); setPe(""); setSan(""); setRd(""); setIsPlayer(false);
   }
@@ -86,7 +88,7 @@ export function OrdemInitiative({ api }: { api: OperacaoApi }) {
   function toggleCondition(c: OrdemCombatant, condId: string) {
     const cur = parseConditions(c.conditions);
     const next = cur.includes(condId) ? cur.filter((x) => x !== condId) : [...cur, condId];
-    api.editChild("combatants", c.id, { conditions: JSON.stringify(next) });
+    api.editChild("combatants", c.id, { conditions: next });
   }
 
   function vital(c: OrdemCombatant, field: "pv" | "pe" | "san", label: string, color: string) {

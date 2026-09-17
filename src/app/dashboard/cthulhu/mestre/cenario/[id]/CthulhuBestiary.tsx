@@ -80,8 +80,8 @@ export function CthulhuBestiary({ api }: Props) {
     const dex = addDex !== "" ? Number(addDex) : creature.dex;
     await api.addChild("combatants", {
       name: creature.name, dex, hp: creature.hp, maxHp: creature.hp,
-      san: null, maxSan: null, mp: null, maxMp: null, conditions: "[]", isPlayer: false,
-      order: api.campaign.cthulhuCombatants.length,
+      san: null, maxSan: null, mp: null, maxMp: null, conditions: [], isPlayer: false,
+      order: api.campaign.combatants.length,
     });
     setAddTarget(null);
     setAddDex("");

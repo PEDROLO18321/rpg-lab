@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 import type { TormentaNpc, NPCAttack } from "@/lib/tormenta/tormentaCampaignClient";
 import { OfficialBestiary } from "./OfficialBestiary";
+import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT = "#a01818";
 const ACCENT_LIGHT = "#c94040";
@@ -16,10 +17,13 @@ const ATTR_LABELS: { key: "forca" | "des" | "con" | "int" | "sab" | "car"; label
 
 function rollD20() { return Math.floor(Math.random() * 20) + 1; }
 function mod(s: number) { const m = Math.floor((s - 10) / 2); return m >= 0 ? `+${m}` : `${m}`; }
-function parseAttacks(json: string): NPCAttack[] { try { const a = JSON.parse(json); return Array.isArray(a) ? a : []; } catch { return []; } }
+function parseAttacks(json: unknown): NPCAttack[] {
+  const v = parseJsonField<unknown>(json, []);
+  return Array.isArray(v) ? (v as NPCAttack[]) : [];
+}
 
 export function Bestiary({ api }: { api: TormentaApi }) {
-  const npcs = api.campaign.tormentaNpcs;
+  const npcs = api.campaign.npcs;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [addInitTarget, setAddInitTarget] = useState<string | null>(null);
   const [addInitValue, setAddInitValue] = useState("");
@@ -27,7 +31,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
   function deleteCreature(id: string) { api.removeChild("npcs", id); if (expanded === id) setExpanded(null); }
   async function addToInitiative(npc: TormentaNpc) {
     const initiative = addInitValue !== "" ? Number(addInitValue) : rollD20();
-    await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pm: null, maxPm: null, defense: npc.defense, conditions: "[]", isPlayer: false, order: api.campaign.tormentaCombatants.length });
+    await api.addChild("combatants", { name: npc.name, initiative, pv: npc.pv, maxPv: npc.pv, pm: null, maxPm: null, defense: npc.defense, conditions: [], isPlayer: false, order: api.campaign.combatants.length });
     setAddInitTarget(null); setAddInitValue("");
   }
 

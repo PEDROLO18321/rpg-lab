@@ -1,44 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { numOr, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { readImportRequest, handleImportError } from "@/lib/characterImport";
+import { LIMITS, intIn, strOrNull, toJsonFieldOrNull } from "@/lib/characterTransfer";
 import { FORMAT } from "../[id]/export/route";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json();
-  const { systemId, payload } = body ?? {};
-  if (!systemId || payload?.format !== FORMAT) {
-    return NextResponse.json({ error: "Arquivo inválido para Call of Cthulhu." }, { status: 400 });
-  }
-
-  const char = payload.character ?? {};
-  const s = payload.sheet ?? {};
-  if (typeof char.name !== "string" || !char.name.trim()) {
-    return NextResponse.json({ error: "Nome do investigador ausente." }, { status: 400 });
-  }
-
   try {
+    const { userId, systemId, character: char, sheet: s } = await readImportRequest(req, {
+      slug: "cthulhu",
+      format: FORMAT,
+      label: "Call of Cthulhu",
+      subject: "investigador",
+    });
+
     const character = await prisma.character.create({
       data: {
-        userId: session.user.id,
+        userId,
         systemId,
-        name: char.name.trim(),
+        name: (char.name as string).trim(),
         notes: strOrNull(char.notes),
-        portraitUrl: strOrNull(char.portraitUrl),
+        portraitUrl: strOrNull(char.portraitUrl, LIMITS.url),
         cthulhuSheet: {
           create: {
-            occupation: strOrNull(s.occupation), era: strOrNull(s.era) ?? "1920s",
-            age: numOr(s.age, 25),
-            atribFor: numOr(s.atribFor, 50), atribCon: numOr(s.atribCon, 50), atribTam: numOr(s.atribTam, 65),
-            atribDes: numOr(s.atribDes, 50), atribApa: numOr(s.atribApa, 50), atribInt: numOr(s.atribInt, 65),
-            atribPod: numOr(s.atribPod, 50), atribEdu: numOr(s.atribEdu, 65),
-            sanCurrent: numOr(s.sanCurrent, 50), sanMax: numOr(s.sanMax, 99),
-            pvMax: numOr(s.pvMax, 12), pvCurrent: numOr(s.pvCurrent, 12),
-            luck: numOr(s.luck, 50), mov: numOr(s.mov, 8), pmCurrent: numOr(s.pmCurrent, 10),
-            pvTemp: numOr(s.pvTemp, 0), sanTemp: numOr(s.sanTemp, 0), pmTemp: numOr(s.pmTemp, 0),
+            occupation: strOrNull(s.occupation, LIMITS.name),
+            era: strOrNull(s.era, LIMITS.name) ?? "1920s",
+            age: intIn(s.age, 1, 120, 25),
+            // Atributos de CoC são percentuais (0–99 na criação); teto folgado
+            // para acomodar bônus de regra da casa sem aceitar lixo.
+            atribFor: intIn(s.atribFor, 0, 200, 50), atribCon: intIn(s.atribCon, 0, 200, 50),
+            atribTam: intIn(s.atribTam, 0, 200, 65), atribDes: intIn(s.atribDes, 0, 200, 50),
+            atribApa: intIn(s.atribApa, 0, 200, 50), atribInt: intIn(s.atribInt, 0, 200, 65),
+            atribPod: intIn(s.atribPod, 0, 200, 50), atribEdu: intIn(s.atribEdu, 0, 200, 65),
+            sanCurrent: intIn(s.sanCurrent, 0, 200, 50), sanMax: intIn(s.sanMax, 0, 200, 99),
+            pvMax: intIn(s.pvMax, 0, 500, 12), pvCurrent: intIn(s.pvCurrent, -100, 500, 12),
+            luck: intIn(s.luck, 0, 200, 50),
+            mov: intIn(s.mov, 0, 100, 8),
+            pmCurrent: intIn(s.pmCurrent, 0, 200, 10),
+            pvTemp: intIn(s.pvTemp, 0, 500, 0),
+            sanTemp: intIn(s.sanTemp, 0, 200, 0),
+            pmTemp: intIn(s.pmTemp, 0, 200, 0),
             skillChecks: toJsonFieldOrNull(s.skillChecks ?? []),
             skills: toJsonFieldOrNull(s.skills ?? {}),
             background: toJsonFieldOrNull(s.background ?? {}),
@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ id: character.id }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/cthulhu/characters/import]", err);
-    return NextResponse.json({ error: "Erro ao importar personagem." }, { status: 500 });
+    return handleImportError(err, "[POST /api/cthulhu/characters/import]");
   }
 }

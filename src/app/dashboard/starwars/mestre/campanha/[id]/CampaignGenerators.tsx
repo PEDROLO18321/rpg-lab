@@ -59,7 +59,7 @@ export function CampaignGenerators({ api }: { api: StarWarsApi }) {
       description: npc.planet ? `Natural de ${npc.planet}.` : "",
       personality: npc.trait ?? "",
       notes: npc.motive ? `Motivação: ${npc.motive}.` : "",
-      attacks: "[]",
+      attacks: [],
     });
     setSaveMsg("✓ NPC adicionado à aba NPCs.");
     setTimeout(() => setSaveMsg(null), 3000);

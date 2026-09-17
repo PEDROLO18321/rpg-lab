@@ -6,7 +6,6 @@ import { OCCUPATIONS } from "@/lib/cthulhu/data";
 import { generateInvestigator } from "@/lib/cthulhu/autoGenerate";
 
 interface Props {
-  systemId: string;
   onBack: () => void;
 }
 
@@ -15,7 +14,7 @@ const ACCENT_LIGHT = "#a3b86c";
 const ACCENT_DIM   = "rgba(125,156,62,0.12)";
 const ACCENT_BORD  = "rgba(125,156,62,0.28)";
 
-export function AutoGenerateForm({ systemId, onBack }: Props) {
+export function AutoGenerateForm({ onBack }: Props) {
   const router = useRouter();
   const [charName, setCharName] = useState("");
   const [occupationId, setOccupationId] = useState("");
@@ -36,7 +35,7 @@ export function AutoGenerateForm({ systemId, onBack }: Props) {
       const res = await fetch("/api/cthulhu/characters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...build, systemId }),
+        body: JSON.stringify(build),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erro ao gerar investigador");

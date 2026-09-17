@@ -14,8 +14,8 @@ const inputStyle: React.CSSProperties = { padding: "9px 12px", background: "var(
 const labelStyle: React.CSSProperties = { display: "block", fontSize: "0.68rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 };
 
 export function CampaignClues({ api }: { api: StarWarsApi }) {
-  const clues = api.campaign.starWarsClues;
-  const sessions = api.campaign.starWarsSessions;
+  const clues = api.campaign.clues;
+  const sessions = api.campaign.sessions;
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [source, setSource] = useState("");
@@ -78,7 +78,7 @@ export function CampaignClues({ api }: { api: StarWarsApi }) {
   );
 }
 
-function ClueEditor({ api, clue, sessions }: { api: StarWarsApi; clue: StarWarsClue; sessions: StarWarsApi["campaign"]["starWarsSessions"] }) {
+function ClueEditor({ api, clue, sessions }: { api: StarWarsApi; clue: StarWarsClue; sessions: StarWarsApi["campaign"]["sessions"] }) {
   const [d, setD] = useState(clue);
   const set = (p: Partial<StarWarsClue>) => setD((c) => ({ ...c, ...p }));
   const commit = (p: Partial<StarWarsClue>) => api.editChild("clues", clue.id, p);

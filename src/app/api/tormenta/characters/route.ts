@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toJsonFieldOrNull } from "@/lib/characterTransfer";
+import { authedSystemContext } from "@/lib/apiAuth";
 import { attrMod, type AttrKey, type TormentaAttrs } from "@/lib/tormenta/data";
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 import { RACE_BY_ID } from "@/lib/tormenta/races";
@@ -20,10 +22,13 @@ function rollDice(notation: string): number {
 }
 
 export async function POST(req: NextRequest) {
+  const ctx = await authedSystemContext("tormenta20");
+  if (!ctx.ok) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
+
   try {
     const body = await req.json();
     const {
-      userId, systemId, charName,
+      charName,
       raceId, raceVariantId, racialAttrChoices,
       classId, pathId, schoolsChosen, godId,
       originId, originSkillChoices, classSkillChoices, classFixedChoice, intBonusSkillChoices,
@@ -32,7 +37,7 @@ export async function POST(req: NextRequest) {
       desc,
     } = body;
 
-    if (!userId || !systemId || !charName?.trim() || !raceId || !classId || !originId) {
+    if (!charName?.trim() || !raceId || !classId || !originId) {
       return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
     }
 
@@ -73,8 +78,8 @@ export async function POST(req: NextRequest) {
 
     const character = await prisma.character.create({
       data: {
-        userId,
-        systemId,
+        userId: ctx.userId,
+        systemId: ctx.systemId,
         name: charName.trim(),
         notes: null,
         tormentaSheet: {
@@ -100,12 +105,12 @@ export async function POST(req: NextRequest) {
             defense,
             movement: race.speed,
             money: rollDice(STARTING_MONEY_DICE),
-            skills: JSON.stringify(skillsData),
-            schoolsChosen: schoolsChosen ? JSON.stringify(schoolsChosen) : null,
-            spellsKnown: selectedSpells ? JSON.stringify(selectedSpells) : null,
-            weapons: weaponId ? JSON.stringify([weaponId]) : null,
-            equipment: JSON.stringify(equipment),
-            background: desc ? JSON.stringify(desc) : null,
+            skills: skillsData,
+            schoolsChosen: toJsonFieldOrNull(schoolsChosen),
+            spellsKnown: toJsonFieldOrNull(selectedSpells),
+            weapons: weaponId ? [weaponId] : undefined,
+            equipment: equipment,
+            background: toJsonFieldOrNull(desc),
           },
         },
       },

@@ -69,7 +69,7 @@ export function OrdemGenerators({ api }: { api: OperacaoApi }) {
       name: npc.name, role: "", personality: npc.trait,
       paranormalTies: `Segredo: ${npc.secret}`,
       notes: `Motivação: ${npc.motive}. Elemento associado: ${ELEMENT_LABEL[npc.element]}.`,
-      attacks: "[]",
+      attacks: [],
     });
     setSaveMsg("✓ NPC adicionado à aba NPCs.");
     setTimeout(() => setSaveMsg(null), 3000);

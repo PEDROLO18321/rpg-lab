@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseJsonField } from "@/lib/characterTransfer";
 import {
   MAX_LEVEL, CLASS_LEVEL_CAP, BONUS_LEVEL_ID, isMilestone5, isMilestone10,
   levelUpGain, ppLevelUpGain, canCombineClasses,
@@ -34,9 +35,9 @@ export async function POST(
     return NextResponse.json({ error: `Nível máximo (${MAX_LEVEL}) já alcançado.` }, { status: 400 });
   }
 
-  const classLevels: Record<string, number> = JSON.parse(sheet.classes || "{}");
+  const classLevels: Record<string, number> = parseJsonField<Record<string, number>>(sheet.classes, {});
   const existingClassIds = Object.keys(classLevels);
-  const skills: Record<string, SkillGrade> = JSON.parse(sheet.skills || "{}");
+  const skills: Record<string, SkillGrade> = parseJsonField<Record<string, SkillGrade>>(sheet.skills, {});
 
   const body = await req.json().catch(() => ({}));
   const classId: string = body.classId ?? existingClassIds[0];
@@ -62,8 +63,8 @@ export async function POST(
   const milestoneAttrKey: string | undefined = body.milestoneAttrKey;
   const multiclassAttrKey: string | undefined = body.multiclassAttrKey;
 
-  const existingClassPowers: ChosenPower[] = JSON.parse(sheet.classPowers || "[]");
-  const existingGeneralPowers: string[] = JSON.parse(sheet.generalPowers || "[]");
+  const existingClassPowers: ChosenPower[] = parseJsonField<ChosenPower[]>(sheet.classPowers, []);
+  const existingGeneralPowers: string[] = parseJsonField<string[]>(sheet.generalPowers, []);
   const newClassPowers = [...existingClassPowers];
   const newGeneralPowers = [...existingGeneralPowers];
   const attrUpdates: Record<string, number> = {};

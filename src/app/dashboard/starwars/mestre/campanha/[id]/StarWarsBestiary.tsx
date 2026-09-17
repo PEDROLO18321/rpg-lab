@@ -5,7 +5,14 @@ import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import { BESTIARY, MODULE_GROUPS, BOOK_LABEL, type BestiaryBook, type StarWarsCreature, type ThreatLevel } from "@/lib/starwars/bestiary";
 import { SW } from "../../../ui";
 
-const ACCENT = SW.accent;
+// Fora do componente: a aleatoriedade roda em handlers de evento, não no
+// render — mantém o componente puro para o React Compiler.
+/** Rolagem de 1d20. */
+function rollD20(): number {
+  return Math.floor(Math.random() * 20) + 1;
+}
+
+
 const ACCENT_LIGHT = SW.accentLight;
 const ACCENT_DIM = SW.accentDim;
 const ACCENT_BORD = SW.accentBord;
@@ -43,11 +50,11 @@ export function StarWarsBestiary({ api }: Props) {
   const [showModules, setShowModules] = useState(false);
 
   async function addToInitiative(creature: StarWarsCreature) {
-    const init = addInit !== "" ? Number(addInit) : creature.initiative + Math.floor(Math.random() * 20) + 1;
+    const init = addInit !== "" ? Number(addInit) : creature.initiative + rollD20();
     await api.addChild("combatants", {
       name: creature.name, initiative: init, pv: creature.pv, maxPv: creature.pv,
-      pe: creature.pe, maxPe: creature.pe, conditions: "[]", isPlayer: false,
-      order: api.campaign.starWarsCombatants.length,
+      pe: creature.pe, maxPe: creature.pe, conditions: [], isPlayer: false,
+      order: api.campaign.combatants.length,
     });
     setAddTarget(null);
     setAddInit("");

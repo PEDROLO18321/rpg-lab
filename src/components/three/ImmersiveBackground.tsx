@@ -26,20 +26,25 @@ export function ImmersiveBackground() {
   const pathname = usePathname();
 
   const targetSystem = detectSystem(pathname);
-  const [system,  setSystem]  = useState<ParticleSystem>(targetSystem);
-  const [opacity, setOpacity] = useState(1);
+  const [system, setSystem] = useState<ParticleSystem>(targetSystem);
+  // Sistema aguardando a troca. Enquanto houver um pendente, o fundo está em
+  // fade-out; a troca de cores acontece no fim da transição.
+  const [pending, setPending] = useState<ParticleSystem | null>(null);
+
+  if (targetSystem !== system && pending !== targetSystem) {
+    setPending(targetSystem);
+  }
+
+  const opacity = pending ? 0 : 1;
 
   useEffect(() => {
-    if (targetSystem === system) return;
-    // fade out → troca cores → fade in
-    setOpacity(0);
+    if (!pending) return;
     const t = setTimeout(() => {
-      setSystem(targetSystem);
-      setOpacity(1);
+      setSystem(pending);
+      setPending(null);
     }, FADE_MS);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetSystem]);
+  }, [pending]);
 
   if (tier === null || tier === "off") return null;
 
