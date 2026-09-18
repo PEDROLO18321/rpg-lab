@@ -6,9 +6,9 @@ import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 import type { TormentaNpc, NPCAttack } from "@/lib/tormenta/tormentaCampaignClient";
 import { OfficialBestiary } from "./OfficialBestiary";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { activateOnKey } from "@/lib/a11y";
 
-const ACCENT = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 
 const ATTR_LABELS: { key: "forca" | "des" | "con" | "int" | "sab" | "car"; label: string }[] = [
   { key: "forca", label: "FOR" }, { key: "des", label: "DES" }, { key: "con", label: "CON" },
@@ -56,7 +56,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
             const attacks = parseAttacks(npc.attacks);
             return (
               <div key={npc.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
+                <div role="button" tabIndex={0} onKeyDown={activateOnKey(() => setExpanded(expanded === npc.id ? null : npc.id))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "var(--radius)", background: "rgba(160,24,24,0.12)", border: "1px solid rgba(160,24,24,0.28)", display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT_LIGHT, fontSize: "0.9rem", flexShrink: 0 }}>{npc.race?.[0] ?? "?"}</div>
                     <div style={{ minWidth: 0 }}>
@@ -72,7 +72,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
                 </div>
 
                 {addInitTarget === npc.id && (
-                  <div onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: "1px solid rgba(160,24,24,0.28)", background: "rgba(160,24,24,0.12)" }}>
+                  <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: "1px solid rgba(160,24,24,0.28)", background: "rgba(160,24,24,0.12)" }}>
                     <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>Valor de Iniciativa <span style={{ color: "var(--text-subtle)" }}>(vazio = d20)</span></p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input type="number" value={addInitValue} onChange={(e) => setAddInitValue(e.target.value)} placeholder="Rolar d20" autoFocus style={{ ...inputStyle, flex: 1 }} onKeyDown={(e) => e.key === "Enter" && addToInitiative(npc)} />
@@ -86,7 +86,7 @@ export function Bestiary({ api }: { api: TormentaApi }) {
                   <div style={{ padding: "12px 16px 16px", borderTop: "1px solid var(--border)" }}>
                     {ATTR_LABELS.some(({ key }) => npc[key] !== null) && (
                       <div style={{ marginBottom: 14 }}>
-                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Atributos</p>
+                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Atributos</p>
                         <div className="tm-attr-grid-6" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
                           {ATTR_LABELS.map(({ key, label }) => (
                             <div key={key} style={{ textAlign: "center", padding: "6px 4px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
@@ -99,17 +99,17 @@ export function Bestiary({ api }: { api: TormentaApi }) {
                       </div>
                     )}
                     <div className="tm-bestiary-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                      {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Comportamento</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
-                      {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
+                      {npc.personality && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Comportamento</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.personality}</p></div>}
+                      {npc.description && <div><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Descrição</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.description}</p></div>}
                     </div>
-                    {npc.notes && <div style={{ marginBottom: 10 }}><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Notas</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.notes}</p></div>}
+                    {npc.notes && <div style={{ marginBottom: 10 }}><p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Notas</p><p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{npc.notes}</p></div>}
                     {attacks.length > 0 && (
                       <div>
-                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Ataques</p>
+                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Ataques</p>
                         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                           {attacks.map((atk, i) => (
                             <div key={i} style={{ padding: "7px 10px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
-                              <p style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{atk.name}{atk.bonus && <span style={{ color: ACCENT_LIGHT, fontWeight: 400 }}> · {atk.bonus}</span>}{atk.damage && <span style={{ color: ACCENT, fontWeight: 400 }}> · {atk.damage}</span>}</p>
+                              <p style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text)", marginBottom: 2 }}>{atk.name}{atk.bonus && <span style={{ color: ACCENT_LIGHT, fontWeight: 400 }}> · {atk.bonus}</span>}{atk.damage && <span style={{ color: ACCENT_LIGHT, fontWeight: 400 }}> · {atk.damage}</span>}</p>
                               {atk.description && <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", lineHeight: 1.5 }}>{atk.description}</p>}
                             </div>
                           ))}

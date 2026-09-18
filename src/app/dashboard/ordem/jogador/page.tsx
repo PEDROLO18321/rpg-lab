@@ -46,7 +46,7 @@ export default async function OrdemJogadorPage() {
         accentColor="#ffffff"
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
         <div
           style={{
             display: "flex",

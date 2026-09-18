@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CLASSES } from "@/lib/dnd/classes";
 import { MAX_LEVEL } from "@/lib/dnd/leveling";
+import { Field } from "@/components/ui/Field";
 
 interface Props {
   onBack: () => void;
@@ -73,8 +74,7 @@ export function AutoGenerateForm({ onBack }: Props) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20, background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", padding: 24 }}>
           <div>
-            <label style={labelStyle}>Nível (obrigatório)</label>
-            <input
+            <Field label="Nível (obrigatório)" style={labelStyle}><input
               type="number"
               min={1}
               max={MAX_LEVEL}
@@ -82,12 +82,11 @@ export function AutoGenerateForm({ onBack }: Props) {
               onChange={(e) => setLevel(Math.max(1, Math.min(MAX_LEVEL, Number(e.target.value) || 1)))}
               disabled={loading}
               style={inputStyle}
-            />
+            /></Field>
           </div>
 
           <div>
-            <label style={labelStyle}>Nome (opcional)</label>
-            <input
+            <Field label="Nome (opcional)" style={labelStyle}><input
               type="text"
               placeholder="Deixe em branco para sortear"
               value={charName}
@@ -95,12 +94,11 @@ export function AutoGenerateForm({ onBack }: Props) {
               disabled={loading}
               maxLength={60}
               style={inputStyle}
-            />
+            /></Field>
           </div>
 
           <div>
-            <label style={labelStyle}>Classe (opcional)</label>
-            <select
+            <Field label="Classe (opcional)" style={labelStyle}><select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
               disabled={loading}
@@ -110,7 +108,7 @@ export function AutoGenerateForm({ onBack }: Props) {
               {CLASSES.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </select></Field>
           </div>
 
           {error && (

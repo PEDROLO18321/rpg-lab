@@ -9,6 +9,8 @@ import { SKILLS, SKILL_BY_ID } from "@/lib/starwars/skills";
 import { SKILL_GRADE_LABEL, SKILL_GRADE_BONUS, SKILL_GRADE_ORDER, type SkillGrade } from "@/lib/starwars/data";
 import { SW } from "../../../ui";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { Field } from "@/components/ui/Field";
+import { activateOnKey } from "@/lib/a11y";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;
@@ -703,8 +705,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
   function numField(label: string, key: keyof NpcForm) {
     return (
       <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <label style={{ ...labelStyle, textAlign: "center" }}>{label}</label>
-        <input type="number" min="0" max="10" placeholder="—" value={(form[key] as number | null) ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })} style={{ ...inputStyle, textAlign: "center", padding: "8px 6px" }} />
+        <Field label={<>{label}</>} style={{ ...labelStyle, textAlign: "center" }}><input type="number" min="0" max="10" placeholder="—" value={(form[key] as number | null) ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })} style={{ ...inputStyle, textAlign: "center", padding: "8px 6px" }} /></Field>
       </div>
     );
   }
@@ -754,8 +755,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
           {textField("Descrição / Aparência", "description")}
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Notas</label>
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Motivações, segredos, conexões..." style={{ ...inputStyle, resize: "vertical" }} />
+          <Field label="Notas" style={labelStyle}><textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Motivações, segredos, conexões..." style={{ ...inputStyle, resize: "vertical" }} /></Field>
         </div>
 
         <div style={{ borderTop: `1px solid ${ACCENT_BORD}`, paddingTop: 16, marginBottom: 16 }}>
@@ -779,17 +779,15 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
           )}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 160 }}>
-              <label style={labelStyle}>Perícia</label>
-              <select value={newSkillId} onChange={(e) => setNewSkillId(e.target.value)} style={inputStyle}>
+              <Field label="Perícia" style={labelStyle}><select value={newSkillId} onChange={(e) => setNewSkillId(e.target.value)} style={inputStyle}>
                 <option value="">Selecionar...</option>
                 {SKILLS.filter((sk) => !form.skills.some((s) => s.skillId === sk.id)).map((sk) => <option key={sk.id} value={sk.id}>{sk.name}</option>)}
-              </select>
+              </select></Field>
             </div>
             <div style={{ width: 140 }}>
-              <label style={labelStyle}>Grau</label>
-              <select value={newSkillGrade} onChange={(e) => setNewSkillGrade(e.target.value as SkillGrade)} style={inputStyle}>
+              <Field label="Grau" style={labelStyle}><select value={newSkillGrade} onChange={(e) => setNewSkillGrade(e.target.value as SkillGrade)} style={inputStyle}>
                 {SKILL_GRADE_ORDER.map((g) => <option key={g} value={g}>{SKILL_GRADE_LABEL[g]} (+{SKILL_GRADE_BONUS[g]})</option>)}
-              </select>
+              </select></Field>
             </div>
             <button onClick={addSkill} disabled={!newSkillId} style={{ padding: "8px 14px", background: newSkillId ? ACCENT_DIM : "var(--surface-2)", color: newSkillId ? ACCENT_LIGHT : "var(--text-subtle)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: newSkillId ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>+ Perícia</button>
           </div>
@@ -811,12 +809,12 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
             </div>
           )}
           <div className="sw-npc-attack-grid" style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px", gap: 8, marginBottom: 8 }}>
-            <div><label style={labelStyle}>Nome do Ataque</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Rifle Blaster" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Bônus</label><input value={newAtk.bonus} onChange={(e) => setNewAtk({ ...newAtk, bonus: e.target.value })} placeholder="+5" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="3d6" style={inputStyle} /></div>
+            <div><Field label="Nome do Ataque" style={labelStyle}><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Rifle Blaster" style={inputStyle} /></Field></div>
+            <div><Field label="Bônus" style={labelStyle}><input value={newAtk.bonus} onChange={(e) => setNewAtk({ ...newAtk, bonus: e.target.value })} placeholder="+5" style={inputStyle} /></Field></div>
+            <div><Field label="Dano" style={labelStyle}><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="3d6" style={inputStyle} /></Field></div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <div style={{ flex: 1 }}><label style={labelStyle}>Descrição do Ataque</label><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: À distância, longo alcance" style={inputStyle} /></div>
+            <div style={{ flex: 1 }}><Field label="Descrição do Ataque" style={labelStyle}><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: À distância, longo alcance" style={inputStyle} /></Field></div>
             <button onClick={addAttack} disabled={!newAtk.name.trim()} style={{ padding: "8px 14px", background: newAtk.name.trim() ? ACCENT_DIM : "var(--surface-2)", color: newAtk.name.trim() ? ACCENT_LIGHT : "var(--text-subtle)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: newAtk.name.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>+ Ataque</button>
           </div>
         </div>
@@ -837,7 +835,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
             const skills = parseSkills(npc.skills);
             return (
               <div key={npc.id} style={{ background: SW.panel, border: `1px solid ${SW.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
+                <div role="button" tabIndex={0} onKeyDown={activateOnKey(() => setExpanded(expanded === npc.id ? null : npc.id))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "var(--radius)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT_LIGHT, fontSize: "0.9rem", flexShrink: 0 }}>{npc.species?.[0] ?? "N"}</div>
                     <div style={{ minWidth: 0 }}>
@@ -853,7 +851,7 @@ export function NpcCreator({ api }: { api: StarWarsApi }) {
                 </div>
 
                 {addInitTarget === npc.id && (
-                  <div onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: `1px solid ${ACCENT_BORD}`, background: ACCENT_DIM }}>
+                  <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: `1px solid ${ACCENT_BORD}`, background: ACCENT_DIM }}>
                     <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>Valor de Iniciativa <span style={{ color: "var(--text-subtle)" }}>(vazio = d20)</span></p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input type="number" value={addInitValue} onChange={(e) => setAddInitValue(e.target.value)} placeholder="Rolar d20" autoFocus style={{ ...inputStyle, flex: 1 }} onKeyDown={(e) => e.key === "Enter" && addToInitiative(npc)} />

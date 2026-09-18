@@ -18,7 +18,7 @@ import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { parseJsonField } from "@/lib/characterTransfer";
 
 const ACCENT       = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM   = "rgba(160,24,24,0.12)";
 const ACCENT_BORD  = "rgba(160,24,24,0.32)";
 
@@ -80,9 +80,9 @@ export function SheetClient({ character }: { character: AnyChar }) {
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
       {/* onExportPdf={() => window.print()} — export em PDF desativado do visual por ora, ver DndPrintSheet.tsx */}
-      <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" accentColor="#a01818" />
+      <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" accentColor="#a01818" shareCharacterId={character.id} />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 52, height: 52, borderRadius: "var(--radius-xl)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -92,7 +92,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
                 : <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: ACCENT_LIGHT, letterSpacing: "0.04em" }}>{cls ? cls.id.slice(0, 3).toUpperCase() : "T20"}</span>}
             </div>
             <div>
-              <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>Tormenta 20</span>
+              <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT_LIGHT }}>Tormenta 20</span>
               <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.4rem, 3vw, 1.9rem)", fontWeight: 700, color: "var(--text)" }}>{character.name}</h1>
               <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
                 {race?.icon} {race?.name} · {cls?.icon} {cls?.name} (nível {sheet.level}) · {origin?.name}{god ? ` · Devoto de ${god.name}` : ""}

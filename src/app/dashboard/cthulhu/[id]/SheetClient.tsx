@@ -10,6 +10,7 @@ import {
   type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon,
 } from "@/lib/cthulhu/data";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 import "../cthulhu-responsive.css";
 
 const ACCENT       = "#7d9c3e";
@@ -90,6 +91,7 @@ export function SheetClient({ character }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [devOpen,  setDevOpen]  = useState(false);
+  useEscapeKey(devOpen, () => setDevOpen(false));
   const [devResults, setDevResults] = useState<DevResult[] | null>(null);
 
   const [portrait,       setPortrait]       = useState<string | null>(character.portraitUrl ?? null);
@@ -408,6 +410,7 @@ export function SheetClient({ character }: Props) {
         systemHref="/dashboard/cthulhu/jogador"
         backLabel="Investigadores"
         accentColor={ACCENT}
+        shareCharacterId={character.id}
         // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
@@ -432,7 +435,7 @@ export function SheetClient({ character }: Props) {
         <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" style={pillBtn} />
       </div>
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ flex: 1, minWidth: 260 }}>
@@ -961,11 +964,12 @@ export function SheetClient({ character }: Props) {
       </main>
 
       {devOpen && (
-        <div
+        <div role="presentation"
           onClick={() => setDevOpen(false)}
           style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
         >
           <div
+            role="presentation"
             onClick={(e) => e.stopPropagation()}
             style={{ width: 460, maxWidth: "100%", maxHeight: "85vh", overflowY: "auto", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)" }}
           >

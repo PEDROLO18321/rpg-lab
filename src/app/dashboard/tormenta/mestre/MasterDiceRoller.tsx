@@ -4,7 +4,7 @@ import "../tormenta-responsive.css";
 import { useRef, useState } from "react";
 
 const ACCENT = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM = "rgba(160,24,24,0.12)";
 const ACCENT_BORD = "rgba(160,24,24,0.28)";
 const ACCENT_GLOW = "rgba(160,24,24,0.22)";
@@ -96,7 +96,7 @@ export function MasterDiceRoller() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Dados do Mestre
             </p>
             <button

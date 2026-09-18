@@ -12,6 +12,7 @@ import {
   deleteCampaign,
   type DndCampaignSummary,
 } from "@/lib/dnd/dndCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 export default function MestrePage() {
   const { data: session, status } = useSession();
@@ -55,9 +56,9 @@ export default function MestrePage() {
 
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -72,7 +73,7 @@ export default function MestrePage() {
         accentColor="#c9941f"
       />
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <span className="section-label" style={{ display: "block", marginBottom: 8 }}>
@@ -131,12 +132,7 @@ export default function MestrePage() {
             }}
           >
             <div style={{ flex: 1, minWidth: 220 }}>
-              <label
-                style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}
-              >
-                Nome da Campanha
-              </label>
-              <input
+              <Field label="Nome da Campanha" style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}><input
                 autoFocus
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -153,7 +149,7 @@ export default function MestrePage() {
                   outline: "none",
                   boxSizing: "border-box",
                 }}
-              />
+              /></Field>
             </div>
             <div style={{ display: "flex", gap: 8, alignSelf: "flex-end" }}>
               <button

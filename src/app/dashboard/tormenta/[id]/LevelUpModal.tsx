@@ -11,12 +11,13 @@ import {
   nextAttributeIncreaseAmount, type ChosenPower,
 } from "@/lib/tormenta/leveling";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 import { getAvailablePowers, getFeaturesAtLevel, type PowerCategory } from "@/lib/tormenta/powers/registry";
 import { ARMOR_BY_ID, computeTormentaDefense } from "@/lib/tormenta/items";
 import { SPELLS } from "@/lib/tormenta/spells";
 
 const ACCENT       = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM   = "rgba(160,24,24,0.12)";
 const ACCENT_BORD  = "rgba(160,24,24,0.35)";
 
@@ -140,7 +141,7 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
     <Overlay onClose={onClose}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
         <h2 style={titleStyle}>Subir de Nível · {cls.name}</h2>
-        <span style={{ fontSize: "1.1rem", fontWeight: 800, color: ACCENT, fontFamily: "var(--font-cinzel), serif" }}>
+        <span style={{ fontSize: "1.1rem", fontWeight: 800, color: ACCENT_LIGHT, fontFamily: "var(--font-cinzel), serif" }}>
           {plan.fromLevel}º → {plan.toLevel}º
         </span>
       </div>
@@ -156,7 +157,7 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {fixedFeatures.map((f) => (
               <div key={f.name} style={{ ...cardBtn(true), cursor: "default" }}>
-                <p style={{ fontSize: "0.84rem", fontWeight: 700, color: ACCENT }}>{f.name}</p>
+                <p style={{ fontSize: "0.84rem", fontWeight: 700, color: ACCENT_LIGHT }}>{f.name}</p>
                 <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.5, marginTop: 3 }}>{f.description}</p>
               </div>
             ))}
@@ -246,9 +247,11 @@ export function LevelUpModal({ character, onClose }: { character: AnyChar; onClo
 }
 
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  useEscapeKey(true, onClose);
+
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(3,5,10,0.78)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", overflowY: "auto" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 780, background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 26px", display: "flex", flexDirection: "column", gap: 18, boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
+    <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(3,5,10,0.78)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", overflowY: "auto" }}>
+      <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 780, background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 26px", display: "flex", flexDirection: "column", gap: 18, boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
         {children}
       </div>
     </div>
@@ -259,7 +262,7 @@ function Group({ label, hint, children }: { label: string; hint?: string; childr
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <div>
-        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</p>
+        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT_LIGHT, letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</p>
         {hint && <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginTop: 2 }}>{hint}</p>}
       </div>
       {children}

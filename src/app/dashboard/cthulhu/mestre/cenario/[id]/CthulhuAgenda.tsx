@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 
 const A = "#a3b86c";
@@ -14,6 +14,7 @@ function toLocalInput(iso: string | null): string {
 
 export function CthulhuAgenda({ api }: { api: CthulhuApi }) {
   const [value, setValue] = useState(toLocalInput(api.campaign.nextSessionAt));
+  const dateId = useId();
 
   function save() { api.patch({ nextSessionAt: value ? new Date(value).toISOString() : null }); }
   function clear() { setValue(""); api.patch({ nextSessionAt: null }); }
@@ -29,9 +30,9 @@ export function CthulhuAgenda({ api }: { api: CthulhuApi }) {
       <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", display: "flex", alignItems: "center", gap: 10 }}><span style={{ color: A }}>📅</span> Agenda do Cenário</h2>
 
       <div style={card}>
-        <label style={lab}>Próxima Sessão</label>
+        <label style={lab} htmlFor={dateId}>Próxima Sessão</label>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem" }} />
+          <input id={dateId} type="datetime-local" value={value} onChange={(e) => setValue(e.target.value)} style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem" }} />
           <button onClick={save} style={{ padding: "9px 18px", background: "linear-gradient(135deg, #a3b86c 0%, #7d9c3e 100%)", color: "#06090f", border: "none", borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: "pointer" }}>Salvar</button>
           {api.campaign.nextSessionAt && <button onClick={clear} style={{ padding: "9px 14px", background: "transparent", color: "var(--text-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius)", fontSize: "0.84rem", cursor: "pointer" }}>Limpar</button>}
         </div>
@@ -40,7 +41,7 @@ export function CthulhuAgenda({ api }: { api: CthulhuApi }) {
 
       {sessionsWithDate.length > 0 && (
         <div style={card}>
-          <label style={lab}>Datas Registradas</label>
+          <h3 style={lab}>Datas Registradas</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {sessionsWithDate.map((s) => (
               <div key={s.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.84rem", color: "var(--text-muted)", padding: "5px 0", borderBottom: "1px solid var(--border)" }}>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CLASSES, NEX_VALUES, computeVitals, computeDefense, type ClassId } from "@/lib/ordem/data";
 import { emptyProgression } from "@/lib/ordem/leveling";
 import { generateLevel1Build, pickNexUpgrade, type OrdemSnapshot } from "@/lib/ordem/autoGenerate";
+import { Field } from "@/components/ui/Field";
 
 interface Props {
   onBack: () => void;
@@ -113,8 +114,7 @@ export function AutoGenerateForm({ onBack }: Props) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20, background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: 24 }}>
           <div>
-            <label style={labelStyle}>NEX (obrigatório)</label>
-            <select
+            <Field label="NEX (obrigatório)" style={labelStyle}><select
               value={nex}
               onChange={(e) => setNex(Number(e.target.value))}
               disabled={loading}
@@ -123,12 +123,11 @@ export function AutoGenerateForm({ onBack }: Props) {
               {NEX_VALUES.map((v) => (
                 <option key={v} value={v}>{v}%</option>
               ))}
-            </select>
+            </select></Field>
           </div>
 
           <div>
-            <label style={labelStyle}>Nome (opcional)</label>
-            <input
+            <Field label="Nome (opcional)" style={labelStyle}><input
               type="text"
               placeholder="Deixe em branco para sortear"
               value={charName}
@@ -136,12 +135,11 @@ export function AutoGenerateForm({ onBack }: Props) {
               disabled={loading}
               maxLength={60}
               style={inputStyle}
-            />
+            /></Field>
           </div>
 
           <div>
-            <label style={labelStyle}>Classe (opcional)</label>
-            <select
+            <Field label="Classe (opcional)" style={labelStyle}><select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
               disabled={loading}
@@ -151,7 +149,7 @@ export function AutoGenerateForm({ onBack }: Props) {
               {CLASSES.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
-            </select>
+            </select></Field>
           </div>
 
           {error && (

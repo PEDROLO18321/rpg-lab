@@ -14,6 +14,7 @@ import {
   type CampaignSummary,
   type Tier,
 } from "@/lib/ordem/ordemCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -70,9 +71,9 @@ export default function OrdemMestrePage() {
 
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -87,7 +88,7 @@ export default function OrdemMestrePage() {
         accentColor="#ffffff"
       />
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <span className="section-label" style={{ display: "block", marginBottom: 8, color: A }}>
@@ -112,29 +113,23 @@ export default function OrdemMestrePage() {
         {creating && (
           <div style={{ marginBottom: 32, padding: "24px 28px", background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)", display: "flex", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 220 }}>
-              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-                Nome da Operação
-              </label>
-              <input
+              <Field label="Nome da Operação" style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}><input
                 autoFocus
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") setCreating(false); }}
                 placeholder="Ex: Operação Vão Sangrento"
                 style={{ width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
-              />
+              /></Field>
             </div>
             <div style={{ minWidth: 180 }}>
-              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-                Círculo
-              </label>
-              <select
+              <Field label="Círculo" style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}><select
                 value={newTier}
                 onChange={(e) => setNewTier(e.target.value as Tier)}
                 style={{ width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.9rem", cursor: "pointer" }}
               >
                 {TIER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              </select></Field>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={handleCreate} disabled={!newName.trim()} style={{ padding: "10px 20px", background: newName.trim() ? `linear-gradient(135deg, ${A} 0%, #b9b9c6 100%)` : "var(--surface-2)", color: newName.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, cursor: newName.trim() ? "pointer" : "not-allowed" }}>

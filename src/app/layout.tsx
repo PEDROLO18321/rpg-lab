@@ -28,6 +28,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${cinzel.variable}`}>
       <body suppressHydrationWarning>
+        {/* Primeiro elemento focável: leva direto ao conteúdo, pulando a
+            navegação repetida em toda página (WCAG 2.4.1). Só aparece ao
+            receber foco pelo teclado. */}
+        <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
         <ImmersiveBackground />
         <Providers>{children}</Providers>
       </body>

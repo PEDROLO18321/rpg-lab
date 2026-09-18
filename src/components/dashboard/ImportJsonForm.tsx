@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Field } from "@/components/ui/Field";
 
 interface Props {
   systemLabel: string;
@@ -87,10 +88,7 @@ export function ImportJsonForm({ systemLabel, expectedFormat, importUrl, redirec
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20, background: "var(--surface)", border: `1px solid ${accentBorder}`, borderRadius: "var(--radius-xl)", padding: 24 }}>
           <div>
-            <label style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 8, display: "block" }}>
-              Arquivo JSON
-            </label>
-            <input
+            <Field label="Arquivo JSON" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-subtle)", marginBottom: 8, display: "block" }}><input
               ref={fileRef}
               type="file"
               accept="application/json,.json"
@@ -109,7 +107,7 @@ export function ImportJsonForm({ systemLabel, expectedFormat, importUrl, redirec
                 fontSize: "0.86rem",
                 boxSizing: "border-box",
               }}
-            />
+            /></Field>
             {fileName && !error && (
               <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 8 }}>
                 {payload ? `✓ ${fileName} pronto para importar.` : `Lendo ${fileName}…`}

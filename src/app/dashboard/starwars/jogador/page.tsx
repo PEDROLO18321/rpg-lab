@@ -48,7 +48,7 @@ export default async function StarWarsJogadorPage() {
         accentColor="#3b82c4"
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 36 }}>
           <div>
             <span className="section-label" style={{ display: "block", marginBottom: 8, color: ACCENT }}>Star Wars: Além da Fronteira</span>

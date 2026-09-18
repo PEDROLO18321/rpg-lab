@@ -26,7 +26,10 @@ html { scroll-behavior: smooth; }
   /* Text */
   --text:         #eef2f7;
   --text-muted:   #8896aa;
-  --text-subtle:  #404d5e;
+  /* Clareado de #404d5e: o valor antigo dava 1.8–2.3:1 de contraste, muito
+     abaixo dos 4.5:1 da WCAG 2.1 AA para texto pequeno. #798ca4 dá 4.52:1
+     no pior fundo (--surface-3) e mantém a mesma matiz. Ver tests/contraste.test.ts. */
+  --text-subtle:  #798ca4;
 
   /* Accent – gold */
   --accent:            #c9941f;
@@ -88,6 +91,35 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── Acessibilidade: pular para o conteúdo ─────────────────────────────── */
+/* Fora da tela até receber foco; aí desce para o topo, visível e com contraste. */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 1000;
+  padding: 10px 18px;
+  background: var(--accent);
+  color: #06090f;
+  font-size: 0.86rem;
+  font-weight: 700;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  transition: top 0.15s;
+}
+.skip-link:focus { top: 0; }
+
+/* Texto só para leitor de tela: invisível, mas lido e anunciado. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ── Animations ────────────────────────────────────────────────────────── */
 .reveal {
@@ -355,9 +387,9 @@ button:disabled { cursor: not-allowed; }
   /* HomeClient.tsx — AboutSection: mínimo de 320px é maior que a área útil em 375px */
   .home-about-grid { grid-template-columns: 1fr !important; }
 
-  /* HomeClient.tsx — StatsStrip: imagem de 126px espreme o nome do sistema */
-  .home-stats-card { gap: 14px !important; }
-  .home-stats-card-img { width: 64px !important; height: 64px !important; }
+  /* HomeClient.tsx — StatsStrip: 4 colunas fixas ficam apertadas demais em telas pequenas */
+  .home-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .home-stats-card-img { width: 60px !important; height: 60px !important; }
 
   /* dashboard/page.tsx (Laboratório) — card de sistema empilha em vez de espremer */
   .dashboard-system-card { flex-direction: column !important; }

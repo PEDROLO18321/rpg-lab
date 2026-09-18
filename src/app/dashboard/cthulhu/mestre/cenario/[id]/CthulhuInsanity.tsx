@@ -5,6 +5,7 @@ import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuInsanityRecord } from "@/lib/cthulhu/cthulhuCampaignClient";
 import "../../../cthulhu-responsive.css";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { Field } from "@/components/ui/Field";
 
 const G = "#7d9c3e";
 const GL = "#a3b86c";
@@ -153,10 +154,10 @@ function InsanityEditor({ r, phobias, manias, onPatch, onAddTag, onRemoveTag, on
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="cth-insanity-editor-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
-        <div><label style={labelStyle}>Nome do Investigador</label><input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => onPatch({ investigatorName: e.target.value })} placeholder="Nome..." /></div>
-        <div><label style={labelStyle}>SAN Atual</label><input type="number" style={numStyle} value={r.currentSan} min={0} max={r.maxSan} onChange={(e) => { const v = Math.max(0, Math.min(r.maxSan, Number(e.target.value))); onPatch({ currentSan: v }); }} /></div>
-        <div><label style={labelStyle}>SAN Máxima</label><input type="number" style={numStyle} value={r.maxSan} min={1} max={99} onChange={(e) => { const v = Math.max(1, Number(e.target.value)); onPatch({ maxSan: v, currentSan: Math.min(r.currentSan, v) }); }} /></div>
-        <div><label style={labelStyle}>Perda na Sessão</label><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ ...numStyle, width: 50, color: r.sessionLoss >= indefiniteThreshold ? "#f87171" : "var(--text)" }}>{r.sessionLoss}</span><button onClick={() => onPatch({ sessionLoss: 0, status: "normal" })} title="Resetar" style={{ padding: "6px 8px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.7rem" }}>↺</button></div></div>
+        <div><Field label="Nome do Investigador" style={labelStyle}><input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => onPatch({ investigatorName: e.target.value })} placeholder="Nome..." /></Field></div>
+        <div><Field label="SAN Atual" style={labelStyle}><input type="number" style={numStyle} value={r.currentSan} min={0} max={r.maxSan} onChange={(e) => { const v = Math.max(0, Math.min(r.maxSan, Number(e.target.value))); onPatch({ currentSan: v }); }} /></Field></div>
+        <div><Field label="SAN Máxima" style={labelStyle}><input type="number" style={numStyle} value={r.maxSan} min={1} max={99} onChange={(e) => { const v = Math.max(1, Number(e.target.value)); onPatch({ maxSan: v, currentSan: Math.min(r.currentSan, v) }); }} /></Field></div>
+        <div><span style={labelStyle}>Perda na Sessão</span><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ ...numStyle, width: 50, color: r.sessionLoss >= indefiniteThreshold ? "#f87171" : "var(--text)" }}>{r.sessionLoss}</span><button onClick={() => onPatch({ sessionLoss: 0, status: "normal" })} title="Resetar" style={{ padding: "6px 8px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.7rem" }}>↺</button></div></div>
       </div>
 
       <div style={{ padding: "10px 14px", background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: "var(--radius)", fontSize: "0.78rem", color: "var(--text-muted)" }}>
@@ -164,8 +165,8 @@ function InsanityEditor({ r, phobias, manias, onPatch, onAddTag, onRemoveTag, on
       </div>
 
       <div>
-        <label style={labelStyle}>Estado Mental</label>
-        <div style={{ display: "flex", gap: 8 }}>
+        <span style={labelStyle}>Estado Mental</span>
+        <div role="group" aria-label="Estado Mental" style={{ display: "flex", gap: 8 }}>
           {(["normal", "temp_insane", "indef_insane"] as const).map((s) => (
             <button key={s} onClick={() => onPatch({ status: s })} style={{ padding: "6px 14px", borderRadius: "var(--radius)", border: `1px solid ${r.status === s ? STATUS_COLORS[s] : "var(--border)"}`, background: r.status === s ? `${STATUS_COLORS[s]}22` : "transparent", color: r.status === s ? STATUS_COLORS[s] : "var(--text-muted)", cursor: "pointer", fontSize: "0.78rem", fontWeight: 700 }}>{STATUS_LABELS[s]}</button>
           ))}
@@ -175,7 +176,7 @@ function InsanityEditor({ r, phobias, manias, onPatch, onAddTag, onRemoveTag, on
       <TagField label="Fobias" options={PHOBIAS} tags={phobias} field="phobias" color="#fca5a5" inputVal={phobiaInput} setInputVal={setPhobiaInput} onAdd={onAddTag} onRemove={onRemoveTag} />
       <TagField label="Manias" options={MANIAS} tags={manias} field="manias" color="#fde68a" inputVal={maniaInput} setInputVal={setManiaInput} onAdd={onAddTag} onRemove={onRemoveTag} />
 
-      <div><label style={labelStyle}>Notas de Insanidade</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={(e) => onPatch({ notes: e.target.value })} placeholder="Episódios, traumas, observações..." style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", lineHeight: 1.6, resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" }} /></div>
+      <div><Field label="Notas de Insanidade" style={labelStyle}><textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={(e) => onPatch({ notes: e.target.value })} placeholder="Episódios, traumas, observações..." style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", lineHeight: 1.6, resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" }} /></Field></div>
 
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={onRemove} style={{ padding: "7px 16px", background: "rgba(220,60,60,0.1)", border: "1px solid rgba(220,60,60,0.3)", borderRadius: "var(--radius)", color: "#e06c6c", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>Remover Investigador</button>

@@ -230,7 +230,7 @@ export function CthulhuWizard() {
       </div>
 
       {/* Content */}
-      <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "40px 24px 100px" }}>
+      <main id="conteudo" style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "40px 24px 100px" }}>
         {step === 0 && <StepAttrs data={data} onChange={patch} />}
         {step === 1 && <StepSkills data={data} onChange={patch} />}
         {step === 2 && <StepBackground data={data} onChange={patch} />}

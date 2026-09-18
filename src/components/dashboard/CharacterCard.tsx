@@ -107,6 +107,7 @@ export function CharacterCard({ id, name, race, className, level, portraitUrl }:
       <div
         ref={menuRef}
         style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }}
+        role="presentation"
         onClick={(e) => e.stopPropagation()}
       >
         <button

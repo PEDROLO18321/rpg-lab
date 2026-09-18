@@ -3,9 +3,10 @@
 import { useState } from "react";
 import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 import type { TormentaClock } from "@/lib/tormenta/tormentaCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const ACCENT = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_BORD = "rgba(160,24,24,0.28)";
 
 const KIND_COLOR: Record<TormentaClock["kind"], string> = { ameaca: "#e0524c", missao: "#7dd3a8", neutro: "#9aa0a6" };
@@ -38,7 +39,7 @@ export function CampaignClocks({ api }: { api: TormentaApi }) {
   function tick(c: TormentaClock, delta: number) { api.editChild("clocks", c.id, { filled: Math.max(0, Math.min(c.segments, c.filled + delta)) }); }
 
   const ip: React.CSSProperties = { padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box" };
-  const lab: React.CSSProperties = { display: "block", fontSize: "0.68rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 };
+  const lab: React.CSSProperties = { display: "block", fontSize: "0.68rem", fontWeight: 700, color: ACCENT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
@@ -48,9 +49,9 @@ export function CampaignClocks({ api }: { api: TormentaApi }) {
       </div>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)" }}>
-        <div style={{ flex: "2 1 200px" }}><label style={lab}>Nome</label><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Exército de Nazjigar se aproxima" style={{ ...ip, width: "100%" }} /></div>
-        <div><label style={lab}>Segmentos</label><select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ ...ip, cursor: "pointer" }}>{SEGMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-        <div><label style={lab}>Tipo</label><select value={kind} onChange={(e) => setKind(e.target.value as TormentaClock["kind"])} style={{ ...ip, cursor: "pointer" }}>{(["ameaca", "missao", "neutro"] as const).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></div>
+        <div style={{ flex: "2 1 200px" }}><Field label="Nome" style={lab}><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Exército de Nazjigar se aproxima" style={{ ...ip, width: "100%" }} /></Field></div>
+        <div><Field label="Segmentos" style={lab}><select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ ...ip, cursor: "pointer" }}>{SEGMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}</select></Field></div>
+        <div><Field label="Tipo" style={lab}><select value={kind} onChange={(e) => setKind(e.target.value as TormentaClock["kind"])} style={{ ...ip, cursor: "pointer" }}>{(["ameaca", "missao", "neutro"] as const).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></Field></div>
         <button onClick={add} disabled={!name.trim()} style={{ padding: "9px 20px", background: name.trim() ? `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)` : "var(--surface-2)", color: name.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: name.trim() ? "pointer" : "not-allowed" }}>+ Criar</button>
       </div>
 

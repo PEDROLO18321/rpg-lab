@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { PartyTab } from "@/components/party/PartyTab";
 import { useTormentaCampaign } from "@/lib/tormenta/useTormentaCampaign";
 import { MasterDiceRoller } from "../../MasterDiceRoller";
 
@@ -21,12 +22,11 @@ const CampaignGenerators = dynamic(() => import("./CampaignGenerators").then((m)
 const CampaignAgenda = dynamic(() => import("./CampaignAgenda").then((m) => m.CampaignAgenda));
 const TormentaGuide = dynamic(() => import("./TormentaGuide").then((m) => m.TormentaGuide));
 
-const ACCENT = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM = "rgba(160,24,24,0.12)";
 const ACCENT_BORD = "rgba(160,24,24,0.28)";
 
-type Tab = "story" | "items" | "npc" | "initiative" | "clues" | "clocks" | "bestiary" | "generators" | "notes" | "agenda" | "guide";
+type Tab = "story" | "items" | "npc" | "initiative" | "clues" | "clocks" | "bestiary" | "generators" | "notes" | "agenda" | "guide" | "party";
 
 function icon(d: string) {
   return (
@@ -47,6 +47,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: "generators", label: "Geradores",  icon: icon("M5 3v4 M3 5h4 M6 17v4 M4 19h4 M13 3l3 6 6 1-5 5 1 7-5-3") },
   { id: "notes",      label: "Notas",      icon: icon("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h8") },
   { id: "agenda",     label: "Agenda",     icon: icon("M8 2v4 M16 2v4 M3 8h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z") },
+  { id: "party",      label: "Fichas de Jogadores", icon: icon("M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0 0 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75") },
   { id: "guide",      label: "Guia",       icon: icon("M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z") },
 ];
 
@@ -61,9 +62,9 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
 
   if (status === "loading" || cStatus === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -91,9 +92,9 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         accentColor="#a01818"
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
         <div style={{ marginBottom: 32 }}>
-          <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>Tormenta 20 · Mestre</span>
+          <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT_LIGHT }}>Tormenta 20 · Mestre</span>
           <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.3rem, 3vw, 1.8rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>{c.name}</h1>
         </div>
 
@@ -119,6 +120,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         {tab === "generators" && <CampaignGenerators api={api} />}
         {tab === "notes"      && <SessionNotes api={api} />}
         {tab === "agenda"     && <CampaignAgenda api={api} />}
+        {tab === "party"      && <PartyTab system="tormenta" campaignId={id} accentColor={"#a01818"} />}
         {tab === "guide"      && <TormentaGuide />}
       </main>
     </div>

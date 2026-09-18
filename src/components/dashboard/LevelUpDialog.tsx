@@ -10,6 +10,7 @@ import {
   MULTICLASS_PROFICIENCIES,
   checkMulticlassPrereqs,
 } from "@/lib/dnd/leveling";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 import type { LevelFeature } from "@/lib/dnd/leveling";
 import { SPELLS, SCHOOL_COLORS, spellClassKey, SPELLCASTING } from "@/lib/dnd/spells";
 import { CLASSES } from "@/lib/dnd/classes";
@@ -125,6 +126,8 @@ function LevelUpModal({
   knownSpellNames: string[];
   onClose: (changed: boolean) => void;
 }) {
+  useEscapeKey(true, () => onClose(false));
+
   // Null = "adicionar nova classe"; string = id do DndClass a subir de nível
   const [targetClassEntryId, setTargetClassEntryId] = useState<string | null>(classes[0]?.id ?? null);
   const [newClassId,    setNewClassId]    = useState<string | null>(null);
@@ -281,8 +284,8 @@ function LevelUpModal({
   // ── Tela de resumo ─────────────────────────────────────────────────────────
   if (summary) {
     return (
-      <div style={overlay} onClick={() => onClose(true)}>
-        <div style={panel} onClick={(e) => e.stopPropagation()}>
+      <div role="presentation" style={overlay} onClick={() => onClose(true)}>
+        <div style={panel} role="presentation" onClick={(e) => e.stopPropagation()}>
           <div style={{ textAlign: "center" }}>
             <p style={{ fontSize: "0.7rem", fontWeight: 700, color: GREEN, textTransform: "uppercase", letterSpacing: "0.14em" }}>
               {summary.newClassName ? `✦ Nova Classe ✦` : `✦ Nível alcançado ✦`}
@@ -348,8 +351,8 @@ function LevelUpModal({
 
   // ── Tela de configuração ───────────────────────────────────────────────────
   return (
-    <div style={overlay} onClick={() => onClose(false)}>
-      <div style={panel} onClick={(e) => e.stopPropagation()}>
+    <div role="presentation" style={overlay} onClick={() => onClose(false)}>
+      <div style={panel} role="presentation" onClick={(e) => e.stopPropagation()}>
 
         {/* Seletor de classe alvo */}
         <div>

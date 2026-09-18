@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuClue } from "@/lib/cthulhu/cthulhuCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const A = "#a3b86c";
 const ADIM = "rgba(125,156,62,0.14)";
@@ -32,10 +33,10 @@ export function CthulhuClues({ api }: { api: CthulhuApi }) {
 
       <div style={{ padding: "18px 20px", background: "var(--surface)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius-xl)" }}>
         <div className="cth-clues-form-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
-          <div><label style={labelStyle}>Título</label><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Diário rasgado" style={inputStyle} /></div>
-          <div><label style={labelStyle}>Onde/Como foi achada</label><input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Ex: Sótão, NPC X" style={inputStyle} /></div>
+          <div><Field label="Título" style={labelStyle}><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Diário rasgado" style={inputStyle} /></Field></div>
+          <div><Field label="Onde/Como foi achada" style={labelStyle}><input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Ex: Sótão, NPC X" style={inputStyle} /></Field></div>
         </div>
-        <div style={{ marginBottom: 12 }}><label style={labelStyle}>Conteúdo</label><textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="O que a pista revela?" style={{ ...inputStyle, resize: "vertical", minHeight: 70 }} /></div>
+        <div style={{ marginBottom: 12 }}><Field label="Conteúdo" style={labelStyle}><textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="O que a pista revela?" style={{ ...inputStyle, resize: "vertical", minHeight: 70 }} /></Field></div>
         <button onClick={add} disabled={!title.trim()} style={{ padding: "9px 20px", background: title.trim() ? "linear-gradient(135deg, #a3b86c 0%, #7d9c3e 100%)" : "var(--surface-2)", color: title.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: title.trim() ? "pointer" : "not-allowed" }}>+ Adicionar Pista</button>
       </div>
 
@@ -79,15 +80,14 @@ function ClueEditor({ api, clue, sessions }: { api: CthulhuApi; clue: CthulhuClu
   return (
     <div style={{ padding: "0 16px 16px 16px", borderTop: "1px solid var(--border)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
       <div className="cth-clues-form-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
-        <div><label style={labelStyle}>Título</label><input style={inputStyle} value={d.title} onChange={(e) => set({ title: e.target.value })} onBlur={(e) => commit({ title: e.target.value })} /></div>
-        <div><label style={labelStyle}>Vínculo à Sessão</label>
-          <select style={{ ...inputStyle, cursor: "pointer" }} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}>
+        <div><Field label="Título" style={labelStyle}><input style={inputStyle} value={d.title} onChange={(e) => set({ title: e.target.value })} onBlur={(e) => commit({ title: e.target.value })} /></Field></div>
+        <div><Field label="Vínculo à Sessão" style={labelStyle}><select style={{ ...inputStyle, cursor: "pointer" }} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}>
             <option value="">Nenhuma</option>{sessions.map((s) => <option key={s.id} value={s.id}>Sessão {s.number}</option>)}
-          </select>
+          </select></Field>
         </div>
       </div>
-      <div><label style={labelStyle}>Onde/Como</label><input style={inputStyle} value={d.source} onChange={(e) => set({ source: e.target.value })} onBlur={(e) => commit({ source: e.target.value })} /></div>
-      <div><label style={labelStyle}>Conteúdo</label><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={d.content} onChange={(e) => set({ content: e.target.value })} onBlur={(e) => commit({ content: e.target.value })} /></div>
+      <div><Field label="Onde/Como" style={labelStyle}><input style={inputStyle} value={d.source} onChange={(e) => set({ source: e.target.value })} onBlur={(e) => commit({ source: e.target.value })} /></Field></div>
+      <div><Field label="Conteúdo" style={labelStyle}><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={d.content} onChange={(e) => set({ content: e.target.value })} onBlur={(e) => commit({ content: e.target.value })} /></Field></div>
     </div>
   );
 }

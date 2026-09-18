@@ -10,6 +10,7 @@ import {
   type AttrKey, type TrainDegree, type ClassId, type OrdemAttrs, type Element,
 } from "@/lib/ordem/data";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 import {
   CLASS_POWERS_BY_CLASS, TRAILS_BY_CLASS, PARANORMAL_POWERS,
 } from "@/lib/ordem/abilities";
@@ -410,9 +411,11 @@ function RitualLearnGrid({ learnable, picks, setPicks }: { learnable: typeof RIT
 
 // ─── Bits ─────────────────────────────────────────────────────────────────────
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  useEscapeKey(true, onClose);
+
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(3,5,10,0.78)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", overflowY: "auto" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 760, background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 26px", display: "flex", flexDirection: "column", gap: 18, boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
+    <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(3,5,10,0.78)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", overflowY: "auto" }}>
+      <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 760, background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 26px", display: "flex", flexDirection: "column", gap: 18, boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}>
         {children}
       </div>
     </div>

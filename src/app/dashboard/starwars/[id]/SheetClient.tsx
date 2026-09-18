@@ -20,6 +20,7 @@ import { LevelUpModal } from "./LevelUpModal";
 import { RulesManual } from "./RulesManual";
 import { RollResultDie, RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
 // render — mantém o componente puro para o React Compiler.
@@ -469,6 +470,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         systemHref="/dashboard/starwars/jogador"
         backLabel="Meus Personagens"
         accentColor={ACCENT}
+        shareCharacterId={character.id}
         // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
@@ -497,7 +499,7 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         />
       </div>
 
-      <main className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
+      <main id="conteudo" className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
           <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>
             {character.portraitUrl
@@ -763,6 +765,7 @@ function PlayMode({
   const [diceQty, setDiceQty] = useState(1);
   const [pickMode, setPickMode] = useState<"soma" | "maior">("soma");
   const [rollChoice, setRollChoice] = useState<{ skillId: string; chosenAttr?: AttrKey } | null>(null);
+  useEscapeKey(rollChoice !== null, () => setRollChoice(null));
 
   function doRoll(label: string, attr: AttrKey, bonus: number) {
     const pool = attributeDicePool(attrs[attr]);
@@ -1178,9 +1181,9 @@ function PlayMode({
       <RollToast roll={fxRoll} color={ACCENT} edgeColor={ACCENT_LIGHT} emissive="#12202e" />
 
       {rollChoice && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(5,7,13,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+        <div role="presentation" style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(5,7,13,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
           onClick={() => setRollChoice(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: 22, width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", gap: 14 }}>
+          <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: 22, width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", gap: 14 }}>
             {rollChoice.chosenAttr ? (
               <>
                 <p style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--text)" }}>Gastar 1 Ponto de Energia da Força?</p>

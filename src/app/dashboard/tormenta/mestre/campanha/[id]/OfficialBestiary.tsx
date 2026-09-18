@@ -11,7 +11,7 @@ interface OfficialCreature {
   skills: string; abilitiesRaw: string; treasure: string;
 }
 
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 
 const ATTR_KEYS: { key: keyof OfficialCreature["attrs"]; label: string }[] = [
   { key: "for", label: "FOR" }, { key: "des", label: "DES" }, { key: "con", label: "CON" },

@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { PartyTab } from "@/components/party/PartyTab";
 import { useStarWarsCampaign } from "@/lib/starwars/useStarWarsCampaign";
 import { StarWarsMasterDiceRoller } from "../../StarWarsMasterDiceRoller";
 import { SW, SectionTitle } from "../../../ui";
@@ -21,7 +22,7 @@ const CampaignClocks = dynamic(() => import("./CampaignClocks").then((m) => m.Ca
 const CampaignGenerators = dynamic(() => import("./CampaignGenerators").then((m) => m.CampaignGenerators));
 const StarWarsGuide = dynamic(() => import("./StarWarsGuide").then((m) => m.StarWarsGuide));
 
-type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "generators" | "notes" | "guide";
+type Tab = "story" | "items" | "npc" | "bestiary" | "initiative" | "clues" | "clocks" | "generators" | "notes" | "guide" | "party";
 
 function icon(d: string) {
   return (
@@ -41,6 +42,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: "items",      label: "Itens",      icon: icon("M21 8 21 21 3 21 3 8 M1 3h22v5H1z M10 12h4") },
   { id: "generators", label: "Geradores",  icon: icon("M5 3v4 M3 5h4 M6 17v4 M4 19h4 M13 3l3 6 6 1-5 5 1 7-5-3") },
   { id: "notes",      label: "Notas",      icon: icon("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h8") },
+  { id: "party",      label: "Fichas de Jogadores", icon: icon("M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0 0 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75") },
   { id: "guide",      label: "Guia",       icon: icon("M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z") },
 ];
 
@@ -55,9 +57,9 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
 
   if (status === "loading" || cStatus === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -85,7 +87,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
         accentColor={SW.accent}
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
         <div style={{ marginBottom: 32 }}>
           <SectionTitle eyebrow="Star Wars · Mestre" title={c.name} />
         </div>
@@ -111,6 +113,7 @@ export default function StarWarsCampaignPage({ params }: { params: Promise<{ id:
         {tab === "items"      && <CampaignItems api={api} />}
         {tab === "generators" && <CampaignGenerators api={api} />}
         {tab === "notes"      && <SessionNotes api={api} />}
+        {tab === "party"      && <PartyTab system="starwars" campaignId={id} accentColor={SW.accent} />}
         {tab === "guide"      && <StarWarsGuide />}
       </main>
     </div>

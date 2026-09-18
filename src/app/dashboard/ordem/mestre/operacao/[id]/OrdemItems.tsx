@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemItem } from "@/lib/ordem/ordemCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -98,21 +99,18 @@ export function OrdemItems({ api }: { api: OperacaoApi }) {
           <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>Novo Item</p>
           <div className="op-items-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Nome</label>
-              <input style={inputStyle} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Ex: Pistola .40, Medalhão Profano, Ritual: Lança de Sangue" autoFocus />
+              <Field label="Nome" style={labelStyle}><input style={inputStyle} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} placeholder="Ex: Pistola .40, Medalhão Profano, Ritual: Lança de Sangue" autoFocus /></Field>
             </div>
             <div>
-              <label style={labelStyle}>Tipo</label>
-              <select style={selectStyle} value={newItem.type} onChange={(e) => setNewItem({ ...newItem, type: e.target.value as ItemType })}>
+              <Field label="Tipo" style={labelStyle}><select style={selectStyle} value={newItem.type} onChange={(e) => setNewItem({ ...newItem, type: e.target.value as ItemType })}>
                 {TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              </select></Field>
             </div>
             <div>
-              <label style={labelStyle}>Vínculo à Sessão</label>
-              <select style={selectStyle} value={newItem.sessionId ?? ""} onChange={(e) => setNewItem({ ...newItem, sessionId: e.target.value || null })}>
+              <Field label="Vínculo à Sessão" style={labelStyle}><select style={selectStyle} value={newItem.sessionId ?? ""} onChange={(e) => setNewItem({ ...newItem, sessionId: e.target.value || null })}>
                 <option value="">Geral (operação)</option>
                 {sessions.map((s) => <option key={s.id} value={s.id}>Sessão {s.number}{s.name ? ` · ${s.name}` : ""}</option>)}
-              </select>
+              </select></Field>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem", color: "var(--text-muted)", cursor: "pointer", marginBottom: 12 }}>
@@ -121,8 +119,7 @@ export function OrdemItems({ api }: { api: OperacaoApi }) {
               </label>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Descrição / Efeitos</label>
-              <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} placeholder="Categoria, dano, espaços, elemento, custo de PE, perda de SAN..." />
+              <Field label="Descrição / Efeitos" style={labelStyle}><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} placeholder="Categoria, dano, espaços, elemento, custo de PE, perda de SAN..." /></Field>
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
@@ -177,21 +174,18 @@ function ItemEditor({ api, item, sessions, onDeleted }: {
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
       <div className="op-items-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={labelStyle}>Nome</label>
-          <input style={inputStyle} value={d.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} />
+          <Field label="Nome" style={labelStyle}><input style={inputStyle} value={d.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></Field>
         </div>
         <div>
-          <label style={labelStyle}>Tipo</label>
-          <select style={selectStyle} value={d.type} onChange={(e) => { set({ type: e.target.value as ItemType }); commit({ type: e.target.value as ItemType }); }}>
+          <Field label="Tipo" style={labelStyle}><select style={selectStyle} value={d.type} onChange={(e) => { set({ type: e.target.value as ItemType }); commit({ type: e.target.value as ItemType }); }}>
             {TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          </select></Field>
         </div>
         <div>
-          <label style={labelStyle}>Vínculo</label>
-          <select style={selectStyle} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}>
+          <Field label="Vínculo" style={labelStyle}><select style={selectStyle} value={d.sessionId ?? ""} onChange={(e) => { const v = e.target.value || null; set({ sessionId: v }); commit({ sessionId: v }); }}>
             <option value="">Geral (operação)</option>
             {sessions.map((s) => <option key={s.id} value={s.id}>Sessão {s.number}{s.name ? ` · ${s.name}` : ""}</option>)}
-          </select>
+          </select></Field>
         </div>
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.78rem", color: "var(--text-muted)", cursor: "pointer" }}>
@@ -200,8 +194,7 @@ function ItemEditor({ api, item, sessions, onDeleted }: {
           </label>
         </div>
         <div style={{ gridColumn: "1 / -1" }}>
-          <label style={labelStyle}>Descrição</label>
-          <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={d.description} onChange={(e) => set({ description: e.target.value })} onBlur={(e) => commit({ description: e.target.value })} />
+          <Field label="Descrição" style={labelStyle}><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={d.description} onChange={(e) => set({ description: e.target.value })} onBlur={(e) => commit({ description: e.target.value })} /></Field>
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>

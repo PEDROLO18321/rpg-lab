@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useId, useState, Suspense } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -48,7 +48,8 @@ function LoginForm() {
   }
 
   return (
-    <div
+    <main
+      id="conteudo"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -194,25 +195,35 @@ function LoginForm() {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        // Sem fallback, o HTML servido não tem landmark nenhum e o "Pular para
+        // o conteúdo" aponta para o vazio até a hidratação.
+        <main id="conteudo" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
+        </main>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
 }
 
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const id = useId();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.03em" }}>
+      <label htmlFor={id} style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.03em" }}>
         {label}
       </label>
       <input
+        id={id}
         {...props}
         style={{
           padding: "10px 14px",

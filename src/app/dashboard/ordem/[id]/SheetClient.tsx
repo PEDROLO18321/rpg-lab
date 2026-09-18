@@ -43,6 +43,7 @@ import {
   type RitualCircle,
 } from "@/lib/ordem/rituals";
 import type { ClassId, Element } from "@/lib/ordem/data";
+import { activateOnKey } from "@/lib/a11y";
 
 const ACCENT       = "#ffffff";
 const ACCENT_LIGHT = "#ffffff";
@@ -219,6 +220,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
         systemHref="/dashboard/ordem/jogador"
         backLabel="Meus Agentes"
         accentColor={ACCENT}
+        shareCharacterId={character.id}
         // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
@@ -247,7 +249,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
         />
       </div>
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
         {/* Identity header (always visible) */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
           <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>
@@ -1573,6 +1575,10 @@ function StatusPanel({
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
           {conditions.map((c) => (
             <span key={c}
+              role={readOnly ? undefined : "button"}
+              tabIndex={readOnly ? undefined : 0}
+              aria-label={readOnly ? undefined : `Remover condição ${c}`}
+              onKeyDown={readOnly ? undefined : activateOnKey(() => persistCond(conditions.filter((x) => x !== c)))}
               onClick={readOnly ? undefined : () => persistCond(conditions.filter((x) => x !== c))}
               title={readOnly ? c : "Clique para remover"}
               style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-xs)", cursor: readOnly ? "default" : "pointer", background: `${ORDEM_CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${ORDEM_CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", userSelect: "none" }}>

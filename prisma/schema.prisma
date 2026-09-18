@@ -22,7 +22,7 @@ model User {
   accounts   Account[]
   sessions   Session[]
   characters Character[]
-  campaigns  CampaignMember[]
+  campaigns  Campaign[]
 }
 
 model Account {
@@ -83,8 +83,8 @@ model Character {
   name        String
   portraitUrl String?
   notes       String?
-  isPublic    Boolean  @default(false)
-  shareToken  String   @unique @default(cuid())
+  isPublic    Boolean  @default(false) // compartilhamento ligado pelo jogador
+  shareToken  String   @unique @default(cuid()) // link da ficha; regerar invalida o anterior
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -409,8 +409,8 @@ model Campaign {
   nextSessionAt DateTime? // agenda da próxima sessão
   notes         String?
 
+  owner      User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   system     System              @relation(fields: [systemId], references: [id])
-  members    CampaignMember[]
   characters CampaignCharacter[]
 
   ordemStory      OrdemStory?
@@ -1049,31 +1049,18 @@ model StarWarsClock {
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 }
 
-model CampaignMember {
-  id         String       @id @default(cuid())
-  campaignId String
-  userId     String
-  role       CampaignRole @default(PLAYER)
-  joinedAt   DateTime     @default(now())
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([campaignId, userId])
-}
-
+// Ficha de jogador vinculada a uma campanha por link de compartilhamento.
+// A ficha continua pertencendo ao jogador; o mestre só lê.
 model CampaignCharacter {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   campaignId  String
   characterId String
+  linkedAt    DateTime @default(now())
 
   campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([campaignId, characterId])
-}
-
-enum CampaignRole {
-  MASTER
-  PLAYER
+  @@index([campaignId])
+  @@index([characterId])
 }

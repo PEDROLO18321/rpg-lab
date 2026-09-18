@@ -19,7 +19,7 @@ import { StepDesc } from "./steps/StepDesc";
 import { StepReview } from "./steps/StepReview";
 
 export const ACCENT       = "#a01818";
-export const ACCENT_LIGHT = "#c94040";
+export const ACCENT_LIGHT = "#d56c6c";
 export const ACCENT_DIM   = "rgba(160,24,24,0.12)";
 export const ACCENT_BORD  = "rgba(160,24,24,0.35)";
 
@@ -176,7 +176,7 @@ export function CharacterWizard() {
             return (
               <button key={s.id} onClick={() => i < step && setStep(i)} disabled={i > step}
                 style={{ padding: "12px 16px", background: "none", border: "none", borderBottom: current ? `2px solid ${ACCENT}` : "2px solid transparent", color: current ? ACCENT_LIGHT : done ? "var(--text-muted)" : "var(--text-subtle)", fontSize: "0.78rem", fontWeight: current ? 700 : 500, cursor: i <= step ? "pointer" : "default", whiteSpace: "nowrap", transition: "color 0.2s", display: "flex", alignItems: "center", gap: 6 }}>
-                {done && <span style={{ color: ACCENT, fontSize: "0.7rem" }}>✓</span>}
+                {done && <span style={{ color: ACCENT_LIGHT, fontSize: "0.7rem" }}>✓</span>}
                 {s.label}
               </button>
             );
@@ -184,7 +184,7 @@ export function CharacterWizard() {
         </div>
       </div>
 
-      <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "40px 24px 100px" }}>
+      <main id="conteudo" style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "40px 24px 100px" }}>
         {step === 0 && (
           <StepRace
             raceId={data.raceId ?? null}

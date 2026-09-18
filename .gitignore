@@ -47,3 +47,6 @@ next-env.d.ts
 .claude/
 # Livros de regras de referência (obras comerciais — não versionar)
 /basement/
+
+# Relatório do ESLint usado pelo codemod de acessibilidade (gerado sob demanda)
+/eslint-a11y.json

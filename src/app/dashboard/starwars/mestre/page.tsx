@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { StarWarsMasterDiceRoller } from "./StarWarsMasterDiceRoller";
 import { SW, Panel, SectionTitle, PrimaryButton, GhostButton, gridAutoFill } from "../ui";
@@ -49,7 +50,7 @@ export default function StarWarsMestrePage() {
       <StarWarsMasterDiceRoller />
       <DashboardNav userName={userName} systemName="Star Wars: Além da Fronteira" systemHref="/dashboard/starwars" backLabel="Star Wars" accentColor={SW.accent} />
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
           <SectionTitle eyebrow="Star Wars · Mestre" title="Minhas Campanhas" />
           <PrimaryButton onClick={() => setCreating(true)}>+ Nova campanha</PrimaryButton>
@@ -124,7 +125,9 @@ export default function StarWarsMestrePage() {
           <div style={gridAutoFill(240)}>
             {campaigns.map((c) => (
               <Panel key={c.id} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 10 }}>
-                <h3 onClick={() => router.push(`/dashboard/starwars/mestre/campanha/${c.id}`)} style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", cursor: "pointer" }}>{c.name}</h3>
+                <h3 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700 }}>
+                  <Link href={`/dashboard/starwars/mestre/campanha/${c.id}`} style={{ color: "var(--text)", textDecoration: "none" }}>{c.name}</Link>
+                </h3>
                 <p style={{ fontSize: "0.76rem", color: SW.textMuted }}>
                   {c.counts.npcs} NPCs · {c.counts.combatants} combatentes · {c.counts.sessions} sessões
                 </p>

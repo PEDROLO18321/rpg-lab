@@ -45,7 +45,7 @@ export default async function DndJogadorPage() {
         accentColor="#c9941f"
       />
 
-      <main
+      <main id="conteudo"
         style={{
           maxWidth: 1100,
           margin: "0 auto",

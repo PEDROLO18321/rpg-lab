@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -40,7 +40,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div
+    <main
+      id="conteudo"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -212,17 +213,19 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
 
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const id = useId();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.03em" }}>
+      <label htmlFor={id} style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.03em" }}>
         {label}
       </label>
       <input
+        id={id}
         {...props}
         style={{
           padding: "10px 14px",

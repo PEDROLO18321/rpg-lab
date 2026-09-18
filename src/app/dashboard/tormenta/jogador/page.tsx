@@ -8,6 +8,7 @@ import { RACE_BY_ID } from "@/lib/tormenta/races";
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 
 const ACCENT = "#a01818";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM = "rgba(160,24,24,0.12)";
 const ACCENT_BORD = "rgba(160,24,24,0.32)";
 const ACCENT_GLOW = "rgba(160,24,24,0.22)";
@@ -47,16 +48,16 @@ export default async function TormentaJogadorPage() {
         accentColor="#a01818"
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 24px 80px" }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 36 }}>
           <div>
-            <span className="section-label" style={{ display: "block", marginBottom: 8, color: ACCENT }}>Tormenta 20 · Edição 2020</span>
+            <span className="section-label" style={{ display: "block", marginBottom: 8, color: ACCENT_LIGHT }}>Tormenta 20 · Edição 2020</span>
             <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.4rem, 3vw, 1.9rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>
-              Meus <span style={{ color: ACCENT }}>Heróis</span>
+              Meus <span style={{ color: ACCENT_LIGHT }}>Heróis</span>
             </h1>
           </div>
 
-          <Link href="/dashboard/tormenta/new" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", background: `linear-gradient(135deg, #c94040 0%, ${ACCENT} 100%)`, color: "#fff", border: "none", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, textDecoration: "none", boxShadow: `0 0 20px ${ACCENT_GLOW}`, whiteSpace: "nowrap" }}>
+          <Link href="/dashboard/tormenta/new" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", background: `linear-gradient(135deg, #d56c6c 0%, ${ACCENT} 100%)`, color: "#fff", border: "none", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, textDecoration: "none", boxShadow: `0 0 20px ${ACCENT_GLOW}`, whiteSpace: "nowrap" }}>
             + Criar personagem
           </Link>
         </div>
@@ -98,7 +99,7 @@ function EmptyState() {
       </div>
       <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.1rem", fontWeight: 700, color: "var(--text)" }}>Nenhum herói ainda</h2>
       <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", maxWidth: 320, lineHeight: 1.65 }}>Crie seu primeiro herói e comece sua aventura em Arton.</p>
-      <Link href="/dashboard/tormenta/new" style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 22px", background: `linear-gradient(135deg, #c94040 0%, ${ACCENT} 100%)`, color: "#fff", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, textDecoration: "none", boxShadow: `0 0 20px ${ACCENT_GLOW}` }}>
+      <Link href="/dashboard/tormenta/new" style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 22px", background: `linear-gradient(135deg, #d56c6c 0%, ${ACCENT} 100%)`, color: "#fff", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, textDecoration: "none", boxShadow: `0 0 20px ${ACCENT_GLOW}` }}>
         + Criar primeiro herói
       </Link>
     </div>

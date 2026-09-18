@@ -5,6 +5,8 @@ import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuNpc, CthulhuNPCAttack } from "@/lib/cthulhu/cthulhuCampaignClient";
 import "../../../cthulhu-responsive.css";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { Field } from "@/components/ui/Field";
+import { activateOnKey } from "@/lib/a11y";
 
 const A = "#a3b86c";
 const ABORD = "rgba(125,156,62,0.32)";
@@ -86,8 +88,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
   function numField(label: string, key: keyof NpcForm) {
     return (
       <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <label style={{ ...labelStyle, textAlign: "center" }}>{label}</label>
-        <input type="number" min="1" max="100" placeholder="—" value={(form[key] as number | null) ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })} style={{ ...inputStyle, textAlign: "center", padding: "8px 4px" }} />
+        <Field label={<>{label}</>} style={{ ...labelStyle, textAlign: "center" }}><input type="number" min="1" max="100" placeholder="—" value={(form[key] as number | null) ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })} style={{ ...inputStyle, textAlign: "center", padding: "8px 4px" }} /></Field>
       </div>
     );
   }
@@ -113,8 +114,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
         </div>
         <div style={{ marginBottom: 12 }}>{textField("Ligação com o Mythos", "mythosTies")}</div>
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Notas</label>
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Segredos, motivações, conexões..." style={{ ...inputStyle, resize: "vertical" }} />
+          <Field label="Notas" style={labelStyle}><textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Segredos, motivações, conexões..." style={{ ...inputStyle, resize: "vertical" }} /></Field>
         </div>
 
         <div style={{ borderTop: `1px solid ${ABORD}`, paddingTop: 16, marginBottom: 16 }}>
@@ -139,12 +139,12 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
             </div>
           )}
           <div className="cth-npc-atk-row" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px", gap: 8, marginBottom: 8 }}>
-            <div><label style={labelStyle}>Nome</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Revólver .38" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Perícia / %</label><input value={newAtk.skill} onChange={(e) => setNewAtk({ ...newAtk, skill: e.target.value })} placeholder="Briga 50%" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="1d10" style={inputStyle} /></div>
+            <div><Field label="Nome" style={labelStyle}><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Revólver .38" style={inputStyle} /></Field></div>
+            <div><Field label="Perícia / %" style={labelStyle}><input value={newAtk.skill} onChange={(e) => setNewAtk({ ...newAtk, skill: e.target.value })} placeholder="Briga 50%" style={inputStyle} /></Field></div>
+            <div><Field label="Dano" style={labelStyle}><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="1d10" style={inputStyle} /></Field></div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <div style={{ flex: 1 }}><label style={labelStyle}>Descrição</label><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: Alcance 15m, 6 balas" style={inputStyle} /></div>
+            <div style={{ flex: 1 }}><Field label="Descrição" style={labelStyle}><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: Alcance 15m, 6 balas" style={inputStyle} /></Field></div>
             <button onClick={addAttack} disabled={!newAtk.name.trim()} style={{ padding: "8px 14px", background: newAtk.name.trim() ? ADIM : "var(--surface-2)", color: newAtk.name.trim() ? A : "var(--text-subtle)", border: `1px solid ${ABORD}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: newAtk.name.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>+ Ataque</button>
           </div>
         </div>
@@ -164,7 +164,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
             const attacks = parseAttacks(npc.attacks);
             return (
               <div key={npc.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
+                <div role="button" tabIndex={0} onKeyDown={activateOnKey(() => setExpanded(expanded === npc.id ? null : npc.id))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "var(--radius)", background: ADIM, border: `1px solid ${ABORD}`, display: "flex", alignItems: "center", justifyContent: "center", color: A, fontSize: "0.9rem", flexShrink: 0 }}>{npc.name?.[0] ?? "N"}</div>
                     <div style={{ minWidth: 0 }}>
@@ -181,7 +181,7 @@ export function CthulhuNpcCreator({ api }: { api: CthulhuApi }) {
                 </div>
 
                 {addInitTarget === npc.id && (
-                  <div onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: `1px solid ${ABORD}`, background: ADIM }}>
+                  <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: `1px solid ${ABORD}`, background: ADIM }}>
                     <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>DEX para ordem de ação <span style={{ color: "var(--text-subtle)" }}>(vazio = DEX do NPC)</span></p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input type="number" value={addInitValue} onChange={(e) => setAddInitValue(e.target.value)} placeholder={`DEX: ${npc.dex ?? "?"}`} autoFocus style={{ ...inputStyle, flex: 1 }} onKeyDown={(e) => e.key === "Enter" && addToInitiative(npc)} />

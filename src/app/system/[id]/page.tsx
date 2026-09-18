@@ -378,7 +378,7 @@ function WikiPage({ sys }: { sys: SystemData }) {
       </header>
 
       {/* ── Body ── */}
-      <main style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "64px 28px 100px" }}>
+      <main id="conteudo" style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "64px 28px 100px" }}>
 
         {/* First section + sidebar: 2 columns */}
         <div className="sys-sidebar-grid" style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 48, alignItems: "start", marginBottom: 56 }}>

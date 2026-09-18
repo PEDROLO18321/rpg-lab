@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
+import { ShareSheetButton } from "@/components/party/ShareSheetButton";
 
 interface Props {
   userName: string;
@@ -13,9 +14,11 @@ interface Props {
   accentColor?: string;
   /** Quando definido, mostra um botão "Exportar PDF" que aciona esta função (ex: `() => window.print()`). */
   onExportPdf?: () => void;
+  /** Id da ficha aberta. Mostra o botão que gera o link para a campanha do mestre. */
+  shareCharacterId?: string;
 }
 
-export function DashboardNav({ userName, systemName, systemHref, backLabel, accentColor, onExportPdf }: Props) {
+export function DashboardNav({ userName, systemName, systemHref, backLabel, accentColor, onExportPdf, shareCharacterId }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -93,6 +96,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
 
         {/* Right — export + user menu */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {shareCharacterId && <ShareSheetButton characterId={shareCharacterId} />}
           {onExportPdf && (
             <button
               className="no-print"
@@ -166,7 +170,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
 
           {menuOpen && (
             <>
-              <div
+              <div role="presentation"
                 style={{ position: "fixed", inset: 0, zIndex: 10 }}
                 onClick={() => setMenuOpen(false)}
               />

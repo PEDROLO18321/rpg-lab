@@ -9,6 +9,7 @@ import {
   levelUpGain, type MandatoryChoiceKind, POOL_CLASS_IDS, getRemainingPoolAbilities,
 } from "@/lib/starwars/leveling";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 import { getAvailableAbilities } from "@/lib/starwars/powers/registry";
 import { GENERAL_POWERS, GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import type { ChosenPower } from "@/lib/starwars/powers/types";
@@ -139,6 +140,8 @@ const STEP_LABEL = ["Classe", "Vitais", "Escolha", "Múltiplo de 5", "Múltiplo 
 const LAST_STEP = STEP_LABEL.length - 1;
 
 export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
+  useEscapeKey(true, onClose);
+
   const router = useRouter();
   const classLevels = parseJsonField<Record<string, number>>(sheet.classes, {});
   const existingClassIds = Object.keys(classLevels);
@@ -300,8 +303,8 @@ export function LevelUpModal({ characterId, sheet, onClose, onDone }: Props) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(2,4,8,0.78)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: SW.panel, border: `1px solid ${SW.accentBord}`, boxShadow: `0 0 40px ${SW.glow}`, padding: 30, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+    <div role="presentation" style={{ position: "fixed", inset: 0, background: "rgba(2,4,8,0.78)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 20 }} onClick={onClose}>
+      <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ background: SW.panel, border: `1px solid ${SW.accentBord}`, boxShadow: `0 0 40px ${SW.glow}`, padding: 30, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
           <p style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.accentLight, letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 4 }}>
             Progressão · Etapa {step + 1} de {STEP_LABEL.length} — {STEP_LABEL[step]}

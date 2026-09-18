@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsClock } from "@/lib/starwars/starwarsCampaignClient";
 import { SW } from "../../../ui";
+import { Field } from "@/components/ui/Field";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;
@@ -49,9 +50,9 @@ export function CampaignClocks({ api }: { api: StarWarsApi }) {
       </div>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end", padding: "16px 20px", background: SW.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: `0 0 24px ${SW.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
-        <div style={{ flex: "2 1 200px" }}><label style={lab}>Nome</label><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: A frota do Império se aproxima" style={{ ...ip, width: "100%" }} /></div>
-        <div><label style={lab}>Segmentos</label><select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ ...ip, cursor: "pointer" }}>{SEGMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-        <div><label style={lab}>Tipo</label><select value={kind} onChange={(e) => setKind(e.target.value as StarWarsClock["kind"])} style={{ ...ip, cursor: "pointer" }}>{(["ameaca", "missao", "neutro"] as const).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></div>
+        <div style={{ flex: "2 1 200px" }}><Field label="Nome" style={lab}><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: A frota do Império se aproxima" style={{ ...ip, width: "100%" }} /></Field></div>
+        <div><Field label="Segmentos" style={lab}><select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ ...ip, cursor: "pointer" }}>{SEGMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}</select></Field></div>
+        <div><Field label="Tipo" style={lab}><select value={kind} onChange={(e) => setKind(e.target.value as StarWarsClock["kind"])} style={{ ...ip, cursor: "pointer" }}>{(["ameaca", "missao", "neutro"] as const).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></Field></div>
         <button onClick={add} disabled={!name.trim()} style={{ padding: "9px 20px", background: name.trim() ? `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)` : "var(--surface-2)", color: name.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: name.trim() ? "pointer" : "not-allowed" }}>+ Criar</button>
       </div>
 

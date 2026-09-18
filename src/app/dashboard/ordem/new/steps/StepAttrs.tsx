@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import dynamic from "next/dynamic";
 import type { OrdemWizardData } from "../CharacterWizard";
 import { ATTR_KEYS, ATTR_LABEL, ATTR_ABBR, type AttrKey } from "@/lib/ordem/data";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function StepAttrs({ data, onChange }: Props) {
+  const nameId = useId();
   const attrs = data.attrs;
   const vals = Object.values(attrs);
   const used = vals.reduce((a, v) => a + Math.max(0, v - 1), 0);
@@ -38,11 +40,12 @@ export function StepAttrs({ data, onChange }: Props) {
 
       {/* Nome */}
       <div>
-        <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 8, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        <label htmlFor={nameId} style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: 8, letterSpacing: "0.04em", textTransform: "uppercase" }}>
           Nome do agente
         </label>
         <div style={{ display: "flex", gap: 8 }}>
           <input
+            id={nameId}
             value={data.name}
             onChange={(e) => onChange({ name: e.target.value })}
             placeholder="Ex.: Ulisses Beltrão"

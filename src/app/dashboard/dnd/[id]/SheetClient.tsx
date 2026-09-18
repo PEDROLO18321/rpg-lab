@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { useEscapeKey } from "@/lib/useEscapeKey";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
@@ -21,6 +22,7 @@ import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
 import { DndPrintSheet } from "./DndPrintSheet";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import "../dnd-responsive.css";
+import { activateOnKey } from "@/lib/a11y";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -320,10 +322,11 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         systemHref="/dashboard/dnd/jogador"
         backLabel="Meus Personagens"
         accentColor="#c9941f"
+        shareCharacterId={characterId}
         // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
-      <main className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
+      <main id="conteudo" className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
         <Link href="/dashboard/dnd/jogador" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
           ← Meus Personagens
         </Link>
@@ -811,6 +814,7 @@ function EditMode({
 
   // ── Item picker state ────────────────────────────────────────────────────
   const [showItemPicker, setShowItemPicker] = useState(false);
+  useEscapeKey(showItemPicker, () => setShowItemPicker(false));
   const [itemSearch, setItemSearch] = useState("");
   const [itemPickerGroup, setItemPickerGroup] = useState<PickerGroup>("Tudo");
   const [itemQty, setItemQty] = useState(1);
@@ -1159,7 +1163,7 @@ function EditMode({
 
       {/* Item Picker Modal */}
       {showItemPicker && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={(e) => { if (e.target === e.currentTarget) setShowItemPicker(false); }}>
+        <div role="presentation" style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={(e) => { if (e.target === e.currentTarget) setShowItemPicker(false); }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", width: "100%", maxWidth: 680, maxHeight: "85vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
             <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)" }}>Adicionar Item</p>
@@ -1367,6 +1371,7 @@ function PlayMode({
 
   // Item picker state
   const [showItemPicker, setShowItemPicker] = useState(false);
+  useEscapeKey(showItemPicker, () => setShowItemPicker(false));
   const [itemSearch, setItemSearch] = useState("");
   const [itemPickerGroup, setItemPickerGroup] = useState<PickerGroup>("Tudo");
   const [itemQty, setItemQty] = useState(1);
@@ -1736,6 +1741,10 @@ function PlayMode({
             {conditions.map((c) => (
               <span
                 key={c}
+                role="button"
+                tabIndex={0}
+                aria-label={`Remover condição ${c}`}
+                onKeyDown={activateOnKey(() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); })}
                 onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
                 style={{
                   fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: "var(--radius-xs)", cursor: "pointer",
@@ -2269,6 +2278,10 @@ function PlayMode({
                           borderRadius: isExpanded ? "var(--radius-lg) var(--radius-lg) 0 0" : "var(--radius-lg)",
                           transition: "all 0.15s", cursor: "pointer",
                         }}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
+                        onKeyDown={activateOnKey(() => setExpandedItemId(isExpanded ? null : item.id))}
                         onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
                       >
                         <button
@@ -2450,6 +2463,10 @@ function PlayMode({
                 {conditions.map((c) => (
                   <span
                     key={c}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Remover condição ${c}`}
+                    onKeyDown={activateOnKey(() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); })}
                     onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
                     style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-xs)", cursor: "pointer", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", userSelect: "none" }}
                     title="Clique para remover"
@@ -2672,7 +2689,7 @@ function PlayMode({
 
       {/* Item Picker Modal */}
       {showItemPicker && (
-        <div
+        <div role="presentation"
           style={{
             position: "fixed", inset: 0, zIndex: 100,
             background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)",

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { OCCUPATIONS } from "@/lib/cthulhu/data";
 import { generateInvestigator } from "@/lib/cthulhu/autoGenerate";
+import { Field } from "@/components/ui/Field";
 
 interface Props {
   onBack: () => void;
@@ -84,8 +85,7 @@ export function AutoGenerateForm({ onBack }: Props) {
           </p>
 
           <div>
-            <label style={labelStyle}>Nome (opcional)</label>
-            <input
+            <Field label="Nome (opcional)" style={labelStyle}><input
               type="text"
               placeholder="Deixe em branco para sortear"
               value={charName}
@@ -93,12 +93,11 @@ export function AutoGenerateForm({ onBack }: Props) {
               disabled={loading}
               maxLength={60}
               style={inputStyle}
-            />
+            /></Field>
           </div>
 
           <div>
-            <label style={labelStyle}>Ocupação (opcional)</label>
-            <select
+            <Field label="Ocupação (opcional)" style={labelStyle}><select
               value={occupationId}
               onChange={(e) => setOccupationId(e.target.value)}
               disabled={loading}
@@ -108,12 +107,11 @@ export function AutoGenerateForm({ onBack }: Props) {
               {OCCUPATIONS.map((o) => (
                 <option key={o.id} value={o.id}>{o.name}</option>
               ))}
-            </select>
+            </select></Field>
           </div>
 
           <div>
-            <label style={labelStyle}>Era</label>
-            <select
+            <Field label="Era" style={labelStyle}><select
               value={era}
               onChange={(e) => setEra(e.target.value as "1920s" | "modern")}
               disabled={loading}
@@ -121,7 +119,7 @@ export function AutoGenerateForm({ onBack }: Props) {
             >
               <option value="1920s">1920s</option>
               <option value="modern">Era Moderna</option>
-            </select>
+            </select></Field>
           </div>
 
           {error && (

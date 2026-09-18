@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { SPECIES, TIER_LABEL, TIER_DESCRIPTION } from "@/lib/starwars/species";
 import { NAMES_BY_SPECIES, pickRandom } from "@/lib/starwars/names";
 import { ATTR_KEYS, ATTR_LABEL, type AttrKey } from "@/lib/starwars/data";
@@ -22,6 +22,7 @@ function formatBonus(b: Partial<Record<AttrKey, number>>): string {
 const SPECIES_SORTED = [...SPECIES].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
 export function StepSpecies({ charName, speciesId, humanChoice, onChange }: Props) {
+  const nameId = useId();
   const species = speciesId ? SPECIES.find((s) => s.id === speciesId) : undefined;
   const names = speciesId ? NAMES_BY_SPECIES[speciesId] : undefined;
   const detailRef = useRef<HTMLDivElement>(null);
@@ -99,11 +100,11 @@ export function StepSpecies({ charName, speciesId, humanChoice, onChange }: Prop
           )}
 
           <div>
-            <label style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.textMuted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <label htmlFor={nameId} style={{ fontSize: "0.68rem", fontWeight: 800, color: SW.textMuted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
               Nome do personagem <span style={{ color: SW.gold }}>*</span>
             </label>
             <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <input value={charName} onChange={(e) => onChange({ charName: e.target.value })}
+              <input id={nameId} value={charName} onChange={(e) => onChange({ charName: e.target.value })}
                 placeholder={names ? `Ex.: ${names.male[0]}` : "Digite um nome..."} maxLength={60}
                 style={{ flex: 1, minWidth: 0, padding: "11px 16px", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.92rem", fontFamily: "var(--font-cinzel), serif" }} />
               {names && (

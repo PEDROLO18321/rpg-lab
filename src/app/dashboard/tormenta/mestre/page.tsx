@@ -12,9 +12,10 @@ import {
   deleteCampaign,
   type TormentaCampaignSummary,
 } from "@/lib/tormenta/tormentaCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const ACCENT = "#a01818";
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM = "rgba(160,24,24,0.12)";
 const ACCENT_BORD = "rgba(160,24,24,0.28)";
 
@@ -60,9 +61,9 @@ export default function MestrePage() {
 
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -77,10 +78,10 @@ export default function MestrePage() {
         accentColor="#a01818"
       />
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
-          <span className="section-label" style={{ display: "block", marginBottom: 8, color: ACCENT }}>
+          <span className="section-label" style={{ display: "block", marginBottom: 8, color: ACCENT_LIGHT }}>
             Tormenta 20 · Arton
           </span>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
@@ -136,12 +137,7 @@ export default function MestrePage() {
             }}
           >
             <div style={{ flex: 1, minWidth: 220 }}>
-              <label
-                style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}
-              >
-                Nome da Campanha
-              </label>
-              <input
+              <Field label="Nome da Campanha" style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: ACCENT_LIGHT, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}><input
                 autoFocus
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -158,7 +154,7 @@ export default function MestrePage() {
                   outline: "none",
                   boxSizing: "border-box",
                 }}
-              />
+              /></Field>
             </div>
             <div style={{ display: "flex", gap: 8, alignSelf: "flex-end" }}>
               <button

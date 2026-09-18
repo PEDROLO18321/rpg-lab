@@ -13,6 +13,7 @@ import {
   type CthulhuCampaignSummary,
   type Era,
 } from "@/lib/cthulhu/cthulhuCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const ERA_OPTIONS: { value: Era; label: string }[] = [
   { value: "1920s", label: "Anos 1920" },
@@ -63,9 +64,9 @@ export default function GuardiaoPage() {
 
   if (status === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -80,7 +81,7 @@ export default function GuardiaoPage() {
         accentColor="#6b7a3a"
       />
 
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 80px" }}>
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <span className="section-label" style={{ display: "block", marginBottom: 8, color: "#7d9c3e" }}>
@@ -105,29 +106,23 @@ export default function GuardiaoPage() {
         {creating && (
           <div style={{ marginBottom: 32, padding: "24px 28px", background: "var(--surface)", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius-xl)", display: "flex", alignItems: "flex-end", gap: 12, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 220 }}>
-              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-                Nome do Cenário
-              </label>
-              <input
+              <Field label="Nome do Cenário" style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}><input
                 autoFocus
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); if (e.key === "Escape") setCreating(false); }}
                 placeholder="Ex: A Sombra Sobre Innsmouth"
                 style={{ width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
-              />
+              /></Field>
             </div>
             <div style={{ minWidth: 160 }}>
-              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-                Era
-              </label>
-              <select
+              <Field label="Era" style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#7d9c3e", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}><select
                 value={newEra}
                 onChange={(e) => setNewEra(e.target.value as Era)}
                 style={{ width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: "1px solid rgba(125,156,62,0.32)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.9rem", cursor: "pointer" }}
               >
                 {ERA_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              </select></Field>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={handleCreate} disabled={!newName.trim()} style={{ padding: "10px 20px", background: newName.trim() ? "linear-gradient(135deg, #a3b86c 0%, #7d9c3e 100%)" : "var(--surface-2)", color: newName.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.86rem", fontWeight: 700, cursor: newName.trim() ? "pointer" : "not-allowed" }}>

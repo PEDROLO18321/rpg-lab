@@ -5,6 +5,8 @@ import type { DndApi } from "@/lib/dnd/useDndCampaign";
 import type { DndNpc, NPCAttack } from "@/lib/dnd/dndCampaignClient";
 import "../../../dnd-responsive.css";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { Field } from "@/components/ui/Field";
+import { activateOnKey } from "@/lib/a11y";
 
 const RACES = ["Humano", "Elfo", "Anão", "Halfling", "Gnomo", "Meio-Elfo", "Meio-Orc", "Tiefling", "Draconato", "Aasimar", "Orc", "Goblin"];
 const ROLES = ["Aldeão", "Guarda da Cidade", "Mercador", "Sacerdote", "Taberneiro", "Ladrão", "Nobre", "Mago", "Guerreiro", "Ladino", "Ferreiro", "Fazendeiro", "Curandeiro", "Explorador", "Espião", "Cultista", "Mendigo", "Artesão", "Pescador", "Soldado", "Cavaleiro", "Mensageiro", "Bardo", "Herói"];
@@ -88,8 +90,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
   function numField(label: string, key: keyof NpcForm) {
     return (
       <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <label style={{ ...labelStyle, textAlign: "center" }}>{label}</label>
-        <input type="number" min="1" max="30" placeholder="—" value={(form[key] as number | null) ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })} style={{ ...inputStyle, textAlign: "center", padding: "8px 6px" }} />
+        <Field label={<>{label}</>} style={{ ...labelStyle, textAlign: "center" }}><input type="number" min="1" max="30" placeholder="—" value={(form[key] as number | null) ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })} style={{ ...inputStyle, textAlign: "center", padding: "8px 6px" }} /></Field>
       </div>
     );
   }
@@ -114,8 +115,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
           {textField("Aparência", "appearance")}
         </div>
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Notas</label>
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Motivações, segredos, conexões..." style={{ ...inputStyle, resize: "vertical" }} />
+          <Field label="Notas" style={labelStyle}><textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Motivações, segredos, conexões..." style={{ ...inputStyle, resize: "vertical" }} /></Field>
         </div>
 
         <div style={{ borderTop: "1px solid var(--border-accent)", paddingTop: 16, marginBottom: 16 }}>
@@ -140,12 +140,12 @@ export function NpcCreator({ api }: { api: DndApi }) {
             </div>
           )}
           <div className="dnd-npc-attack-grid" style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px", gap: 8, marginBottom: 8 }}>
-            <div><label style={labelStyle}>Nome do Ataque</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Espada Longa" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Bônus</label><input value={newAtk.bonus} onChange={(e) => setNewAtk({ ...newAtk, bonus: e.target.value })} placeholder="+5" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="1d8+3" style={inputStyle} /></div>
+            <div><Field label="Nome do Ataque" style={labelStyle}><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Espada Longa" style={inputStyle} /></Field></div>
+            <div><Field label="Bônus" style={labelStyle}><input value={newAtk.bonus} onChange={(e) => setNewAtk({ ...newAtk, bonus: e.target.value })} placeholder="+5" style={inputStyle} /></Field></div>
+            <div><Field label="Dano" style={labelStyle}><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="1d8+3" style={inputStyle} /></Field></div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <div style={{ flex: 1 }}><label style={labelStyle}>Descrição do Ataque</label><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: Corpo a corpo, alcance 1,5 m" style={inputStyle} /></div>
+            <div style={{ flex: 1 }}><Field label="Descrição do Ataque" style={labelStyle}><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: Corpo a corpo, alcance 1,5 m" style={inputStyle} /></Field></div>
             <button onClick={addAttack} disabled={!newAtk.name.trim()} style={{ padding: "8px 14px", background: newAtk.name.trim() ? "var(--accent-dim)" : "var(--surface-2)", color: newAtk.name.trim() ? "var(--accent-light)" : "var(--text-subtle)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: newAtk.name.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>+ Ataque</button>
           </div>
         </div>
@@ -165,7 +165,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
             const attacks = parseAttacks(npc.attacks);
             return (
               <div key={npc.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
+                <div role="button" tabIndex={0} onKeyDown={activateOnKey(() => setExpanded(expanded === npc.id ? null : npc.id))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent-light)", fontSize: "0.9rem", flexShrink: 0 }}>{npc.race?.[0] ?? "N"}</div>
                     <div style={{ minWidth: 0 }}>
@@ -181,7 +181,7 @@ export function NpcCreator({ api }: { api: DndApi }) {
                 </div>
 
                 {addInitTarget === npc.id && (
-                  <div onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: "1px solid var(--border-accent)", background: "var(--accent-dim)" }}>
+                  <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: "1px solid var(--border-accent)", background: "var(--accent-dim)" }}>
                     <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>Valor de Iniciativa <span style={{ color: "var(--text-subtle)" }}>(vazio = d20)</span></p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input type="number" value={addInitValue} onChange={(e) => setAddInitValue(e.target.value)} placeholder="Rolar d20" autoFocus style={{ ...inputStyle, flex: 1 }} onKeyDown={(e) => e.key === "Enter" && addToInitiative(npc)} />

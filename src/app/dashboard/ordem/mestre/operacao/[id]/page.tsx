@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { PartyTab } from "@/components/party/PartyTab";
 import { TIER_LABEL } from "@/lib/ordem/ordemCampaignClient";
 import { useOperacao } from "@/lib/ordem/useOperacao";
 import { OrdemMasterDiceRoller } from "../../OrdemMasterDiceRoller";
@@ -31,7 +32,7 @@ const AB = "rgba(255,255,255,0.28)";
 
 type Tab =
   | "scenario" | "npc" | "initiative" | "sanity" | "economy"
-  | "clues" | "clocks" | "items" | "bestiary" | "generators" | "notes" | "agenda" | "guide";
+  | "clues" | "clocks" | "items" | "bestiary" | "generators" | "notes" | "agenda" | "guide" | "party";
 
 function icon(d: string) {
   return (
@@ -54,6 +55,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
   { id: "generators", label: "Geradores",     icon: icon("M5 3v4 M3 5h4 M6 17v4 M4 19h4 M13 3l3 6 6 1-5 5 1 7-5-3") },
   { id: "notes",      label: "Sessões",       icon: icon("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M8 13h8 M8 17h8") },
   { id: "agenda",     label: "Agenda",        icon: icon("M8 2v4 M16 2v4 M3 8h18 M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z") },
+  { id: "party",      label: "Fichas de Jogadores", icon: icon("M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0 0 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75") },
   { id: "guide",      label: "Guia",          icon: icon("M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z") },
 ];
 
@@ -68,9 +70,9 @@ export default function OrdemOperacaoPage({ params }: { params: Promise<{ id: st
 
   if (status === "loading" || opStatus === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <main id="conteudo" style={{ minHeight: "100vh", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Carregando...</p>
-      </div>
+      </main>
     );
   }
 
@@ -98,7 +100,7 @@ export default function OrdemOperacaoPage({ params }: { params: Promise<{ id: st
         accentColor="#ffffff"
       />
 
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px" }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
@@ -138,6 +140,7 @@ export default function OrdemOperacaoPage({ params }: { params: Promise<{ id: st
         {tab === "generators" && <OrdemGenerators api={api} />}
         {tab === "notes"      && <OrdemSessionNotes api={api} />}
         {tab === "agenda"     && <OrdemAgenda api={api} />}
+        {tab === "party"      && <PartyTab system="ordem" campaignId={id} accentColor={"#d4d4d4"} />}
         {tab === "guide"      && <OrdemGuide />}
       </main>
     </div>

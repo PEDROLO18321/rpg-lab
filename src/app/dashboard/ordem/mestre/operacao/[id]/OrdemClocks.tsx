@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemClock } from "@/lib/ordem/ordemCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -67,20 +68,17 @@ export function OrdemClocks({ api }: { api: OperacaoApi }) {
       {/* Add */}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end", padding: "16px 20px", background: "var(--surface)", border: `1px solid ${AB}`, borderRadius: "var(--radius-xl)" }}>
         <div style={{ flex: "2 1 200px" }}>
-          <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Nome</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Ritual de invocação" style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" }} />
+          <Field label="Nome" style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}><input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Ex: Ritual de invocação" style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", width: "100%", boxSizing: "border-box" }} /></Field>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Segmentos</label>
-          <select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", cursor: "pointer" }}>
+          <Field label="Segmentos" style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}><select value={segments} onChange={(e) => setSegments(Number(e.target.value))} style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", cursor: "pointer" }}>
             {SEGMENT_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </select></Field>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>Tipo</label>
-          <select value={kind} onChange={(e) => setKind(e.target.value as OrdemClock["kind"])} style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", cursor: "pointer" }}>
+          <Field label="Tipo" style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}><select value={kind} onChange={(e) => setKind(e.target.value as OrdemClock["kind"])} style={{ padding: "9px 12px", background: "var(--surface-2)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", cursor: "pointer" }}>
             {(["ameaca", "missao", "neutro"] as const).map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
-          </select>
+          </select></Field>
         </div>
         <button onClick={add} disabled={!name.trim()} style={{ padding: "9px 20px", background: name.trim() ? `linear-gradient(135deg, ${A} 0%, #b9b9c6 100%)` : "var(--surface-2)", color: name.trim() ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: name.trim() ? "pointer" : "not-allowed" }}>+ Criar</button>
       </div>

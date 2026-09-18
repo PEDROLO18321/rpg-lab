@@ -69,7 +69,7 @@ export function NewCharacterEntry() {
     );
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px" }}>
+    <main id="conteudo" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px" }}>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
         <span className="section-label" style={{ display: "block", marginBottom: 12 }}>Ordem Paranormal</span>
         <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", fontWeight: 700, color: "var(--text)" }}>
@@ -141,6 +141,6 @@ export function NewCharacterEntry() {
           );
         })}
       </div>
-    </div>
+    </main>
   );
 }

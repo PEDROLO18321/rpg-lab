@@ -3,7 +3,7 @@
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 import { WEAPONS, ARMORS, DEFAULT_STARTING_KIT, STARTING_MONEY_DICE } from "@/lib/tormenta/items";
 import type { WizardData } from "../CharacterWizard";
-import { ACCENT, ACCENT_LIGHT, ACCENT_DIM, ACCENT_BORD } from "../CharacterWizard";
+import { ACCENT_LIGHT, ACCENT_DIM, ACCENT_BORD } from "../CharacterWizard";
 import { Intro } from "./Intro";
 
 interface Props {
@@ -35,7 +35,7 @@ export function StepEquipment({ classId, weaponId, armorId, shieldId, onChange }
 
       <div>
         <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>
-          Arma inicial <span style={{ color: ACCENT }}>*</span>
+          Arma inicial <span style={{ color: ACCENT_LIGHT }}>*</span>
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
           {weaponOptions.map((w) => {

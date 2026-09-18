@@ -6,6 +6,8 @@ import type { OrdemNpc, OrdemNPCAttack } from "@/lib/ordem/ordemCampaignClient";
 import { randomOrdemName } from "@/lib/ordem/names";
 import "../../../ordem-responsive.css";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { Field } from "@/components/ui/Field";
+import { activateOnKey } from "@/lib/a11y";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -128,10 +130,9 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
   function numField(label: string, key: keyof NpcForm, max = 99) {
     return (
       <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <label style={{ ...labelStyle, textAlign: "center" }}>{label}</label>
-        <input type="number" min="0" max={max} placeholder="—" value={(form[key] as number | null) ?? ""}
+        <Field label={<>{label}</>} style={{ ...labelStyle, textAlign: "center" }}><input type="number" min="0" max={max} placeholder="—" value={(form[key] as number | null) ?? ""}
           onChange={(e) => setForm({ ...form, [key]: e.target.value ? Number(e.target.value) : null })}
-          style={{ ...inputStyle, textAlign: "center", padding: "8px 4px" }} />
+          style={{ ...inputStyle, textAlign: "center", padding: "8px 4px" }} /></Field>
       </div>
     );
   }
@@ -159,8 +160,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
         </div>
         <div style={{ marginBottom: 12 }}>{textField("Ligação com o Paranormal", "paranormalTies")}</div>
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>Notas</label>
-          <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Segredos, motivações, conexões com os agentes..." style={{ ...inputStyle, resize: "vertical" }} />
+          <Field label="Notas" style={labelStyle}><textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Segredos, motivações, conexões com os agentes..." style={{ ...inputStyle, resize: "vertical" }} /></Field>
         </div>
 
         <div style={{ borderTop: `1px solid ${AB}`, paddingTop: 16, marginBottom: 16 }}>
@@ -193,14 +193,13 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
             </div>
           )}
           <div className="op-npc-attack-row" style={{ display: "grid", gridTemplateColumns: "1fr 140px 120px", gap: 8, marginBottom: 8 }}>
-            <div><label style={labelStyle}>Nome</label><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Pistola" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Teste</label><input value={newAtk.test} onChange={(e) => setNewAtk({ ...newAtk, test: e.target.value })} placeholder="Pontaria" style={inputStyle} /></div>
-            <div><label style={labelStyle}>Dano</label><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="2d6" style={inputStyle} /></div>
+            <div><Field label="Nome" style={labelStyle}><input value={newAtk.name} onChange={(e) => setNewAtk({ ...newAtk, name: e.target.value })} placeholder="Ex: Pistola" style={inputStyle} /></Field></div>
+            <div><Field label="Teste" style={labelStyle}><input value={newAtk.test} onChange={(e) => setNewAtk({ ...newAtk, test: e.target.value })} placeholder="Pontaria" style={inputStyle} /></Field></div>
+            <div><Field label="Dano" style={labelStyle}><input value={newAtk.damage} onChange={(e) => setNewAtk({ ...newAtk, damage: e.target.value })} placeholder="2d6" style={inputStyle} /></Field></div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>Descrição</label>
-              <input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: Alcance médio, perfurante" style={inputStyle} />
+              <Field label="Descrição" style={labelStyle}><input value={newAtk.description} onChange={(e) => setNewAtk({ ...newAtk, description: e.target.value })} placeholder="Ex: Alcance médio, perfurante" style={inputStyle} /></Field>
             </div>
             <button onClick={addAttack} disabled={!newAtk.name.trim()} style={{ padding: "8px 14px", background: newAtk.name.trim() ? AD : "var(--surface-2)", color: newAtk.name.trim() ? AL : "var(--text-subtle)", border: `1px solid ${AB}`, borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: newAtk.name.trim() ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>+ Ataque</button>
           </div>
@@ -221,7 +220,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
             const attacks = parseAttacks(npc.attacks);
             return (
               <div key={npc.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
+                <div role="button" tabIndex={0} onKeyDown={activateOnKey(() => setExpanded(expanded === npc.id ? null : npc.id))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", cursor: "pointer", gap: 10 }} onClick={() => setExpanded(expanded === npc.id ? null : npc.id)}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: "var(--radius)", background: AD, border: `1px solid ${AB}`, display: "flex", alignItems: "center", justifyContent: "center", color: AL, fontSize: "0.9rem", flexShrink: 0 }}>{npc.name?.[0] ?? "N"}</div>
                     <div style={{ minWidth: 0 }}>
@@ -243,7 +242,7 @@ export function OrdemNpcCreator({ api }: { api: OperacaoApi }) {
                 </div>
 
                 {addInitTarget === npc.id && (
-                  <div onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: `1px solid ${AB}`, background: AD }}>
+                  <div role="presentation" onClick={(e) => e.stopPropagation()} style={{ padding: "12px 16px", borderTop: `1px solid ${AB}`, background: AD }}>
                     <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>Iniciativa para ordem de ação <span style={{ color: "var(--text-subtle)" }}>(vazio = AGI + d20)</span></p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <input type="number" value={addInitValue} onChange={(e) => setAddInitValue(e.target.value)} placeholder={`AGI: ${npc.agi ?? "?"}`} autoFocus style={{ ...inputStyle, flex: 1 }} onKeyDown={(e) => e.key === "Enter" && addToInitiative(npc)} />

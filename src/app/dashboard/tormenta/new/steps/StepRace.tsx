@@ -127,7 +127,7 @@ export function StepRace({ raceId, raceVariantId, racialAttrChoices, charName, o
 
           <div>
             <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
-              Nome do Personagem <span style={{ color: ACCENT }}>*</span>
+              Nome do Personagem <span style={{ color: ACCENT_LIGHT }}>*</span>
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <input type="text" value={charName} onChange={(e) => onChange({ charName: e.target.value })} placeholder="Nome do herói" maxLength={60}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useId, useState, useMemo } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemReward } from "@/lib/ordem/ordemCampaignClient";
 import { PATENTES, patenteForPP } from "@/lib/ordem/data";
+import { Field } from "@/components/ui/Field";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -23,6 +24,7 @@ export function OrdemEconomy({ api }: { api: OperacaoApi }) {
   const players = api.campaign.combatants.filter((c) => c.isPlayer);
 
   const [agentName, setAgentName] = useState("");
+  const agentId = useId();
   const [prestige, setPrestige] = useState("");
   const [reason, setReason] = useState("");
 
@@ -78,21 +80,19 @@ export function OrdemEconomy({ api }: { api: OperacaoApi }) {
         <p style={{ fontSize: "0.72rem", fontWeight: 700, color: A, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>Conceder / Remover Prestígio</p>
         <div className="op-economy-reward-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 3fr auto", gap: 10, alignItems: "end" }}>
           <div>
-            <label style={labelStyle}>Agente</label>
+            <label style={labelStyle} htmlFor={agentId}>Agente</label>
             {players.length > 0 ? (
-              <input list="player-names" value={agentName} onChange={(e) => setAgentName(e.target.value)} placeholder="Nome do agente" style={inputStyle} />
+              <input id={agentId} list="player-names" value={agentName} onChange={(e) => setAgentName(e.target.value)} placeholder="Nome do agente" style={inputStyle} />
             ) : (
-              <input value={agentName} onChange={(e) => setAgentName(e.target.value)} placeholder="Nome do agente" style={inputStyle} />
+              <input id={agentId} value={agentName} onChange={(e) => setAgentName(e.target.value)} placeholder="Nome do agente" style={inputStyle} />
             )}
             <datalist id="player-names">{players.map((p) => <option key={p.id} value={p.name} />)}</datalist>
           </div>
           <div>
-            <label style={labelStyle}>Prestígio</label>
-            <input type="number" value={prestige} onChange={(e) => setPrestige(e.target.value)} placeholder="+10 / -5" style={inputStyle} />
+            <Field label="Prestígio" style={labelStyle}><input type="number" value={prestige} onChange={(e) => setPrestige(e.target.value)} placeholder="+10 / -5" style={inputStyle} /></Field>
           </div>
           <div>
-            <label style={labelStyle}>Motivo</label>
-            <input value={reason} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addReward()} placeholder="Missão concluída, falha, conduta..." style={inputStyle} />
+            <Field label="Motivo" style={labelStyle}><input value={reason} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addReward()} placeholder="Missão concluída, falha, conduta..." style={inputStyle} /></Field>
           </div>
           <button onClick={addReward} disabled={!agentName.trim() || !prestige} style={{ padding: "9px 18px", background: agentName.trim() && prestige ? `linear-gradient(135deg, ${A} 0%, #b9b9c6 100%)` : "var(--surface-2)", color: agentName.trim() && prestige ? "#06090f" : "var(--text-muted)", border: "none", borderRadius: "var(--radius)", fontSize: "0.84rem", fontWeight: 700, cursor: agentName.trim() && prestige ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>Registrar</button>
         </div>

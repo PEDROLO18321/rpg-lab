@@ -99,7 +99,8 @@ export default function SystemSelectPage() {
   }
 
   return (
-    <div
+    <main
+      id="conteudo"
       style={{
         minHeight: "100vh",
         background: "transparent",
@@ -353,6 +354,6 @@ export default function SystemSelectPage() {
         })}
       </div>
 
-    </div>
+    </main>
   );
 }

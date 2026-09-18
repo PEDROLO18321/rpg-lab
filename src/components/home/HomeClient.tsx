@@ -158,6 +158,7 @@ export function HomeClient({ session }: Props) {
     <div style={{ minHeight:"100vh", background:"transparent", overflowX:"hidden" }}>
       <TopNav isAuthed={isAuthed} userName={userName} />
 
+      <main id="conteudo">
       <section style={{ position:"relative", minHeight:"100vh", display:"flex", alignItems:"center", overflow:"hidden" }}>
         <Background isAuthed={isAuthed} />
 
@@ -202,6 +203,8 @@ export function HomeClient({ session }: Props) {
           <CtaSection />
         </>
       )}
+
+      </main>
 
       <SiteFooter isAuthed={isAuthed} />
     </div>
@@ -527,14 +530,14 @@ const STRIP_SYSTEMS = [
 function StatsStrip() {
   return (
     <div style={{ padding:"48px 28px 20px" }}>
-      <div style={{ maxWidth:920, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:20 }}>
+      <div className="home-stats-grid" style={{ maxWidth:920, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:16 }}>
         {STRIP_SYSTEMS.map((s) => (
           <Link key={s.id} href={`/system/${s.id}`} style={{ textDecoration:"none" }}>
             <div
               className="home-stats-card"
               style={{
-                display:"flex", alignItems:"center", gap:24,
-                padding:"18px 28px 18px 18px",
+                display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", gap:10,
+                padding:"20px 12px",
                 background:"var(--surface)",
                 border:"1px solid var(--border)",
                 borderRadius:"var(--radius-xl)",
@@ -554,19 +557,16 @@ function StatsStrip() {
                 el.style.boxShadow = "none";
               }}
             >
-              <div className="home-stats-card-img" style={{ width:126, height:126, borderRadius:"var(--radius-lg)", overflow:"hidden", flexShrink:0, position:"relative" }}>
-                <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover" }} sizes="126px" />
+              <div className="home-stats-card-img" style={{ width:72, height:72, borderRadius:"var(--radius-lg)", overflow:"hidden", flexShrink:0, position:"relative" }}>
+                <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover" }} sizes="72px" />
               </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8, flex:1, minWidth:0 }}>
-                <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"1.1rem", fontWeight:700, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                  {s.name}
-                </span>
-                <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                  <div style={{ width:8, height:8, borderRadius:"50%", background:s.dot, flexShrink:0 }} />
-                  <span style={{ fontSize:"0.82rem", fontWeight:700, color:s.dot }}>{s.statusLabel}</span>
-                </div>
+              <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.92rem", fontWeight:700, color:"var(--text)", lineHeight:1.25 }}>
+                {s.name}
+              </span>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                <div style={{ width:7, height:7, borderRadius:"50%", background:s.dot, flexShrink:0 }} />
+                <span style={{ fontSize:"0.72rem", fontWeight:700, color:s.dot }}>{s.statusLabel}</span>
               </div>
-              <span style={{ fontSize:"0.9rem", color:"var(--text-subtle)", flexShrink:0 }}>→</span>
             </div>
           </Link>
         ))}

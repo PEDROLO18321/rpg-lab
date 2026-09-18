@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const ACCENT_LIGHT = "#c94040";
+const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_BORD = "rgba(160,24,24,0.28)";
 
 interface Row { term: string; text: string; }

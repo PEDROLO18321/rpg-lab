@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import { MEMBRANA_STATES, type OrdemStory, type OrdemGameSession } from "@/lib/ordem/ordemCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -47,28 +48,23 @@ export function OrdemScenario({ api }: { api: OperacaoApi }) {
         </h2>
         <div className="op-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <div>
-            <label style={labelStyle}>Objetivo dos Agentes</label>
-            <textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os agentes precisam descobrir ou impedir?" />
+            <Field label="Objetivo dos Agentes" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os agentes precisam descobrir ou impedir?" /></Field>
           </div>
           <div>
-            <label style={labelStyle}>Gancho Inicial</label>
-            <textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.hook} onChange={(e) => setField({ hook: e.target.value })} onBlur={(e) => commit({ hook: e.target.value })} placeholder="Como a Ordo Realitas envolve os agentes?" />
+            <Field label="Gancho Inicial" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.hook} onChange={(e) => setField({ hook: e.target.value })} onBlur={(e) => commit({ hook: e.target.value })} placeholder="Como a Ordo Realitas envolve os agentes?" /></Field>
           </div>
           <div>
-            <label style={labelStyle}>Ameaça Principal / Outro Lado</label>
-            <textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.mainThreat} onChange={(e) => setField({ mainThreat: e.target.value })} onBlur={(e) => commit({ mainThreat: e.target.value })} placeholder="Entidade, culto ou fenômeno central; elemento, objetivos..." />
+            <Field label="Ameaça Principal / Outro Lado" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.mainThreat} onChange={(e) => setField({ mainThreat: e.target.value })} onBlur={(e) => commit({ mainThreat: e.target.value })} placeholder="Entidade, culto ou fenômeno central; elemento, objetivos..." /></Field>
           </div>
           <div>
-            <label style={labelStyle}>Arco Atual</label>
-            <textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.currentArc} onChange={(e) => setField({ currentArc: e.target.value })} onBlur={(e) => commit({ currentArc: e.target.value })} placeholder="O que está acontecendo agora?" />
+            <Field label="Arco Atual" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.currentArc} onChange={(e) => setField({ currentArc: e.target.value })} onBlur={(e) => commit({ currentArc: e.target.value })} placeholder="O que está acontecendo agora?" /></Field>
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label style={labelStyle}>História Geral / Lore</label>
-            <textarea style={{ ...areaStyle, minHeight: 120 }} value={draft.generalHistory} onChange={(e) => setField({ generalHistory: e.target.value })} onBlur={(e) => commit({ generalHistory: e.target.value })} placeholder="Contexto, história do local, segredos que os agentes ainda não sabem..." />
+            <Field label="História Geral / Lore" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 120 }} value={draft.generalHistory} onChange={(e) => setField({ generalHistory: e.target.value })} onBlur={(e) => commit({ generalHistory: e.target.value })} placeholder="Contexto, história do local, segredos que os agentes ainda não sabem..." /></Field>
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label style={labelStyle}>Estado da Membrana</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <span style={labelStyle}>Estado da Membrana</span>
+            <div role="group" aria-label="Estado da Membrana" style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {MEMBRANA_STATES.map((m) => {
                 const on = draft.membrana === m.id;
                 return (
@@ -139,25 +135,20 @@ function SessionEditor({ api, session }: { api: OperacaoApi; session: OrdemGameS
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="op-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <div>
-          <label style={labelStyle}>Nome da Sessão</label>
-          <input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} />
+          <Field label="Nome da Sessão" style={labelStyle}><input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></Field>
         </div>
         <div>
-          <label style={labelStyle}>Data</label>
-          <input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} />
+          <Field label="Data" style={labelStyle}><input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} /></Field>
         </div>
       </div>
       <div>
-        <label style={labelStyle}>Objetivo da Sessão</label>
-        <textarea style={{ ...areaStyle, minHeight: 60 }} value={s.objective} onChange={(e) => set({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os agentes devem descobrir ou impedir?" />
+        <Field label="Objetivo da Sessão" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={s.objective} onChange={(e) => set({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os agentes devem descobrir ou impedir?" /></Field>
       </div>
       <div>
-        <label style={labelStyle}>Roteiro / O que vai acontecer</label>
-        <textarea style={{ ...areaStyle, minHeight: 90 }} value={s.events} onChange={(e) => set({ events: e.target.value })} onBlur={(e) => commit({ events: e.target.value })} placeholder="Encontros, pistas, locais, criaturas, revelações..." />
+        <Field label="Roteiro / O que vai acontecer" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 90 }} value={s.events} onChange={(e) => set({ events: e.target.value })} onBlur={(e) => commit({ events: e.target.value })} placeholder="Encontros, pistas, locais, criaturas, revelações..." /></Field>
       </div>
       <div>
-        <label style={labelStyle}>Resumo (após a sessão)</label>
-        <textarea style={{ ...areaStyle, minHeight: 80 }} value={s.summary} onChange={(e) => set({ summary: e.target.value })} onBlur={(e) => commit({ summary: e.target.value })} placeholder="O que aconteceu? Sanidade perdida, decisões..." />
+        <Field label="Resumo (após a sessão)" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 80 }} value={s.summary} onChange={(e) => set({ summary: e.target.value })} onBlur={(e) => commit({ summary: e.target.value })} placeholder="O que aconteceu? Sanidade perdida, decisões..." /></Field>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={() => api.removeChild("sessions", session.id)} style={{ padding: "7px 16px", background: "rgba(220,60,60,0.1)", border: "1px solid rgba(220,60,60,0.3)", borderRadius: "var(--radius)", color: "#e06c6c", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>

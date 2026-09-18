@@ -16,7 +16,7 @@ export default async function DndRolePage() {
         accentColor="#c9941f"
       />
 
-      <main
+      <main id="conteudo"
         style={{
           maxWidth: 800,
           margin: "0 auto",

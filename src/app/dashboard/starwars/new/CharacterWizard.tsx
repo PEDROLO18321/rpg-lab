@@ -169,7 +169,7 @@ export function CharacterWizard() {
         </div>
       </div>
 
-      <main style={{ flex: 1, maxWidth: 960, width: "100%", margin: "0 auto", padding: "44px 24px 110px" }}>
+      <main id="conteudo" style={{ flex: 1, maxWidth: 960, width: "100%", margin: "0 auto", padding: "44px 24px 110px" }}>
         {step === 0 && (
           <StepSpecies
             charName={data.charName ?? ""}

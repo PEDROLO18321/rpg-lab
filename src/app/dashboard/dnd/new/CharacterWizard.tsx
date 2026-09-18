@@ -300,7 +300,7 @@ export function CharacterWizard() {
       </div>
 
       {/* Step content */}
-      <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "40px 24px 100px" }}>
+      <main id="conteudo" style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "40px 24px 100px" }}>
         {step === 0 && (
           <StepRace
             selected={data.raceId ?? null}

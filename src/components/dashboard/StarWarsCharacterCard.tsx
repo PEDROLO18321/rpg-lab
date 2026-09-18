@@ -85,7 +85,7 @@ export function StarWarsCharacterCard({ id, name, species, className, level, pvC
         display: "flex", flexDirection: "column", gap: 14,
       }}
     >
-      <div ref={menuRef} style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }} onClick={(e) => e.stopPropagation()}>
+      <div ref={menuRef} style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }} role="presentation" onClick={(e) => e.stopPropagation()}>
         <button
           aria-label="Opções do personagem"
           onClick={() => { setMenuOpen((o) => !o); setConfirmDelete(false); }}

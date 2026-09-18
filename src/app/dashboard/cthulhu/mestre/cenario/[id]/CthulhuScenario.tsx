@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CthulhuApi } from "@/lib/cthulhu/useCthulhuCampaign";
 import type { CthulhuStory, CthulhuGameSession } from "@/lib/cthulhu/cthulhuCampaignClient";
+import { Field } from "@/components/ui/Field";
 
 const A = "#a3b86c";
 const ABORD = "rgba(125,156,62,0.32)";
@@ -33,11 +34,11 @@ export function CthulhuScenario({ api }: { api: CthulhuApi }) {
       <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "24px 28px" }}>
         <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}><span style={{ color: A }}>📜</span> Cenário</h2>
         <div className="cth-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-          <div><label style={labelStyle}>Objetivo dos Investigadores</label><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que precisam descobrir ou impedir?" /></div>
-          <div><label style={labelStyle}>Gancho Inicial</label><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.hook} onChange={(e) => setField({ hook: e.target.value })} onBlur={(e) => commit({ hook: e.target.value })} placeholder="Como são envolvidos? Contrato, desaparecimento..." /></div>
-          <div><label style={labelStyle}>Principal Culto / Ameaça</label><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.mainCult} onChange={(e) => setField({ mainCult: e.target.value })} onBlur={(e) => commit({ mainCult: e.target.value })} placeholder="Entidade ou culto central, objetivos, membros-chave..." /></div>
-          <div><label style={labelStyle}>Arco Atual</label><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.currentArc} onChange={(e) => setField({ currentArc: e.target.value })} onBlur={(e) => commit({ currentArc: e.target.value })} placeholder="O que está acontecendo agora?" /></div>
-          <div style={{ gridColumn: "1 / -1" }}><label style={labelStyle}>História Geral / Lore</label><textarea style={{ ...areaStyle, minHeight: 120 }} value={draft.generalHistory} onChange={(e) => setField({ generalHistory: e.target.value })} onBlur={(e) => commit({ generalHistory: e.target.value })} placeholder="Contexto do Mythos, história do local, segredos ocultos..." /></div>
+          <div><Field label="Objetivo dos Investigadores" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que precisam descobrir ou impedir?" /></Field></div>
+          <div><Field label="Gancho Inicial" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.hook} onChange={(e) => setField({ hook: e.target.value })} onBlur={(e) => commit({ hook: e.target.value })} placeholder="Como são envolvidos? Contrato, desaparecimento..." /></Field></div>
+          <div><Field label="Principal Culto / Ameaça" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.mainCult} onChange={(e) => setField({ mainCult: e.target.value })} onBlur={(e) => commit({ mainCult: e.target.value })} placeholder="Entidade ou culto central, objetivos, membros-chave..." /></Field></div>
+          <div><Field label="Arco Atual" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.currentArc} onChange={(e) => setField({ currentArc: e.target.value })} onBlur={(e) => commit({ currentArc: e.target.value })} placeholder="O que está acontecendo agora?" /></Field></div>
+          <div style={{ gridColumn: "1 / -1" }}><Field label="História Geral / Lore" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 120 }} value={draft.generalHistory} onChange={(e) => setField({ generalHistory: e.target.value })} onBlur={(e) => commit({ generalHistory: e.target.value })} placeholder="Contexto do Mythos, história do local, segredos ocultos..." /></Field></div>
         </div>
       </section>
 
@@ -87,12 +88,12 @@ function SessionEditor({ api, session }: { api: CthulhuApi; session: CthulhuGame
   return (
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="cth-scenario-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div><label style={labelStyle}>Nome da Sessão</label><input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></div>
-        <div><label style={labelStyle}>Data</label><input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} /></div>
+        <div><Field label="Nome da Sessão" style={labelStyle}><input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></Field></div>
+        <div><Field label="Data" style={labelStyle}><input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} /></Field></div>
       </div>
-      <div><label style={labelStyle}>Objetivo da Sessão</label><textarea style={{ ...areaStyle, minHeight: 60 }} value={s.objective} onChange={(e) => set({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que devem descobrir ou impedir?" /></div>
-      <div><label style={labelStyle}>Roteiro / O que vai acontecer</label><textarea style={{ ...areaStyle, minHeight: 90 }} value={s.events} onChange={(e) => set({ events: e.target.value })} onBlur={(e) => commit({ events: e.target.value })} placeholder="Encontros, pistas, locais, revelações do Mythos..." /></div>
-      <div><label style={labelStyle}>Resumo (após a sessão)</label><textarea style={{ ...areaStyle, minHeight: 80 }} value={s.summary} onChange={(e) => set({ summary: e.target.value })} onBlur={(e) => commit({ summary: e.target.value })} placeholder="O que aconteceu? Sanidade perdida, decisões..." /></div>
+      <div><Field label="Objetivo da Sessão" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={s.objective} onChange={(e) => set({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que devem descobrir ou impedir?" /></Field></div>
+      <div><Field label="Roteiro / O que vai acontecer" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 90 }} value={s.events} onChange={(e) => set({ events: e.target.value })} onBlur={(e) => commit({ events: e.target.value })} placeholder="Encontros, pistas, locais, revelações do Mythos..." /></Field></div>
+      <div><Field label="Resumo (após a sessão)" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 80 }} value={s.summary} onChange={(e) => set({ summary: e.target.value })} onBlur={(e) => commit({ summary: e.target.value })} placeholder="O que aconteceu? Sanidade perdida, decisões..." /></Field></div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button onClick={() => api.removeChild("sessions", session.id)} style={{ padding: "7px 16px", background: "rgba(220,60,60,0.1)", border: "1px solid rgba(220,60,60,0.3)", borderRadius: "var(--radius)", color: "#e06c6c", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>Excluir Sessão</button>
       </div>

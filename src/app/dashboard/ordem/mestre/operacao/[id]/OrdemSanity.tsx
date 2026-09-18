@@ -5,6 +5,7 @@ import type { OperacaoApi } from "@/lib/ordem/useOperacao";
 import type { OrdemSanityRecord } from "@/lib/ordem/ordemCampaignClient";
 import "../../../ordem-responsive.css";
 import { parseJsonField } from "@/lib/characterTransfer";
+import { Field } from "@/components/ui/Field";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -148,21 +149,18 @@ function SanityEditor({ r, traumas, onPatch, onAddTrauma, onRemoveTrauma, onRemo
     <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="op-sanity-editor-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12 }}>
         <div>
-          <label style={labelStyle}>Nome do Agente</label>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => onPatch({ agentName: e.target.value })} placeholder="Nome..." />
+          <Field label="Nome do Agente" style={labelStyle}><input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} onBlur={(e) => onPatch({ agentName: e.target.value })} placeholder="Nome..." /></Field>
         </div>
         <div>
-          <label style={labelStyle}>SAN Atual</label>
-          <input type="number" style={numStyle} value={r.currentSan} min={0} max={r.maxSan}
-            onChange={(e) => { const v = Math.max(0, Math.min(r.maxSan, Number(e.target.value))); onPatch({ currentSan: v, status: computeStatus(v, r.maxSan) }); }} />
+          <Field label="SAN Atual" style={labelStyle}><input type="number" style={numStyle} value={r.currentSan} min={0} max={r.maxSan}
+            onChange={(e) => { const v = Math.max(0, Math.min(r.maxSan, Number(e.target.value))); onPatch({ currentSan: v, status: computeStatus(v, r.maxSan) }); }} /></Field>
         </div>
         <div>
-          <label style={labelStyle}>SAN Máxima</label>
-          <input type="number" style={numStyle} value={r.maxSan} min={1}
-            onChange={(e) => { const v = Math.max(1, Number(e.target.value)); onPatch({ maxSan: v, currentSan: Math.min(r.currentSan, v), status: computeStatus(Math.min(r.currentSan, v), v) }); }} />
+          <Field label="SAN Máxima" style={labelStyle}><input type="number" style={numStyle} value={r.maxSan} min={1}
+            onChange={(e) => { const v = Math.max(1, Number(e.target.value)); onPatch({ maxSan: v, currentSan: Math.min(r.currentSan, v), status: computeStatus(Math.min(r.currentSan, v), v) }); }} /></Field>
         </div>
         <div>
-          <label style={labelStyle}>Perda na Sessão</label>
+          <span style={labelStyle}>Perda na Sessão</span>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ ...numStyle, width: 50 }}>{r.sessionLoss}</span>
             <button onClick={() => onPatch({ sessionLoss: 0 })} title="Resetar" style={{ padding: "6px 8px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.7rem" }}>↺</button>
@@ -171,8 +169,8 @@ function SanityEditor({ r, traumas, onPatch, onAddTrauma, onRemoveTrauma, onRemo
       </div>
 
       <div>
-        <label style={labelStyle}>Estado Mental</label>
-        <div style={{ display: "flex", gap: 8 }}>
+        <span style={labelStyle}>Estado Mental</span>
+        <div role="group" aria-label="Estado Mental" style={{ display: "flex", gap: 8 }}>
           {(["normal", "perturbado", "enlouquecido"] as const).map((s) => (
             <button key={s} onClick={() => onPatch({ status: s })}
               style={{ padding: "6px 14px", borderRadius: "var(--radius)", border: `1px solid ${r.status === s ? STATUS_COLORS[s] : "var(--border)"}`, background: r.status === s ? `${STATUS_COLORS[s]}22` : "transparent", color: r.status === s ? STATUS_COLORS[s] : "var(--text-muted)", cursor: "pointer", fontSize: "0.78rem", fontWeight: 700 }}>
@@ -183,7 +181,7 @@ function SanityEditor({ r, traumas, onPatch, onAddTrauma, onRemoveTrauma, onRemo
       </div>
 
       <div>
-        <label style={labelStyle}>Traumas</label>
+        <span style={labelStyle}>Traumas</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
           {traumas.map((t) => (
             <span key={t} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.28)", borderRadius: "var(--radius-xs)", fontSize: "0.75rem", color: "#fca5a5" }}>
@@ -192,7 +190,7 @@ function SanityEditor({ r, traumas, onPatch, onAddTrauma, onRemoveTrauma, onRemo
           ))}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <select value="" onChange={(e) => onAddTrauma(e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+          <select aria-label="Adicionar trauma" value="" onChange={(e) => onAddTrauma(e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
             <option value="">Escolher trauma...</option>
             {TRAUMAS.filter((t) => !traumas.includes(t)).map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
@@ -202,8 +200,7 @@ function SanityEditor({ r, traumas, onPatch, onAddTrauma, onRemoveTrauma, onRemo
       </div>
 
       <div>
-        <label style={labelStyle}>Notas de Sanidade</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={(e) => onPatch({ notes: e.target.value })} placeholder="Episódios, gatilhos, observações..." style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", lineHeight: 1.6, resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" }} />
+        <Field label="Notas de Sanidade" style={labelStyle}><textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={(e) => onPatch({ notes: e.target.value })} placeholder="Episódios, gatilhos, observações..." style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", lineHeight: 1.6, resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" }} /></Field>
       </div>
 
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
