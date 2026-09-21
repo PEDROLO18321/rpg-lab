@@ -14,6 +14,7 @@ import { SPELLS } from "@/lib/tormenta/spells";
 import { ATTR_KEYS, ATTR_LABEL, attrMod, SKILLS, skillModifier } from "@/lib/tormenta/data";
 import { XP_THRESHOLDS, MAX_LEVEL, type ChosenPower } from "@/lib/tormenta/leveling";
 import { LevelUpModal } from "./LevelUpModal";
+import { PlayMode } from "./PlayMode";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { parseJsonField } from "@/lib/characterTransfer";
 
@@ -38,7 +39,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
   const origin = sheet.origin ? ORIGIN_BY_ID[sheet.origin] : null;
   const god = sheet.godId ? GOD_BY_ID[sheet.godId] : null;
 
-  const [mode, setMode] = useState<"ficha" | "editar">("ficha");
+  const [mode, setMode] = useState<"ficha" | "jogar" | "editar">("ficha");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(character.portraitUrl ?? null);
   const [pv, setPv] = useState({ cur: sheet.pvCurrent, max: sheet.pvMax, temp: sheet.pvTemp });
   const [pm, setPm] = useState({ cur: sheet.pmCurrent, max: sheet.pmMax, temp: sheet.pmTemp });
@@ -47,10 +48,14 @@ export function SheetClient({ character }: { character: AnyChar }) {
   const [saving, setSaving] = useState(false);
   const [levelingUp, setLevelingUp] = useState(false);
 
+  // Estado alterável em mesa (modo Jogar) — a ficha lê os mesmos valores.
+  const [conditions, setConditions] = useState<string[]>(() => parse<string[]>(sheet.conditions, []));
+  const [money, setMoney] = useState<number>(sheet.money);
+  const [equipment, setEquipment] = useState<string[]>(() => parse<string[]>(sheet.equipment, []));
+  const [weaponIds, setWeaponIds] = useState<string[]>(() => parse<string[]>(sheet.weapons, []));
+
   const attrs = { for: sheet.forca, des: sheet.des, con: sheet.con, int: sheet.int, sab: sheet.sab, car: sheet.car };
   const skillsData = parse<Record<string, boolean>>(sheet.skills, {});
-  const equipment = parse<string[]>(sheet.equipment, []);
-  const weaponIds = parse<string[]>(sheet.weapons, []);
   const spellIds = parse<string[]>(sheet.spellsKnown, []);
   const powers = parse<ChosenPower[]>(sheet.powers, []);
   const xpForNext = sheet.level < MAX_LEVEL ? XP_THRESHOLDS[sheet.level + 1] : null;
@@ -108,6 +113,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
             )}
             <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
             <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
+            <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>Jogar</ModeBtn>
             <ExportJsonButton exportUrl={`/api/tormenta/characters/${character.id}/export`} characterName={character.name} systemSlug="tormenta" />
           </div>
         </div>
@@ -119,6 +125,23 @@ export function SheetClient({ character }: { character: AnyChar }) {
             sheet={sheet}
             portraitUrl={portraitUrl}
             setPortraitUrl={setPortraitUrl}
+          />
+        ) : mode === "jogar" ? (
+          <PlayMode
+            level={sheet.level}
+            attrs={attrs}
+            skillsData={skillsData}
+            defense={sheet.defense}
+            movement={sheet.movement}
+            pv={pv} setPv={setPv}
+            pm={pm} setPm={setPm}
+            conditions={conditions} setConditions={setConditions}
+            money={money} setMoney={setMoney}
+            weaponIds={weaponIds} setWeaponIds={setWeaponIds}
+            equipment={equipment} setEquipment={setEquipment}
+            spellIds={spellIds}
+            powers={powers}
+            save={save}
           />
         ) : (
         <>
@@ -132,7 +155,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
           <Chip label="XP" value={xpForNext !== null ? `${sheet.xp} / ${xpForNext}` : `${sheet.xp} (máx.)`} />
           <Chip label="Defesa" value={`${sheet.defense}`} />
           <Chip label="Deslocamento" value={`${sheet.movement}m`} />
-          <Chip label="Dinheiro" value={`T$ ${sheet.money}`} />
+          <Chip label="Dinheiro" value={`T$ ${money}`} />
         </div>
 
         {levelingUp && <LevelUpModal character={character} onClose={() => setLevelingUp(false)} />}

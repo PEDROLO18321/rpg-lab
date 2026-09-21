@@ -36,7 +36,10 @@
      e.g. "Constituição", "Inteligência" — need more room per button) */
   .tm-race-attr-grid { grid-template-columns: repeat(2, 1fr) !important; }
 
-  /* MasterDiceRoller.tsx — die type selector (d4..d%) */
+  /* SheetClient.tsx (modo Jogar) — grade de 3 colunas (230px 1fr 290px) empilha */
+  .tm-sheet-columns { grid-template-columns: 1fr !important; }
+
+  /* MasterDiceRoller.tsx / PlayMode.tsx — die type selector (d4..d%) */
   .tm-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
 
   /* InitiativeTracker.tsx — add combatant row (name / iniciativa / pv / pm / defesa) */
