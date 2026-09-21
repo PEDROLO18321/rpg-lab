@@ -606,12 +606,27 @@ npm run seed
 npm run dev
 ```
 
-O build de produção aplica as migrações antes de compilar — é assim que o deploy
-na Vercel sincroniza o banco do Neon:
+**O build não toca no banco.** Ele só gera o client e compila:
 
 ```json
-"build": "prisma generate && prisma migrate deploy && next build"
+"build": "prisma generate && next build",
+"migrate:deploy": "prisma migrate deploy"
 ```
+
+A migração é um passo à parte, rodado quando existe migration nova:
+
+```bash
+DATABASE_URL="<string do Neon>" npm run migrate:deploy
+```
+
+**Por quê.** O `migrate deploy` já morou dentro do `build`, o que parecia
+conveniente: um push sincronizava código e banco. Mas o Neon do plano grátis
+dorme por inatividade, e a primeira conexão precisa acordá-lo. Quando a máquina
+de build da Vercel tentou conectar num banco adormecido, o Prisma estourou o
+timeout, devolveu `P1001: Can't reach database server` e derrubou o deploy
+inteiro — de um commit que não mexia no schema. Separar os dois tira o deploy da
+dependência de um banco serverless estar acordado: o que falha, quando falha, é
+só a migração, e ela é reexecutável.
 
 > Para rodar o build de produção localmente (`npm run start`), é preciso
 > `AUTH_TRUST_HOST=true` no `.env` — fora da Vercel o NextAuth recusa o host e o
