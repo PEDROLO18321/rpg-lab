@@ -11,7 +11,15 @@ import { parseJsonField } from "@/lib/characterTransfer";
 
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
-import { RollResultDie, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
+import { PlayCard } from "@/components/play/PlayCard";
+import { VitalBar } from "@/components/play/VitalBar";
+import { StatChip } from "@/components/play/StatChip";
+import { RollHistory } from "@/components/play/RollHistory";
+import { DicePanel, type DiceResult } from "@/components/play/DicePanel";
+import { PLAY_THEME } from "@/components/play/theme";
+import type { PlayRollEntry } from "@/components/play/types";
 import {
   ATTR_KEYS, ATTR_ABBR, ATTR_LABEL, type AttrKey,
   SKILLS, SKILL_BY_ID, TRAIN_LABEL, type TrainDegree,
@@ -157,6 +165,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
 
   // ── Roll log ─────────────────────────────────────────────────────────────────
   const [log, setLog] = useState<RollLog[]>([]);
+  const [fxRoll, setFxRoll] = useState<DiceFxRoll | null>(null);
   const rollId        = useRef(0);
 
   // ── Autosave (debounced) ──────────────────────────────────────────────────────
@@ -203,14 +212,20 @@ export function SheetClient({ character }: { character: AnyChar }) {
     pushLog({ dice: diceArr, chosen: total, bonus: 0, total, worstChosen: false, id: ++rollId.current, label: `Dano · ${label}` });
   }
 
-  function pushLog(entry: RollLog) {
+  function pushLog(raw: Omit<RollLog, "id"> & { id?: number }) {
+    // Quem rola de dentro do PlayMode não tem acesso ao contador; deixar o id
+    // nascer aqui também evita a colisão que existia entre as duas fontes.
+    const entry: RollLog = { ...raw, id: raw.id ?? ++rollId.current };
     setLog((l) => [entry, ...l].slice(0, 5));
+    // Toda rolagem também anima: antes só o dado livre tinha feedback 3D, e
+    // perícia, atributo e dano passavam despercebidos.
+    setFxRoll({ id: entry.id, label: entry.label, dice: 20, total: entry.total });
   }
 
   const sanStatus = sanityStatus(san.cur, san.max);
   const lifeStat  = lifeStatus(pv.cur, pv.max);
 
-  const sharedProps = { character, sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, log, saved };
+  const sharedProps = { character, sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, log, saved, fxRoll };
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent", paddingBottom: 60 }}>
@@ -298,6 +313,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
             rollAttribute={rollAttribute}
             rollDamage={rollDamage}
             pushLog={pushLog}
+            clearLog={() => setLog([])}
             save={save}
           />
         )}
@@ -314,95 +330,6 @@ export function SheetClient({ character }: { character: AnyChar }) {
     </div>
   );
 }
-
-// ─── ORDEM DICE PANEL (rolagem livre, colunas direita do PlayMode) ───────────
-
-const DICE_SIDES = [4, 6, 8, 10, 12, 20, 100] as const;
-type DiceSides = typeof DICE_SIDES[number];
-
-function OrdemDicePanel({ pushLog }: { pushLog: (entry: RollLog) => void }) {
-  const rollId = useRef(0);
-  const [selected, setSelected] = useState<DiceSides>(20);
-  const [mod, setMod] = useState(0);
-  const [lastRoll, setLastRoll] = useState<DiceFxRoll | null>(null);
-
-  function doRoll() {
-    const faces = selected === 100 ? 10 : selected;
-    const die1 = Math.floor(Math.random() * faces) + 1;
-    const die2 = selected === 100 ? Math.floor(Math.random() * 10) * 10 : null;
-    const raw = die2 !== null ? die2 + die1 - 1 : die1;
-    const total = Math.max(1, raw + mod);
-    const label = `D${selected}${mod !== 0 ? (mod > 0 ? `+${mod}` : mod) : ""}`;
-    const id = ++rollId.current;
-    pushLog({ dice: [raw], chosen: raw, bonus: mod, total, worstChosen: false, id, label });
-    setLastRoll({ id, label, dice: selected === 100 ? 10 : selected, total });
-  }
-
-  const btnBase: React.CSSProperties = {
-    padding: "5px 0", borderRadius: "var(--radius)", fontSize: "0.72rem", fontWeight: 700,
-    cursor: "pointer", fontFamily: "var(--font-cinzel), serif", border: "1px solid",
-    letterSpacing: "0.03em", textAlign: "center",
-  };
-
-  return (
-    <Panel title="Rolagem de Dados">
-      {/* Dice type selector */}
-      <div className="op-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 14 }}>
-        {DICE_SIDES.map((d) => (
-          <button key={d} onClick={() => setSelected(d)} style={{
-            ...btnBase,
-            background: selected === d ? "rgba(255,255,255,0.18)" : "var(--surface-2)",
-            borderColor: selected === d ? "rgba(255,255,255,0.55)" : "var(--border)",
-            color: selected === d ? "#ffffff" : "var(--text-muted)",
-            boxShadow: selected === d ? "0 0 10px rgba(255,255,255,0.12)" : "none",
-          }}>
-            D{d === 100 ? "%" : d}
-          </button>
-        ))}
-      </div>
-
-      {/* 3D die inline */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-        <RollResultDie
-          sides={selected === 100 ? 10 : selected}
-          size={120}
-          roll={lastRoll}
-          color="#ffffff"
-          edgeColor="#ffffff"
-          emissive="#2a2a30"
-          resultColor="#1a1a22"
-          fallback={
-            <div style={{ width: 120, height: 120, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", color: "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>
-              D{selected === 100 ? "%" : selected}
-            </div>
-          }
-        />
-      </div>
-
-      {/* Modifier row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <span style={{ fontSize: "0.74rem", color: "var(--text-muted)", flexShrink: 0 }}>Mod</span>
-        <button onClick={() => setMod((m) => m - 1)} style={{ width: 28, height: 28, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-        <span style={{ minWidth: 28, textAlign: "center", fontSize: "0.9rem", fontWeight: 700, color: mod !== 0 ? "#ffffff" : "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>{mod >= 0 ? `+${mod}` : mod}</span>
-        <button onClick={() => setMod((m) => m + 1)} style={{ width: 28, height: 28, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-        <button onClick={() => setMod(0)} style={{ fontSize: "0.66rem", color: "var(--text-subtle)", background: "none", border: "none", cursor: "pointer", marginLeft: 2, padding: "2px 6px" }}>reset</button>
-      </div>
-
-      {/* Roll button */}
-      <button onClick={doRoll} style={{
-        width: "100%", padding: "11px 0", borderRadius: "var(--radius-lg)",
-        background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.35)",
-        color: "#ffffff", fontWeight: 700, fontSize: "0.88rem",
-        fontFamily: "var(--font-cinzel), serif", cursor: "pointer", letterSpacing: "0.05em",
-        boxShadow: "0 0 14px rgba(255,255,255,0.08)",
-      }}>
-        ROLAR 1D{selected === 100 ? "%" : selected}
-      </button>
-    </Panel>
-  );
-}
-
-// ─── SHARED TYPES ──────────────────────────────────────────────────────────────
 
 interface SharedProps {
   character: AnyChar;
@@ -432,9 +359,8 @@ interface SharedProps {
   saved: string;
   sanStatus: ReturnType<typeof sanityStatus>;
   lifeStat: ReturnType<typeof lifeStatus>;
+  fxRoll: DiceFxRoll | null;
 }
-
-// ─── VIEW MODE ────────────────────────────────────────────────────────────────
 
 function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, sanStatus, lifeStat }: SharedProps) {
   const unlockedAbilities = cls ? getUnlockedAbilities(cls.id as ClassId, nex) : [];
@@ -686,34 +612,87 @@ interface PlayProps extends SharedProps {
   rollSkillRow: (id: string) => void;
   rollAttribute: (k: AttrKey) => void;
   rollDamage: (expr: string, label: string) => void;
-  pushLog: (entry: RollLog) => void;
+  pushLog: (entry: Omit<RollLog, "id"> & { id?: number }) => void;
+  clearLog: () => void;
   save: (payload: Record<string, unknown>) => void;
 }
 
-function PlayMode({ sheet, origin, attrs, nex, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, log, sanStatus, lifeStat, setPv, setPe, setSan, setNotes, setSkillAttrFor, rollSkillRow, rollAttribute, rollDamage, pushLog, save }: PlayProps) {
+function PlayMode({ sheet, origin, attrs, nex, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, load, armorBonus, effectiveDefense, effectiveMove, background, log, sanStatus, lifeStat, fxRoll, setPv, setPe, setSan, setNotes, setSkillAttrFor, rollSkillRow, rollAttribute, rollDamage, pushLog, clearLog, save }: PlayProps) {
+  const historico: PlayRollEntry[] = log.map((r) => ({
+    id: r.id,
+    label: r.label,
+    total: r.total,
+    detail: `[${r.dice.join(", ")}]${r.worstChosen ? " pior" : r.dice.length > 1 ? " maior" : ""}${r.bonus ? ` +${r.bonus}` : ""}`,
+  }));
+
+  /** Dano desconta os temporários antes dos pontos atuais. */
+  function damage(v: { cur: number; max: number; temp: number }, set: (d: { cur: number; max: number; temp: number }) => void, keys: { cur: string; temp: string }, delta: number) {
+    if (delta >= 0) {
+      const next = { ...v, cur: v.cur + delta };
+      set(next); save({ [keys.cur]: next.cur });
+      return;
+    }
+    let restante = -delta;
+    const doTemp = Math.min(v.temp, restante);
+    restante -= doTemp;
+    const next = { ...v, cur: v.cur - restante, temp: v.temp - doTemp };
+    set(next); save({ [keys.cur]: next.cur, [keys.temp]: next.temp });
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Vitals editable */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-        <VitalCard label="Pontos de Vida" color="#c03030" data={pv} setData={(d) => { setPv(d); save({ pvCurrent: d.cur, pvMax: d.max, pvTemp: d.temp }); }} note={lifeStat === "morrendo" ? "Morrendo!" : lifeStat === "machucado" ? "Machucado" : ""} noteWarn={lifeStat === "morrendo"} />
-        <VitalCard label="Pontos de Esforço" color={ACCENT} data={pe} setData={(d) => { setPe(d); save({ peCurrent: d.cur, peMax: d.max, peTemp: d.temp }); }} note={`Limite ${peLimit(nex)} PE/turno`} />
-        <VitalCard label="Sanidade" color="#c9941f" data={san} setData={(d) => { setSan(d); save({ sanCurrent: d.cur, sanMax: d.max, sanTemp: d.temp }); }} note={SANITY_STATUS_LABEL[sanStatus]} noteWarn={sanStatus !== "estavel"} />
-      </div>
+    <>
+      <PlayShell
+        system="ordem"
+        band={
+          <>
+            <PlayVitals>
+              <VitalBar
+                label="Pontos de Vida" color="#c03030" cur={pv.cur} max={pv.max} temp={pv.temp}
+                onDelta={(d) => damage(pv, setPv, { cur: "pvCurrent", temp: "pvTemp" }, d)}
+                onTemp={(t) => { const n = { ...pv, temp: t }; setPv(n); save({ pvTemp: t }); }}
+                onMaxChange={(m) => { const n = { ...pv, max: m }; setPv(n); save({ pvMax: m }); }}
+                note={lifeStat === "morrendo" ? "Morrendo!" : lifeStat === "machucado" ? "Machucado" : undefined}
+                warn={lifeStat === "morrendo"}
+              />
+              <VitalBar
+                label="Pontos de Esforço" color={ACCENT} cur={pe.cur} max={pe.max} temp={pe.temp}
+                onDelta={(d) => damage(pe, setPe, { cur: "peCurrent", temp: "peTemp" }, d)}
+                onTemp={(t) => { const n = { ...pe, temp: t }; setPe(n); save({ peTemp: t }); }}
+                onMaxChange={(m) => { const n = { ...pe, max: m }; setPe(n); save({ peMax: m }); }}
+                note={`Limite ${peLimit(nex)} PE/turno`}
+              />
+              <VitalBar
+                label="Sanidade" color="#c9941f" cur={san.cur} max={san.max} temp={san.temp}
+                onDelta={(d) => damage(san, setSan, { cur: "sanCurrent", temp: "sanTemp" }, d)}
+                onTemp={(t) => { const n = { ...san, temp: t }; setSan(n); save({ sanTemp: t }); }}
+                onMaxChange={(m) => { const n = { ...san, max: m }; setSan(n); save({ sanMax: m }); }}
+                note={SANITY_STATUS_LABEL[sanStatus]}
+                warn={sanStatus !== "estavel"}
+              />
+            </PlayVitals>
 
-      {/* Derived badges */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        <Badge label="NEX" value={`${nex}% · nível ${nexLevel(nex)}`} />
-        <Badge label="Defesa" value={armorBonus > 0 ? `${effectiveDefense} (+${armorBonus})` : effectiveDefense} warn={load.overloaded} />
-        <Badge label="Deslocamento" value={`${effectiveMove}m`} warn={load.overloaded} />
-        <Badge label="Carga" value={`${load.used}/${load.capacity} esp`} warn={load.overloaded} />
-        <Badge label="Prestígio" value={sheet.prestige ?? 0} />
-      </div>
+            <PlayChips>
+              <StatChip label="NEX" value={`${nex}% · nível ${nexLevel(nex)}`} />
+              <StatChip label="Defesa" value={armorBonus > 0 ? `${effectiveDefense} (+${armorBonus})` : effectiveDefense} warn={load.overloaded} />
+              <StatChip label="Deslocamento" value={`${effectiveMove}m`} warn={load.overloaded} />
+              <StatChip label="Carga" value={`${load.used}/${load.capacity} esp`} warn={load.overloaded} />
+              <StatChip label="Prestígio" value={sheet.prestige ?? 0} />
+            </PlayChips>
 
-      <div className="op-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: 24, alignItems: "start" }}>
-        {/* Left */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {/* Attributes — clickable */}
-          <Panel title="Atributos">
+            {(lifeStat === "morrendo" || sanStatus === "insano") && (
+              <PlayAlert title={lifeStat === "morrendo" ? "☠ Morrendo" : "🧠 Sanidade esgotada"}>
+                <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                  {lifeStat === "morrendo"
+                    ? "Com 0 PV o agente cai e precisa de estabilização."
+                    : SANITY_STATUS_LABEL[sanStatus]}
+                </p>
+              </PlayAlert>
+            )}
+          </>
+        }
+        left={
+          <>
+          <PlayCard title="Atributos">
             <div className="op-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => (
                 <button key={k} onClick={() => rollAttribute(k)} title={`Rolar ${ATTR_LABEL[k]}`}
@@ -724,10 +703,8 @@ function PlayMode({ sheet, origin, attrs, nex, pv, pe, san, skills, skillAttr, n
               ))}
             </div>
             <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginTop: 10 }}>Toque em um atributo para rolar.</p>
-          </Panel>
-
-          {/* Skills — clickable degree + roll */}
-          <Panel title="Perícias">
+          </PlayCard>
+          <PlayCard title="Perícias">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14, fontSize: "0.68rem", color: "var(--text-subtle)" }}>
               {DEGREES.map((d) => (
                 <span key={d} style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -772,80 +749,67 @@ function PlayMode({ sheet, origin, attrs, nex, pv, pe, san, skills, skillAttr, n
             <p style={{ fontSize: "0.7rem", color: "var(--text-subtle)", marginTop: 10 }}>
               <span style={{ color: "#c9941f", fontWeight: 700 }}>Dourado</span> = atributo-base padrão. Toque na sigla para escolher outro atributo para o teste.
             </p>
-          </Panel>
-        </div>
-
-        {/* Right */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          {/* Free dice roller */}
-          <OrdemDicePanel pushLog={pushLog} />
-
-          {/* Roll log */}
-          <Panel title="Histórico de Rolagens">
-            {log.length === 0 ? (
-              <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)" }}>Role um atributo, perícia ou dano para ver aqui.</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {log.map((r) => (
-                  <div key={r.id} style={{ padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{r.label}</span>
-                      <span style={{ fontSize: "1.2rem", fontWeight: 800, color: ACCENT_LIGHT, fontFamily: "var(--font-cinzel), serif" }}>{r.total}</span>
-                    </div>
-                    <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 2 }}>
-                      [{r.dice.join(", ")}]{r.worstChosen ? " pior" : r.dice.length > 1 ? " maior" : ""} {r.bonus ? `+ ${r.bonus}` : ""}
-                    </p>
-                  </div>
-                ))}
-              </div>
+          </PlayCard>
+            {sheet.className === "ocultista" && <RituaisPanel sheet={sheet} nex={nex} pe={pe} rollDamage={rollDamage} />}
+            {(weapons.length > 0 || protections.length > 0 || generals.length > 0) && (
+              <PlayCard title="Equipamento">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
+                  {weapons.map((c, i) => <WeaponCard key={`w${i}`} item={c} onRollDamage={rollDamage} />)}
+                  {protections.map((c, i) => <ProtectionCard key={`p${i}`} item={c} />)}
+                  {generals.map((c, i) => <GeneralCard key={`g${i}`} item={c} />)}
+                </div>
+                <CursePricePanel weapons={weapons} protections={protections} generals={generals} />
+              </PlayCard>
             )}
-          </Panel>
+          </>
+        }
+        right={
+          <>
+            <PlayCard title="Rolagem de Dados" accent>
+              <DicePanel
+                theme={PLAY_THEME.ordem}
+                onRoll={(r: DiceResult) => pushLog({
+                  label: r.label,
+                  dice: r.rolls,
+                  chosen: r.kept,
+                  bonus: r.mod,
+                  total: r.total,
+                  worstChosen: false,
+                })}
+              />
+            </PlayCard>
 
-          {/* Power */}
-          {origin && (
-            <Panel title={`Poder · ${origin.powerName}`}>
-              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.65 }}>{origin.powerDesc}</p>
-            </Panel>
-          )}
+            <PlayCard title="Histórico de Rolagens">
+              <RollHistory log={historico} onClear={clearLog} />
+            </PlayCard>
 
-          {/* Identity */}
-          {(background.appearance || background.personality || background.history || background.objective) && (
-            <Panel title="Identidade">
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {background.appearance  && <BgRow label="Aparência"    value={background.appearance} />}
-                {background.personality && <BgRow label="Personalidade" value={background.personality} />}
-                {background.history     && <BgRow label="História"      value={background.history} />}
-                {background.objective   && <BgRow label="Objetivo"      value={background.objective} />}
-              </div>
-            </Panel>
-          )}
+            {origin && (
+              <PlayCard title={`Poder · ${origin.powerName}`}>
+                <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.65 }}>{origin.powerDesc}</p>
+              </PlayCard>
+            )}
+            {(background.appearance || background.personality || background.history || background.objective) && (
+              <PlayCard title="Identidade">
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {background.appearance  && <BgRow label="Aparência"    value={background.appearance} />}
+                  {background.personality && <BgRow label="Personalidade" value={background.personality} />}
+                  {background.history     && <BgRow label="História"      value={background.history} />}
+                  {background.objective   && <BgRow label="Objetivo"      value={background.objective} />}
+                </div>
+              </PlayCard>
+            )}
+            <StatusPanel sheet={sheet} save={save} sanStatus={sanStatus} />
 
-          {/* Conditions & Insanity */}
-          <StatusPanel sheet={sheet} save={save} sanStatus={sanStatus} />
+            <PlayCard title="Anotações">
+              <textarea value={notes} onChange={(e) => { setNotes(e.target.value); save({ notes: e.target.value }); }} rows={5} placeholder="Notas da sessão, pistas, contatos…"
+                style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+            </PlayCard>
+          </>
+        }
+      />
 
-          {/* Notes */}
-          <Panel title="Anotações">
-            <textarea value={notes} onChange={(e) => { setNotes(e.target.value); save({ notes: e.target.value }); }} rows={5} placeholder="Notas da sessão, pistas, contatos…"
-              style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical" }} />
-          </Panel>
-        </div>
-      </div>
-
-      {/* Rituais conhecidos — Ocultista only */}
-      {sheet.className === "ocultista" && <RituaisPanel sheet={sheet} nex={nex} pe={pe} rollDamage={rollDamage} />}
-
-      {/* Equipment full-width with roll buttons */}
-      {(weapons.length > 0 || protections.length > 0 || generals.length > 0) && (
-        <Panel title="Equipamento">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
-            {weapons.map((c, i) => <WeaponCard key={`w${i}`} item={c} onRollDamage={rollDamage} />)}
-            {protections.map((c, i) => <ProtectionCard key={`p${i}`} item={c} />)}
-            {generals.map((c, i) => <GeneralCard key={`g${i}`} item={c} />)}
-          </div>
-          <CursePricePanel weapons={weapons} protections={protections} generals={generals} />
-        </Panel>
-      )}
-    </div>
+      <RollToast roll={fxRoll} color={ACCENT} edgeColor={ACCENT_LIGHT} emissive="#2a2a30" />
+    </>
   );
 }
 
@@ -1451,54 +1415,6 @@ function VitalView({ label, color, cur, max, temp = 0, note, warn }: { label: st
     </div>
   );
 }
-
-function VitalCard({ label, color, data, setData, note, noteWarn }: { label: string; color: string; data: { cur: number; max: number; temp: number }; setData: (d: { cur: number; max: number; temp: number }) => void; note?: string; noteWarn?: boolean }) {
-  const pct = Math.max(0, Math.min(100, (data.cur / Math.max(1, data.max)) * 100));
-  return (
-    <div style={{ padding: "16px 18px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</span>
-        {note && <span style={{ fontSize: "0.7rem", fontWeight: 700, color: noteWarn ? "#e0843c" : "var(--text-subtle)" }}>{note}</span>}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* − desconta primeiro os pontos temporários */}
-        <button onClick={() => data.temp > 0 ? setData({ ...data, temp: data.temp - 1 }) : setData({ ...data, cur: data.cur - 1 })} style={vBtn}>−</button>
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <span style={{ fontSize: "1.6rem", fontWeight: 800, color, fontFamily: "var(--font-cinzel), serif" }}>{data.cur + data.temp}</span>
-          {data.temp > 0 && <span style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT_LIGHT }}> (+{data.temp})</span>}
-          <span style={{ fontSize: "0.9rem", color: "var(--text-subtle)" }}> / </span>
-          <input value={data.max} onChange={(e) => { const v = parseInt(e.target.value, 10); setData({ ...data, max: Number.isFinite(v) ? v : 0 }); }}
-            style={{ width: 38, background: "none", border: "none", color: "var(--text-muted)", fontSize: "1rem", fontWeight: 700, textAlign: "center" }} />
-        </div>
-        <button onClick={() => setData({ ...data, cur: data.cur + 1 })} style={vBtn}>+</button>
-      </div>
-      <div style={{ height: 4, borderRadius: 2, background: "var(--surface-2)", overflow: "hidden", marginTop: 10 }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2, transition: "width 0.3s" }} />
-      </div>
-      {/* Pontos temporários — botões no mesmo estilo, levemente diferentes (quadrados tracejados) */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 }}>
-        <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--text-subtle)", letterSpacing: "0.04em", textTransform: "uppercase" }}>Temp.</span>
-        <button onClick={() => setData({ ...data, temp: Math.max(0, data.temp - 1) })} style={vBtnTemp}>−</button>
-        <span style={{ minWidth: 24, textAlign: "center", fontSize: "1rem", fontWeight: 800, color: data.temp > 0 ? ACCENT_LIGHT : "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>{data.temp}</span>
-        <button onClick={() => setData({ ...data, temp: data.temp + 1 })} style={vBtnTemp}>+</button>
-      </div>
-    </div>
-  );
-}
-
-const vBtn: React.CSSProperties = {
-  width: 30, height: 30, borderRadius: "50%",
-  background: "var(--surface-2)", border: "1px solid var(--border)",
-  color: "var(--text)", fontSize: "1.1rem", fontWeight: 700, cursor: "pointer",
-  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-};
-
-const vBtnTemp: React.CSSProperties = {
-  width: 26, height: 26, borderRadius: "var(--radius-xs)",
-  background: ACCENT_DIM, border: `1px dashed ${ACCENT_BORD}`,
-  color: ACCENT_LIGHT, fontSize: "0.95rem", fontWeight: 700, cursor: "pointer",
-  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-};
 
 function DegreeDot({ degree, onClick, small }: { degree: TrainDegree; onClick?: () => void; small?: boolean }) {
   const color = DEGREE_COLOR[degree];
