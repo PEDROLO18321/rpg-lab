@@ -5,11 +5,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import dndImg           from "@/assets/systems/D&D.png";
-import tormentaImg      from "@/assets/systems/Tormenta.png";
-import cthulhuImg       from "@/assets/systems/CallofCthulhu.png";
-import ordemImg         from "@/assets/systems/OrdemParanormal.png";
-import starWarsImg      from "@/assets/systems/StarWars.png";
+import dndImg           from "@/assets/systems/D&D.webp";
+import tormentaImg      from "@/assets/systems/Tormenta.webp";
+import cthulhuImg       from "@/assets/systems/CallofCthulhu.webp";
+import ordemImg         from "@/assets/systems/OrdemParanormal.webp";
+import starWarsImg      from "@/assets/systems/StarWars.webp";
 
 const SYSTEMS = [
   {

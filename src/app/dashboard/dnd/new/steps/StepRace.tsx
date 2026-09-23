@@ -11,15 +11,15 @@ import { RaceMorphSlot } from "@/components/three/RaceMorph";
 import { smoothScrollTo } from "@/lib/smoothScroll";
 import "../../dnd-responsive.css";
 
-import imgAnao       from "@/assets/D&D-Racas/Anoes.png";
-import imgElfo       from "@/assets/D&D-Racas/Elfos.png";
-import imgHalfling   from "@/assets/D&D-Racas/Halflings.png";
-import imgHumano     from "@/assets/D&D-Racas/Humanos.png";
-import imgDraconato  from "@/assets/D&D-Racas/Draconatos.png";
-import imgGnomo      from "@/assets/D&D-Racas/Gnomos.png";
-import imgMeioElfo   from "@/assets/D&D-Racas/Meio-Elfos.png";
-import imgMeioOrc    from "@/assets/D&D-Racas/Meio-Orcs.png";
-import imgTiefling   from "@/assets/D&D-Racas/Tiefling.png";
+import imgAnao       from "@/assets/D&D-Racas/Anoes.webp";
+import imgElfo       from "@/assets/D&D-Racas/Elfos.webp";
+import imgHalfling   from "@/assets/D&D-Racas/Halflings.webp";
+import imgHumano     from "@/assets/D&D-Racas/Humanos.webp";
+import imgDraconato  from "@/assets/D&D-Racas/Draconatos.webp";
+import imgGnomo      from "@/assets/D&D-Racas/Gnomos.webp";
+import imgMeioElfo   from "@/assets/D&D-Racas/Meio-Elfos.webp";
+import imgMeioOrc    from "@/assets/D&D-Racas/Meio-Orcs.webp";
+import imgTiefling   from "@/assets/D&D-Racas/Tiefling.webp";
 
 const ABILITY_KEYS: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 

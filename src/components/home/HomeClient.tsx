@@ -6,10 +6,10 @@ import Image from "next/image";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 
-import dndImg      from "@/assets/systems/D&D.png";
-import cthulhuImg  from "@/assets/systems/CallofCthulhu.png";
-import ordemImg    from "@/assets/systems/OrdemParanormal.png";
-import tormentaImg from "@/assets/systems/Tormenta.png";
+import dndImg      from "@/assets/systems/D&D.webp";
+import cthulhuImg  from "@/assets/systems/CallofCthulhu.webp";
+import ordemImg    from "@/assets/systems/OrdemParanormal.webp";
+import tormentaImg from "@/assets/systems/Tormenta.webp";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
 // render — mantém o componente puro para o React Compiler.
