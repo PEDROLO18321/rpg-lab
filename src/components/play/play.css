@@ -1,0 +1,22 @@
+/* Áreas de Jogar — a única regra responsiva que a moldura comum precisa.
+   O resto do app estiliza por `style={{}}` inline, então aqui vale o mesmo
+   padrão dos arquivos *-responsive.css: !important para vencer o inline em
+   telas pequenas, e nada que afete o desktop. */
+
+@media (max-width: 640px) {
+  /* Grade canônica 1.4fr / 1fr → uma coluna só */
+  .play-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Faixa de vitais: cartões lado a lado viram empilhados mais cedo */
+  .play-vitals {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Seletor de dados do painel de rolagem */
+  .play-dice-grid {
+    gap: 4px !important;
+  }
+}
