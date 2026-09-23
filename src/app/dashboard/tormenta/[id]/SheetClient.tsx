@@ -13,6 +13,7 @@ import { WEAPON_BY_ID } from "@/lib/tormenta/items";
 import { SPELLS } from "@/lib/tormenta/spells";
 import { ATTR_KEYS, ATTR_LABEL, attrMod, SKILLS, skillModifier } from "@/lib/tormenta/data";
 import { XP_THRESHOLDS, MAX_LEVEL, type ChosenPower } from "@/lib/tormenta/leveling";
+import { deathThreshold } from "@/lib/tormenta/play";
 import { LevelUpModal } from "./LevelUpModal";
 import { PlayMode } from "./PlayMode";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
@@ -71,8 +72,11 @@ export function SheetClient({ character }: { character: AnyChar }) {
     } finally { setSaving(false); }
   }
 
+  // PV negativo é regra do T20: só a morte encerra a ficha, em -10 ou metade dos
+  // PV totais (pág. 217). Mesmo piso usado no modo Jogar — a ficha não pode
+  // contar uma história diferente da mesa.
   function adjustPv(delta: number) {
-    const next = { ...pv, cur: Math.max(0, Math.min(pv.max, pv.cur + delta)) };
+    const next = { ...pv, cur: Math.max(deathThreshold(pv.max), Math.min(pv.max, pv.cur + delta)) };
     setPv(next);
     save({ pvCurrent: next.cur });
   }
