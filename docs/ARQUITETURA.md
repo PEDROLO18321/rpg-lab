@@ -6,7 +6,7 @@ avaliação — **como as regras de cada sistema de RPG foram adaptadas**, inclu
 o que foi simplificado e por quê.
 
 > Escopo em números: ~74.000 linhas de TypeScript em `src/` (fora o client gerado
-> pelo Prisma), 5 sistemas de RPG, 56 modelos no banco, 198 testes automatizados
+> pelo Prisma), 5 sistemas de RPG, 56 modelos no banco, 204 testes automatizados
 > mais uma suíte ponta a ponta.
 
 ---
@@ -58,7 +58,7 @@ prisma/schema.prisma            BANCO
 
 A regra que sustenta a testabilidade: **`src/lib/<sistema>/` não faz I/O**. Não
 importa Prisma, não faz `fetch`, não lê `window`. São funções puras sobre dados
-— por isso os 198 testes rodam em milissegundos, sem banco e sem servidor.
+— por isso os 204 testes rodam em milissegundos, sem banco e sem servidor.
 
 O cálculo e a persistência são separados de propósito. O padrão aparece no
 level-up: uma função pura monta o *plano*, e a rota apenas o aplica numa
@@ -350,6 +350,12 @@ Implementado com fidelidade alta — é o sistema mais mecanicamente autocontido
 - Níveis de sucesso (normal / bom / extremo), crítico e falha crítica
 - Sanidade, com registro de fobias e manias na área do Guardião
 
+Os **dados de bônus e de penalidade** (pág. 91) são a forma como o Guardião
+ajusta um teste: um dado de dezenas a mais por nível, com um único dado de
+unidades valendo para todas as leituras — o bônus fica com a menor, a penalidade
+com a maior, e um de cada se anula. Por isso a ficha representa a regra inteira
+num número só, de −2 a +2.
+
 **Simplificações:** sem evolução por marcação de perícia entre sessões (o
 sistema não tem “subir de nível”, e o ganho é decidido em mesa); combate tático
 não simulado — a ficha oferece as rolagens, a resolução é do Guardião.
@@ -528,12 +534,12 @@ contraste, não fluxo percebido.
 
 ## 9. Testes
 
-198 testes em 9 arquivos, sem banco e sem servidor (`npm test`).
+204 testes em 9 arquivos, sem banco e sem servidor (`npm test`).
 
 | Arquivo | Cobre |
 |---|---|
 | `dnd-leveling.test.ts` | Proficiência, PV por nível, XP, ASI com teto, espaços de magia |
-| `cthulhu-rules.test.ts` | PV/PM, bônus de dano, MOV, modificadores de idade, faixa das rolagens |
+| `cthulhu-rules.test.ts` | PV/PM, bônus de dano, MOV, modificadores de idade, faixa das rolagens, dados de bônus e penalidade |
 | `tormenta-ordem-rules.test.ts` | Vitais T20, atributo-chave, bônus racial; marcos de NEX da Ordem |
 | `starwars-rules.test.ts` | Pool de dados, atributos por espécie, vitais, Habilidade Natal |
 | `auto-generate.test.ts` | Geração automática produz ficha válida nos 5 sistemas (60 execuções por asserção) |
@@ -560,7 +566,7 @@ Dois casos fogem desse molde de propósito:
   separada e sem paralelismo (as etapas são encadeadas).
 
 ```bash
-npm test                                    # 198 testes de regra, sem infraestrutura
+npm test                                    # 204 testes de regra, sem infraestrutura
 
 npx next start -p 3100                      # e2e: precisa do servidor e do banco
 npm run test:e2e
