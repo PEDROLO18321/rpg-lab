@@ -450,6 +450,43 @@ export function rollPercentile(): number {
   return Math.floor(Math.random() * 100) + 1;
 }
 
+// ─── DADOS DE BÔNUS E DE PENALIDADE (Livro do Guardião, pág. 91) ─────────────
+// "Jogue um dado de dezenas adicional junto com o par normal. Para o bônus, use
+// o dado de dezenas com o melhor (menor) resultado; para a penalidade, o pior
+// (maior)." O dado de unidades é um só e vale para todas as leituras. "Um dado
+// de bônus e um dado de penalidade se anulam."
+
+export interface PercentileRoll {
+  /** Valor efetivamente usado no teste (1–100). */
+  result: number;
+  /** Dado de unidades, 0–9. */
+  units: number;
+  /** Dados de dezenas rolados, já em dezenas (0, 10, … 90). */
+  tens: number[];
+  /** As leituras possíveis, uma por dado de dezenas, na ordem em que saíram. */
+  readings: number[];
+}
+
+/** Lê dezenas + unidades: 00 com 0 é 100; 00 com 3 é 3 (pág. 85). */
+function readPercentile(tens: number, units: number): number {
+  return tens === 0 && units === 0 ? 100 : tens + units;
+}
+
+/**
+ * Rola porcentagem com dados de bônus/penalidade. Os dois se anulam, e o saldo
+ * é limitado a dois dados extras — o teto que o livro descreve.
+ */
+export function rollPercentileDice(bonusDice = 0, penaltyDice = 0): PercentileRoll {
+  const net = Math.max(-2, Math.min(2, bonusDice - penaltyDice));
+  const extra = Math.abs(net);
+  const units = Math.floor(Math.random() * 10);
+  const tens = Array.from({ length: 1 + extra }, () => Math.floor(Math.random() * 10) * 10);
+  const readings = tens.map((t) => readPercentile(t, units));
+  // Saldo positivo = bônus, fica com a menor leitura; negativo = penalidade, a maior.
+  const result = net > 0 ? Math.min(...readings) : net < 0 ? Math.max(...readings) : readings[0];
+  return { result, units, tens, readings };
+}
+
 export type CheckLevel = "critico" | "extremo" | "dificil" | "normal" | "falha" | "desastre";
 
 export const CHECK_LABELS: Record<CheckLevel, string> = {

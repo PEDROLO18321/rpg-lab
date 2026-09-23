@@ -6,9 +6,12 @@ import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import {
   SKILLS, ATTR_ABBR, ATTR_LABELS, OCCUPATIONS, WEAPONS,
   getSkillBase, half, fifth, calcDamageBonus, calcCorpo,
-  resolveCheck, rollWeaponDamage, rollImprovement, CHECK_LABELS,
-  type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon,
+  resolveCheck, rollWeaponDamage, rollImprovement, CHECK_LABELS, rollPercentileDice,
+  type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon, type PercentileRoll,
 } from "@/lib/cthulhu/data";
+import { CTHULHU_STATES, CTHULHU_STATE_BY_ID } from "@/lib/cthulhu/states";
+import { DieSvg, rollDie, DICE_SIDES } from "@/components/dice/DieSvg";
+import { RollResultDie } from "@/components/three/DiceRollFx";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
 import "../cthulhu-responsive.css";
@@ -53,7 +56,7 @@ const LEVEL_COLOR: Record<string, string> = {
 };
 
 type RollEntry =
-  | { kind: "check"; label: string; check: SkillCheck }
+  | { kind: "check"; label: string; check: SkillCheck; dice?: PercentileRoll }
   | { kind: "damage"; label: string; segments: { label?: string; total: number; expr: string; rolls: number[] }[] }
   | { kind: "raw"; label: string; total: number; expr: string; rolls: number[] };
 
@@ -107,10 +110,13 @@ export function SheetClient({ character }: Props) {
   const attrsFull: CthulhuAttrs = { ...attrs, sorte: luck };
   const pmMax = Math.floor(attrs.pod / 5);
 
-  type InsanityData = { sessionLoss: number; status: "normal" | "temp_insane" | "indef_insane"; phobias: string[]; manias: string[]; notes: string };
+  // `states` guarda as condições ativas (CTHULHU_STATES). Mora aqui, junto de
+  // fobias e manias, porque a CthulhuSheet não tem coluna de condições — e o
+  // que está em jogo é a mesma coisa: o estado do investigador na cena.
+  type InsanityData = { sessionLoss: number; status: "normal" | "temp_insane" | "indef_insane"; phobias: string[]; manias: string[]; notes: string; states?: string[] };
   const PHOBIAS_LIST = ["Acrofobia (alturas)", "Agorafobia (espaços abertos)", "Aracnofobia (aranhas)", "Claustrofobia (espaços fechados)", "Cinofobia (cães)", "Entomofobia (insetos)", "Hematofobia (sangue)", "Hidrofobia (água profunda)", "Necrofobia (cadáveres)", "Noctifobia (escuridão)", "Ofidiofobia (cobras)", "Talassofobia (oceano profundo)", "Xenofobia (estranhos/alienígenas)", "Medo de fogo", "Medo de sons estranhos", "Medo de símbolos do Mythos"];
   const MANIAS_LIST  = ["Ablutomania (lavagem compulsiva)", "Aritmomania (contar objetos)", "Bibliofilia (coletar livros)", "Cleptomania (roubar)", "Dipsomania (beber álcool)", "Fascínio por fogo", "Fascínio por símbolos ocultos", "Grafofilia (escrever compulsivamente)", "Hipocondria", "Obsessão por datas e horários", "Obsessão por um Grande Antigo", "Paranoia generalizada", "Sadismo", "Xenofilia (fascínio por estranhos)"];
-  const parseInsanity = (): InsanityData => parseJsonField<InsanityData>(s.insanityData, { sessionLoss: 0, status: "normal", phobias: [], manias: [], notes: "" });
+  const parseInsanity = (): InsanityData => parseJsonField<InsanityData>(s.insanityData, { sessionLoss: 0, status: "normal", phobias: [], manias: [], notes: "", states: [] });
   const [insanity, setInsanityRaw] = useState<InsanityData>(parseInsanity);
   const [phobiaInput, setPhobiaInput] = useState("");
   const [maniaInput, setManiaInput] = useState("");
@@ -236,8 +242,33 @@ export function SheetClient({ character }: Props) {
   function pushLog(entry: RollEntry) {
     setLog((prev) => [entry, ...prev].slice(0, 12));
   }
+
+  // Saldo de dados de dezenas extras: positivo é bônus, negativo é penalidade.
+  // Um de cada se anula, então um único número representa a regra inteira.
+  const [diceMod, setDiceMod] = useState(0);
+
   function rollCheck(label: string, target: number) {
-    pushLog({ kind: "check", label, check: resolveCheck(target) });
+    const dice = rollPercentileDice(Math.max(0, diceMod), Math.max(0, -diceMod));
+    pushLog({ kind: "check", label, check: resolveCheck(target, dice.result), dice });
+  }
+
+  // ── Rolador livre (d4…d%) ──
+  const [freeDie, setFreeDie] = useState<number>(100);
+  const [freeCount, setFreeCount] = useState(1);
+  const [lastFree, setLastFree] = useState<{ id: number; label: string; dice: number; total: number } | null>(null);
+  const freeId = useRef(0);
+
+  function rollFree() {
+    const rolls = Array.from({ length: freeCount }, () => rollDie(freeDie));
+    const total = rolls.reduce((a, b) => a + b, 0);
+    const expr = `${freeCount}D${freeDie}`;
+    setLastFree({ id: ++freeId.current, label: expr, dice: freeDie, total });
+    pushLog({ kind: "raw", label: expr, total, expr, rolls });
+  }
+
+  const states = insanity.states ?? [];
+  function toggleState(id: string) {
+    setInsanity({ states: states.includes(id) ? states.filter((x) => x !== id) : [...states, id] });
   }
   function rollDamage(weapon: Weapon) {
     const segs = rollWeaponDamage(weapon, attrsFull);
@@ -520,6 +551,139 @@ export function SheetClient({ character }: Props) {
             onRoll={() => rollCheck(`Sorte (${luck}%)`, luck)}
           />
         </div>
+
+        {/* Mesa: dados de bônus/penalidade, rolador livre e estados */}
+        {!editMode && (
+          <Section title="Mesa">
+            <div className="cth-table-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 8, lineHeight: 1.5 }}>
+                  <b style={{ color: ACCENT_LIGHT }}>Dados de bônus e penalidade.</b> Um dado de dezenas a mais por nível:
+                  o bônus fica com a menor leitura, a penalidade com a maior. Vale para os testes desta ficha até você zerar.
+                </p>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {[-2, -1, 0, 1, 2].map((v) => {
+                    const ativo = diceMod === v;
+                    const cor = v > 0 ? ACCENT : v < 0 ? "#c03030" : "var(--text-subtle)";
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setDiceMod(v)}
+                        aria-pressed={ativo}
+                        title={v === 0 ? "Sem dados extras" : v > 0 ? `${v} dado(s) de bônus` : `${-v} dado(s) de penalidade`}
+                        style={{
+                          padding: "6px 14px", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "inherit",
+                          fontSize: "0.78rem", fontWeight: 700,
+                          background: ativo ? `${cor}22` : "var(--surface-2)",
+                          border: `1px solid ${ativo ? cor : "var(--border)"}`,
+                          color: ativo ? cor : "var(--text-muted)",
+                        }}
+                      >
+                        {v === 0 ? "Normal" : v > 0 ? `+${v} bônus` : `${-v} penal.`}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", margin: "16px 0 8px", lineHeight: 1.5 }}>
+                  <b style={{ color: ACCENT_LIGHT }}>Estados.</b> Clique para aplicar ou remover.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {CTHULHU_STATES.map((st) => {
+                    const ativo = states.includes(st.id);
+                    return (
+                      <button
+                        key={st.id}
+                        onClick={() => toggleState(st.id)}
+                        aria-pressed={ativo}
+                        title={st.desc}
+                        style={{
+                          padding: "4px 10px", borderRadius: "var(--radius-xs)", cursor: "pointer", fontFamily: "inherit",
+                          fontSize: "0.72rem", fontWeight: ativo ? 700 : 400,
+                          background: ativo ? "rgba(192,48,48,0.16)" : "var(--surface-2)",
+                          border: `1px solid ${ativo ? "#c03030" : "var(--border)"}`,
+                          color: ativo ? "#e07070" : "var(--text-muted)",
+                        }}
+                      >
+                        {st.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {states.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                    {states.map((id) => {
+                      const st = CTHULHU_STATE_BY_ID[id];
+                      if (!st) return null;
+                      return (
+                        <p key={id} style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
+                          <b style={{ color: "#e07070" }}>{st.name}:</b> {st.desc}
+                        </p>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 8 }}>
+                  <b style={{ color: ACCENT_LIGHT }}>Dados avulsos.</b> Dano, sanidade perdida, tabelas do Guardião.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginBottom: 10 }}>
+                  {DICE_SIDES.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setFreeDie(d)}
+                      aria-label={d === 100 ? "Dado percentual" : `Dado de ${d} faces`}
+                      aria-pressed={freeDie === d}
+                      style={{
+                        background: "none", border: "none", padding: 0, cursor: "pointer",
+                        opacity: freeDie === d ? 1 : 0.4,
+                        transform: freeDie === d ? "scale(1.15)" : "scale(1)",
+                        transition: "opacity 0.15s, transform 0.15s",
+                      }}
+                    >
+                      <DieSvg sides={d} active={freeDie === d} size={38} accent={ACCENT} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} />
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                  <RollResultDie
+                    sides={freeDie}
+                    size={96}
+                    roll={lastFree && lastFree.dice === freeDie ? { ...lastFree, isCrit: false, isFumble: false } : null}
+                    color={ACCENT}
+                    edgeColor={ACCENT_LIGHT}
+                    emissive={ACCENT}
+                    fallback={<DieSvg sides={freeDie} active size={96} accent={ACCENT} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} result={lastFree && lastFree.dice === freeDie ? lastFree.total : null} />}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.74rem", color: "var(--text-muted)" }}>
+                    Qtd
+                    <select
+                      value={freeCount}
+                      onChange={(e) => setFreeCount(parseInt(e.target.value))}
+                      style={{ padding: "5px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit" }}
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>×{n}</option>)}
+                    </select>
+                  </label>
+                  <button
+                    onClick={rollFree}
+                    style={{
+                      padding: "8px 20px", borderRadius: "var(--radius-lg)", cursor: "pointer", fontFamily: "var(--font-cinzel), serif",
+                      background: ACCENT_DIM, border: `1px solid ${ACCENT}`, color: ACCENT_LIGHT,
+                      fontSize: "0.84rem", fontWeight: 700, letterSpacing: "0.06em",
+                    }}
+                  >
+                    ROLAR {freeCount}D{freeDie}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Section>
+        )}
 
         <div className="cth-view-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           {/* Attributes */}
@@ -1150,6 +1314,29 @@ function RollRow({ entry, latest }: { entry: RollEntry; latest: boolean }) {
         <div style={{ fontSize: "0.7rem", fontWeight: 700, color, marginTop: 2 }}>
           {CHECK_LABELS[c.level]} {c.success ? "✓" : "✗"}
         </div>
+        {/* Com dados extras, mostra as leituras possíveis e qual valeu — sem
+            isso o jogador não vê o bônus agindo. */}
+        {entry.dice && entry.dice.readings.length > 1 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+            {entry.dice.readings.map((r, i) => {
+              const usado = r === c.roll;
+              return (
+                <span
+                  key={i}
+                  style={{
+                    fontSize: "0.68rem", padding: "1px 7px", borderRadius: "var(--radius-xs)",
+                    background: usado ? "rgba(125,156,62,0.18)" : "var(--surface-2)",
+                    border: `1px solid ${usado ? "rgba(125,156,62,0.45)" : "var(--border)"}`,
+                    color: usado ? ACCENT_LIGHT : "var(--text-subtle)",
+                    fontWeight: usado ? 700 : 400,
+                  }}
+                >
+                  {r}{usado ? " ✓" : ""}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }

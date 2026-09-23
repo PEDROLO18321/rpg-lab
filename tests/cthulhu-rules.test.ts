@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calcPV, calcPM, calcMOV, calcDamageBonus, calcCorpo, half, fifth,
-  applyAgeModifiers, rollAll,
+  applyAgeModifiers, rollAll, rollPercentileDice, resolveCheck,
 } from "@/lib/cthulhu/data";
 import type { CthulhuAttrs } from "@/lib/cthulhu/data";
 
@@ -95,5 +95,56 @@ describe("Call of Cthulhu 7e — rolagem de atributos", () => {
       expect(a.edu).toBeGreaterThanOrEqual(40);
       expect(a.edu).toBeLessThanOrEqual(90);
     }
+  });
+});
+
+describe("Call of Cthulhu 7e — dados de bônus e de penalidade (pág. 91)", () => {
+  it("rola um dado de dezenas a mais por dado de bônus, com um único dado de unidades", () => {
+    for (let i = 0; i < 200; i++) {
+      expect(rollPercentileDice(1, 0).tens).toHaveLength(2);
+      expect(rollPercentileDice(2, 0).tens).toHaveLength(3);
+      expect(rollPercentileDice(0, 1).tens).toHaveLength(2);
+    }
+  });
+
+  it("bônus fica com a menor leitura e penalidade com a maior", () => {
+    for (let i = 0; i < 300; i++) {
+      const b = rollPercentileDice(1, 0);
+      expect(b.result).toBe(Math.min(...b.readings));
+      const p = rollPercentileDice(0, 1);
+      expect(p.result).toBe(Math.max(...p.readings));
+    }
+  });
+
+  it("um dado de bônus e um de penalidade se anulam", () => {
+    for (let i = 0; i < 100; i++) {
+      const r = rollPercentileDice(1, 1);
+      expect(r.tens).toHaveLength(1);
+      expect(r.result).toBe(r.readings[0]);
+    }
+  });
+
+  it("limita o saldo a dois dados extras", () => {
+    expect(rollPercentileDice(5, 0).tens).toHaveLength(3);
+    expect(rollPercentileDice(0, 5).tens).toHaveLength(3);
+  });
+
+  it("lê 00 com 0 como 100, e 00 com outro valor como unidade (pág. 85)", () => {
+    for (let i = 0; i < 500; i++) {
+      const r = rollPercentileDice();
+      for (const [idx, t] of r.tens.entries()) {
+        const esperado = t === 0 && r.units === 0 ? 100 : t + r.units;
+        expect(r.readings[idx]).toBe(esperado);
+      }
+      expect(r.result).toBeGreaterThanOrEqual(1);
+      expect(r.result).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("alimenta os níveis de sucesso sem mudar a resolução", () => {
+    // Exemplo do livro: Charme 55 com dado de bônus, unidades 4, dezenas 40 e 20
+    // → leituras 44 e 24; o jogador usa 24, um sucesso difícil (metade de 55).
+    expect(resolveCheck(55, 24).level).toBe("dificil");
+    expect(resolveCheck(55, 44).level).toBe("normal");
   });
 });
