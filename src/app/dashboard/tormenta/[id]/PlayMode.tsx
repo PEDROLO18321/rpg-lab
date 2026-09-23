@@ -17,6 +17,7 @@ import {
   deathThreshold, spendFromPool, recoverToMax, spellPmCost, STABILIZE_DC,
 } from "@/lib/tormenta/play";
 import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
+import { DieSvg, rollDie } from "@/components/dice/DieSvg";
 import { useEscapeKey } from "@/lib/useEscapeKey";
 import { activateOnKey } from "@/lib/a11y";
 import "../tormenta-responsive.css";
@@ -45,7 +46,6 @@ type RollEntry = {
 
 type Pool = { cur: number; max: number; temp: number };
 
-function rollDie(sides: number) { return Math.floor(Math.random() * sides) + 1; }
 function signed(n: number) { return n >= 0 ? `+${n}` : `${n}`; }
 
 interface Props {
@@ -581,7 +581,7 @@ export function PlayMode({
                     transition: "opacity 0.15s, transform 0.15s",
                   }}
                 >
-                  <DieSvg sides={d} active={selectedDie === d} size={42} />
+                  <DieSvg sides={d} active={selectedDie === d} size={42} accent={ACCENT} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} />
                 </button>
               ))}
             </div>
@@ -594,7 +594,7 @@ export function PlayMode({
                 color={ACCENT}
                 edgeColor={ACCENT_LIGHT}
                 emissive={ACCENT}
-                fallback={<DieSvg sides={selectedDie} active size={110} result={lastRoll && lastRoll.dice === selectedDie ? lastRoll.total : null} />}
+                fallback={<DieSvg sides={selectedDie} active size={110} accent={ACCENT} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} result={lastRoll && lastRoll.dice === selectedDie ? lastRoll.total : null} />}
               />
             </div>
 
@@ -1015,35 +1015,5 @@ function ItemChip({ label, onRemove, accent }: { label: string; onRemove: () => 
       <button onClick={onRemove} aria-label={`Remover ${label}`}
         style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: "0.72rem", padding: 0, lineHeight: 1 }}>✕</button>
     </span>
-  );
-}
-
-/** Silhuetas dos dados — versão nas cores do Tormenta (o D&D usa as do tema). */
-function DieSvg({ sides, size = 44, active = false, result }: {
-  sides: number; size?: number; active?: boolean; result?: number | null;
-}) {
-  const stroke = active ? ACCENT : "var(--border)";
-  const fill   = active ? ACCENT_DIM : "var(--surface-2)";
-  const centerY = sides === 4 ? 65 : 56;
-  const fontSize = result != null ? (result >= 100 ? 20 : result >= 10 ? 24 : 28) : (sides === 100 ? 16 : 18);
-  const text = result != null ? String(result) : (sides === 100 ? "d%" : `d${sides}`);
-  const textFill = result != null
-    ? (result === sides ? ACCENT_LIGHT : result === 1 && sides === 20 ? "#ff6b6b" : "var(--text)")
-    : (active ? ACCENT_LIGHT : "var(--text-muted)");
-
-  return (
-    <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: "block", overflow: "visible" }} aria-hidden>
-      {sides === 4   && <polygon points="50,8 92,87 8,87"                  fill={fill} stroke={stroke} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 6   && <rect x="10" y="10" width="80" height="80" rx="12" fill={fill} stroke={stroke} strokeWidth="3" />}
-      {sides === 8   && <polygon points="50,5 95,50 50,95 5,50"            fill={fill} stroke={stroke} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 10  && <polygon points="50,5 93,40 76,90 24,90 7,40"      fill={fill} stroke={stroke} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 12  && <polygon points="50,5 93,32 78,88 22,88 7,32"      fill={fill} stroke={stroke} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 20  && <polygon points="50,5 93,27 93,73 50,95 7,73 7,27" fill={fill} stroke={stroke} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 100 && <circle cx="50" cy="50" r="44"                     fill={fill} stroke={stroke} strokeWidth="3" />}
-      <text x="50" y={centerY} textAnchor="middle" fontSize={fontSize} fontWeight="900" fill={textFill}
-        fontFamily="var(--font-cinzel), serif" style={{ userSelect: "none" }}>
-        {text}
-      </text>
-    </svg>
   );
 }

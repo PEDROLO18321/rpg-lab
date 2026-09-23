@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { SW } from "../ui";
+import { rollDie } from "@/components/dice/DieSvg";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;
@@ -24,9 +25,6 @@ type RollResult = {
   isFumble: boolean;
 };
 
-function rollDie(sides: number) {
-  return Math.floor(Math.random() * sides) + 1;
-}
 
 function formatFormula(count: number, die: DiceType, modifier: number) {
   return `${count}d${die}${modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : ""}`;

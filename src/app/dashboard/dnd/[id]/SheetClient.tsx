@@ -16,6 +16,7 @@ import type { AbilityKey } from "@/lib/dnd/races";
 import { WEAPONS, ALL_PHB_ITEMS, PICKER_GROUPS } from "@/lib/dnd/items";
 import type { PickerGroup } from "@/lib/dnd/items";
 import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
+import { DieSvg, rollDie } from "@/components/dice/DieSvg";
 import { proficiencyBonus, getMaxSlots, getMulticlassSlots } from "@/lib/dnd/leveling";
 import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
@@ -150,7 +151,6 @@ interface Props {
 
 function mod(score: number) { return Math.floor((score - 10) / 2); }
 function signed(n: number)  { return n >= 0 ? `+${n}` : `${n}`; }
-function rollDie(sides: number) { return Math.floor(Math.random() * sides) + 1; }
 
 const dndVBtn: React.CSSProperties = {
   width: 32, height: 32, borderRadius: "50%",
@@ -2831,51 +2831,6 @@ const smallBtn: React.CSSProperties = {
   border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem",
   cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center",
 };
-
-// ── DieSvg ────────────────────────────────────────────────────────────────────
-
-function DieSvg({ sides, size = 44, active = false, result }: {
-  sides: number;
-  size?: number;
-  active?: boolean;
-  result?: number | null;
-}) {
-  const strokeColor = active ? "var(--accent)" : "var(--border)";
-  const fillColor   = active ? "var(--accent-dim)" : "var(--surface-2)";
-  const labelColor  = active ? "var(--accent-light)" : "var(--text-muted)";
-
-  const centerY = sides === 4 ? 65 : 56;
-  const fontSize = result != null
-    ? (result >= 100 ? 20 : result >= 10 ? 24 : 28)
-    : (sides === 100 ? 16 : 18);
-  const displayText = result != null ? String(result) : (sides === 100 ? "d%" : `d${sides}`);
-  const textFill = result != null
-    ? (result === sides ? "var(--accent-light)" : result === 1 && sides === 20 ? "#ff6b6b" : "var(--text)")
-    : labelColor;
-
-  return (
-    <svg viewBox="0 0 100 100" width={size} height={size} style={{ display: "block", overflow: "visible" }}>
-      {sides === 4  && <polygon points="50,8 92,87 8,87"                           fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 6  && <rect x="10" y="10" width="80" height="80" rx="12"          fill={fillColor} stroke={strokeColor} strokeWidth="3" />}
-      {sides === 8  && <polygon points="50,5 95,50 50,95 5,50"                      fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 10 && <polygon points="50,5 93,40 76,90 24,90 7,40"               fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 12 && <polygon points="50,5 93,32 78,88 22,88 7,32"               fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 20 && <polygon points="50,5 93,27 93,73 50,95 7,73 7,27"          fill={fillColor} stroke={strokeColor} strokeWidth="3" strokeLinejoin="round" />}
-      {sides === 100 && <circle cx="50" cy="50" r="44"                             fill={fillColor} stroke={strokeColor} strokeWidth="3" />}
-      <text
-        x="50" y={centerY}
-        textAnchor="middle"
-        fontSize={fontSize}
-        fontWeight="900"
-        fill={textFill}
-        fontFamily="var(--font-cinzel), serif"
-        style={{ userSelect: "none" }}
-      >
-        {displayText}
-      </text>
-    </svg>
-  );
-}
 
 function PlayCard({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
   return (

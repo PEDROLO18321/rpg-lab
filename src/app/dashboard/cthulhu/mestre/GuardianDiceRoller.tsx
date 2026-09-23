@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import "../cthulhu-responsive.css";
+import { rollDie } from "@/components/dice/DieSvg";
 
 const DICE_TYPES = [3, 6, 8, 10, 100] as const;
 type DiceType = typeof DICE_TYPES[number];
@@ -16,9 +17,6 @@ type RollResult = {
   skillTarget: number | null;
 };
 
-function rollDie(sides: number) {
-  return Math.floor(Math.random() * sides) + 1;
-}
 
 function formatFormula(count: number, die: DiceType, modifier: number) {
   return `${count}d${die === 100 ? "%" : die}${modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : ""}`;

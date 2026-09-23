@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import "../ordem-responsive.css";
+import { rollDie } from "@/components/dice/DieSvg";
 
 const A = "#ffffff";
 const AL = "#e8e8ef";
@@ -23,9 +24,6 @@ type RollResult = {
   dt: number | null;
 };
 
-function rollDie(sides: number) {
-  return Math.floor(Math.random() * sides) + 1;
-}
 
 function formatFormula(count: number, die: DiceType, modifier: number) {
   return `${count}d${die}${modifier !== 0 ? (modifier > 0 ? `+${modifier}` : modifier) : ""}`;
