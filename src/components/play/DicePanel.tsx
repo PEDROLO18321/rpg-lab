@@ -34,17 +34,27 @@ interface Props {
   /** Faces oferecidas. O Cthulhu joga d100; o D&D usa a lista inteira. */
   sidesList?: readonly number[];
   defaultSides?: number;
+  /**
+   * Modificador controlado por quem chama. No Star Wars ele não é só do
+   * painel: o mesmo valor entra nas rolagens de perícia e de habilidade da
+   * ficha inteira, então o estado precisa morar lá fora.
+   */
+  mod?: number;
+  onModChange?: (value: number) => void;
 }
 
 type Advantage = "normal" | "advantage" | "disadvantage";
 
 export function DicePanel({
   theme, features = {}, onRoll, sidesList = DICE_SIDES, defaultSides = 20,
+  mod: modProp, onModChange,
 }: Props) {
   const [sides, setSides] = useState(defaultSides);
   const [qty, setQty] = useState(1);
   const [pickMode, setPickMode] = useState<"sum" | "max">("sum");
-  const [mod, setMod] = useState(0);
+  const [modLocal, setModLocal] = useState(0);
+  const mod = modProp ?? modLocal;
+  const setMod = onModChange ?? setModLocal;
   const [advantage, setAdvantage] = useState<Advantage>("normal");
   const [last, setLast] = useState<{ id: number; label: string; dice: number; total: number; isCrit?: boolean; isFumble?: boolean } | null>(null);
   const rollId = useRef(0);

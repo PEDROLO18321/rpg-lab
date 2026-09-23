@@ -18,7 +18,16 @@ import { ITEMS, ITEM_BY_ID, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory, t
 import { damageLevelMultiplier, baseDamageValue, scaledDamage } from "@/lib/starwars/damage";
 import { LevelUpModal } from "./LevelUpModal";
 import { RulesManual } from "./RulesManual";
-import { RollResultDie, RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
+import { PlayCard } from "@/components/play/PlayCard";
+import { VitalBar } from "@/components/play/VitalBar";
+import { StatChip } from "@/components/play/StatChip";
+import { RollHistory } from "@/components/play/RollHistory";
+import { DicePanel, type DiceResult } from "@/components/play/DicePanel";
+import { FreeConditionInput } from "@/components/play/ConditionPicker";
+import { PLAY_THEME } from "@/components/play/theme";
+import type { PlayRollEntry } from "@/components/play/types";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
 
@@ -357,7 +366,8 @@ export function SheetClient({ character }: { character: CharacterProp }) {
   const [pvTemp, setPvTemp] = useState(sheet.pvTemp ?? 0);
   const [peTemp, setPeTemp] = useState(sheet.peTemp ?? 0);
   const [ppTemp, setPpTemp] = useState(sheet.ppTemp ?? 0);
-  const [conditions] = useState<string[]>(() => parse(sheet.conditions, [] as string[]));
+  const [conditions, setConditions] = useState<string[]>(() => parse(sheet.conditions, [] as string[]));
+  const [notes, setNotes] = useState<string>(sheet.notes ?? "");
   const [equipment, setEquipment] = useState<EquipmentItem[]>(() => parse(sheet.equipment, [] as EquipmentItem[]));
   const [skills, setSkills] = useState<Record<string, SkillGrade>>(() => parse(sheet.skills, {} as Record<string, SkillGrade>));
   const [background, setBackground] = useState<Record<string, string>>(() => parse(sheet.background, {} as Record<string, string>));
@@ -379,6 +389,8 @@ export function SheetClient({ character }: { character: CharacterProp }) {
     setSkills(parse(sheet.skills, {} as Record<string, SkillGrade>));
     setEquipment(parse(sheet.equipment, [] as EquipmentItem[]));
     setBackground(parse(sheet.background, {} as Record<string, string>));
+    setConditions(parse(sheet.conditions, [] as string[]));
+    setNotes(sheet.notes ?? "");
   }
 
   const species = sheet.species ? SPECIES_BY_ID[sheet.species] : undefined;
@@ -546,6 +558,9 @@ export function SheetClient({ character }: { character: CharacterProp }) {
             equipment={equipment} addEquipment={addEquipment} removeEquipment={removeEquipment}
             addCatalogItem={addCatalogItem} setEquipmentQty={setEquipmentQty} toggleEquipped={toggleEquipped}
             adjust={adjust} setTempValue={setTempValue}
+            conditions={conditions}
+            onConditions={(v) => { setConditions(v); save({ conditions: v }); }}
+            notes={notes} onNotes={setNotes} onNotesBlur={() => save({ notes })}
             {...sharedVitals}
           />
         ) : mode === "editar" ? (
@@ -737,14 +752,13 @@ function ViewMode({
 
 // ─── JOGAR (play mode) ─────────────────────────────────────────────────────────
 
-const DICE_SIDES = [4, 6, 8, 10, 12, 20, 100] as const;
-type DiceSides = typeof DICE_SIDES[number];
 
 function PlayMode({
   sheet, attrs, skills, generalPowerIds, classLevels, classPowers,
   equipment, addEquipment, removeEquipment, addCatalogItem, setEquipmentQty, toggleEquipped,
   pvCur, peCur, ppCur, pvTemp, peTemp, ppTemp,
   adjust, setTempValue,
+  conditions, onConditions, notes, onNotes, onNotesBlur,
 }: VitalsProps & {
   sheet: StarWarsSheetData; attrs: Record<AttrKey, number>; skills: Record<string, SkillGrade>;
   generalPowerIds: string[]; classLevels: Record<string, number>;
@@ -753,17 +767,17 @@ function PlayMode({
   addCatalogItem: (itemId: string) => void; setEquipmentQty: (id: string, qty: number) => void; toggleEquipped: (id: string) => void;
   adjust: (field: "pv" | "pe" | "pp", delta: number) => void;
   setTempValue: (field: "pv" | "pe" | "pp", value: number) => void;
+  conditions: string[]; onConditions: (v: string[]) => void;
+  notes: string; onNotes: (v: string) => void; onNotesBlur: () => void;
 }) {
-  const [lastRoll, setLastRoll] = useState<RollEntry | null>(null);
   const [fxRoll, setFxRoll] = useState<RollEntry | null>(null);
   const [log, setLog] = useState<RollEntry[]>([]);
   const rollId = useRef(0);
   const [newItemName, setNewItemName] = useState("");
   const [newItemQty, setNewItemQty] = useState(1);
+  // Modificador global da ficha: o painel de dados mostra e edita, mas ele
+  // também entra nas rolagens de perícia, atributo e habilidade.
   const [mod, setMod] = useState(0);
-  const [selectedDie, setSelectedDie] = useState<DiceSides>(20);
-  const [diceQty, setDiceQty] = useState(1);
-  const [pickMode, setPickMode] = useState<"soma" | "maior">("soma");
   const [rollChoice, setRollChoice] = useState<{ skillId: string; chosenAttr?: AttrKey } | null>(null);
   useEscapeKey(rollChoice !== null, () => setRollChoice(null));
 
@@ -773,20 +787,19 @@ function PlayMode({
     const kept = pool.take === "highest" ? Math.max(...rolls) : Math.min(...rolls);
     const total = kept + bonus;
     const entry: RollEntry = { id: ++rollId.current, label, dice: 20, total, rolls, kept, bonus, isCrit: kept === 20, isFumble: kept === 1 };
-    setLastRoll(entry); setFxRoll(entry);
+    setFxRoll(entry);
     setLog((l) => [entry, ...l].slice(0, 5));
   }
 
-  function doGenericRoll() {
-    const rolls = Array.from({ length: diceQty }, () => Math.floor(Math.random() * selectedDie) + 1);
-    const raw = pickMode === "maior" ? Math.max(...rolls) : rolls.reduce((a, b) => a + b, 0);
-    const total = Math.max(1, raw + mod);
-    const label = `${diceQty}D${selectedDie === 100 ? "%" : selectedDie}`;
+  /** Resultado vindo do painel compartilhado, traduzido para o log do sistema. */
+  function handleDiceRoll(r: DiceResult) {
     const entry: RollEntry = {
-      id: ++rollId.current, label, dice: selectedDie, total,
-      rolls, kept: raw, bonus: mod, isCrit: selectedDie === 20 && rolls[0] === 20, isFumble: selectedDie === 20 && rolls[0] === 1,
+      id: ++rollId.current, label: r.label, dice: r.sides, total: Math.max(1, r.total),
+      rolls: r.rolls, kept: r.kept, bonus: r.mod,
+      isCrit: r.sides === 20 && r.kept === 20,
+      isFumble: r.sides === 20 && r.kept === 1,
     };
-    setLastRoll(entry); setFxRoll(entry);
+    setFxRoll(entry);
     setLog((l) => [entry, ...l].slice(0, 5));
   }
 
@@ -836,7 +849,7 @@ function PlayMode({
       const skillBonus = skillTotal("sabres_de_luz");
       const total = Math.max(0, (scaledDamage(diceSum * attrValue, sheet.level) + skillBonus) * 2 + mod);
       const entry: RollEntry = { id: ++rollId.current, label: `Forma: ${a.name}`, dice: 6, total, rolls, kept: diceSum, bonus: skillBonus + mod };
-      setLastRoll(entry); setFxRoll(entry);
+      setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));
       adjust("pe", -a.peCost);
       return;
@@ -853,7 +866,7 @@ function PlayMode({
       const skillBonus = skillTotal("sabres_de_luz");
       const total = Math.max(0, scaledDamage(diceSum * attrValue, sheet.level) + skillBonus + mod);
       const entry: RollEntry = { id: ++rollId.current, label: `Sabre: ${a.name}`, dice: 6, total, rolls, kept: diceSum, bonus: skillBonus + mod };
-      setLastRoll(entry); setFxRoll(entry);
+      setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));
       adjust("pe", -a.peCost);
       return;
@@ -869,7 +882,7 @@ function PlayMode({
         id: ++rollId.current, label: `Teste: ${a.name}${skillLabel} (DT ${a.dt})`, dice: 20, total, rolls: [roll], kept: roll, bonus: skillBonus + mod,
         isCrit: roll === 20, isFumble: roll === 1,
       };
-      setLastRoll(entry); setFxRoll(entry);
+      setFxRoll(entry);
       setLog((l) => [entry, ...l].slice(0, 5));
       adjust("pe", -a.peCost);
       return;
@@ -885,7 +898,7 @@ function PlayMode({
     const total = Math.max(0, scaled + mod);
     const label = `${a.heal ? "Cura" : "Dano"}: ${a.name}`;
     const entry: RollEntry = { id: ++rollId.current, label, dice: sides, total, rolls, kept: scaled, bonus: mod };
-    setLastRoll(entry); setFxRoll(entry);
+    setFxRoll(entry);
     setLog((l) => [entry, ...l].slice(0, 5));
     adjust("pe", -a.peCost);
   }
@@ -928,21 +941,50 @@ function PlayMode({
     const raw = rolls.reduce((x, y) => x + y, 0);
     const scaled = scaledDamage(raw, sheet.level);
     const entry: RollEntry = { id: ++rollId.current, label: r.name, dice: sides, total: scaled, rolls, kept: scaled, bonus: 0 };
-    setLastRoll(entry); setFxRoll(entry);
+    setFxRoll(entry);
     setLog((l) => [entry, ...l].slice(0, 5));
   }
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-        <VitalCard label="Pontos de Vida" color="#e06c6c" cur={pvCur} max={sheet.pvMax} temp={pvTemp} onDelta={(d) => adjust("pv", d)} onTemp={(v) => setTempValue("pv", v)} warn={pvCur <= 0} note={pvCur <= 0 ? "Incapacitado!" : undefined} />
-        <VitalCard label="Energia da Força" color={ACCENT_LIGHT} cur={peCur} max={sheet.peMax} temp={peTemp} onDelta={(d) => adjust("pe", d)} onTemp={(v) => setTempValue("pe", v)} />
-        <VitalCard label="Pontos de Poder" color={GOLD} cur={ppCur} max={sheet.ppMax} temp={ppTemp} onDelta={(d) => adjust("pp", d)} onTemp={(v) => setTempValue("pp", v)} />
-      </div>
+  const historico: PlayRollEntry[] = log.map((r) => ({
+    id: r.id,
+    label: r.label,
+    total: r.total,
+    detail: `[${r.rolls.join(", ")}] → ${r.kept}${r.bonus ? ` ${r.bonus > 0 ? "+" : ""}${r.bonus}` : ""}`,
+    tone: r.isCrit ? ("crit" as const) : r.isFumble ? ("fumble" as const) : undefined,
+  }));
 
-      <div className="sw-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <Panel title="Atributos">
+  return (
+    <>
+      <PlayShell
+        system="starwars"
+        band={
+          <>
+            <PlayVitals>
+              <VitalBar label="Pontos de Vida" color="#e06c6c" cur={pvCur} max={sheet.pvMax} temp={pvTemp} bigStep={5} onDelta={(d) => adjust("pv", d)} onTemp={(v) => setTempValue("pv", v)} warn={pvCur <= 0} note={pvCur <= 0 ? "Incapacitado!" : undefined} />
+              <VitalBar label="Energia da Força" color={ACCENT_LIGHT} cur={peCur} max={sheet.peMax} temp={peTemp} bigStep={5} onDelta={(d) => adjust("pe", d)} onTemp={(v) => setTempValue("pe", v)} />
+              <VitalBar label="Pontos de Poder" color={GOLD} cur={ppCur} max={sheet.ppMax} temp={ppTemp} bigStep={5} onDelta={(d) => adjust("pp", d)} onTemp={(v) => setTempValue("pp", v)} />
+            </PlayVitals>
+
+            <PlayChips>
+              <StatChip label="Nível" value={sheet.level} />
+              {Object.entries(classLevels).map(([id, lvl]) => (
+                <StatChip key={id} label={CLASS_BY_ID[id]?.name ?? id} value={`Nível ${lvl}`} />
+              ))}
+              {sheet.sabreForm && <StatChip label="Forma de Sabre" value={sheet.sabreForm} />}
+            </PlayChips>
+
+            {pvCur <= 0 && (
+              <PlayAlert title="⚠ Incapacitado">
+                <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                  Com 0 Pontos de Vida o personagem não age até ser estabilizado ou curado.
+                </p>
+              </PlayAlert>
+            )}
+          </>
+        }
+        left={
+          <>
+          <PlayCard title="Atributos">
             <div className="sw-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => {
                 const pool = attributeDicePool(attrs[k]);
@@ -955,9 +997,9 @@ function PlayMode({
                 );
               })}
             </div>
-          </Panel>
+          </PlayCard>
 
-          <Panel title="Perícias">
+          <PlayCard title="Perícias">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 4, maxHeight: 320, overflowY: "auto" }}>
               {SKILLS.map((s) => {
                 const grade = skills[s.id] ?? "inexperiente";
@@ -973,9 +1015,9 @@ function PlayMode({
                 );
               })}
             </div>
-          </Panel>
+          </PlayCard>
 
-          <Panel title="Habilidades de Classe">
+          <PlayCard title="Habilidades de Classe">
             <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", marginBottom: 10 }}>PE disponível: <strong style={{ color: TEMP_BLUE }}>{peAvailable}</strong></p>
             <div style={{ display: "flex", flexDirection: "column", gap: 14, maxHeight: 340, overflowY: "auto" }}>
               {Object.entries(classLevels).map(([classId, lvl]) => {
@@ -1009,9 +1051,9 @@ function PlayMode({
                 );
               })}
             </div>
-          </Panel>
+          </PlayCard>
 
-          <Panel title="Área de Danos">
+          <PlayCard title="Área de Danos">
             <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", marginBottom: 12 }}>
               Nível {sheet.level} → multiplicador <strong style={{ color: ACCENT_LIGHT }}>×{damageLevelMultiplier(sheet.level).toFixed(1)}</strong> (Dano Final = Base × (1 + Nível ÷ 5))
             </p>
@@ -1059,10 +1101,10 @@ function PlayMode({
                 );
               })}
             </div>
-          </Panel>
+          </PlayCard>
 
           {generalPowerIds.length > 0 && (
-            <Panel title="Poderes Gerais">
+            <PlayCard title="Poderes Gerais">
               <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", marginBottom: 10 }}>PP disponível: <strong style={{ color: GOLD }}>{ppAvailable}</strong></p>
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 {generalPowerIds.map((id) => {
@@ -1078,105 +1120,64 @@ function PlayMode({
                   );
                 })}
               </div>
-            </Panel>
+            </PlayCard>
           )}
-        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <Panel title="Rolagem de Dados">
-            <div className="sw-dice-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 14 }}>
-              {DICE_SIDES.map((d) => (
-                <button key={d} onClick={() => setSelectedDie(d)} style={{
-                  padding: "5px 0", borderRadius: "var(--radius)", fontSize: "0.72rem", fontWeight: 700,
-                  cursor: "pointer", fontFamily: "var(--font-cinzel), serif", letterSpacing: "0.03em", textAlign: "center",
-                  border: `1px solid ${selectedDie === d ? ACCENT_BORD : "var(--border)"}`,
-                  background: selectedDie === d ? ACCENT_DIM : "var(--surface-2)",
-                  color: selectedDie === d ? ACCENT_LIGHT : "var(--text-muted)",
-                  boxShadow: selectedDie === d ? `0 0 10px ${ACCENT_DIM}` : "none",
-                }}>
-                  D{d === 100 ? "%" : d}
-                </button>
-              ))}
-            </div>
+        <PlayCard title="Catálogo de Itens">
+          <ItemCatalogBrowser onAdd={addCatalogItem} />
+        </PlayCard>
 
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-              <RollResultDie
-                sides={selectedDie} size={120} roll={fxRoll} color={ACCENT_LIGHT} edgeColor={ACCENT_LIGHT} emissive={ACCENT}
-                resultColor={ACCENT_LIGHT}
-                label={selectedDie === 100 ? "d%" : undefined}
-                fallback={<div style={{ width: 120, height: 120, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", color: "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>D{selectedDie === 100 ? "%" : selectedDie}</div>}
+        <PlayCard title={`Inventário (${equipment.length})`}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10, maxHeight: 320, overflowY: "auto" }}>
+            {equipment.map((item) => (
+              <OwnedItemCard key={item.id} entry={item} onEquip={toggleEquipped} onQty={setEquipmentQty} onRemove={removeEquipment} />
+            ))}
+            {equipment.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Sem itens registrados.</p>}
+          </div>
+          <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", marginBottom: 6 }}>Item personalizado (fora do catálogo):</p>
+          <div style={{ display: "flex", gap: 5 }}>
+            <input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Novo item…" style={{ flex: 1, minWidth: 0, padding: "6px 9px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem" }} />
+            <input type="number" min={1} value={newItemQty} onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value) || 1))} style={{ width: 44, padding: "6px 5px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem", textAlign: "center" }} />
+            <button onClick={() => { if (newItemName.trim()) { addEquipment(newItemName.trim(), newItemQty); setNewItemName(""); setNewItemQty(1); } }} style={{ padding: "6px 11px", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: 5, cursor: "pointer", fontSize: "0.74rem" }}>+</button>
+          </div>
+        </PlayCard>
+          </>
+        }
+        right={
+          <>
+            <PlayCard title="Rolagem de Dados" accent>
+              <DicePanel
+                theme={PLAY_THEME.starwars}
+                features={{ qty: true, pickMode: true }}
+                mod={mod} onModChange={setMod}
+                onRoll={handleDiceRoll}
               />
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Qtd</span>
-                <button onClick={() => setDiceQty((q) => Math.max(1, q - 1))} style={{ width: 24, height: 24, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer" }}>−</button>
-                <span style={{ minWidth: 20, textAlign: "center", fontSize: "0.82rem", fontWeight: 700, color: ACCENT_LIGHT }}>×{diceQty}</span>
-                <button onClick={() => setDiceQty((q) => Math.min(20, q + 1))} style={{ width: 24, height: 24, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer" }}>+</button>
-              </div>
-              <div style={{ display: "flex", gap: 4 }}>
-                {(["soma", "maior"] as const).map((m) => (
-                  <button key={m} onClick={() => setPickMode(m)} style={{ padding: "4px 10px", borderRadius: "var(--radius-xs)", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer", textTransform: "uppercase", border: `1px solid ${pickMode === m ? ACCENT_BORD : "var(--border)"}`, background: pickMode === m ? ACCENT_DIM : "var(--surface-2)", color: pickMode === m ? ACCENT_LIGHT : "var(--text-muted)" }}>{m}</button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ fontSize: "0.74rem", color: "var(--text-muted)", flexShrink: 0 }}>Mod</span>
-              <button onClick={() => setMod((m) => m - 1)} style={{ width: 28, height: 28, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "1rem", cursor: "pointer" }}>−</button>
-              <span style={{ minWidth: 28, textAlign: "center", fontSize: "0.9rem", fontWeight: 700, color: mod !== 0 ? ACCENT_LIGHT : "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>{mod >= 0 ? `+${mod}` : mod}</span>
-              <button onClick={() => setMod((m) => m + 1)} style={{ width: 28, height: 28, borderRadius: "var(--radius-xs)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "1rem", cursor: "pointer" }}>+</button>
-              <button onClick={() => setMod(0)} style={{ fontSize: "0.66rem", color: "var(--text-subtle)", background: "none", border: "none", cursor: "pointer" }}>reset</button>
-            </div>
-
-            <button onClick={doGenericRoll} style={{
-              width: "100%", padding: "11px 0", borderRadius: "var(--radius-lg)", marginBottom: 12,
-              background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`,
-              color: ACCENT_LIGHT, fontWeight: 700, fontSize: "0.88rem",
-              fontFamily: "var(--font-cinzel), serif", cursor: "pointer", letterSpacing: "0.05em",
-              boxShadow: `0 0 14px ${ACCENT_DIM}`,
-            }}>
-              ROLAR {diceQty > 1 ? diceQty : ""}D{selectedDie === 100 ? "%" : selectedDie}
-            </button>
-
-            <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginBottom: 10 }}>Ou clique num atributo/perícia ao lado (Nd20, regra própria de Star Wars: mantém maior/menor conforme o valor do atributo).</p>
-            {lastRoll && (
-              <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
-                <strong style={{ color: "var(--text)" }}>{lastRoll.label}</strong>: [{lastRoll.rolls.join(", ")}] → {lastRoll.kept}{lastRoll.bonus ? ` + ${lastRoll.bonus}` : ""} = <strong style={{ color: ACCENT_LIGHT }}>{lastRoll.total}</strong>
+              <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)", marginTop: 10 }}>
+                Ou clique num atributo/perícia ao lado — Nd20 pela regra própria do sistema, mantendo o maior ou o menor conforme o valor do atributo.
               </p>
-            )}
-            {log.length > 1 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 8 }}>
-                {log.slice(1).map((r) => (
-                  <div key={r.id} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "var(--text-subtle)", padding: "3px 8px", background: "var(--surface-2)", borderRadius: 4 }}>
-                    <span>{r.label}</span><span style={{ color: "var(--text-muted)", fontWeight: 700 }}>{r.total}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
+            </PlayCard>
 
-          <Panel title="Catálogo de Itens">
-            <ItemCatalogBrowser onAdd={addCatalogItem} />
-          </Panel>
+            <PlayCard title="Histórico">
+              <RollHistory log={historico} onClear={() => setLog([])} />
+            </PlayCard>
 
-          <Panel title={`Inventário (${equipment.length})`}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10, maxHeight: 320, overflowY: "auto" }}>
-              {equipment.map((item) => (
-                <OwnedItemCard key={item.id} entry={item} onEquip={toggleEquipped} onQty={setEquipmentQty} onRemove={removeEquipment} />
-              ))}
-              {equipment.length === 0 && <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Sem itens registrados.</p>}
-            </div>
-            <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", marginBottom: 6 }}>Item personalizado (fora do catálogo):</p>
-            <div style={{ display: "flex", gap: 5 }}>
-              <input value={newItemName} onChange={(e) => setNewItemName(e.target.value)} placeholder="Novo item…" style={{ flex: 1, minWidth: 0, padding: "6px 9px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem" }} />
-              <input type="number" min={1} value={newItemQty} onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value) || 1))} style={{ width: 44, padding: "6px 5px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 5, color: "var(--text)", fontSize: "0.76rem", textAlign: "center" }} />
-              <button onClick={() => { if (newItemName.trim()) { addEquipment(newItemName.trim(), newItemQty); setNewItemName(""); setNewItemQty(1); } }} style={{ padding: "6px 11px", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: 5, cursor: "pointer", fontSize: "0.74rem" }}>+</button>
-            </div>
-          </Panel>
-        </div>
-      </div>
+            <PlayCard title="Condições">
+              <FreeConditionInput active={conditions} onChange={onConditions} />
+            </PlayCard>
+
+            <PlayCard title="Anotações">
+              <textarea
+                value={notes}
+                onChange={(e) => onNotes(e.target.value)}
+                onBlur={onNotesBlur}
+                rows={5}
+                placeholder="Anotações de sessão…"
+                style={{ width: "100%", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "8px 10px", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+              />
+            </PlayCard>
+          </>
+        }
+      />
 
       <RollToast roll={fxRoll} color={ACCENT} edgeColor={ACCENT_LIGHT} emissive="#12202e" />
 
@@ -1209,7 +1210,7 @@ function PlayMode({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
