@@ -50,6 +50,7 @@ recusa um item malformado.
 ```
 src/app/dashboard/<sistema>/    UI  — assistente, ficha, área do Mestre
 src/app/api/                    HTTP — autenticação, validação, persistência
+src/components/play/            UI  — moldura comum das cinco áreas de Jogar
 src/lib/<sistema>/              REGRAS — dados e funções puras, sem I/O
 src/lib/campaign/               INFRA compartilhada da área do Mestre
 src/lib/party/                  VÍNCULO ficha→campanha e visão do Mestre
@@ -59,6 +60,28 @@ prisma/schema.prisma            BANCO
 A regra que sustenta a testabilidade: **`src/lib/<sistema>/` não faz I/O**. Não
 importa Prisma, não faz `fetch`, não lê `window`. São funções puras sobre dados
 — por isso os 204 testes rodam em milissegundos, sem banco e sem servidor.
+
+As cinco áreas de Jogar compartilham `src/components/play/`: `PlayShell`
+(faixa de vitais em largura cheia + duas colunas `1.4fr / 1fr`), `PlayCard`,
+`VitalBar`, `StatChip`, `RollHistory`, `DicePanel` e `ConditionPicker`. A
+divisão é sempre a mesma — **à esquerda o que o personagem faz** (atributos,
+perícias, ações, recursos, inventário), **à direita a mesa** (dados, histórico,
+condições, descanso, dinheiro, referência).
+
+A cor de cada sistema é híbrida por necessidade. `PlayShell` sobrescreve
+`--accent`, `--accent-light`, `--accent-dim`, `--border-accent` e
+`--accent-glow` na própria subárvore, então qualquer estilo inline lê a cor
+certa sem prop nem contexto. Mas `Dice3D` repassa a cor direto ao material do
+three.js, e `new THREE.Color("var(--accent)")` não funciona — por isso
+`PLAY_THEME` existe **em TypeScript como fonte de verdade**, e é o literal que
+vai para `RollResultDie`, `RollToast` e `DieSvg`.
+
+Cada sistema escreve um adaptador curto do seu tipo de rolagem para
+`PlayRollEntry`. É o que deixa os níveis de sucesso do Cthulhu e o "maior/pior"
+da Ordem sobreviverem sem poluir o componente comum. Inventário, descanso,
+dinheiro, espaços de magia e listas de perícia **não** viraram componentes
+compartilhados: os cinco formatos de dados são genuinamente diferentes, e
+compartilhar a moldura já entrega a padronização.
 
 O cálculo e a persistência são separados de propósito. O padrão aparece no
 level-up: uma função pura monta o *plano*, e a rota apenas o aplica numa
@@ -588,7 +611,7 @@ esquecidas.
 | **Export em PDF do visual desativado** | Só o layout estruturado de D&D exporta (`DndPrintSheet.tsx`). |
 | **Responsividade desigual** | Existe folha responsiva própria para D&D, Tormenta, Ordem e Cthulhu; **Star Wars não tem**. |
 | **Estilos inline** | 6.556 objetos `style={{…}}`; Tailwind está instalado e praticamente não é usado. |
-| **Componentes monolíticos** | `dnd/[id]/SheetClient.tsx` passa de 2.900 linhas; `HomeClient.tsx` e os demais `SheetClient` seguem no mesmo caminho. |
+| **Componentes monolíticos** | O modo Jogar do D&D saiu para `dnd/[id]/PlayMode.tsx`, mas `HomeClient.tsx` e os `SheetClient` de Ordem, Star Wars e Cthulhu seguem passando de mil linhas. |
 
 ---
 
