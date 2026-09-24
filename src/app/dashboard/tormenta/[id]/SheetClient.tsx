@@ -88,7 +88,6 @@ export function SheetClient({ character }: { character: AnyChar }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>
-      {/* onExportPdf={() => window.print()} — export em PDF desativado do visual por ora, ver DndPrintSheet.tsx */}
       <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" accentColor="#a01818" shareCharacterId={character.id} />
 
       <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>

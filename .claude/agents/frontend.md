@@ -87,7 +87,7 @@ rtk proxy "npx eslint src"
 rtk proxy "npx next build"
 ```
 
-Os 204 testes cobrem `src/lib/**` e não pegam layout — servem para acusar regra
+Os 283 testes cobrem `src/lib/**` e não pegam layout — servem para acusar regra
 alterada por acidente durante uma movimentação.
 
 ## Limites

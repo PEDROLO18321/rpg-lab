@@ -463,7 +463,7 @@ export const BESTIARY: OrdemCreature[] = [
     displacement: "6m", resistances: "Imune a dano (até resolver o Enigma de Medo). Reúne Energia, Conhecimento, Sangue e Morte", vulnerabilities: "Confronto com a origem",
     attacks: ["Pancada (corpo a corpo x2, +35): 8d8+20 impacto", "Grito Rasgado: 4d10+10 mental + surdez (Vontade DT 35)", "Desfiguramento Capilar: 10d6+20 perfuração + 6d10 mental no agarrado"],
     abilities: "Criatura de Medo: imune a dano até resolver o mistério da origem (confrontá-la com a causa da morte). Metamorfose: vira Conturbada (Energia), Gnóstica (Conhecimento), Devoradora (Sangue) ou Decrépita (Morte). NEX 95%+ imune à PP.",
-    description: "Uma das criaturas mais temidas, formada por todos os elementos. Figura fantasmagórica de longos cabelos pretos cobrindo o rosto, cercada de neblina com almas torturadas. \"Se vir cabelos pretos flutuando... CORRA.\"",
+    description: "Uma das criaturas mais temidas, formada por todos os elementos. Figura fantasmagórica de longos cabelos pretos cobrindo o rosto, cercada de neblina com almas torturadas.",
   },
 
   // ──────────────────── AMEAÇAS DA REALIDADE (mundanas) ─────────────────

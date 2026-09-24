@@ -20,7 +20,7 @@ convenção — `params` é `Promise`, entre outras. Leia o guia relevante em
 ## A regra que sustenta os testes
 
 **`src/lib/<sistema>/` não faz I/O.** Não importa Prisma, não faz `fetch`, não
-lê `window`. São funções puras sobre dados tipados — é por isso que 204 testes
+lê `window`. São funções puras sobre dados tipados — é por isso que 283 testes
 rodam em milissegundos sem banco e sem servidor. Se você precisa de I/O, o
 lugar é a rota, não a lib.
 
@@ -70,7 +70,7 @@ estoura na constraint única como 500. Colisão simultânea cai no `P2002`.
 ## Testes
 
 ```bash
-npm test                      # 204 testes de regra, sem infraestrutura
+npm test                      # 283 testes de regra, sem infraestrutura
 npx tsc --noEmit
 rtk proxy "npx eslint src"
 ```

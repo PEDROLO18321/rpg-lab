@@ -6,7 +6,7 @@ avaliação — **como as regras de cada sistema de RPG foram adaptadas**, inclu
 o que foi simplificado e por quê.
 
 > Escopo em números: ~74.000 linhas de TypeScript em `src/` (fora o client gerado
-> pelo Prisma), 5 sistemas de RPG, 56 modelos no banco, 204 testes automatizados
+> pelo Prisma), 5 sistemas de RPG, 56 modelos no banco, 283 testes automatizados
 > mais uma suíte ponta a ponta.
 
 ---
@@ -57,9 +57,18 @@ src/lib/party/                  VÍNCULO ficha→campanha e visão do Mestre
 prisma/schema.prisma            BANCO
 ```
 
-A regra que sustenta a testabilidade: **`src/lib/<sistema>/` não faz I/O**. Não
-importa Prisma, não faz `fetch`, não lê `window`. São funções puras sobre dados
-— por isso os 204 testes rodam em milissegundos, sem banco e sem servidor.
+A regra que sustenta a testabilidade: **os módulos de regra não fazem I/O**.
+Raças, classes, magias, perícias, progressão, tabelas de resolução — tudo em
+`src/lib/<sistema>/` que descreve *a regra* é função pura sobre dados tipados:
+não importa Prisma, não faz `fetch`, não lê `window`. Por isso os testes rodam
+em milissegundos, sem banco e sem servidor.
+
+No mesmo diretório convivem, por proximidade de assunto, três arquivos que
+**são** camada de acesso e por isso ficam fora dos testes de regra: o serviço de
+persistência (`dnd/characterService.ts`, o único que importa Prisma), os
+clientes de campanha (`<sistema>CampaignClient.ts`) e os hooks de tela
+(`use<Sistema>Campaign.ts`), que apenas tipam e repassam para
+`src/lib/campaign/`.
 
 As cinco áreas de Jogar compartilham `src/components/play/`: `PlayShell`
 (faixa de vitais em largura cheia + duas colunas `1.4fr / 1fr`), `PlayCard`,
@@ -379,9 +388,13 @@ unidades valendo para todas as leituras — o bônus fica com a menor, a penalid
 com a maior, e um de cada se anula. Por isso a ficha representa a regra inteira
 num número só, de −2 a +2.
 
-**Simplificações:** sem evolução por marcação de perícia entre sessões (o
-sistema não tem “subir de nível”, e o ganho é decidido em mesa); combate tático
-não simulado — a ficha oferece as rolagens, a resolução é do Guardião.
+**Fase de Desenvolvimento implementada:** a perícia usada com sucesso fica
+marcada, e ao fim da sessão `rollImprovement` ([data.ts:226](../src/lib/cthulhu/data.ts))
+rola a melhoria de cada marcada — `runDevelopment` aplica o ganho e limpa as
+marcações.
+
+**Simplificações:** combate tático não simulado — a ficha oferece as rolagens, a
+resolução é do Guardião.
 
 ### 5.4 Ordem Paranormal
 
@@ -492,8 +505,11 @@ if (!ctx.ok) return NextResponse.json({ error: ctx.error }, { status: ctx.status
 // ctx.userId / ctx.systemId — confiáveis
 ```
 
-**2. Escrita sempre por whitelist.** Nem nome de campo nem nome de tabela vêm do
-cliente sem passar pelo registro (`pickFields`, `cfg.delegate`).
+**2. Escrita sempre por whitelist, com teto.** Nem nome de campo nem nome de
+tabela vêm do cliente sem passar pelo registro (`pickFields`, `cfg.delegate`).
+A lista diz *quais* campos entram; o teto por campo (`LIMITS`, o mesmo da
+importação de ficha) diz *quanto* cabe em cada um — sem ele, a whitelist aceita
+um NPC com 5 MB de nome. Campo acima do teto devolve 400.
 
 **3. Toda leitura confere dono.** `character.userId !== session.user.id → 403`.
 A única exceção é deliberada e estreita: a ficha compartilhada por link, lida
@@ -557,7 +573,7 @@ contraste, não fluxo percebido.
 
 ## 9. Testes
 
-204 testes em 9 arquivos, sem banco e sem servidor (`npm test`).
+283 testes em 13 arquivos, sem banco e sem servidor (`npm test`).
 
 | Arquivo | Cobre |
 |---|---|
@@ -569,11 +585,24 @@ contraste, não fluxo percebido.
 | `character-transfer.test.ts` | Guardas de importação: faixa, tamanho, tipo, JSON corrompido |
 | `party-summary.test.ts` | Normalização da ficha para a visão do Mestre nos 5 sistemas |
 | `tormenta-play.test.ts` | Mesa do T20: crítico por margem/multiplicador, dano por tipo de arma, descanso, limiar de morte, pontos temporários, custo de magia |
+| `cthulhu-play.test.ts` | Mesa do CoC: níveis de sucesso de `resolveCheck` nas fronteiras exatas, dano de arma com Dano Extra, aprimoramento de perícia |
+| `ordem-play.test.ts` | Mesa da Ordem: grau de treinamento e regra do maior/pior, defesa, limite de PE por NEX, estados de sanidade e vida, carga e proteção |
+| `starwars-play.test.ts` | Mesa do SW: escala de dano por nível, PP por turno, tabela de bônus por grau de perícia |
+| `dnd-play.test.ts` | Mesa do D&D: CA por tipo de armadura com teto de Destreza, espaços de magia por círculo e multiclasse, truques e magias conhecidas, condições e exaustão |
 | `contraste.test.ts` | Contraste dos tokens de cor de `globals.css` contra os limiares da WCAG 2.1 AA |
 
 A ênfase é deliberada: **testar as regras**, que é onde um erro passa
 despercebido — um bônus de proficiência errado não quebra a tela, só entrega um
-personagem inválido.
+personagem inválido. Os cinco arquivos `*-play.test.ts` cobrem a mecânica das
+áreas de mesa, que é a parte demonstrada ao vivo; os testes atacam as fronteiras
+(o valor exato do limiar, o valor logo abaixo, zero, o máximo) em vez do caso
+feliz, e onde há `Math.random` afirmam o invariante em laço.
+
+**O que continua sem teste de regra, e é buraco conhecido:** descanso, dados de
+vida gastos e resistência à morte do D&D estão implementados dentro de
+`dnd/[id]/PlayMode.tsx`, não em `src/lib/dnd/` — não há função pura equivalente
+para chamar. Cobrir isso exige extrair a lógica para a camada de regra primeiro,
+e essa extração não foi feita.
 
 Dois casos fogem desse molde de propósito:
 
@@ -596,7 +625,7 @@ Dois casos fogem desse molde de propósito:
   infraestrutura, mesma configuração separada.
 
 ```bash
-npm test                                    # 204 testes de regra, sem infraestrutura
+npm test                                    # 283 testes de regra, sem infraestrutura
 
 # e2e: precisa do servidor e do banco. AUTH_TRUST_HOST porque o NextAuth v5
 # recusa host não confiável fora da Vercel, e o teste fala com localhost.
@@ -624,7 +653,7 @@ esquecidas.
 | **Fichas em JSON não são consultáveis** | Trade-off da seção 3.2. |
 | **Export em PDF do visual desativado** | Só o layout estruturado de D&D exporta (`DndPrintSheet.tsx`). |
 | **Responsividade por sobrescrita** | Cada sistema tem sua folha `*-responsive.css`, e todas vencem o estilo inline com `!important` dentro de `@media (max-width: 640px)`. Funciona, mas é sintoma dos estilos inline: o layout mobile é correção, não projeto. |
-| **Estilos inline** | 6.556 objetos `style={{…}}`; Tailwind está instalado e praticamente não é usado. |
+| **Estilos inline** | cerca de 6 mil objetos `style={{…}}` (`grep -ro "style={{" --include=*.tsx src/ | wc -l`); Tailwind está instalado e praticamente não é usado. |
 | **Componentes monolíticos** | O modo Jogar do D&D saiu para `dnd/[id]/PlayMode.tsx`, mas `HomeClient.tsx` e os `SheetClient` de Ordem, Star Wars e Cthulhu seguem passando de mil linhas. |
 
 ---

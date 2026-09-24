@@ -171,8 +171,9 @@ export async function createChild(
 ): Promise<ChildResult<unknown>> {
   const r = await resolveChild(system, campaignId, resource, userId);
   if (!r.ok) return r;
-  const data = pickFields(body, r.res.fields);
-  const item = await delegateFor(r.res.delegate).create({ data: { ...data, campaignId } });
+  const picked = pickFields(body, r.res.fields);
+  if (!picked.ok) return { ok: false, error: `Campo "${picked.field}" excede o tamanho máximo permitido.`, status: 400 };
+  const item = await delegateFor(r.res.delegate).create({ data: { ...picked.data, campaignId } });
   return { ok: true, value: item };
 }
 
@@ -188,8 +189,9 @@ export async function updateChild(
   if (!existing || existing.campaignId !== campaignId) {
     return { ok: false, error: "Not found", status: 404 };
   }
-  const data = pickFields(body, r.res.fields);
-  const item = await delegate.update({ where: { id: itemId }, data });
+  const picked = pickFields(body, r.res.fields);
+  if (!picked.ok) return { ok: false, error: `Campo "${picked.field}" excede o tamanho máximo permitido.`, status: 400 };
+  const item = await delegate.update({ where: { id: itemId }, data: picked.data });
   return { ok: true, value: item };
 }
 

@@ -238,7 +238,6 @@ export function SheetClient({ character }: { character: AnyChar }) {
         backLabel="Meus Agentes"
         accentColor={ACCENT}
         shareCharacterId={character.id}
-        // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
       <div className="op-header-modes no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>

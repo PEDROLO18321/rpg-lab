@@ -5,7 +5,7 @@ import type { TormentaApi } from "@/lib/tormenta/useTormentaCampaign";
 
 interface OfficialCreature {
   name: string; nd: number; type: string; size: string; alignment: string; typeLine: string;
-  flavor: string; init: string; senses: string; ca: number | null; pv: number | null;
+  init: string; senses: string; ca: number | null; pv: number | null;
   resistances: string; speed: string; attacksRaw: string;
   attrs: { for: string; des: string; con: string; int: string; sab: string; car: string };
   skills: string; abilitiesRaw: string; treasure: string;
@@ -79,7 +79,6 @@ export function OfficialBestiary({ api }: { api: TormentaApi }) {
       race: c.type || "Monstro",
       role: `ND ${c.nd}`,
       description: [c.size, c.alignment].filter(Boolean).join(" · "),
-      personality: c.flavor,
       notes: [
         c.senses && `Sentidos: ${c.senses}`,
         c.resistances && `Resistências: ${c.resistances}`,
@@ -218,10 +217,6 @@ export function OfficialBestiary({ api }: { api: TormentaApi }) {
             </div>
             <button onClick={() => setSelected(null)} style={{ padding: "4px 8px", background: "transparent", color: "var(--text-subtle)", border: "none", cursor: "pointer", fontSize: "1rem", flexShrink: 0 }}>✕</button>
           </div>
-
-          {selected.flavor && (
-            <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", lineHeight: 1.6, fontStyle: "italic", marginBottom: 14 }}>{selected.flavor}</p>
-          )}
 
           <div style={{ height: 1, background: `${accent}30`, marginBottom: 14 }} />
 

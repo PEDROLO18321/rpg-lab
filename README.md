@@ -21,12 +21,18 @@ automática** (personagem completo e já progredido até o nível escolhido) e
 
 ## Conteúdo dos sistemas e base legal
 
-As regras implementadas foram transcritas como dados tipados em `src/lib/<sistema>/`
-— não há texto integral de nenhum livro no repositório.
+As regras implementadas foram transcritas como dados tipados em `src/lib/<sistema>/`.
+O que está versionado é **conteúdo mecânico** — valores, fórmulas, tabelas e a
+descrição funcional de um efeito. Prosa literária dos livros (texto ambiental,
+citações de personagem, narrativa de sabor) **não é distribuída**: os campos de
+sabor do bestiário de Tormenta 20 foram removidos justamente por isso.
 
 - **D&D 5e** — conteúdo derivado do *System Reference Document 5.1*, publicado pela
   Wizards of the Coast sob licença [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- **Tormenta 20** — conteúdo aberto publicado pela Jambô Editora.
+- **Tormenta 20** — conteúdo aberto publicado pela Jambô Editora. O bestiário
+  (`src/lib/tormenta/officialBestiary.json`) traz o bloco de estatísticas das
+  criaturas — ND, atributos, CA, PV, ataques, habilidades especiais — sem o
+  texto descritivo que acompanha cada verbete no livro.
 - **Ordem Paranormal** e **Call of Cthulhu** — apenas os elementos mecânicos
   necessários ao preenchimento da ficha, em contexto acadêmico e sem fins lucrativos.
 - **Star Wars: Além da Fronteira** — sistema autoral; as regras completas estão em
@@ -34,6 +40,10 @@ As regras implementadas foram transcritas como dados tipados em `src/lib/<sistem
 
 Os livros de regras usados como referência durante o desenvolvimento **não são
 versionados** (ver `.gitignore`).
+
+A atribuição completa, sistema por sistema, está em
+**[ATTRIBUTION.md](ATTRIBUTION.md)**. O código é licenciado sob MIT
+(**[LICENSE](LICENSE)**).
 
 ## Documentação
 
@@ -79,7 +89,7 @@ cp .env.example .env
 
 ```bash
 npx prisma migrate dev   # cria as tabelas
-npm run seed              # popula dados iniciais (sistemas, classes, perícias etc.)
+npm run seed              # cadastra os cinco sistemas no banco
 ```
 
 ### 5. Rodar o servidor de desenvolvimento
@@ -98,6 +108,6 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `npm run build` | Gera o cliente Prisma e cria o build de produção |
 | `npm run start` | Roda o build de produção |
 | `npm run lint` | ESLint |
-| `npm run seed` | Popula o banco com dados iniciais |
+| `npm run seed` | Cadastra os cinco sistemas no banco (o catálogo de regras vive em `src/lib/`, não no banco) |
 | `npm test` | Roda a suíte de testes (Vitest) |
 | `npm run test:watch` | Testes em modo observador |

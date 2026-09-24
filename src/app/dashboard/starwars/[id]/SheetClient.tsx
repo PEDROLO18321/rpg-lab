@@ -484,7 +484,6 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         backLabel="Meus Personagens"
         accentColor={ACCENT}
         shareCharacterId={character.id}
-        // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
       />
 
       <div className="sw-mode-tabs-wrap no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
