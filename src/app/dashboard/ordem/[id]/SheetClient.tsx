@@ -209,17 +209,19 @@ export function SheetClient({ character }: { character: AnyChar }) {
     const n = parseInt(m[1], 10), faces = parseInt(m[2], 10);
     const diceArr = Array.from({ length: n }, () => Math.floor(Math.random() * faces) + 1);
     const total = diceArr.reduce((a, b) => a + b, 0);
-    pushLog({ dice: diceArr, chosen: total, bonus: 0, total, worstChosen: false, id: ++rollId.current, label: `Dano · ${label}` });
+    pushLog({ dice: diceArr, chosen: total, bonus: 0, total, worstChosen: false, id: ++rollId.current, label: `Dano · ${label}`, faces });
   }
 
-  function pushLog(raw: Omit<RollLog, "id"> & { id?: number }) {
+  function pushLog(raw: Omit<RollLog, "id"> & { id?: number; faces?: number }) {
     // Quem rola de dentro do PlayMode não tem acesso ao contador; deixar o id
     // nascer aqui também evita a colisão que existia entre as duas fontes.
-    const entry: RollLog = { ...raw, id: raw.id ?? ++rollId.current };
+    const { faces = 20, ...dados } = raw;
+    const entry: RollLog = { ...dados, id: dados.id ?? ++rollId.current };
     setLog((l) => [entry, ...l].slice(0, 5));
     // Toda rolagem também anima: antes só o dado livre tinha feedback 3D, e
-    // perícia, atributo e dano passavam despercebidos.
-    setFxRoll({ id: entry.id, label: entry.label, dice: 20, total: entry.total });
+    // perícia, atributo e dano passavam despercebidos. `faces` existe porque o
+    // d20 é o dado dos testes, mas dano e rolagem livre usam outros.
+    setFxRoll({ id: entry.id, label: entry.label, dice: faces, total: entry.total });
   }
 
   const sanStatus = sanityStatus(san.cur, san.max);
@@ -612,7 +614,7 @@ interface PlayProps extends SharedProps {
   rollSkillRow: (id: string) => void;
   rollAttribute: (k: AttrKey) => void;
   rollDamage: (expr: string, label: string) => void;
-  pushLog: (entry: Omit<RollLog, "id"> & { id?: number }) => void;
+  pushLog: (entry: Omit<RollLog, "id"> & { id?: number; faces?: number }) => void;
   clearLog: () => void;
   save: (payload: Record<string, unknown>) => void;
 }
@@ -775,6 +777,7 @@ function PlayMode({ sheet, origin, attrs, nex, pv, pe, san, skills, skillAttr, n
                   bonus: r.mod,
                   total: r.total,
                   worstChosen: false,
+                  faces: r.sides,
                 })}
               />
             </PlayCard>

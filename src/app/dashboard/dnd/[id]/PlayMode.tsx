@@ -370,6 +370,7 @@ export function PlayMode({
       ...(r.allRolls ? { allRolls: r.allRolls, advantageMode: r.advantageMode, advantagePickIdx: r.advantagePickIdx } : {}),
     };
     setRollHistory((prev) => [entry, ...prev].slice(0, 5));
+    setFxRoll(entry);
   }
 
   return (
