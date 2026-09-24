@@ -19,6 +19,7 @@ import {
   PATH_CLASS_UNLOCK_LEVEL, POOL_CLASS_IDS, ppMaxPerTurn, ppLevelUpGain,
 } from "@/lib/starwars/leveling";
 import { damageLevelMultiplier } from "@/lib/starwars/damage";
+import "../starwars-responsive.css";
 
 const ACCENT = "#5d9ed6";
 const ACCENT_LIGHT = "#8fc4f5";

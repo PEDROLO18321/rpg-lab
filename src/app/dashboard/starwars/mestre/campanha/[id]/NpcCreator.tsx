@@ -11,6 +11,7 @@ import { SW } from "../../../ui";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { Field } from "@/components/ui/Field";
 import { activateOnKey } from "@/lib/a11y";
+import "../../../starwars-responsive.css";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;

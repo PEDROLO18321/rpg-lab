@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { SW } from "../ui";
 import { rollDie } from "@/components/dice/DieSvg";
+import "../starwars-responsive.css";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;

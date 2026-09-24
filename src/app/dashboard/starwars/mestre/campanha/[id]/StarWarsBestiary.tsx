@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import { BESTIARY, MODULE_GROUPS, BOOK_LABEL, type BestiaryBook, type StarWarsCreature, type ThreatLevel } from "@/lib/starwars/bestiary";
 import { SW } from "../../../ui";
+import "../../../starwars-responsive.css";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
 // render — mantém o componente puro para o React Compiler.

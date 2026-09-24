@@ -30,6 +30,7 @@ import { PLAY_THEME } from "@/components/play/theme";
 import type { PlayRollEntry } from "@/components/play/types";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
+import "../starwars-responsive.css";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
 // render — mantém o componente puro para o React Compiler.

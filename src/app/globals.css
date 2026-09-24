@@ -320,48 +320,6 @@ button:disabled { cursor: not-allowed; }
   html { scroll-behavior: auto; }
 }
 
-/* ── Star Wars: responsivo mobile (o resto do app usa inline style fixo,
-   então as classes abaixo levam !important só pra vencer o inline em telas
-   pequenas — nada disso afeta desktop) ─────────────────────────────────── */
-@media (max-width: 640px) {
-  /* SheetClient.tsx — linha de modos (Ficha/Jogar/Editar/Regras) abaixo do DashboardNav */
-  .sw-mode-tabs-wrap { justify-content: center !important; flex-wrap: wrap !important; padding-left: 14px !important; padding-right: 14px !important; }
-  .sw-mode-tabs-wrap button { flex: 1 1 auto; }
-
-  .sw-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 6px !important; }
-  .sw-wizard-header-title { order: 3; width: 100%; text-align: center; font-size: 0.7rem !important; }
-  .sw-wizard-footer { padding: 12px 14px !important; }
-
-  .sw-main-padding { padding: 18px 14px !important; }
-  .sw-two-col { grid-template-columns: 1fr !important; }
-  .sw-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
-  .sw-dice-grid { grid-template-columns: repeat(4, 1fr) !important; }
-  .sw-attr-row { flex-wrap: wrap !important; row-gap: 8px !important; }
-  .sw-attr-row-trailing { margin-left: 0 !important; width: 100%; justify-content: space-between !important; }
-  .sw-levelup-btn { width: 100%; margin-left: 0 !important; justify-content: center; }
-  .sw-npc-attack-grid { grid-template-columns: 1fr !important; }
-
-  /* Mestre — Pistas/Itens/História/Iniciativa/NPCs/Bestiário/Guia (área nova, sem cobertura ainda) */
-  .sw-clue-grid { grid-template-columns: 1fr !important; }
-  .sw-item-form-grid { grid-template-columns: 1fr !important; }
-  .sw-story-grid { grid-template-columns: 1fr !important; }
-  .sw-session-editor-grid { grid-template-columns: 1fr !important; }
-  .sw-init-add-grid { grid-template-columns: 1fr !important; }
-  .sw-npc-mode-tabs { flex-wrap: wrap !important; width: 100% !important; }
-  .sw-npc-two-col { grid-template-columns: 1fr !important; }
-  .sw-bestiary-stat-grid { grid-template-columns: repeat(3, 1fr) !important; }
-  .sw-bestiary-info-grid { grid-template-columns: 1fr !important; }
-  .sw-guide-row { flex-wrap: wrap !important; }
-  .sw-guide-row-term { width: 100%; min-width: 0 !important; }
-
-  /* RulesManual.tsx — manual completo de regras (aba Regras da ficha do jogador) */
-  .sw-rules-grid { grid-template-columns: 1fr !important; }
-  .sw-rules-toc { position: static !important; }
-  .sw-rules-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }
-  .sw-rules-grade-grid { grid-template-columns: repeat(3, 1fr) !important; }
-  .sw-rules-item-filters { flex-wrap: wrap !important; }
-}
-
 /* ── Home/Login/Dashboard: nav e cabeçalhos globais no mobile ────────────── */
 .home-nav-cta-short { display: none; }
 @media (max-width: 480px) {

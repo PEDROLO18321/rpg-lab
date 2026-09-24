@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SW } from "../../../ui";
+import "../../../starwars-responsive.css";
 
 const ACCENT_LIGHT = SW.accentLight;
 const ACCENT_BORD = SW.accentBord;

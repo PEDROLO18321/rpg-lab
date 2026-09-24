@@ -609,7 +609,7 @@ esquecidas.
 | **Tabelas de campanha duplicadas** | Aplicação unificada pelo registro de configuração, banco ainda com um conjunto de tabelas por sistema — 56 modelos no total. |
 | **Fichas em JSON não são consultáveis** | Trade-off da seção 3.2. |
 | **Export em PDF do visual desativado** | Só o layout estruturado de D&D exporta (`DndPrintSheet.tsx`). |
-| **Responsividade desigual** | Existe folha responsiva própria para D&D, Tormenta, Ordem e Cthulhu; **Star Wars não tem**. |
+| **Responsividade por sobrescrita** | Cada sistema tem sua folha `*-responsive.css`, e todas vencem o estilo inline com `!important` dentro de `@media (max-width: 640px)`. Funciona, mas é sintoma dos estilos inline: o layout mobile é correção, não projeto. |
 | **Estilos inline** | 6.556 objetos `style={{…}}`; Tailwind está instalado e praticamente não é usado. |
 | **Componentes monolíticos** | O modo Jogar do D&D saiu para `dnd/[id]/PlayMode.tsx`, mas `HomeClient.tsx` e os `SheetClient` de Ordem, Star Wars e Cthulhu seguem passando de mil linhas. |
 

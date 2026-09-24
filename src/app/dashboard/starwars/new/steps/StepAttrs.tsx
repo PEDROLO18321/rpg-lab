@@ -6,6 +6,7 @@ import { attributeDicePool } from "@/lib/starwars/creation";
 import { SKILLS } from "@/lib/starwars/skills";
 import type { WizardData } from "../CharacterWizard";
 import { SW, SectionTitle, Badge, gridAutoFill } from "../../ui";
+import "../../starwars-responsive.css";
 
 interface Props {
   attrBases: StarWarsAttrs;

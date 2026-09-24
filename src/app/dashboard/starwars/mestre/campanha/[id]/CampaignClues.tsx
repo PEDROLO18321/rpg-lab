@@ -5,6 +5,7 @@ import type { StarWarsApi } from "@/lib/starwars/useStarWarsCampaign";
 import type { StarWarsClue } from "@/lib/starwars/starwarsCampaignClient";
 import { SW } from "../../../ui";
 import { Field } from "@/components/ui/Field";
+import "../../../starwars-responsive.css";
 
 const ACCENT = SW.accent;
 const ACCENT_LIGHT = SW.accentLight;

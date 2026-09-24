@@ -16,6 +16,7 @@ import { StepAttrs } from "./steps/StepAttrs";
 import { StepSkills } from "./steps/StepSkills";
 import { StepDesc } from "./steps/StepDesc";
 import { StepReview } from "./steps/StepReview";
+import "../starwars-responsive.css";
 
 export const ACCENT       = SW.accent;
 export const ACCENT_LIGHT = SW.accentLight;
