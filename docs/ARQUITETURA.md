@@ -587,13 +587,27 @@ Dois casos fogem desse molde de propósito:
   indevidas no meio (campanha alheia, sistema errado, link desligado). Exige
   servidor no ar e banco real, então fica **fora** do `npm test`, em configuração
   separada e sem paralelismo (as etapas são encadeadas).
+- **`scripts/e2e-play.test.ts`** cobre as cinco áreas de Jogar por onde elas
+  podem quebrar sem ninguém ver: a página responde e renderiza no servidor, e
+  tudo que a área altera — PV, temporários, condições, estados, insanidade,
+  moedas — sobrevive a uma leitura nova do banco, que é o que "recarregar a
+  página" significa. Inclui o modo Editar do Cthulhu campo a campo, porque
+  `editMode: boolean` virou `mode` de três valores. Mesma exigência de
+  infraestrutura, mesma configuração separada.
 
 ```bash
 npm test                                    # 204 testes de regra, sem infraestrutura
 
-npx next start -p 3100                      # e2e: precisa do servidor e do banco
+# e2e: precisa do servidor e do banco. AUTH_TRUST_HOST porque o NextAuth v5
+# recusa host não confiável fora da Vercel, e o teste fala com localhost.
+AUTH_TRUST_HOST=true npx next start -p 3100
 npm run test:e2e
 ```
+
+**O que o e2e não cobre:** ele fala HTTP, não desenha. A aba Jogar é estado de
+cliente, então o HTML do servidor traz a aba padrão — a cor do dado 3D, o
+empilhamento das colunas em telas estreitas e o `localStorage` do atributo-base
+da Ordem continuam dependendo de olho humano.
 
 ---
 
