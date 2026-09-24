@@ -44,7 +44,10 @@ next-env.d.ts
 
 /src/generated/
 /generated/
-.claude/
+.claude/*
+# …menos as definições de agente: são conhecimento do projeto, não
+# configuração de máquina.
+!.claude/agents/
 # Livros de regras de referência (obras comerciais — não versionar)
 /basement/
 
