@@ -25,6 +25,11 @@ export interface DiceResult {
   total: number;
   /** "3d6+2", "d20 com vantagem". */
   label: string;
+  /** Vantagem/desvantagem: todos os d20 rolados, para o detalhe da rolagem. */
+  allRolls?: number[];
+  advantageMode?: "advantage" | "disadvantage";
+  /** Índice do dado escolhido, já na lista ordenada do maior para o menor. */
+  advantagePickIdx?: number;
 }
 
 interface Props {
@@ -56,6 +61,9 @@ export function DicePanel({
   const mod = modProp ?? modLocal;
   const setMod = onModChange ?? setModLocal;
   const [advantage, setAdvantage] = useState<Advantage>("normal");
+  // A regra pede dois dados, mas a mesa às vezes acumula fontes de vantagem —
+  // o D&D já oferecia até cinco dados extras e isso não se perde aqui.
+  const [advExtra, setAdvExtra] = useState(1);
   const [last, setLast] = useState<{ id: number; label: string; dice: number; total: number; isCrit?: boolean; isFumble?: boolean } | null>(null);
   const rollId = useRef(0);
 
@@ -69,10 +77,15 @@ export function DicePanel({
     let kept: number;
     let label: string;
 
+    let extras: Pick<DiceResult, "allRolls" | "advantageMode" | "advantagePickIdx"> = {};
+
     if (useAdv && advantage !== "normal") {
-      rolls = [rollDie(sides), rollDie(sides)];
-      kept = advantage === "advantage" ? Math.max(...rolls) : Math.min(...rolls);
+      rolls = Array.from({ length: count + advExtra }, () => rollDie(sides));
+      const ordenado = [...rolls].sort((a, b) => b - a);
+      const idx = advantage === "advantage" ? 0 : advExtra;
+      kept = ordenado[Math.min(idx, ordenado.length - 1)];
       label = `d${sides} com ${advantage === "advantage" ? "vantagem" : "desvantagem"}`;
+      extras = { allRolls: rolls, advantageMode: advantage, advantagePickIdx: idx };
     } else {
       rolls = Array.from({ length: count }, () => rollDie(sides));
       kept = usePick && pickMode === "max" && rolls.length > 1
@@ -82,7 +95,7 @@ export function DicePanel({
     }
 
     const total = kept + mod;
-    const result: DiceResult = { sides, rolls, kept, mod, total, label };
+    const result: DiceResult = { sides, rolls, kept, mod, total, label, ...extras };
     setLast({
       id: ++rollId.current, label, dice: sides, total,
       isCrit: sides === 20 && kept === 20,
@@ -150,6 +163,17 @@ export function DicePanel({
               {a === "normal" ? "Normal" : a === "advantage" ? "Vantagem" : "Desv."}
             </button>
           ))}
+        </div>
+      )}
+
+      {useAdv && advantage !== "normal" && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
+          <button onClick={() => setAdvExtra(Math.max(1, advExtra - 1))} style={stepStyle} aria-label="Menos um dado extra">−</button>
+          <span style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 700, fontSize: "0.86rem", color: theme.accentLight, minWidth: 18, textAlign: "center" }}>+{advExtra}</span>
+          <button onClick={() => setAdvExtra(Math.min(5, advExtra + 1))} style={stepStyle} aria-label="Mais um dado extra">+</button>
+          <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+            dado{advExtra !== 1 ? "s" : ""} de {advantage === "advantage" ? "vantagem" : "desvantagem"}
+          </span>
         </div>
       )}
 
@@ -222,4 +246,11 @@ const selectStyle: React.CSSProperties = {
   color: "var(--text)",
   fontSize: "0.8rem",
   fontFamily: "inherit",
+};
+
+const stepStyle: React.CSSProperties = {
+  width: 22, height: 22, borderRadius: "50%",
+  background: "var(--surface-2)", border: "1px solid var(--border)",
+  color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit",
 };

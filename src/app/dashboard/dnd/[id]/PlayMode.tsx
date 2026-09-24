@@ -16,9 +16,18 @@ import { activateOnKey } from "@/lib/a11y";
 import type { AbilityKey } from "@/lib/dnd/races";
 import type { SpellcastingConfig } from "@/lib/dnd/spells";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
-import { RollResultDie, RollToast } from "@/components/three/DiceRollFx";
-import { DieSvg, rollDie } from "@/components/dice/DieSvg";
-import { ABILITIES, ABILITY_SHORT, CONDITIONS, CONDITION_COLOR, CP_VALUE, CURRENCY_COLOR, CURRENCY_LABEL, DICE_TYPES, DiceType, RollEntry, SKILL_MAP, SheetRow, SlotState, dndVBtn, dndVBtnTemp, mod, signed, smallBtn } from "./sheetShared";
+import { RollToast } from "@/components/three/DiceRollFx";
+import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
+import { PlayCard, playLabelStyle as labelStyle } from "@/components/play/PlayCard";
+import { VitalBar } from "@/components/play/VitalBar";
+import { StatChip } from "@/components/play/StatChip";
+import { RollHistory } from "@/components/play/RollHistory";
+import { DicePanel, type DiceResult } from "@/components/play/DicePanel";
+import { ActiveConditionChips } from "@/components/play/ConditionPicker";
+import { PLAY_THEME } from "@/components/play/theme";
+import type { PlayRollEntry } from "@/components/play/types";
+import { rollDie } from "@/components/dice/DieSvg";
+import { ABILITIES, ABILITY_SHORT, CONDITIONS, CONDITION_COLOR, CP_VALUE, CURRENCY_COLOR, CURRENCY_LABEL, DiceType, RollEntry, SKILL_MAP, SheetRow, SlotState, mod, signed, smallBtn } from "./sheetShared";
 
 interface PlayProps {
   characterId: string;
@@ -62,14 +71,6 @@ export function PlayMode({
   gp, setGp, cp, setCp, sp, setSp, ep, setEp, pp, setPp,
   equipment, setEquipment, patchSheet,
 }: PlayProps) {
-  // Dice roller state
-  const [selectedDie, setSelectedDie] = useState<DiceType>(20);
-  const [diceCount, setDiceCount] = useState(1);
-  const [diceModifier, setDiceModifier] = useState(0);
-  const [pickMode, setPickMode] = useState<"sum" | "max">("max");
-  const [advantage, setAdvantage] = useState<"normal" | "advantage" | "disadvantage">("normal");
-  const [advExtraDice, setAdvExtraDice] = useState(1); // dados extras de vantagem/desvantagem
-  const [lastRoll, setLastRoll] = useState<RollEntry | null>(null);
   const [rollHistory, setRollHistory] = useState<RollEntry[]>([]);
   // Rolagem disparada fora do painel de dados (perícias, ataques, saves) →
   // alimenta o toast 3D flutuante.
@@ -168,41 +169,21 @@ export function PlayMode({
   };
 
   // ── Dice ──────────────────────────────────────────────────────────────────
-  function doRoll(label: string, die: DiceType = selectedDie, count: number = diceCount, bonus: number = diceModifier, adv?: "normal" | "advantage" | "disadvantage") {
-    const mode = adv ?? advantage;
-    let rolls: number[];
-    let allRolls: number[] | undefined;
-    const effectiveBonus = bonus;
-
-    let advantagePickIdx: number | undefined;
-    if (die === 20 && mode !== "normal") {
-      const totalDice = count + advExtraDice;
-      const rs = Array.from({ length: totalDice }, () => rollDie(die));
-      allRolls = rs;
-      const sorted = [...rs].sort((a, b) => b - a); // desc
-      advantagePickIdx = mode === "advantage" ? 0 : advExtraDice;
-      rolls = [sorted[Math.min(advantagePickIdx, sorted.length - 1)]];
-    } else {
-      rolls = Array.from({ length: count }, () => rollDie(die));
-    }
-
-    const useMax = pickMode === "max" && !allRolls && rolls.length > 1;
-    const rawTotal = useMax ? Math.max(...rolls) : rolls.reduce((a, b) => a + b, 0);
-    const total = rawTotal + effectiveBonus;
-    const isCrit   = die === 20 && rolls[0] === 20;
-    const isFumble = die === 20 && rolls[0] === 1;
+  /** Rolagens disparadas pela ficha: perícias, ataques, saves e dano. */
+  function doRoll(label: string, die: DiceType, count: number, bonus: number) {
+    const rolls = Array.from({ length: count }, () => rollDie(die));
+    const total = rolls.reduce((a, b) => a + b, 0) + bonus;
     const entry: RollEntry = {
-      id: ++rollId.current, label, dice: die, count, modifier: effectiveBonus, rolls, total, isCrit, isFumble,
-      ...(allRolls ? { allRolls, advantageMode: mode as "advantage" | "disadvantage", advantagePickIdx } : {}),
-      ...(useMax ? { pickMode: "max" } : {}),
+      id: ++rollId.current, label, dice: die, count, modifier: bonus, rolls, total,
+      isCrit: die === 20 && rolls[0] === 20,
+      isFumble: die === 20 && rolls[0] === 1,
     };
-    setLastRoll(entry);
     setRollHistory((prev) => [entry, ...prev].slice(0, 5));
     return entry;
   }
 
   function quickRoll(label: string, bonus: number) {
-    setFxRoll(doRoll(label, 20, 1, bonus, "normal"));
+    setFxRoll(doRoll(label, 20, 1, bonus));
   }
 
   function rollWeaponDamage(name: string, damage: string, dmgMod: number) {
@@ -211,13 +192,12 @@ export function PlayMode({
       // flat damage (e.g. "1")
       const total = parseInt(damage) + dmgMod;
       const entry: RollEntry = { id: ++rollId.current, label: `${name} — Dano`, dice: parseInt(damage), count: 1, modifier: dmgMod, rolls: [parseInt(damage)], total };
-      setLastRoll(entry);
-      setRollHistory((prev) => [entry, ...prev].slice(0, 12));
+        setRollHistory((prev) => [entry, ...prev].slice(0, 12));
       return;
     }
     const dieCount = parseInt(countStr) || 1;
     const dieSides = parseInt(sidesStr) as DiceType;
-    setFxRoll(doRoll(`${name} — Dano`, dieSides, dieCount, dmgMod, "normal"));
+    setFxRoll(doRoll(`${name} — Dano`, dieSides, dieCount, dmgMod));
   }
 
   // ── HP ────────────────────────────────────────────────────────────────────
@@ -249,7 +229,7 @@ export function PlayMode({
 
   function rollDeathSave() {
     // Usa o MESMO resultado exibido (antes rolava dois números distintos).
-    const entry = doRoll("Resistência à Morte", 20, 1, 0, "normal");
+    const entry = doRoll("Resistência à Morte", 20, 1, 0);
     setFxRoll(entry);
     const roll = entry.rolls[0];
     if (roll === 20) { applyHeal(1); return; }
@@ -371,1066 +351,779 @@ export function PlayMode({
     return matchGroup && matchSearch;
   });
 
+  const historico: PlayRollEntry[] = rollHistory.map((r) => ({
+    id: r.id,
+    label: r.label,
+    total: r.total,
+    detail: `[${(r.allRolls ?? r.rolls).join(", ")}]${r.advantageMode ? (r.advantageMode === "advantage" ? " vantagem" : " desvantagem") : r.pickMode === "max" ? " maior" : ""}${r.modifier !== 0 ? ` ${signed(r.modifier)}` : ""}`,
+    tone: r.isCrit ? ("crit" as const) : r.isFumble ? ("fumble" as const) : undefined,
+    badge: r.isCrit ? "CRÍTICO" : r.isFumble ? "FALHA" : undefined,
+  }));
+
+  /** Resultado do painel compartilhado, no mesmo log das demais rolagens. */
+  function handleDiceRoll(r: DiceResult) {
+    const entry: RollEntry = {
+      id: ++rollId.current, label: r.label, dice: r.sides, count: r.rolls.length,
+      modifier: r.mod, rolls: r.rolls, total: r.total,
+      isCrit: r.sides === 20 && r.kept === 20,
+      isFumble: r.sides === 20 && r.kept === 1,
+      ...(r.allRolls ? { allRolls: r.allRolls, advantageMode: r.advantageMode, advantagePickIdx: r.advantagePickIdx } : {}),
+    };
+    setRollHistory((prev) => [entry, ...prev].slice(0, 5));
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-      {/* Toast 3D de rolagem (perícias, ataques, saves) */}
-      <RollToast roll={fxRoll} />
-
-      {/* HP Bar + Core stats */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-        {/* HP header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "2rem", fontWeight: 900, color: isDying ? "#8b0000" : hpColor, lineHeight: 1 }}>
-                {isDying ? "0" : hpCurrent}
-              </span>
-              <span style={{ fontSize: "1rem", color: "var(--text-muted)" }}>/ {sheet.hpMax}</span>
-              {hpTemp > 0 && <span style={{ fontSize: "0.84rem", color: "#4fc3f7", fontWeight: 700 }}>+{hpTemp} temp</span>}
-              <span style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginLeft: 4 }}>Pontos de Vida</span>
-            </div>
-            <div style={{ height: 10, background: "var(--surface-2)", borderRadius: 5, overflow: "hidden", border: "1px solid var(--border)" }}>
-              <div style={{ height: "100%", width: `${Math.max(0, Math.min(100, hpPct * 100))}%`, background: hpColor, borderRadius: 5, transition: "width 0.4s ease, background 0.4s ease" }} />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <QuickStat label="CA" value={String(sheet.armorClass)} />
-            <QuickStat label="Init" value={signed(sheet.initiative)} />
-            <QuickStat label="Vel" value={`${sheet.speed}m`} />
-            <button
-              onClick={() => { const v = !inspiration; setInspiration(v); patchSheet({ inspiration: v }); }}
-              style={{
-                padding: "6px 14px", borderRadius: "var(--radius)", border: `1px solid ${inspiration ? "var(--accent)" : "var(--border)"}`,
-                background: inspiration ? "var(--accent-dim)" : "var(--surface-2)",
-                color: inspiration ? "var(--accent-light)" : "var(--text-subtle)",
-                fontWeight: 700, fontSize: "0.76rem", cursor: "pointer", fontFamily: "inherit",
-                boxShadow: inspiration ? "0 0 12px var(--accent-glow)" : "none",
-              }}
-            >
-              ⚡ Inspiração
-            </button>
-          </div>
-        </div>
-
-        {/* HP arrows (Ordem-style) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          {/* Main HP −/+ */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button onClick={() => applyDamage(1)} style={dndVBtn}>−</button>
-            <button onClick={() => applyHeal(1)} style={dndVBtn}>+</button>
-          </div>
-
-          <div style={{ width: 1, height: 28, background: "var(--border)", flexShrink: 0 }} />
-
-          {/* Temp HP */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--text-subtle)", letterSpacing: "0.04em", textTransform: "uppercase" }}>Temp</span>
-            <button onClick={() => { const v = Math.max(0, hpTemp - 1); setHpTemp(v); patchSheet({ hpTemp: v }); }} style={dndVBtnTemp}>−</button>
-            <span style={{ minWidth: 22, textAlign: "center", fontSize: "0.9rem", fontWeight: 800, color: hpTemp > 0 ? "#4fc3f7" : "var(--text-subtle)", fontFamily: "var(--font-cinzel), serif" }}>{hpTemp}</span>
-            <button onClick={() => { const v = hpTemp + 1; setHpTemp(v); patchSheet({ hpTemp: v }); }} style={dndVBtnTemp}>+</button>
-          </div>
-
-          <div style={{ width: 1, height: 28, background: "var(--border)", flexShrink: 0 }} />
-
-          {/* Restaurar */}
-          {confirmRestore ? (
-            <>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Restaurar tudo?</span>
-              <button onClick={restoreSheet} style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "rgba(95,191,127,0.25)", border: "1px solid #5fbf7f", color: "#5fbf7f" }}>Sim</button>
-              <button onClick={() => setConfirmRestore(false)} style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>Não</button>
-            </>
-          ) : (
-            <button onClick={() => setConfirmRestore(true)} title="Restaura PV, dados de vida e espaços de magia ao máximo"
-              style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-              ✨ Restaurar Ficha
-            </button>
-          )}
-        </div>
-
-        {/* Death saves */}
-        {isDying && (
-          <div style={{ background: "rgba(139,0,0,0.15)", border: "1px solid #8b0000", borderRadius: "var(--radius-lg)", padding: "14px 16px" }}>
-            <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#ff4444", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
-              💀 INCONSCIENTE — Resistências à Morte
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "0.72rem", color: "#4fc3f7", fontWeight: 700 }}>Sucesso:</span>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: i < dsSuccess ? "#2d8b2d" : "var(--surface-2)", border: `2px solid ${i < dsSuccess ? "#2d8b2d" : "var(--border)"}`, transition: "all 0.2s" }} />
-                ))}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "0.72rem", color: "#ff6b6b", fontWeight: 700 }}>Falha:</span>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: i < dsFailure ? "#8b0000" : "var(--surface-2)", border: `2px solid ${i < dsFailure ? "#8b0000" : "var(--border)"}`, transition: "all 0.2s" }} />
-                ))}
-              </div>
-              <button
-                onClick={rollDeathSave}
-                style={{ padding: "6px 16px", borderRadius: "var(--radius)", background: "rgba(139,0,0,0.3)", border: "1px solid #8b0000", color: "#ff6b6b", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}
-              >
-                🎲 Rolar Resistência
-              </button>
-              {dsSuccess >= 3 && <span style={{ fontSize: "0.8rem", color: "#4fc3f7", fontWeight: 700 }}>✦ Estabilizado!</span>}
-              {dsFailure >= 3 && <span style={{ fontSize: "0.8rem", color: "#ff4444", fontWeight: 700 }}>💀 Morto!</span>}
-            </div>
-          </div>
-        )}
-
-        {/* Active conditions */}
-        {conditions.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {conditions.map((c) => (
-              <span
-                key={c}
-                role="button"
-                tabIndex={0}
-                aria-label={`Remover condição ${c}`}
-                onKeyDown={activateOnKey(() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); })}
-                onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
-                style={{
-                  fontSize: "0.72rem", fontWeight: 700, padding: "3px 10px", borderRadius: "var(--radius-xs)", cursor: "pointer",
-                  background: `${CONDITION_COLOR[c] ?? "#555"}33`,
-                  border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`,
-                  color: "var(--text)",
-                  userSelect: "none",
-                }}
-                title="Clique para remover"
-              >
-                {c} ✕
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Main 3-column grid */}
-      <div className="dnd-sheet-columns" style={{ display: "grid", gridTemplateColumns: "220px 1fr 280px", gap: 16, alignItems: "start" }}>
-
-        {/* LEFT: Abilities + Saves + Skills */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <PlayCard>
-            <p style={labelStyle}>Atributos</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {ABILITIES.map((k) => {
-                const score = scores[k];
-                const m = mod(score);
-                return (
-                  <button
-                    key={k}
-                    onClick={() => quickRoll(`Teste de ${ABILITY_LABELS[k]}`, m)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                      background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
-                      cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all 0.15s",
-                    }}
-                    title={`Rolar teste de ${ABILITY_LABELS[k]}`}
-                  >
-                    <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.3rem", fontWeight: 900, color: "var(--text)", minWidth: 28, textAlign: "center" }}>{score}</span>
-                    <div>
-                      <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{ABILITY_SHORT[k]}</p>
-                      <p style={{ fontSize: "0.82rem", fontWeight: 700, color: m >= 0 ? "var(--accent-light)" : "var(--text-muted)" }}>{signed(m)}</p>
-                    </div>
-                    <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "var(--text-subtle)" }}>🎲</span>
-                  </button>
-                );
-              })}
-            </div>
-          </PlayCard>
-
-          <PlayCard>
-            <button
-              onClick={() => setSkillsOpen((v) => !v)}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: skillsOpen ? 6 : 0, fontFamily: "inherit" }}
-            >
-              <p style={labelStyle}>Perícias</p>
-              <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", display: "inline-block", transition: "transform 0.2s", transform: skillsOpen ? "rotate(180deg)" : "none" }}>▼</span>
-            </button>
-            {skillsOpen && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {Object.entries(SKILL_MAP).map(([skill, abilityKey]) => {
-                  const prof = proficientSkills.has(skill);
-                  const expert = expertiseSkills.has(skill);
-                  const bonus = mod(scores[abilityKey]) + (expert ? PROF_BONUS * 2 : prof ? PROF_BONUS : 0);
-                  return (
-                    <button
-                      key={skill}
-                      onClick={() => quickRoll(skill, bonus)}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 8px", background: prof ? "rgba(201,148,31,0.06)" : "transparent", border: "none", borderRadius: "var(--radius-xs)", cursor: "pointer", fontFamily: "inherit" }}
-                    >
-                      <span style={{ fontSize: "0.7rem", color: prof ? "var(--accent-light)" : "var(--text-muted)", fontWeight: prof ? 700 : 400, textAlign: "left" }}>
-                        {expert ? "◆◆" : prof ? "◆" : "○"} {skill}
-                      </span>
-                      <span style={{ fontSize: "0.76rem", fontWeight: 700, color: prof ? "var(--accent-light)" : "var(--text-muted)", flexShrink: 0, marginLeft: 4 }}>{signed(bonus)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </PlayCard>
-        </div>
-
-        {/* CENTER: Quick Actions + Dice + Spells */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-
-          {/* Quick Actions */}
-          <PlayCard>
-            <p style={labelStyle}>Ações Rápidas</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {/* Initiative always shown */}
-              <QuickActionBtn
-                label={`🎯 Iniciativa (${signed(dexMod)})`}
-                onClick={() => quickRoll("Iniciativa", dexMod)}
+    <>
+      <PlayShell
+        system="dnd"
+        band={
+          <>
+            <PlayVitals>
+              <VitalBar
+                label="Pontos de Vida" color={hpColor} cur={hpCurrent} max={sheet.hpMax} temp={hpTemp} bigStep={5}
+                onDelta={(d) => (d < 0 ? applyDamage(-d) : applyHeal(d))}
+                onTemp={(t) => { setHpTemp(t); patchSheet({ hpTemp: t }); }}
+                note={isDying ? "Inconsciente" : undefined}
+                warn={isDying}
               />
+            </PlayVitals>
 
-              {/* Weapon attacks from equipped weapons */}
-              {weaponAttacks.length > 0 && weaponAttacks.map((atk) => (
-                <div key={atk.id} style={{ display: "flex", gap: 4 }}>
-                  <QuickActionBtn
-                    label={`⚔️ ${atk.name} (${signed(atk.atkMod)})`}
-                    onClick={() => quickRoll(`Ataque — ${atk.name}`, atk.atkMod)}
-                  />
-                  <button
-                    onClick={() => rollWeaponDamage(atk.name, atk.w.damage, atk.dmgMod)}
-                    title={`Rolar dano: ${atk.w.damage}${atk.dmgMod >= 0 ? "+" : ""}${atk.dmgMod} ${atk.w.damageType}`}
-                    style={{
-                      padding: "6px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)",
-                      border: "1px solid var(--border)", color: "var(--text-subtle)", fontSize: "0.72rem",
-                      cursor: "pointer", fontFamily: "inherit",
-                    }}
-                  >
-                    {atk.w.damage}
-                  </button>
-                </div>
-              ))}
-
-              {/* Items adicionados às ações rápidas */}
-              {equipment
-                .filter((e) => quickActionItemIds.has(e.id))
-                .map((e) => {
-                  const w = WEAPONS.find((w) => w.name.toLowerCase() === e.itemName.toLowerCase());
-                  const atkAttr: AbilityKey = itemAtkAttr[e.id] ?? (w?.finesse ? (scores.str >= scores.dex ? "str" : "dex") : w?.ranged ? "dex" : "str");
-                  const atkBonus = mod(scores[atkAttr]) + PROF_BONUS;
-                  return (
-                    <div key={e.id} style={{ display: "flex", gap: 4 }}>
-                      <QuickActionBtn
-                        label={`⚡ ${e.itemName} (${signed(atkBonus)})`}
-                        onClick={() => quickRoll(`Ataque — ${e.itemName}`, atkBonus)}
-                      />
-                      {w && (
-                        <button
-                          onClick={() => rollWeaponDamage(e.itemName, w.damage, mod(scores[atkAttr]))}
-                          title={`Dano: ${w.damage}+${mod(scores[atkAttr])} ${w.damageType}`}
-                          style={{ padding: "6px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-subtle)", fontSize: "0.72rem", cursor: "pointer", fontFamily: "inherit" }}
-                        >
-                          {w.damage}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-
-              {/* Spell attack if caster */}
-              {isCaster && (
-                <QuickActionBtn
-                  label={`✨ Magia (${signed(spellAttackBonus)}) CD${spellSaveDC}`}
-                  onClick={() => quickRoll("Ataque Mágico", spellAttackBonus)}
-                />
-              )}
-
-              {/* Proficient skills only */}
-              {Object.entries(SKILL_MAP)
-                .filter(([skill]) => proficientSkills.has(skill))
-                .map(([skill, abilityKey]) => {
-                  const expert = expertiseSkills.has(skill);
-                  const bonus = mod(scores[abilityKey]) + (expert ? PROF_BONUS * 2 : PROF_BONUS);
-                  return (
-                    <QuickActionBtn
-                      key={skill}
-                      label={`${expert ? "◆◆" : "◆"} ${skill} (${signed(bonus)})`}
-                      onClick={() => quickRoll(skill, bonus)}
-                    />
-                  );
-                })}
-            </div>
-          </PlayCard>
-
-          {/* Dice Roller */}
-          <PlayCard accent>
-            <p style={labelStyle}>Rolagem de Dados</p>
-
-            {/* Die type selector — SVG shapes */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginBottom: 10 }}>
-              {DICE_TYPES.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setSelectedDie(d)}
-                  title={`d${d}`}
-                  style={{
-                    background: "none", border: "none", padding: 0, cursor: "pointer",
-                    opacity: selectedDie === d ? 1 : 0.4,
-                    transition: "opacity 0.15s, transform 0.15s",
-                    transform: selectedDie === d ? "scale(1.18) translateY(-2px)" : "scale(1)",
-                    filter: selectedDie === d ? "drop-shadow(0 0 5px var(--accent))" : "none",
-                  }}
-                >
-                  <DieSvg sides={d} active={selectedDie === d} size={42} />
+            <PlayChips>
+              <StatChip label="CA" value={sheet.armorClass} />
+              <StatChip label="Init" value={signed(sheet.initiative)} />
+              <StatChip label="Vel" value={`${sheet.speed}m`} />
+              <StatChip
+                label="Inspiração" value={inspiration ? "Sim" : "Não"}
+                onClick={() => { const v = !inspiration; setInspiration(v); patchSheet({ inspiration: v }); }}
+                title="Alternar inspiração"
+              />
+              {confirmRestore ? (
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Restaurar tudo?</span>
+                  <button onClick={restoreSheet} style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "rgba(95,191,127,0.25)", border: "1px solid #5fbf7f", color: "#5fbf7f" }}>Sim</button>
+                  <button onClick={() => setConfirmRestore(false)} style={{ padding: "5px 12px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>Não</button>
+                </span>
+              ) : (
+                <button onClick={() => setConfirmRestore(true)} title="Restaura PV, dados de vida e espaços de magia ao máximo"
+                  style={{ padding: "7px 14px", borderRadius: "var(--radius)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                  ✨ Restaurar Ficha
                 </button>
-              ))}
-            </div>
+              )}
+            </PlayChips>
 
-            {/* Central die display — 3D quando o dispositivo aguenta */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-              <RollResultDie
-                sides={selectedDie}
-                size={110}
-                roll={lastRoll && lastRoll.dice === selectedDie ? lastRoll : null}
-                fallback={
-                  <DieSvg
-                    sides={selectedDie}
-                    active
-                    size={110}
-                    result={lastRoll && lastRoll.dice === selectedDie ? lastRoll.total : null}
-                  />
-                }
-              />
-            </div>
-
-            {/* Advantage/disadvantage (d20 only) */}
-            {selectedDie === 20 && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: advantage !== "normal" ? 8 : 0 }}>
-                  {(["normal", "advantage", "disadvantage"] as const).map((a) => (
-                    <button
-                      key={a}
-                      onClick={() => setAdvantage(a)}
-                      style={{
-                        padding: "4px 10px", borderRadius: "var(--radius-xs)", fontSize: "0.66rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                        background: advantage === a ? "var(--accent-dim)" : "var(--surface-2)",
-                        border: `1px solid ${advantage === a ? "var(--accent)" : "var(--border)"}`,
-                        color: advantage === a ? "var(--accent-light)" : "var(--text-subtle)",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {a === "normal" ? "Normal" : a === "advantage" ? "Vantagem" : "Desv."}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Dados extras de vantagem/desvantagem */}
-                {advantage !== "normal" && (
-                  <div style={{
-                    background: "var(--surface-2)", border: "1px solid var(--border-accent)",
-                    borderRadius: "var(--radius-lg)", padding: "8px 14px",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  }}>
-                    <button
-                      onClick={() => setAdvExtraDice(Math.max(1, advExtraDice - 1))}
-                      style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
-                    >−</button>
-                    <span style={{ fontFamily: "var(--font-cinzel), serif", fontWeight: 700, fontSize: "0.88rem", color: "var(--accent-light)", minWidth: 18, textAlign: "center" }}>+{advExtraDice}</span>
-                    <button
-                      onClick={() => setAdvExtraDice(Math.min(5, advExtraDice + 1))}
-                      style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.9rem", cursor: "pointer", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
-                    >+</button>
-                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
-                      dado{advExtraDice !== 1 ? "s" : ""} de {advantage === "advantage" ? "vantagem" : "desvantagem"}
-                    </span>
+            {isDying && (
+              <PlayAlert title="💀 Inconsciente — Resistências à Morte">
+                <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: "0.72rem", color: "#4fc3f7", fontWeight: 700 }}>Sucesso:</span>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: i < dsSuccess ? "#2d8b2d" : "var(--surface-2)", border: `2px solid ${i < dsSuccess ? "#2d8b2d" : "var(--border)"}`, transition: "all 0.2s" }} />
+                    ))}
                   </div>
-                )}
-              </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: "0.72rem", color: "#ff6b6b", fontWeight: 700 }}>Falha:</span>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: i < dsFailure ? "#8b0000" : "var(--surface-2)", border: `2px solid ${i < dsFailure ? "#8b0000" : "var(--border)"}`, transition: "all 0.2s" }} />
+                    ))}
+                  </div>
+                  <button onClick={rollDeathSave}
+                    style={{ padding: "6px 16px", borderRadius: "var(--radius)", background: "rgba(139,0,0,0.3)", border: "1px solid #8b0000", color: "#ff6b6b", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}>
+                    🎲 Rolar Resistência
+                  </button>
+                  {dsSuccess >= 3 && <span style={{ fontSize: "0.8rem", color: "#4fc3f7", fontWeight: 700 }}>✦ Estabilizado!</span>}
+                  {dsFailure >= 3 && <span style={{ fontSize: "0.8rem", color: "#ff4444", fontWeight: 700 }}>💀 Morto!</span>}
+                </div>
+              </PlayAlert>
             )}
 
-            {/* Qty + Modifier + Soma/Maior */}
-            <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "center", marginBottom: 10, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Qtd</span>
-                <select
-                  value={diceCount}
-                  onChange={(e) => setDiceCount(parseInt(e.target.value))}
-                  style={{ padding: "5px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.82rem", fontFamily: "inherit" }}
-                >
-                  {[1,2,3,4,6,8,10,12].map((n) => <option key={n} value={n}>×{n}</option>)}
-                </select>
+            <ActiveConditionChips
+              all={CONDITIONS.map((c) => ({ id: c, name: c, desc: "Clique para remover" }))}
+              active={conditions}
+              onRemove={(c) => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
+            />
+          </>
+        }
+        left={
+          <>
+            <PlayCard>
+              <p style={labelStyle}>Atributos</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {ABILITIES.map((k) => {
+                  const score = scores[k];
+                  const m = mod(score);
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => quickRoll(`Teste de ${ABILITY_LABELS[k]}`, m)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
+                        background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
+                        cursor: "pointer", textAlign: "left", fontFamily: "inherit", transition: "all 0.15s",
+                      }}
+                      title={`Rolar teste de ${ABILITY_LABELS[k]}`}
+                    >
+                      <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.3rem", fontWeight: 900, color: "var(--text)", minWidth: 28, textAlign: "center" }}>{score}</span>
+                      <div>
+                        <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{ABILITY_SHORT[k]}</p>
+                        <p style={{ fontSize: "0.82rem", fontWeight: 700, color: m >= 0 ? "var(--accent-light)" : "var(--text-muted)" }}>{signed(m)}</p>
+                      </div>
+                      <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "var(--text-subtle)" }}>🎲</span>
+                    </button>
+                  );
+                })}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Mod</span>
-                <input
-                  type="number"
-                  value={diceModifier}
-                  onChange={(e) => setDiceModifier(parseInt(e.target.value) || 0)}
-                  style={{ width: 60, padding: "5px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.82rem", fontFamily: "inherit" }}
-                />
-              </div>
-              {/* Bolinhas Soma / Maior — oculto em modo vantagem (tem lógica própria) */}
-              {advantage === "normal" && (
-                <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                  {(["sum", "max"] as const).map((m) => {
-                    const active = pickMode === m;
-                    const disabled = diceCount <= 1;
+            </PlayCard>
+
+            <PlayCard>
+              <button
+                onClick={() => setSkillsOpen((v) => !v)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: skillsOpen ? 6 : 0, fontFamily: "inherit" }}
+              >
+                <p style={labelStyle}>Perícias</p>
+                <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", display: "inline-block", transition: "transform 0.2s", transform: skillsOpen ? "rotate(180deg)" : "none" }}>▼</span>
+              </button>
+              {skillsOpen && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {Object.entries(SKILL_MAP).map(([skill, abilityKey]) => {
+                    const prof = proficientSkills.has(skill);
+                    const expert = expertiseSkills.has(skill);
+                    const bonus = mod(scores[abilityKey]) + (expert ? PROF_BONUS * 2 : prof ? PROF_BONUS : 0);
                     return (
                       <button
-                        key={m}
-                        onClick={() => setPickMode(m)}
-                        title={m === "sum" ? "Somar todos os dados" : "Usar o maior dado"}
-                        disabled={disabled}
-                        style={{
-                          width: 42, height: 42, borderRadius: "50%",
-                          background: active ? "var(--accent-dim)" : "var(--surface-2)",
-                          border: `2px solid ${active ? "var(--accent)" : "var(--border)"}`,
-                          color: active ? "var(--accent-light)" : disabled ? "var(--text-subtle)" : "var(--text-muted)",
-                          fontFamily: "var(--font-cinzel), serif",
-                          fontSize: "0.6rem", fontWeight: 700, cursor: disabled ? "default" : "pointer",
-                          opacity: disabled ? 0.4 : 1,
-                          boxShadow: active ? "0 0 10px var(--accent-glow)" : "none",
-                          transition: "all 0.15s",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          letterSpacing: "0.02em",
-                        }}
+                        key={skill}
+                        onClick={() => quickRoll(skill, bonus)}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 8px", background: prof ? "rgba(201,148,31,0.06)" : "transparent", border: "none", borderRadius: "var(--radius-xs)", cursor: "pointer", fontFamily: "inherit" }}
                       >
-                        {m === "sum" ? "Soma" : "Maior"}
+                        <span style={{ fontSize: "0.7rem", color: prof ? "var(--accent-light)" : "var(--text-muted)", fontWeight: prof ? 700 : 400, textAlign: "left" }}>
+                          {expert ? "◆◆" : prof ? "◆" : "○"} {skill}
+                        </span>
+                        <span style={{ fontSize: "0.76rem", fontWeight: 700, color: prof ? "var(--accent-light)" : "var(--text-muted)", flexShrink: 0, marginLeft: 4 }}>{signed(bonus)}</span>
                       </button>
                     );
                   })}
                 </div>
               )}
-            </div>
+            </PlayCard>
 
-            {/* Roll button */}
-            <button
-              onClick={() => doRoll(`${diceCount}d${selectedDie}${diceModifier !== 0 ? (diceModifier > 0 ? `+${diceModifier}` : diceModifier) : ""}`)}
-              style={{
-                width: "100%", padding: "10px", borderRadius: "var(--radius-lg)",
-                background: "var(--accent-dim)", border: "1px solid var(--accent)",
-                color: "var(--accent-light)", fontFamily: "var(--font-cinzel), serif",
-                fontSize: "0.92rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em",
-                boxShadow: "0 0 16px var(--accent-glow)",
-                transition: "all 0.15s",
-                marginBottom: 8,
-              }}
-            >
-              ROLAR {diceCount}d{selectedDie}{diceModifier !== 0 ? (diceModifier > 0 ? `+${diceModifier}` : diceModifier) : ""}
-            </button>
-
-            {/* Last roll detail */}
-            {lastRoll && (
-              <div style={{ textAlign: "center", marginBottom: 6 }}>
-                {lastRoll.isCrit    && <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>✦ ACERTO CRITICO ✦</p>}
-                {lastRoll.isFumble  && <p style={{ fontSize: "0.66rem", fontWeight: 700, color: "#ff4444", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 2 }}>FALHA CRITICA</p>}
-
-                {/* Dados de vantagem: mostra sorted desc, destaca o escolhido */}
-                {lastRoll.advantageMode && lastRoll.allRolls && (() => {
-                  const sorted = [...lastRoll.allRolls].sort((a, b) => b - a);
-                  const pickIdx = lastRoll.advantagePickIdx ?? (lastRoll.advantageMode === "advantage" ? 0 : 1);
-                  return (
-                    <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                      {sorted.map((r, i) => {
-                        const isPicked = i === pickIdx;
-                        return (
-                          <span
-                            key={i}
-                            style={{
-                              fontSize: isPicked ? "0.95rem" : "0.78rem", fontWeight: isPicked ? 900 : 400,
-                              color: isPicked ? "var(--accent-light)" : "var(--text-subtle)",
-                              background: isPicked ? "var(--accent-dim)" : "var(--surface)",
-                              border: `1px solid ${isPicked ? "var(--accent)" : "var(--border)"}`,
-                              borderRadius: "var(--radius)", padding: "2px 9px",
-                            }}
-                          >
-                            {r}{isPicked ? " ✓" : ""}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                {/* Multi-dado modo Maior: destaca o maior */}
-                {lastRoll.pickMode === "max" && lastRoll.rolls.length > 1 && (() => {
-                  const maxVal = Math.max(...lastRoll.rolls);
-                  let markedMax = false;
-                  return (
-                    <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
-                      {lastRoll.rolls.map((r, i) => {
-                        const isMax = r === maxVal && !markedMax;
-                        if (isMax) markedMax = true;
-                        return (
-                          <span
-                            key={i}
-                            style={{
-                              fontSize: isMax ? "0.95rem" : "0.78rem", fontWeight: isMax ? 900 : 400,
-                              color: isMax ? "var(--accent-light)" : "var(--text-subtle)",
-                              background: isMax ? "var(--accent-dim)" : "var(--surface)",
-                              border: `1px solid ${isMax ? "var(--accent)" : "var(--border)"}`,
-                              borderRadius: "var(--radius)", padding: "2px 9px",
-                            }}
-                          >
-                            {r}{isMax ? " ↑" : ""}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                <p style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
-                  {lastRoll.label} · [{lastRoll.rolls.join(", ")}]{lastRoll.modifier !== 0 ? ` ${lastRoll.modifier >= 0 ? "+" : ""}${lastRoll.modifier}` : ""}
-                  {lastRoll.pickMode === "max" ? " · Maior" : ""}
-                </p>
-              </div>
-            )}
-
-            {/* History */}
-            {rollHistory.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <p style={{ ...labelStyle, marginBottom: 2 }}>Histórico</p>
-                {rollHistory.slice(0, 5).map((r) => {
-                  const dieResult = r.total - r.modifier;
-                  return (
-                    <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", background: "var(--surface-2)", borderRadius: "var(--radius-xs)" }}>
-                      <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.9rem", fontWeight: 700, color: r.isCrit ? "var(--accent-light)" : r.isFumble ? "#ff6b6b" : "var(--text)", minWidth: 26 }}>{r.total}</span>
-                      <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", flex: 1 }}>{r.label}</span>
-                      {r.modifier !== 0 && (
-                        <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)" }}>
-                          {dieResult}{r.modifier > 0 ? `+${r.modifier}` : r.modifier}
-                        </span>
-                      )}
-                      <span style={{ fontSize: "0.62rem", color: r.isCrit ? "var(--accent)" : r.isFumble ? "#ff6b6b" : "var(--text-subtle)", fontWeight: r.isCrit || r.isFumble ? 700 : 400 }}>
-                        {r.isCrit ? "CRIT" : r.isFumble ? "FAIL" : `d${r.dice}`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </PlayCard>
-
-          {/* Spell Slots — individual per-slot bubbles */}
-          {isCaster && spellConfig && (
+            {/* Quick Actions */}
             <PlayCard>
-              <p style={labelStyle}>Espaços de Magia</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {/* Atributo de conjuração (escolhível) + valores derivados */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Habilidade:</span>
-                  <select
-                    value={spellAbility}
-                    onChange={(e) => {
-                      setSpellAbility(e.target.value);
-                      patchSheet({ spellAbility: e.target.value });
-                    }}
+              <p style={labelStyle}>Ações Rápidas</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {/* Initiative always shown */}
+                <QuickActionBtn
+                  label={`🎯 Iniciativa (${signed(dexMod)})`}
+                  onClick={() => quickRoll("Iniciativa", dexMod)}
+                />
+
+                {/* Weapon attacks from equipped weapons */}
+                {weaponAttacks.length > 0 && weaponAttacks.map((atk) => (
+                  <div key={atk.id} style={{ display: "flex", gap: 4 }}>
+                    <QuickActionBtn
+                      label={`⚔️ ${atk.name} (${signed(atk.atkMod)})`}
+                      onClick={() => quickRoll(`Ataque — ${atk.name}`, atk.atkMod)}
+                    />
+                    <button
+                      onClick={() => rollWeaponDamage(atk.name, atk.w.damage, atk.dmgMod)}
+                      title={`Rolar dano: ${atk.w.damage}${atk.dmgMod >= 0 ? "+" : ""}${atk.dmgMod} ${atk.w.damageType}`}
+                      style={{
+                        padding: "6px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)",
+                        border: "1px solid var(--border)", color: "var(--text-subtle)", fontSize: "0.72rem",
+                        cursor: "pointer", fontFamily: "inherit",
+                      }}
+                    >
+                      {atk.w.damage}
+                    </button>
+                  </div>
+                ))}
+
+                {/* Items adicionados às ações rápidas */}
+                {equipment
+                  .filter((e) => quickActionItemIds.has(e.id))
+                  .map((e) => {
+                    const w = WEAPONS.find((w) => w.name.toLowerCase() === e.itemName.toLowerCase());
+                    const atkAttr: AbilityKey = itemAtkAttr[e.id] ?? (w?.finesse ? (scores.str >= scores.dex ? "str" : "dex") : w?.ranged ? "dex" : "str");
+                    const atkBonus = mod(scores[atkAttr]) + PROF_BONUS;
+                    return (
+                      <div key={e.id} style={{ display: "flex", gap: 4 }}>
+                        <QuickActionBtn
+                          label={`⚡ ${e.itemName} (${signed(atkBonus)})`}
+                          onClick={() => quickRoll(`Ataque — ${e.itemName}`, atkBonus)}
+                        />
+                        {w && (
+                          <button
+                            onClick={() => rollWeaponDamage(e.itemName, w.damage, mod(scores[atkAttr]))}
+                            title={`Dano: ${w.damage}+${mod(scores[atkAttr])} ${w.damageType}`}
+                            style={{ padding: "6px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-subtle)", fontSize: "0.72rem", cursor: "pointer", fontFamily: "inherit" }}
+                          >
+                            {w.damage}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                {/* Spell attack if caster */}
+                {isCaster && (
+                  <QuickActionBtn
+                    label={`✨ Magia (${signed(spellAttackBonus)}) CD${spellSaveDC}`}
+                    onClick={() => quickRoll("Ataque Mágico", spellAttackBonus)}
+                  />
+                )}
+
+                {/* Proficient skills only */}
+                {Object.entries(SKILL_MAP)
+                  .filter(([skill]) => proficientSkills.has(skill))
+                  .map(([skill, abilityKey]) => {
+                    const expert = expertiseSkills.has(skill);
+                    const bonus = mod(scores[abilityKey]) + (expert ? PROF_BONUS * 2 : PROF_BONUS);
+                    return (
+                      <QuickActionBtn
+                        key={skill}
+                        label={`${expert ? "◆◆" : "◆"} ${skill} (${signed(bonus)})`}
+                        onClick={() => quickRoll(skill, bonus)}
+                      />
+                    );
+                  })}
+              </div>
+            </PlayCard>
+
+            {/* Spell Slots — individual per-slot bubbles */}
+            {isCaster && spellConfig && (
+              <PlayCard>
+                <p style={labelStyle}>Espaços de Magia</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {/* Atributo de conjuração (escolhível) + valores derivados */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Habilidade:</span>
+                    <select
+                      value={spellAbility}
+                      onChange={(e) => {
+                        setSpellAbility(e.target.value);
+                        patchSheet({ spellAbility: e.target.value });
+                      }}
+                      style={{
+                        padding: "4px 8px", borderRadius: "var(--radius)",
+                        background: "var(--surface-2)", border: "1px solid var(--border-accent)",
+                        color: "var(--accent-light)", fontSize: "0.76rem", fontWeight: 700,
+                        fontFamily: "inherit", cursor: "pointer",
+                      }}
+                    >
+                      {["Inteligência", "Sabedoria", "Carisma"].map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                    {spellAbility !== spellConfig.ability && (
+                      <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+                        (padrão da classe: {spellConfig.ability})
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>
+                    CD da Magia: <strong style={{ color: "var(--accent-light)" }}>{spellSaveDC}</strong>
+                    {" · "}Bônus de Ataque: <strong style={{ color: "var(--accent-light)" }}>{signed(spellAttackBonus)}</strong>
+                    {" · "}Mod.: <strong style={{ color: "var(--accent-light)" }}>{signed(mod(scores[spellAbilityKey]))}</strong>
+                  </div>
+                  {Object.entries(maxSlots).map(([level, max]) => {
+                    const slots = slotsUsed[level] ?? Array.from({ length: max }, () => false);
+                    const usedCount = slots.filter(Boolean).length;
+                    return (
+                      <div key={level} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", minWidth: 50 }}>Nível {level}</span>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {Array.from({ length: max }).map((_, i) => {
+                            const isUsed = slots[i] ?? false;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => toggleSlot(level, i)}
+                                title={isUsed ? "Usado — clique para recuperar" : "Disponível — clique para gastar"}
+                                style={{
+                                  width: 28, height: 28, borderRadius: "50%",
+                                  background: isUsed ? "var(--surface-2)" : "var(--accent-dim)",
+                                  border: `2px solid ${isUsed ? "var(--border)" : "var(--accent)"}`,
+                                  cursor: "pointer",
+                                  boxShadow: isUsed ? "none" : "0 0 10px var(--accent-glow)",
+                                  transition: "all 0.15s",
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{max - usedCount}/{max}</span>
+                      </div>
+                    );
+                  })}
+
+                </div>
+              </PlayCard>
+            )}
+
+              {/* Inventory — placed here, below spells */}
+              <PlayCard>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <p style={labelStyle}>Inventário ({equipment.length} itens)</p>
+                  <button
+                    onClick={() => setShowItemPicker(true)}
                     style={{
-                      padding: "4px 8px", borderRadius: "var(--radius)",
-                      background: "var(--surface-2)", border: "1px solid var(--border-accent)",
-                      color: "var(--accent-light)", fontSize: "0.76rem", fontWeight: 700,
-                      fontFamily: "inherit", cursor: "pointer",
+                      padding: "5px 14px", borderRadius: "var(--radius)", background: "var(--accent-dim)",
+                      border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700,
+                      fontSize: "0.76rem", cursor: "pointer", fontFamily: "inherit",
                     }}
                   >
-                    {["Inteligência", "Sabedoria", "Carisma"].map((a) => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </select>
-                  {spellAbility !== spellConfig.ability && (
-                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
-                      (padrão da classe: {spellConfig.ability})
-                    </span>
-                  )}
+                    + Adicionar Item
+                  </button>
                 </div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>
-                  CD da Magia: <strong style={{ color: "var(--accent-light)" }}>{spellSaveDC}</strong>
-                  {" · "}Bônus de Ataque: <strong style={{ color: "var(--accent-light)" }}>{signed(spellAttackBonus)}</strong>
-                  {" · "}Mod.: <strong style={{ color: "var(--accent-light)" }}>{signed(mod(scores[spellAbilityKey]))}</strong>
-                </div>
-                {Object.entries(maxSlots).map(([level, max]) => {
-                  const slots = slotsUsed[level] ?? Array.from({ length: max }, () => false);
-                  const usedCount = slots.filter(Boolean).length;
-                  return (
-                    <div key={level} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", minWidth: 50 }}>Nível {level}</span>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {Array.from({ length: max }).map((_, i) => {
-                          const isUsed = slots[i] ?? false;
-                          return (
+
+                {equipment.length === 0 ? (
+                  <div style={{ padding: "24px", textAlign: "center", color: "var(--text-subtle)", fontSize: "0.8rem", background: "var(--surface-2)", borderRadius: "var(--radius-lg)", border: "1px dashed var(--border)" }}>
+                    Inventário vazio. Adicione itens clicando no botão acima.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    {equipment.map((item) => {
+                      const w = WEAPONS.find((w) => w.name.toLowerCase() === item.itemName.toLowerCase());
+                      const catalogItem = ALL_PHB_ITEMS.find((i) => i.name.toLowerCase() === item.itemName.toLowerCase());
+                      const isExpanded = expandedItemId === item.id;
+                      const isQuick = quickActionItemIds.has(item.id);
+                      const defaultAtk: AbilityKey = w?.finesse
+                        ? (scores.str >= scores.dex ? "str" : "dex")
+                        : w?.ranged ? "dex" : "str";
+                      const atkAttr: AbilityKey = itemAtkAttr[item.id] ?? defaultAtk;
+                      const atkBonus = mod(scores[atkAttr]) + PROF_BONUS;
+
+                      return (
+                        <div key={item.id}>
+                          {/* Item row */}
+                          <div
+                            style={{
+                              display: "flex", alignItems: "center", gap: 8, padding: "9px 12px",
+                              background: isExpanded ? "var(--surface-2)" : item.equipped ? "var(--accent-dim)" : "var(--surface-2)",
+                              border: `1px solid ${isExpanded ? "var(--border-accent)" : item.equipped ? "var(--border-accent)" : "var(--border)"}`,
+                              borderRadius: isExpanded ? "var(--radius-lg) var(--radius-lg) 0 0" : "var(--radius-lg)",
+                              transition: "all 0.15s", cursor: "pointer",
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            aria-expanded={isExpanded}
+                            onKeyDown={activateOnKey(() => setExpandedItemId(isExpanded ? null : item.id))}
+                            onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                          >
                             <button
-                              key={i}
-                              onClick={() => toggleSlot(level, i)}
-                              title={isUsed ? "Usado — clique para recuperar" : "Disponível — clique para gastar"}
+                              onClick={(e) => { e.stopPropagation(); toggleEquipped(item); }}
+                              title={item.equipped ? "Equipado — clique para desequipar" : "Clique para equipar"}
                               style={{
-                                width: 28, height: 28, borderRadius: "50%",
-                                background: isUsed ? "var(--surface-2)" : "var(--accent-dim)",
-                                border: `2px solid ${isUsed ? "var(--border)" : "var(--accent)"}`,
+                                width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                                background: item.equipped ? "var(--accent)" : "var(--surface)",
+                                border: `2px solid ${item.equipped ? "var(--accent)" : "var(--border)"}`,
                                 cursor: "pointer",
-                                boxShadow: isUsed ? "none" : "0 0 10px var(--accent-glow)",
-                                transition: "all 0.15s",
+                                boxShadow: item.equipped ? "0 0 6px var(--accent-glow)" : "none",
                               }}
                             />
-                          );
-                        })}
-                      </div>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{max - usedCount}/{max}</span>
-                    </div>
-                  );
-                })}
-
-              </div>
-            </PlayCard>
-          )}
-
-          {/* Inventory — placed here, below spells */}
-          <PlayCard>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <p style={labelStyle}>Inventário ({equipment.length} itens)</p>
-              <button
-                onClick={() => setShowItemPicker(true)}
-                style={{
-                  padding: "5px 14px", borderRadius: "var(--radius)", background: "var(--accent-dim)",
-                  border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700,
-                  fontSize: "0.76rem", cursor: "pointer", fontFamily: "inherit",
-                }}
-              >
-                + Adicionar Item
-              </button>
-            </div>
-
-            {equipment.length === 0 ? (
-              <div style={{ padding: "24px", textAlign: "center", color: "var(--text-subtle)", fontSize: "0.8rem", background: "var(--surface-2)", borderRadius: "var(--radius-lg)", border: "1px dashed var(--border)" }}>
-                Inventário vazio. Adicione itens clicando no botão acima.
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {equipment.map((item) => {
-                  const w = WEAPONS.find((w) => w.name.toLowerCase() === item.itemName.toLowerCase());
-                  const catalogItem = ALL_PHB_ITEMS.find((i) => i.name.toLowerCase() === item.itemName.toLowerCase());
-                  const isExpanded = expandedItemId === item.id;
-                  const isQuick = quickActionItemIds.has(item.id);
-                  const defaultAtk: AbilityKey = w?.finesse
-                    ? (scores.str >= scores.dex ? "str" : "dex")
-                    : w?.ranged ? "dex" : "str";
-                  const atkAttr: AbilityKey = itemAtkAttr[item.id] ?? defaultAtk;
-                  const atkBonus = mod(scores[atkAttr]) + PROF_BONUS;
-
-                  return (
-                    <div key={item.id}>
-                      {/* Item row */}
-                      <div
-                        style={{
-                          display: "flex", alignItems: "center", gap: 8, padding: "9px 12px",
-                          background: isExpanded ? "var(--surface-2)" : item.equipped ? "var(--accent-dim)" : "var(--surface-2)",
-                          border: `1px solid ${isExpanded ? "var(--border-accent)" : item.equipped ? "var(--border-accent)" : "var(--border)"}`,
-                          borderRadius: isExpanded ? "var(--radius-lg) var(--radius-lg) 0 0" : "var(--radius-lg)",
-                          transition: "all 0.15s", cursor: "pointer",
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded={isExpanded}
-                        onKeyDown={activateOnKey(() => setExpandedItemId(isExpanded ? null : item.id))}
-                        onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
-                      >
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggleEquipped(item); }}
-                          title={item.equipped ? "Equipado — clique para desequipar" : "Clique para equipar"}
-                          style={{
-                            width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
-                            background: item.equipped ? "var(--accent)" : "var(--surface)",
-                            border: `2px solid ${item.equipped ? "var(--accent)" : "var(--border)"}`,
-                            cursor: "pointer",
-                            boxShadow: item.equipped ? "0 0 6px var(--accent-glow)" : "none",
-                          }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: "0.8rem", fontWeight: item.equipped ? 700 : 400, color: item.equipped ? "var(--accent-light)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.itemName}
-                            {isQuick && <span style={{ marginLeft: 6, fontSize: "0.6rem", color: "#5fbf7f" }}>⚡</span>}
-                          </p>
-                          {w && (
-                            <p style={{ fontSize: "0.64rem", color: "var(--text-subtle)", marginTop: 1 }}>
-                              {w.damage} {w.damageType} · {w.category.includes("dist") ? "Dist." : "CAC"}
-                              {w.finesse ? " · Acuidade" : ""}
-                              {w.range ? ` · ${w.range}m` : ""}
-                            </p>
-                          )}
-                        </div>
-                        {item.quantity > 1 && (
-                          <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "1px 5px", flexShrink: 0 }}>
-                            ×{item.quantity}
-                          </span>
-                        )}
-                        <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", marginLeft: 4 }}>{isExpanded ? "▲" : "▼"}</span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
-                          style={{ fontSize: "0.7rem", color: "var(--text-subtle)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px", lineHeight: 1, flexShrink: 0 }}
-                          title="Remover item"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Detail balloon */}
-                      {isExpanded && (
-                        <div style={{
-                          background: "var(--surface-2)", border: "1px solid var(--border-accent)",
-                          borderTop: "none", borderRadius: "0 0 var(--radius-lg) var(--radius-lg)",
-                          padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10,
-                        }}>
-                          {/* Stats chips */}
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                            {catalogItem?.group && (
-                              <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                                <strong>Tipo:</strong> {catalogItem.group}
-                              </span>
-                            )}
-                            {w && (
-                              <>
-                                <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                                  <strong>Dano:</strong> {w.damage} {w.damageType}
-                                </span>
-                                <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                                  <strong>Categoria:</strong> {w.category}
-                                </span>
-                                {w.range && (
-                                  <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                                    <strong>Alcance:</strong> {w.range}m
-                                  </span>
-                                )}
-                                {w.finesse && (
-                                  <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--accent-light)" }}>
-                                    Acuidade
-                                  </span>
-                                )}
-                              </>
-                            )}
-                            {catalogItem?.cost && (
-                              <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--accent-light)" }}>
-                                {catalogItem.cost}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Description */}
-                          {item.description ? (
-                            <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.55 }}>{item.description}</p>
-                          ) : (
-                            <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
-                              Sem descrição — consulte o Livro do Jogador.
-                            </p>
-                          )}
-
-                          {/* Attack attribute selector */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: "0.66rem", color: "var(--text-muted)", fontWeight: 700 }}>Atributo de ataque:</span>
-                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                              {ABILITIES.map((k) => {
-                                const isSelected = atkAttr === k;
-                                return (
-                                  <button
-                                    key={k}
-                                    onClick={() => setItemAtkAttr((prev) => ({ ...prev, [item.id]: k }))}
-                                    style={{
-                                      padding: "3px 8px", borderRadius: "var(--radius-xs)", fontSize: "0.6rem", fontWeight: 700,
-                                      cursor: "pointer", fontFamily: "inherit",
-                                      background: isSelected ? "var(--accent-dim)" : "var(--surface)",
-                                      border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
-                                      color: isSelected ? "var(--accent-light)" : "var(--text-subtle)",
-                                    }}
-                                  >
-                                    {ABILITY_SHORT[k]}
-                                  </button>
-                                );
-                              })}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: "0.8rem", fontWeight: item.equipped ? 700 : 400, color: item.equipped ? "var(--accent-light)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {item.itemName}
+                                {isQuick && <span style={{ marginLeft: 6, fontSize: "0.6rem", color: "#5fbf7f" }}>⚡</span>}
+                              </p>
+                              {w && (
+                                <p style={{ fontSize: "0.64rem", color: "var(--text-subtle)", marginTop: 1 }}>
+                                  {w.damage} {w.damageType} · {w.category.includes("dist") ? "Dist." : "CAC"}
+                                  {w.finesse ? " · Acuidade" : ""}
+                                  {w.range ? ` · ${w.range}m` : ""}
+                                </p>
+                              )}
                             </div>
-                            <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
-                              Bônus: {signed(atkBonus)}
-                            </span>
+                            {item.quantity > 1 && (
+                              <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "1px 5px", flexShrink: 0 }}>
+                                ×{item.quantity}
+                              </span>
+                            )}
+                            <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", marginLeft: 4 }}>{isExpanded ? "▲" : "▼"}</span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                              style={{ fontSize: "0.7rem", color: "var(--text-subtle)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px", lineHeight: 1, flexShrink: 0 }}
+                              title="Remover item"
+                            >
+                              ✕
+                            </button>
                           </div>
 
-                          {/* Quick action toggle */}
-                          <button
-                            onClick={() => {
-                              const next = new Set(quickActionItemIds);
-                              if (next.has(item.id)) next.delete(item.id);
-                              else next.add(item.id);
-                              setQuickActionItemIds(next);
-                            }}
-                            style={{
-                              alignSelf: "flex-start", padding: "5px 12px", borderRadius: "var(--radius)",
-                              fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                              background: isQuick ? "rgba(95,191,127,0.15)" : "var(--surface)",
-                              border: `1px solid ${isQuick ? "#5fbf7f" : "var(--border)"}`,
-                              color: isQuick ? "#5fbf7f" : "var(--text-muted)",
-                              transition: "all 0.12s",
-                            }}
-                          >
-                            {isQuick ? "⚡ Remover das ações rápidas" : "⚡ Adicionar às ações rápidas"}
-                          </button>
+                          {/* Detail balloon */}
+                          {isExpanded && (
+                            <div style={{
+                              background: "var(--surface-2)", border: "1px solid var(--border-accent)",
+                              borderTop: "none", borderRadius: "0 0 var(--radius-lg) var(--radius-lg)",
+                              padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10,
+                            }}>
+                              {/* Stats chips */}
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {catalogItem?.group && (
+                                  <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                    <strong>Tipo:</strong> {catalogItem.group}
+                                  </span>
+                                )}
+                                {w && (
+                                  <>
+                                    <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                      <strong>Dano:</strong> {w.damage} {w.damageType}
+                                    </span>
+                                    <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                      <strong>Categoria:</strong> {w.category}
+                                    </span>
+                                    {w.range && (
+                                      <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                                        <strong>Alcance:</strong> {w.range}m
+                                      </span>
+                                    )}
+                                    {w.finesse && (
+                                      <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--accent-light)" }}>
+                                        Acuidade
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                                {catalogItem?.cost && (
+                                  <span style={{ fontSize: "0.62rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--accent-light)" }}>
+                                    {catalogItem.cost}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Description */}
+                              {item.description ? (
+                                <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.55 }}>{item.description}</p>
+                              ) : (
+                                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
+                                  Sem descrição — consulte o Livro do Jogador.
+                                </p>
+                              )}
+
+                              {/* Attack attribute selector */}
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: "0.66rem", color: "var(--text-muted)", fontWeight: 700 }}>Atributo de ataque:</span>
+                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                  {ABILITIES.map((k) => {
+                                    const isSelected = atkAttr === k;
+                                    return (
+                                      <button
+                                        key={k}
+                                        onClick={() => setItemAtkAttr((prev) => ({ ...prev, [item.id]: k }))}
+                                        style={{
+                                          padding: "3px 8px", borderRadius: "var(--radius-xs)", fontSize: "0.6rem", fontWeight: 700,
+                                          cursor: "pointer", fontFamily: "inherit",
+                                          background: isSelected ? "var(--accent-dim)" : "var(--surface)",
+                                          border: `1px solid ${isSelected ? "var(--accent)" : "var(--border)"}`,
+                                          color: isSelected ? "var(--accent-light)" : "var(--text-subtle)",
+                                        }}
+                                      >
+                                        {ABILITY_SHORT[k]}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+                                  Bônus: {signed(atkBonus)}
+                                </span>
+                              </div>
+
+                              {/* Quick action toggle */}
+                              <button
+                                onClick={() => {
+                                  const next = new Set(quickActionItemIds);
+                                  if (next.has(item.id)) next.delete(item.id);
+                                  else next.add(item.id);
+                                  setQuickActionItemIds(next);
+                                }}
+                                style={{
+                                  alignSelf: "flex-start", padding: "5px 12px", borderRadius: "var(--radius)",
+                                  fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                                  background: isQuick ? "rgba(95,191,127,0.15)" : "var(--surface)",
+                                  border: `1px solid ${isQuick ? "#5fbf7f" : "var(--border)"}`,
+                                  color: isQuick ? "#5fbf7f" : "var(--text-muted)",
+                                  transition: "all 0.12s",
+                                }}
+                              >
+                                {isQuick ? "⚡ Remover das ações rápidas" : "⚡ Adicionar às ações rápidas"}
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      );
+                    })}
+                  </div>
+                )}
+              </PlayCard>
+          </>
+        }
+        right={
+          <>
+            <PlayCard title="Rolagem de Dados" accent>
+              <DicePanel
+                theme={PLAY_THEME.dnd}
+                features={{ qty: true, pickMode: true, advantage: true }}
+                onRoll={handleDiceRoll}
+              />
+            </PlayCard>
+
+            <PlayCard title="Histórico">
+              <RollHistory log={historico} onClear={() => setRollHistory([])} />
+            </PlayCard>
+
+            {/* Conditions */}
+            <PlayCard>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <p style={labelStyle}>Condições</p>
+                <button onClick={() => setShowConditionPicker((v) => !v)} style={{ fontSize: "0.72rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>+ Adicionar</button>
+              </div>
+              {showConditionPicker && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8, maxHeight: 140, overflowY: "auto" }}>
+                  {CONDITIONS.filter((c) => !conditions.includes(c)).map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        const v = [...conditions, c];
+                        setConditions(v); patchSheet({ conditions: v });
+                        setShowConditionPicker(false);
+                      }}
+                      style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {conditions.length === 0 ? (
+                <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhuma condição ativa.</p>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {conditions.map((c) => (
+                    <span
+                      key={c}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Remover condição ${c}`}
+                      onKeyDown={activateOnKey(() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); })}
+                      onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
+                      style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-xs)", cursor: "pointer", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", userSelect: "none" }}
+                      title="Clique para remover"
+                    >
+                      {c} ✕
+                    </span>
+                  ))}
+                </div>
+              )}
+            </PlayCard>
+
+            {/* Rest */}
+            <PlayCard>
+              <p style={labelStyle}>Descanso</p>
+              <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>
+                Dados de Vida: {availableHitDice}/{totalHitDice} (D{hitDie}) disponíveis
+              </p>
+
+              {restMode === "none" && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setRestMode("short")}
+                    disabled={availableHitDice === 0 || isDying}
+                    style={{ flex: 1, padding: "8px 6px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: availableHitDice === 0 ? "var(--text-subtle)" : "var(--text-muted)", fontSize: "0.78rem", fontWeight: 700, cursor: availableHitDice === 0 ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                  >
+                    ☕ Curto<br /><span style={{ fontSize: "0.64rem", fontWeight: 400 }}>1 hora</span>
+                  </button>
+                  <button
+                    onClick={() => setRestMode("confirm-long")}
+                    disabled={isDying && hpCurrent === 0}
+                    style={{ flex: 1, padding: "8px 6px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", color: "var(--accent-light)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    🌙 Longo<br /><span style={{ fontSize: "0.64rem", fontWeight: 400 }}>8 horas</span>
+                  </button>
+                </div>
+              )}
+
+              {restMode === "short" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Quantos dados de vida gastar?</p>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <button onClick={() => setRestHitDice(Math.max(1, restHitDice - 1))} style={smallBtn}>−</button>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", minWidth: 24, textAlign: "center" }}>{Math.min(restHitDice, availableHitDice)}</span>
+                    <button onClick={() => setRestHitDice(Math.min(availableHitDice, restHitDice + 1))} style={smallBtn}>+</button>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>× (D{hitDie} + {signed(conMod)})</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={doShortRest} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>Descansar</button>
+                    <button onClick={() => setRestMode("none")} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
+              {restMode === "confirm-long" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ background: "rgba(201,148,31,0.08)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius)", padding: "10px 12px" }}>
+                    <p style={{ fontSize: "0.76rem", color: "var(--accent-light)", fontWeight: 700, marginBottom: 4 }}>Descanso Longo recupera:</p>
+                    <ul style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, paddingLeft: 16 }}>
+                      <li>Todos os Pontos de Vida</li>
+                      <li>Metade dos Dados de Vida (mín. 1)</li>
+                      {isCaster && <li>Todos os Espaços de Magia</li>}
+                    </ul>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={doLongRest} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "rgba(201,148,31,0.2)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>🌙 Confirmar</button>
+                    <button onClick={() => setRestMode("none")} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+            </PlayCard>
+
+            {/* Currency */}
+            <PlayCard>
+              <p style={labelStyle}>Moedas</p>
+
+              {/* Currency display */}
+              <div className="dnd-currency-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 10 }}>
+                {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
+                  const value = currencySetters[coin][0];
+                  return (
+                    <div
+                      key={coin}
+                      style={{
+                        background: "var(--surface-2)",
+                        border: `1px solid ${CURRENCY_COLOR[coin]}44`,
+                        borderRadius: "var(--radius)",
+                        padding: "8px 4px",
+                        textAlign: "center",
+                      }}
+                    >
+                      <p style={{ fontSize: "0.54rem", fontWeight: 700, color: CURRENCY_COLOR[coin], textTransform: "uppercase", letterSpacing: "0.05em" }}>{CURRENCY_LABEL[coin]}</p>
+                      <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{value}</p>
                     </div>
                   );
                 })}
               </div>
-            )}
-          </PlayCard>
-        </div>
 
-        {/* RIGHT: Conditions + Currency + Rest */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-
-          {/* Conditions */}
-          <PlayCard>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <p style={labelStyle}>Condições</p>
-              <button onClick={() => setShowConditionPicker((v) => !v)} style={{ fontSize: "0.72rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>+ Adicionar</button>
-            </div>
-            {showConditionPicker && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8, maxHeight: 140, overflowY: "auto" }}>
-                {CONDITIONS.filter((c) => !conditions.includes(c)).map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => {
-                      const v = [...conditions, c];
-                      setConditions(v); patchSheet({ conditions: v });
-                      setShowConditionPicker(false);
-                    }}
-                    style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: "var(--radius-xs)", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", cursor: "pointer", fontFamily: "inherit" }}
-                  >
-                    {c}
-                  </button>
-                ))}
+              {/* Adjust */}
+              <div style={{ display: "flex", gap: 5, marginBottom: 6 }}>
+                <select
+                  value={goldCurrency}
+                  onChange={(e) => setGoldCurrency(e.target.value as "gp")}
+                  style={{ padding: "5px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}
+                >
+                  {(["cp","sp","ep","gp","pp"] as const).map((c) => (
+                    <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>
+                  ))}
+                </select>
+                <button onClick={adjustCurrency} style={{ padding: "5px 10px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
+                <input
+                  type="number"
+                  value={goldInput}
+                  onChange={(e) => setGoldInput(e.target.value)}
+                  placeholder="±"
+                  onKeyDown={(e) => e.key === "Enter" && adjustCurrency()}
+                  style={{ width: 64, padding: "5px 6px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.82rem", fontFamily: "inherit" }}
+                />
               </div>
-            )}
-            {conditions.length === 0 ? (
-              <p style={{ fontSize: "0.76rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Nenhuma condição ativa.</p>
-            ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                {conditions.map((c) => (
-                  <span
-                    key={c}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Remover condição ${c}`}
-                    onKeyDown={activateOnKey(() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); })}
-                    onClick={() => { const v = conditions.filter((x) => x !== c); setConditions(v); patchSheet({ conditions: v }); }}
-                    style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-xs)", cursor: "pointer", background: `${CONDITION_COLOR[c] ?? "#555"}22`, border: `1px solid ${CONDITION_COLOR[c] ?? "#555"}`, color: "var(--text)", userSelect: "none" }}
-                    title="Clique para remover"
-                  >
-                    {c} ✕
-                  </span>
-                ))}
-              </div>
-            )}
-          </PlayCard>
+              <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", marginBottom: 8 }}>Use +N para ganhar, −N para gastar</p>
 
-          {/* Currency */}
-          <PlayCard>
-            <p style={labelStyle}>Moedas</p>
-
-            {/* Currency display */}
-            <div className="dnd-currency-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5, marginBottom: 10 }}>
-              {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
-                const value = currencySetters[coin][0];
-                return (
-                  <div
-                    key={coin}
-                    style={{
-                      background: "var(--surface-2)",
-                      border: `1px solid ${CURRENCY_COLOR[coin]}44`,
-                      borderRadius: "var(--radius)",
-                      padding: "8px 4px",
-                      textAlign: "center",
-                    }}
-                  >
-                    <p style={{ fontSize: "0.54rem", fontWeight: 700, color: CURRENCY_COLOR[coin], textTransform: "uppercase", letterSpacing: "0.05em" }}>{CURRENCY_LABEL[coin]}</p>
-                    <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginTop: 2 }}>{value}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Adjust */}
-            <div style={{ display: "flex", gap: 5, marginBottom: 6 }}>
-              <select
-                value={goldCurrency}
-                onChange={(e) => setGoldCurrency(e.target.value as "gp")}
-                style={{ padding: "5px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}
+              {/* Conversion */}
+              <button
+                onClick={() => setShowConvert((v) => !v)}
+                style={{ fontSize: "0.7rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", paddingLeft: 0, marginBottom: showConvert ? 8 : 0 }}
               >
-                {(["cp","sp","ep","gp","pp"] as const).map((c) => (
-                  <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>
-                ))}
-              </select>
-              <button onClick={adjustCurrency} style={{ padding: "5px 10px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit" }}>OK</button>
-              <input
-                type="number"
-                value={goldInput}
-                onChange={(e) => setGoldInput(e.target.value)}
-                placeholder="±"
-                onKeyDown={(e) => e.key === "Enter" && adjustCurrency()}
-                style={{ width: 64, padding: "5px 6px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.82rem", fontFamily: "inherit" }}
-              />
-            </div>
-            <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", marginBottom: 8 }}>Use +N para ganhar, −N para gastar</p>
-
-            {/* Conversion */}
-            <button
-              onClick={() => setShowConvert((v) => !v)}
-              style={{ fontSize: "0.7rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", paddingLeft: 0, marginBottom: showConvert ? 8 : 0 }}
-            >
-              {showConvert ? "▲" : "▼"} Converter moedas
-            </button>
-            {showConvert && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)", marginBottom: 6 }}>
-                <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
-                  1PL=10PO · 1PO=2PE=10PP=100PC · 1PE=5PP
-                </p>
-                <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
-                  <input
-                    type="number"
-                    min={1}
-                    value={convertAmt}
-                    onChange={(e) => setConvertAmt(Math.max(1, parseInt(e.target.value) || 1))}
-                    style={{ width: 48, padding: "4px 6px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit" }}
-                  />
-                  <select
-                    value={convertFrom}
-                    onChange={(e) => setConvertFrom(e.target.value as "gp")}
-                    style={{ padding: "4px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}
-                  >
-                    {(["cp","sp","ep","gp","pp"] as const).map((c) => (
-                      <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>
-                    ))}
-                  </select>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>→</span>
-                  <select
-                    value={convertTo}
-                    onChange={(e) => setConvertTo(e.target.value as "cp")}
-                    style={{ padding: "4px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}
-                  >
-                    {(["cp","sp","ep","gp","pp"] as const).map((c) => (
-                      <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>
-                    ))}
-                  </select>
-                </div>
-                {convertFrom !== convertTo && (
-                  <p style={{ fontSize: "0.66rem", color: "var(--text-muted)" }}>
-                    = {Math.floor((convertAmt * CP_VALUE[convertFrom]) / CP_VALUE[convertTo])} {CURRENCY_LABEL[convertTo]}
+                {showConvert ? "▲" : "▼"} Converter moedas
+              </button>
+              {showConvert && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)", marginBottom: 6 }}>
+                  <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>
+                    1PL=10PO · 1PO=2PE=10PP=100PC · 1PE=5PP
                   </p>
-                )}
-                <button
-                  onClick={convertCurrency}
-                  disabled={convertFrom === convertTo || currencySetters[convertFrom][0] < convertAmt}
-                  style={{
-                    padding: "5px 10px", borderRadius: "var(--radius)",
-                    background: "var(--accent-dim)", border: "1px solid var(--accent)",
-                    color: "var(--accent-light)", fontWeight: 700, fontSize: "0.76rem",
-                    cursor: "pointer", fontFamily: "inherit",
-                    opacity: (convertFrom === convertTo || currencySetters[convertFrom][0] < convertAmt) ? 0.4 : 1,
-                  }}
-                >
-                  Converter
-                </button>
-              </div>
-            )}
-
-            {/* Exchange rate table */}
-            <button
-              onClick={() => setShowRates((v) => !v)}
-              style={{ fontSize: "0.7rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", paddingLeft: 0, marginBottom: showRates ? 8 : 0 }}
-            >
-              {showRates ? "▲" : "▼"} Tabela de câmbio
-            </button>
-            {showRates && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
-                {([
-                  { from: "PL", to: "PO", rate: 10, fromColor: "#b0c4de", toColor: "#c9941f" },
-                  { from: "PO", to: "PE", rate: 2,  fromColor: "#c9941f", toColor: "#7dd3fc" },
-                  { from: "PE", to: "PP", rate: 5,  fromColor: "#7dd3fc", toColor: "#d1d5db" },
-                  { from: "PP", to: "PC", rate: 10, fromColor: "#d1d5db", toColor: "#b45309" },
-                ] as const).map(({ from, to, rate, fromColor, toColor }) => (
-                  <div key={from} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px", borderRadius: "var(--radius-xs)", background: "var(--surface)" }}>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: fromColor, minWidth: 24 }}>1 {from}</span>
-                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>→</span>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 700, color: toColor }}>{rate} {to}</span>
+                  <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
+                    <input
+                      type="number"
+                      min={1}
+                      value={convertAmt}
+                      onChange={(e) => setConvertAmt(Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{ width: 48, padding: "4px 6px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit" }}
+                    />
+                    <select
+                      value={convertFrom}
+                      onChange={(e) => setConvertFrom(e.target.value as "gp")}
+                      style={{ padding: "4px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}
+                    >
+                      {(["cp","sp","ep","gp","pp"] as const).map((c) => (
+                        <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>
+                      ))}
+                    </select>
+                    <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>→</span>
+                    <select
+                      value={convertTo}
+                      onChange={(e) => setConvertTo(e.target.value as "cp")}
+                      style={{ padding: "4px", borderRadius: "var(--radius)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.78rem", fontFamily: "inherit" }}
+                    >
+                      {(["cp","sp","ep","gp","pp"] as const).map((c) => (
+                        <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
-              </div>
-            )}
-          </PlayCard>
-
-          {/* Rest */}
-          <PlayCard>
-            <p style={labelStyle}>Descanso</p>
-            <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 8 }}>
-              Dados de Vida: {availableHitDice}/{totalHitDice} (D{hitDie}) disponíveis
-            </p>
-
-            {restMode === "none" && (
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => setRestMode("short")}
-                  disabled={availableHitDice === 0 || isDying}
-                  style={{ flex: 1, padding: "8px 6px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: availableHitDice === 0 ? "var(--text-subtle)" : "var(--text-muted)", fontSize: "0.78rem", fontWeight: 700, cursor: availableHitDice === 0 ? "not-allowed" : "pointer", fontFamily: "inherit" }}
-                >
-                  ☕ Curto<br /><span style={{ fontSize: "0.64rem", fontWeight: 400 }}>1 hora</span>
-                </button>
-                <button
-                  onClick={() => setRestMode("confirm-long")}
-                  disabled={isDying && hpCurrent === 0}
-                  style={{ flex: 1, padding: "8px 6px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", color: "var(--accent-light)", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
-                >
-                  🌙 Longo<br /><span style={{ fontSize: "0.64rem", fontWeight: 400 }}>8 horas</span>
-                </button>
-              </div>
-            )}
-
-            {restMode === "short" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <p style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Quantos dados de vida gastar?</p>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <button onClick={() => setRestHitDice(Math.max(1, restHitDice - 1))} style={smallBtn}>−</button>
-                  <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text)", minWidth: 24, textAlign: "center" }}>{Math.min(restHitDice, availableHitDice)}</span>
-                  <button onClick={() => setRestHitDice(Math.min(availableHitDice, restHitDice + 1))} style={smallBtn}>+</button>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>× (D{hitDie} + {signed(conMod)})</span>
+                  {convertFrom !== convertTo && (
+                    <p style={{ fontSize: "0.66rem", color: "var(--text-muted)" }}>
+                      = {Math.floor((convertAmt * CP_VALUE[convertFrom]) / CP_VALUE[convertTo])} {CURRENCY_LABEL[convertTo]}
+                    </p>
+                  )}
+                  <button
+                    onClick={convertCurrency}
+                    disabled={convertFrom === convertTo || currencySetters[convertFrom][0] < convertAmt}
+                    style={{
+                      padding: "5px 10px", borderRadius: "var(--radius)",
+                      background: "var(--accent-dim)", border: "1px solid var(--accent)",
+                      color: "var(--accent-light)", fontWeight: 700, fontSize: "0.76rem",
+                      cursor: "pointer", fontFamily: "inherit",
+                      opacity: (convertFrom === convertTo || currencySetters[convertFrom][0] < convertAmt) ? 0.4 : 1,
+                    }}
+                  >
+                    Converter
+                  </button>
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={doShortRest} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "var(--accent-dim)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>Descansar</button>
-                  <button onClick={() => setRestMode("none")} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {restMode === "confirm-long" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ background: "rgba(201,148,31,0.08)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius)", padding: "10px 12px" }}>
-                  <p style={{ fontSize: "0.76rem", color: "var(--accent-light)", fontWeight: 700, marginBottom: 4 }}>Descanso Longo recupera:</p>
-                  <ul style={{ fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, paddingLeft: 16 }}>
-                    <li>Todos os Pontos de Vida</li>
-                    <li>Metade dos Dados de Vida (mín. 1)</li>
-                    {isCaster && <li>Todos os Espaços de Magia</li>}
-                  </ul>
+              {/* Exchange rate table */}
+              <button
+                onClick={() => setShowRates((v) => !v)}
+                style={{ fontSize: "0.7rem", color: "var(--accent-light)", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", paddingLeft: 0, marginBottom: showRates ? 8 : 0 }}
+              >
+                {showRates ? "▲" : "▼"} Tabela de câmbio
+              </button>
+              {showRates && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
+                  {([
+                    { from: "PL", to: "PO", rate: 10, fromColor: "#b0c4de", toColor: "#c9941f" },
+                    { from: "PO", to: "PE", rate: 2,  fromColor: "#c9941f", toColor: "#7dd3fc" },
+                    { from: "PE", to: "PP", rate: 5,  fromColor: "#7dd3fc", toColor: "#d1d5db" },
+                    { from: "PP", to: "PC", rate: 10, fromColor: "#d1d5db", toColor: "#b45309" },
+                  ] as const).map(({ from, to, rate, fromColor, toColor }) => (
+                    <div key={from} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px", borderRadius: "var(--radius-xs)", background: "var(--surface)" }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: fromColor, minWidth: 24 }}>1 {from}</span>
+                      <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>→</span>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: toColor }}>{rate} {to}</span>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={doLongRest} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "rgba(201,148,31,0.2)", border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>🌙 Confirmar</button>
-                  <button onClick={() => setRestMode("none")} style={{ flex: 1, padding: "7px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit" }}>Cancelar</button>
-                </div>
-              </div>
-            )}
-          </PlayCard>
-
-          {/* Grimório — magias por nível, expansível, abaixo do Descanso */}
-          {isCaster && (
-            <PlayCard>
-              <SpellbookPanel
-                characterId={characterId}
-                classId={cls?.id ?? null}
-                spells={spells}
-                onSpellAdded={(spell) => setSpells([...spells, spell])}
-              />
+              )}
             </PlayCard>
-          )}
-        </div>
-      </div>
+
+            {/* Grimório — magias por nível, expansível, abaixo do Descanso */}
+            {isCaster && (
+              <PlayCard>
+                <SpellbookPanel
+                  characterId={characterId}
+                  classId={cls?.id ?? null}
+                  spells={spells}
+                  onSpellAdded={(spell) => setSpells([...spells, spell])}
+                />
+              </PlayCard>
+            )}
+          </>
+        }
+      />
+
+      <RollToast roll={fxRoll} />
 
       {/* Item Picker Modal */}
       {showItemPicker && (
@@ -1560,33 +1253,11 @@ export function PlayMode({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
 // ── Subcomponentes do modo Jogar ──────────────────────────────────────────────
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "0.64rem", fontWeight: 700, color: "var(--text-muted)",
-  textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8,
-};
-
-function PlayCard({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
-  return (
-    <div style={{ background: "var(--surface)", border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`, borderRadius: "var(--radius-xl)", padding: "16px" }}>
-      {children}
-    </div>
-  );
-}
-
-function QuickStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "6px 12px", textAlign: "center", minWidth: 52 }}>
-      <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
-      <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)" }}>{value}</p>
-    </div>
-  );
-}
 
 function QuickActionBtn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
