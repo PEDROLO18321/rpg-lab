@@ -8,12 +8,6 @@
   .op-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 8px !important; }
   .op-wizard-header-title { order: 3; width: 100%; text-align: center; font-size: 0.78rem !important; }
 
-  /* SheetClient.tsx — linha de modos (Ficha/Jogar/Editar) abaixo do DashboardNav */
-  .op-header-modes { flex-wrap: wrap !important; row-gap: 6px !important; }
-
-  /* SheetClient.tsx — layout de 2 colunas (conteúdo principal + sidebar) */
-  .op-two-col { grid-template-columns: 1fr !important; }
-
   /* SheetClient.tsx — grade de atributos (5: AGI/FOR/INT/PRE/VIG), reaproveitada
      em ViewMode, PlayMode e EditMode; e StepReview.tsx (revisão do wizard) */
   .op-attr-grid { grid-template-columns: repeat(3, 1fr) !important; }

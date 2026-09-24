@@ -12,6 +12,9 @@ import { parseJsonField } from "@/lib/characterTransfer";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { SheetHeader, SheetProgressBtn } from "@/components/sheet/SheetHeader";
+import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShell";
+import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
 import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
 import { PlayCard } from "@/components/play/PlayCard";
 import { VitalBar } from "@/components/play/VitalBar";
@@ -226,6 +229,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
 
   const sanStatus = sanityStatus(san.cur, san.max);
   const lifeStat  = lifeStatus(pv.cur, pv.max);
+  const initials  = character.name.split(" ").slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join("");
 
   const sharedProps = { character, sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills, skillAttr, notes, weapons, protections, generals, protectionIds, generalIds, load, armorBonus, effectiveDefense, effectiveMove, background, log, saved, fxRoll };
 
@@ -240,56 +244,46 @@ export function SheetClient({ character }: { character: AnyChar }) {
         shareCharacterId={character.id}
       />
 
-      <div className="op-header-modes no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
-        <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
-          {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
-        </span>
-        {(["ficha", "jogar", "editar"] as SheetMode[]).map((m) => (
-          <button key={m} onClick={() => setMode(m)} style={{
-            padding: "6px 14px", borderRadius: "var(--radius-lg)",
-            background: mode === m ? ACCENT_DIM : "var(--surface-2)",
-            border: `1px solid ${mode === m ? ACCENT_BORD : "var(--border)"}`,
-            color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
-            fontWeight: mode === m ? 700 : 400, fontSize: "0.82rem", cursor: "pointer",
-            fontFamily: "inherit",
-            boxShadow: mode === m ? `0 0 14px rgba(255,255,255,0.12)` : "none",
-          }}>
-            {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : "Editar"}
-          </button>
-        ))}
-        <ExportJsonButton
-          exportUrl={`/api/ordem/characters/${character.id}/export`}
-          characterName={character.name}
-          systemSlug="ordem"
-          style={{ padding: "6px 14px", borderRadius: "var(--radius-lg)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.82rem" }}
+      <main
+        id="conteudo"
+        style={{
+          maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px",
+          // Mesma projeção de tema que o SheetHeader já faz na própria subárvore
+          // (ver components/sheet/SheetHeader.tsx) — precisa repetir aqui porque
+          // o cabeçalho e o corpo da ficha são irmãos, não pai/filho, e variável
+          // CSS só desce por herança de DOM.
+          "--accent": ACCENT, "--accent-light": ACCENT_LIGHT, "--accent-dim": ACCENT_DIM,
+          "--border-accent": ACCENT_BORD, "--accent-glow": PLAY_THEME.ordem.glow,
+        } as React.CSSProperties}
+      >
+        <SheetHeader
+          system="ordem"
+          portraitUrl={character.portraitUrl}
+          initials={initials}
+          name={character.name}
+          subtitle={[cls?.name, origin?.name, patente.name, `NEX ${nex}%`].filter(Boolean).join(" · ")}
+          mode={mode}
+          onMode={(id) => setMode(id as SheetMode)}
+          progression={
+            cls && nextNexValue(nex) != null ? (
+              <SheetProgressBtn onClick={() => setShowLevelUp(true)}>
+                ⬆ Subir NEX → {nextNexValue(nex)}%
+              </SheetProgressBtn>
+            ) : undefined
+          }
+          status={
+            <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
+              {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
+            </span>
+          }
+          actions={
+            <ExportJsonButton
+              exportUrl={`/api/ordem/characters/${character.id}/export`}
+              characterName={character.name}
+              systemSlug="ordem"
+            />
+          }
         />
-      </div>
-
-      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
-        {/* Identity header (always visible) */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
-          <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>
-            {character.portraitUrl
-              ? <img src={character.portraitUrl} alt={character.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : character.name.split(" ").slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join("")}
-          </div>
-          <div>
-            <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.5rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.1 }}>{character.name}</h1>
-            <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", marginTop: 3 }}>
-              {[cls?.name, origin?.name, patente.name, `NEX ${nex}%`].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-          {cls && nextNexValue(nex) != null && (
-            <button onClick={() => setShowLevelUp(true)} style={{
-              marginLeft: "auto", padding: "10px 18px", borderRadius: "var(--radius-lg)",
-              background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT,
-              fontWeight: 700, fontSize: "0.84rem", fontFamily: "inherit", cursor: "pointer",
-              boxShadow: "0 0 16px rgba(255,255,255,0.12)", whiteSpace: "nowrap",
-            }}>
-              ⬆ Subir NEX → {nextNexValue(nex)}%
-            </button>
-          )}
-        </div>
 
         {showLevelUp && <LevelUpModal character={character} onClose={() => setShowLevelUp(false)} />}
 
@@ -381,49 +375,50 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
     .filter(Boolean);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Vitals (read-only) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        <VitalView label="Pontos de Vida" color="#c03030" cur={pv.cur} temp={pv.temp} max={pv.max} note={lifeStat === "morrendo" ? "Morrendo!" : lifeStat === "machucado" ? "Machucado" : ""} warn={lifeStat === "morrendo"} />
-        <VitalView label="Pontos de Esforço" color={ACCENT} cur={pe.cur} temp={pe.temp} max={pe.max} note={`Limite ${peLimit(nex)} PE/turno`} />
-        <VitalView label="Sanidade" color="#c9941f" cur={san.cur} temp={san.temp} max={san.max} note={SANITY_STATUS_LABEL[sanStatus]} warn={sanStatus !== "estavel"} />
-      </div>
+    <SheetShell
+      system="ordem"
+      band={
+        <>
+          <SheetVitals>
+            <VitalView label="Pontos de Vida" color="#c03030" cur={pv.cur} temp={pv.temp} max={pv.max} note={lifeStat === "morrendo" ? "Morrendo!" : lifeStat === "machucado" ? "Machucado" : ""} warn={lifeStat === "morrendo"} />
+            <VitalView label="Pontos de Esforço" color={ACCENT} cur={pe.cur} temp={pe.temp} max={pe.max} note={`Limite ${peLimit(nex)} PE/turno`} />
+            <VitalView label="Sanidade" color="#c9941f" cur={san.cur} temp={san.temp} max={san.max} note={SANITY_STATUS_LABEL[sanStatus]} warn={sanStatus !== "estavel"} />
+          </SheetVitals>
 
-      {/* Badges */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        <Badge label="NEX" value={`${nex}% · nível ${nexLevel(nex)}`} />
-        <Badge label="Defesa" value={armorBonus > 0 ? `${effectiveDefense} (+${armorBonus})` : effectiveDefense} warn={load.overloaded} />
-        <Badge label="Deslocamento" value={`${effectiveMove}m`} warn={load.overloaded} />
-        <Badge label="Carga" value={`${load.used}/${load.capacity} esp`} warn={load.overloaded} />
-        <Badge label="Prestígio" value={sheet.prestige ?? 0} />
-        <Badge label="Patente" value={patente.name} />
-      </div>
+          <SheetChips>
+            <SheetChip label="NEX" value={`${nex}% · nível ${nexLevel(nex)}`} />
+            <SheetChip label="Defesa" value={armorBonus > 0 ? `${effectiveDefense} (+${armorBonus})` : effectiveDefense} warn={load.overloaded} />
+            <SheetChip label="Deslocamento" value={`${effectiveMove}m`} warn={load.overloaded} />
+            <SheetChip label="Carga" value={`${load.used}/${load.capacity} esp`} warn={load.overloaded} />
+            <SheetChip label="Prestígio" value={sheet.prestige ?? 0} />
+            <SheetChip label="Patente" value={patente.name} />
+          </SheetChips>
 
-      {/* Conditions & Insanity (read-only) */}
-      {(parse<string[]>(sheet.conditions, []).length > 0 ||
-        (parse<Partial<InsanityData>>(sheet.insanity, {}).traumas?.length ?? 0) > 0 ||
-        sanStatus !== "estavel") && (
-        <StatusPanel sheet={sheet} sanStatus={sanStatus} readOnly />
-      )}
-
-      <div className="op-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
-        {/* Left */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Conditions & Insanity (read-only) */}
+          {(parse<string[]>(sheet.conditions, []).length > 0 ||
+            (parse<Partial<InsanityData>>(sheet.insanity, {}).traumas?.length ?? 0) > 0 ||
+            sanStatus !== "estavel") && (
+            <StatusPanel sheet={sheet} sanStatus={sanStatus} readOnly />
+          )}
+        </>
+      }
+      left={
+        <>
           {/* Attributes */}
-          <Panel title="Atributos">
+          <SheetSection title="Atributos">
             <div className="op-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => (
                 <div key={k} style={{ textAlign: "center", padding: "12px 6px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
                   <p style={{ fontSize: "0.6rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em" }}>{ATTR_ABBR[k]}</p>
-                  <p style={{ fontSize: "1.5rem", fontWeight: 800, color: attrs[k] === 0 ? "var(--text-subtle)" : ACCENT_LIGHT, fontFamily: "var(--font-cinzel), serif" }}>{attrs[k]}</p>
+                  <p style={{ fontSize: "1.5rem", fontWeight: 800, color: attrs[k] === 0 ? "var(--text-subtle)" : "var(--accent-light)", fontFamily: "var(--font-cinzel), serif" }}>{attrs[k]}</p>
                   <p style={{ fontSize: "0.58rem", color: "var(--text-subtle)", marginTop: 2 }}>{ATTR_LABEL[k]}</p>
                 </div>
               ))}
             </div>
-          </Panel>
+          </SheetSection>
 
           {/* Skills read-only */}
-          <Panel title="Perícias">
+          <SheetSection title="Perícias">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14, fontSize: "0.66rem", color: "var(--text-subtle)" }}>
               {DEGREES.map((d) => (
                 <span key={d} style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -435,7 +430,7 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
               {SKILLS.map((s) => {
                 const degree = skills[s.id] ?? "destreinado";
                 return (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: "var(--radius)", background: degree !== "destreinado" ? ACCENT_DIM : "transparent" }}>
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: "var(--radius)", background: degree !== "destreinado" ? "var(--accent-dim)" : "transparent" }}>
                     <DegreeDot degree={degree} />
                     <span style={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: degree !== "destreinado" ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
                     <span style={{ fontSize: "0.6rem", color: "var(--text-subtle)", flexShrink: 0 }}>{ATTR_ABBR[s.attr]}</span>
@@ -443,42 +438,39 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
                 );
               })}
             </div>
-          </Panel>
+          </SheetSection>
 
           {/* Class abilities */}
           {unlockedAbilities.length > 0 && (
-            <Panel title={`Habilidades de Classe — ${cls?.name}`}>
+            <SheetSection title={`Habilidades de Classe — ${cls?.name}`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {unlockedAbilities.map((a) => (
                   <div key={a.nex} style={{ display: "flex", gap: 10, padding: "8px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                    <span style={{ fontSize: "0.66rem", fontWeight: 700, color: ACCENT_LIGHT, whiteSpace: "nowrap", marginTop: 1 }}>{a.nex}%</span>
+                    <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "var(--accent-light)", whiteSpace: "nowrap", marginTop: 1 }}>{a.nex}%</span>
                     <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{a.description}</p>
                   </div>
                 ))}
               </div>
-            </Panel>
+            </SheetSection>
           )}
-        </div>
 
-        {/* Right */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Origin power */}
           {origin && (
-            <Panel title={`Poder de Origem · ${origin.powerName}`}>
+            <SheetSection title={`Poder de Origem · ${origin.powerName}`}>
               <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.65 }}>{origin.powerDesc}</p>
-            </Panel>
+            </SheetSection>
           )}
 
           {/* Trilha escolhida */}
           {chosenTrail ? (
-            <Panel title={`Trilha · ${chosenTrail.name}`}>
+            <SheetSection title={`Trilha · ${chosenTrail.name}`}>
               <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", marginBottom: 10 }}>{chosenTrail.description}</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {chosenTrail.powers.map((p) => {
                   const unlocked = p.nex <= nex;
                   return (
-                    <div key={p.nex} style={{ background: "var(--surface-2)", border: `1px solid ${unlocked ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)", padding: "10px 12px", opacity: unlocked ? 1 : 0.5 }}>
-                      <p style={{ fontSize: "0.78rem", fontWeight: 700, color: unlocked ? ACCENT_LIGHT : "var(--text-subtle)" }}>
+                    <div key={p.nex} style={{ background: "var(--surface-2)", border: `1px solid ${unlocked ? "var(--border-accent)" : "var(--border)"}`, borderRadius: "var(--radius)", padding: "10px 12px", opacity: unlocked ? 1 : 0.5 }}>
+                      <p style={{ fontSize: "0.78rem", fontWeight: 700, color: unlocked ? "var(--accent-light)" : "var(--text-subtle)" }}>
                         {unlocked ? "" : "🔒 "}{p.name} <span style={{ fontWeight: 400, color: "var(--text-subtle)" }}>· NEX {p.nex}%</span>
                       </p>
                       <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", lineHeight: 1.5, marginTop: 2 }}>{p.description}</p>
@@ -486,32 +478,32 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
                   );
                 })}
               </div>
-            </Panel>
+            </SheetSection>
           ) : classTrails.length > 0 && nex >= 10 ? (
-            <Panel title="Trilha de Classe">
+            <SheetSection title="Trilha de Classe">
               <p style={{ fontSize: "0.78rem", color: "#e0843c", lineHeight: 1.5 }}>
                 Nenhuma trilha escolhida. Use <strong>⬆ Subir NEX</strong> (ou Editar) para definir sua trilha — ela concede poderes em NEX 10%, 40%, 65% e 99%.
               </p>
-            </Panel>
+            </SheetSection>
           ) : null}
 
           {/* Poderes de classe escolhidos */}
           {chosenPowers.length > 0 && (
-            <Panel title={`Poderes de ${cls?.name}`}>
+            <SheetSection title={`Poderes de ${cls?.name}`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {chosenPowers.map((p) => (
                   <div key={p.id} style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "10px 12px" }}>
-                    <p style={{ fontSize: "0.78rem", fontWeight: 700, color: ACCENT_LIGHT }}>{p.name}</p>
+                    <p style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--accent-light)" }}>{p.name}</p>
                     <p style={{ fontSize: "0.74rem", color: "var(--text-subtle)", lineHeight: 1.5, marginTop: 2 }}>{p.description}</p>
                   </div>
                 ))}
               </div>
-            </Panel>
+            </SheetSection>
           )}
 
           {/* Poderes paranormais */}
           {chosenParanormal.length > 0 && (
-            <Panel title="Poderes Paranormais">
+            <SheetSection title="Poderes Paranormais">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {chosenParanormal.map((p) => (
                   <div key={p.id} style={{ background: "var(--surface-2)", border: "1px solid rgba(155,127,212,0.3)", borderRadius: "var(--radius)", padding: "10px 12px" }}>
@@ -520,12 +512,12 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
                   </div>
                 ))}
               </div>
-            </Panel>
+            </SheetSection>
           )}
 
           {/* Rituals (Ocultista only) */}
           {sheet.className === "ocultista" && (
-            <Panel title={`Rituais${maxCircle ? ` (até ${maxCircle}º círculo)` : ""}`}>
+            <SheetSection title={`Rituais${maxCircle ? ` (até ${maxCircle}º círculo)` : ""}`}>
               {knownRituals.length === 0 ? (
                 <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)", fontStyle: "italic" }}>
                   Nenhum ritual registrado. Edite a ficha para adicionar rituais.
@@ -570,35 +562,39 @@ function ViewMode({ sheet, cls, origin, attrs, nex, patente, pv, pe, san, skills
                   })}
                 </div>
               )}
-            </Panel>
+            </SheetSection>
           )}
-
+        </>
+      }
+      right={
+        <>
           {/* Identity */}
           {(background.appearance || background.personality || background.history || background.objective) && (
-            <Panel title="Identidade">
+            <SheetSection title="Identidade">
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {background.appearance  && <BgRow label="Aparência"    value={background.appearance} />}
                 {background.personality && <BgRow label="Personalidade" value={background.personality} />}
                 {background.history     && <BgRow label="História"      value={background.history} />}
                 {background.objective   && <BgRow label="Objetivo"      value={background.objective} />}
               </div>
-            </Panel>
+            </SheetSection>
           )}
-        </div>
-      </div>
-
-      {/* Equipment full-width */}
-      {(weapons.length > 0 || protections.length > 0 || generals.length > 0) && (
-        <Panel title="Equipamento">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
-            {weapons.map((c, i) => <WeaponCard key={`w${i}`} item={c} />)}
-            {protections.map((c, i) => <ProtectionCard key={`p${i}`} item={c} />)}
-            {generals.map((c, i) => <GeneralCard key={`g${i}`} item={c} />)}
-          </div>
-          <CursePricePanel weapons={weapons} protections={protections} generals={generals} />
-        </Panel>
-      )}
-    </div>
+        </>
+      }
+      full={
+        /* Equipment full-width */
+        (weapons.length > 0 || protections.length > 0 || generals.length > 0) && (
+          <SheetSection title="Equipamento">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
+              {weapons.map((c, i) => <WeaponCard key={`w${i}`} item={c} />)}
+              {protections.map((c, i) => <ProtectionCard key={`p${i}`} item={c} />)}
+              {generals.map((c, i) => <GeneralCard key={`g${i}`} item={c} />)}
+            </div>
+            <CursePricePanel weapons={weapons} protections={protections} generals={generals} />
+          </SheetSection>
+        )
+      }
+    />
   );
 }
 
@@ -955,7 +951,7 @@ function RituaisPanel({ sheet, nex, pe }: { sheet: AnyChar; nex: number; pe: { c
     .filter((g) => g.rituals.length > 0);
 
   return (
-    <Panel title={`Rituais Conhecidos${maxCircle ? ` · até ${maxCircle}º círculo` : ""}`}>
+    <SheetSection title={`Rituais Conhecidos${maxCircle ? ` · até ${maxCircle}º círculo` : ""}`}>
       <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 12 }}>
         PE disponível: <strong style={{ color: ACCENT_LIGHT }}>{pe.cur}</strong>/{pe.max}
       </p>
@@ -1020,7 +1016,7 @@ function RituaisPanel({ sheet, nex, pe }: { sheet: AnyChar; nex: number; pe: { c
           );
         })}
       </div>
-    </Panel>
+    </SheetSection>
   );
 }
 
@@ -1461,7 +1457,7 @@ function StatusPanel({
   const statusColor = SANITY_STATUS_COLOR[sanStatus];
 
   return (
-    <Panel title="Condições & Insanidade">
+    <SheetSection title="Condições & Insanidade">
       {/* Estado de Sanidade */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
         <span style={{ fontSize: "0.72rem", color: "var(--text-subtle)", fontWeight: 700 }}>Estado mental:</span>
@@ -1540,27 +1536,7 @@ function StatusPanel({
       {readOnly && insanity.notes && (
         <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 10, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{insanity.notes}</p>
       )}
-    </Panel>
-  );
-}
-
-function Badge({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {
-  return (
-    <div style={{ padding: "8px 16px", background: "var(--surface)", border: `1px solid ${warn ? "rgba(224,132,60,0.5)" : "var(--border)"}`, borderRadius: "var(--radius-lg)" }}>
-      <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</p>
-      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: warn ? "#e0843c" : "var(--text)", marginTop: 2 }}>{value}</p>
-    </div>
-  );
-}
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.95rem", fontWeight: 700, color: "var(--text)", marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${ACCENT}22` }}>
-        {title}
-      </h2>
-      {children}
-    </section>
+    </SheetSection>
   );
 }
 

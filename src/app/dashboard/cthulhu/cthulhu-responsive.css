@@ -47,10 +47,8 @@
   }
 
   /* SheetClient.tsx (view mode) — Atributos/Perícias split */
-  .cth-view-columns { grid-template-columns: 1fr !important; }
 
   /* SheetClient.tsx — seção Mesa (dados de bônus/estados | rolador livre) */
-  .cth-table-grid { grid-template-columns: 1fr !important; }
 
   /* Mestre — NpcCreator/Bestiário/Pistas/Artefatos/Cenário/Dados (área de campanha, sem cobertura ainda) */
   .cth-npc-form-row { grid-template-columns: 1fr !important; }

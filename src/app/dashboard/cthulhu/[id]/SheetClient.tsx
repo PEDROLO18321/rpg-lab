@@ -19,6 +19,9 @@ import { RollHistory } from "@/components/play/RollHistory";
 import { DicePanel } from "@/components/play/DicePanel";
 import { ActiveConditionChips } from "@/components/play/ConditionPicker";
 import { PLAY_THEME } from "@/components/play/theme";
+import { SheetHeader, SheetProgressBtn } from "@/components/sheet/SheetHeader";
+import { SheetShell, SheetVitals } from "@/components/sheet/SheetShell";
+import { SheetSection } from "@/components/sheet/SheetSection";
 import type { PlayRollEntry, RollTone } from "@/components/play/types";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
@@ -958,44 +961,34 @@ export function SheetClient({ character }: Props) {
         shareCharacterId={character.id}
       />
 
-      <div className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
-        {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
-        <button
-          onClick={() => { setDevOpen(true); setDevResults(null); }}
-          style={{ ...pillBtn, background: "var(--surface-2)" }}
-          title="Fase de Desenvolvimento"
-        >
-          📈 Desenvolvimento
-        </button>
-        {!editMode && (
-          <div style={{ display: "flex", gap: 3, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-full)", padding: 3 }}>
-            {(["ficha", "jogar"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                aria-pressed={mode === m}
-                style={{
-                  padding: "5px 16px", borderRadius: "var(--radius-full)", cursor: "pointer", fontFamily: "inherit",
-                  fontSize: "0.76rem", fontWeight: 700, border: "none",
-                  background: mode === m ? ACCENT_DIM : "transparent",
-                  color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
-                }}
-              >
-                {m === "ficha" ? "Ficha" : "Jogar"}
-              </button>
-            ))}
-          </div>
-        )}
-        {editMode ? (
-          <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
-            ✓ Salvar
-          </button>
-        ) : (
-          <button onClick={() => setMode("editar")} style={{ ...pillBtn, background: "var(--surface-2)" }}>
-            ✎ Editar
-          </button>
-        )}
-        <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" style={pillBtn} />
+      <div className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0" }}>
+        <SheetHeader
+          system="cthulhu"
+          portraitUrl={portrait}
+          initials={name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "CoC"}
+          name={name}
+          subtitle={[occ?.name ?? occupation ?? "Sem ocupação", age ? `${age} anos` : "Idade desconhecida", eraLabel].join(" · ")}
+          mode={mode}
+          onMode={(m) => setMode(m as "ficha" | "jogar" | "editar")}
+          progression={
+            // O CoC não sobe de nível: o equivalente é a Fase de Desenvolvimento,
+            // que converte em perícia o que foi usado com sucesso na sessão.
+            <SheetProgressBtn onClick={() => { setDevOpen(true); setDevResults(null); }} title="Fase de Desenvolvimento">
+              📈 Desenvolvimento
+            </SheetProgressBtn>
+          }
+          status={saving ? <span style={{ fontSize: "0.74rem", color: "var(--accent-light)" }}>Salvando…</span> : null}
+          actions={
+            <>
+              {editMode && (
+                <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
+                  ✓ Salvar
+                </button>
+              )}
+              <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" />
+            </>
+          }
+        />
       </div>
 
       <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
@@ -1088,63 +1081,47 @@ export function SheetClient({ character }: Props) {
           />
         ) : (
         <>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 260 }}>
-            <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>
-              Call of Cthulhu 7ª Edição · {eraLabel}
-            </span>
-            {editMode ? (
-              <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
-                {/* Portrait upload */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 90, height: 90, borderRadius: "var(--radius-lg)", border: `1px solid ${ACCENT_BORD}`, background: "var(--surface-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {portrait
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={portrait} alt="Retrato" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textAlign: "center", padding: 6 }}>Sem foto</span>}
-                  </div>
-                  <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: "none" }} />
-                  <button onClick={() => fileRef.current?.click()} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px" }}>Trocar foto</button>
-                  {portrait && <button onClick={() => setPortrait(null)} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px", color: "#e06c6c" }}>Remover</button>}
+        {/* Identidade — só no modo Editar: no modo Ficha quem mostra nome,
+            ocupação, era e retrato é o cabeçalho comum, acima. */}
+        {editMode && (
+          <SheetSection title="Identidade">
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 90, height: 90, borderRadius: "var(--radius-lg)", border: `1px solid ${ACCENT_BORD}`, background: "var(--surface-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {portrait
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={portrait} alt="Retrato" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textAlign: "center", padding: 6 }}>Sem foto</span>}
                 </div>
-                {/* Identity fields */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 220 }}>
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" style={editInput} />
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <select value={occupation} onChange={(e) => setOccupation(e.target.value)} style={{ ...editInput, flex: 1 }}>
-                      <option value="">Sem ocupação</option>
-                      {OCCUPATIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                    </select>
-                    <select value={era} onChange={(e) => setEra(e.target.value as "1920s" | "modern")} style={{ ...editInput, width: 130 }}>
-                      <option value="1920s">Anos 1920</option>
-                      <option value="modern">Moderno</option>
-                    </select>
-                    <input type="number" min={15} max={90} value={age} onChange={(e) => setAge(Math.max(0, parseInt(e.target.value) || 0))} style={{ ...editInput, width: 80 }} />
-                  </div>
+                <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: "none" }} />
+                <button onClick={() => fileRef.current?.click()} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px" }}>Trocar foto</button>
+                {portrait && <button onClick={() => setPortrait(null)} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px", color: "#e06c6c" }}>Remover</button>}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 220 }}>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" style={editInput} />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <select value={occupation} onChange={(e) => setOccupation(e.target.value)} style={{ ...editInput, flex: 1 }}>
+                    <option value="">Sem ocupação</option>
+                    {OCCUPATIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </select>
+                  <select value={era} onChange={(e) => setEra(e.target.value as "1920s" | "modern")} style={{ ...editInput, width: 130 }}>
+                    <option value="1920s">Anos 1920</option>
+                    <option value="modern">Moderno</option>
+                  </select>
+                  <input type="number" min={15} max={90} value={age} onChange={(e) => setAge(Math.max(0, parseInt(e.target.value) || 0))} style={{ ...editInput, width: 80 }} />
                 </div>
               </div>
-            ) : (
-              <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                {portrait && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={portrait} alt="Retrato" style={{ width: 72, height: 72, borderRadius: "var(--radius-lg)", objectFit: "cover", border: `1px solid ${ACCENT_BORD}`, flexShrink: 0 }} />
-                )}
-                <div>
-                  <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", fontWeight: 700, color: "var(--text)" }}>
-                    {name}
-                  </h1>
-                  <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
-                    {occ?.name ?? occupation ?? "Sem ocupação"} · {age ? `${age} anos` : "Idade desconhecida"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </SheetSection>
+        )}
 
-        {/* Vitals trackers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
+        {/* A Ficha usa a mesma grade da área de Jogar: faixa de vitais em
+            largura cheia, depois coluna larga (o que o investigador faz) e
+            coluna estreita (a mesa). Trocar de aba não reposiciona nada. */}
+        <SheetShell
+          system="cthulhu"
+          band={
+            <SheetVitals>
           <Tracker
             label="Pontos de Vida"
             current={pvCurrent} temp={pvTemp} max={pvMax} pct={pvPct} barColor={pvColor}
@@ -1171,31 +1148,32 @@ export function SheetClient({ character }: Props) {
             stepLabel="±5"
             onRoll={() => rollCheck(`Sorte (${luck}%)`, luck)}
           />
-        </div>
+            </SheetVitals>
+          }
+          left={
+            <>
+              <SheetSection title="Atributos">
+                {blocoAtributos}
+              </SheetSection>
 
-        {/* Mesa: dados de bônus/penalidade, rolador livre e estados */}
-        {mode === "ficha" && (
-          <Section title="Mesa">
-            <div className="cth-table-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              <div>
-                {blocoDadosExtras}
+              <SheetSection title="Perícias">
+                {blocoPericias}
+              </SheetSection>
 
-                {blocoEstados}
-              </div>
+              {(equipped.length > 0 || editMode) && (
+                <SheetSection title="Armas">
+                  {blocoArmas}
+                </SheetSection>
+              )}
 
-              <div>{painelDados}</div>
-            </div>
-          </Section>
-        )}
-
-        <div className="cth-view-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          {/* Attributes */}
-          <Section title="Atributos">
-            {blocoAtributos}
-          </Section>
-
-          {/* Derived stats */}
-          <Section title="Dados Secundários">
+              <SheetSection title="Feitiços Conhecidos">
+                {blocoFeiticos}
+              </SheetSection>
+            </>
+          }
+          right={
+            <>
+              <SheetSection title="Dados Secundários">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Dano Extra</span>
               <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcDamageBonus(attrsFull)}</span>
@@ -1211,41 +1189,37 @@ export function SheetClient({ character }: Props) {
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>PM Máximo</span>
               <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{pmMax}</span>
             </div>
-          </Section>
-        </div>
+              </SheetSection>
 
-        {/* Skills */}
-        <Section title="Perícias">
-            {blocoPericias}
-        </Section>
+              {/* A mesa só faz sentido fora da edição: rolar no meio de um
+                  formulário meio preenchido dá número que não vale nada. */}
+              {mode === "ficha" && (
+                <>
+                  <SheetSection title="Dados e Rolagem">
+                    {blocoDadosExtras}
+                    {painelDados}
+                  </SheetSection>
 
-        {/* Weapons */}
-        {(equipped.length > 0 || editMode) && (
-          <Section title="Armas">
-            {blocoArmas}
-          </Section>
-        )}
+                  <SheetSection title="Estados">
+                    {blocoEstados}
+                  </SheetSection>
+                </>
+              )}
 
-        {/* Equipment / notes */}
-        {(equipmentText.trim() || editMode) && (
-          <Section title="Equipamento e Posses">
-            {blocoEquipamento}
-          </Section>
-        )}
+              <SheetSection title="Insanidade">
+                {blocoInsanidade}
+              </SheetSection>
 
-        {/* Insanidade */}
-        <Section title="Insanidade">
-            {blocoInsanidade}
-        </Section>
-
-        {/* Feitiços */}
-        <Section title="Feitiços Conhecidos">
-            {blocoFeiticos}
-        </Section>
-
-        {/* Background */}
-        {(Object.keys(background).length > 0 || editMode) && (
-          <Section title="Antecedentes">
+              {(equipmentText.trim() || editMode) && (
+                <SheetSection title="Equipamento e Posses">
+                  {blocoEquipamento}
+                </SheetSection>
+              )}
+            </>
+          }
+          full={
+            (Object.keys(background).length > 0 || editMode) ? (
+              <SheetSection title="Antecedentes">
             {editMode ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
                 {Object.keys(bgLabels).map((k) => (
@@ -1272,8 +1246,10 @@ export function SheetClient({ character }: Props) {
                 ))}
               </div>
             )}
-          </Section>
-        )}
+              </SheetSection>
+            ) : null
+          }
+        />
         </>
         )}
       </main>
@@ -1517,17 +1493,6 @@ function RollRow({ entry, latest }: { entry: RollEntry; latest: boolean }) {
         <span style={{ fontSize: "1.05rem", fontWeight: 800, color: "#e0b94e" }}>{entry.total}</span>
       </div>
       <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>{entry.expr} → [{entry.rolls.join(", ")}]</div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-      <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-        <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{title}</span>
-      </div>
-      <div style={{ padding: "16px 20px" }}>{children}</div>
     </div>
   );
 }

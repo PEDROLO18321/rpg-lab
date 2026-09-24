@@ -1,0 +1,27 @@
+/* Fichas — as regras responsivas da moldura comum.
+   Mesmo padrão de play.css e dos *-responsive.css do projeto: !important para
+   vencer o estilo inline em tela pequena, e nada que afete o desktop. */
+
+@media (max-width: 640px) {
+  /* Grade canônica 1.4fr / 1fr → uma coluna só */
+  .sheet-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .sheet-vitals {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* O cabeçalho vira coluna: identidade em cima, ações embaixo e alinhadas
+     à esquerda — em 375px as abas não cabem na mesma linha do nome. */
+  .sheet-header {
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+
+  .sheet-header-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+}

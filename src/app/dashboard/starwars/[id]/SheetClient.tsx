@@ -30,6 +30,9 @@ import { PLAY_THEME } from "@/components/play/theme";
 import type { PlayRollEntry } from "@/components/play/types";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
+import { SheetHeader, SheetProgressBtn, SHEET_TABS } from "@/components/sheet/SheetHeader";
+import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShell";
+import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
 import "../starwars-responsive.css";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
@@ -110,19 +113,6 @@ interface CharacterProp {
   user?: { name: string | null } | null;
 }
 
-// ─── shared bits (mesmo vocabulário visual da ficha de Ordem Paranormal) ──────
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.95rem", fontWeight: 700, color: "var(--text)", marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${ACCENT}22` }}>
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
-
 // ─── Além da Fronteira — perguntas de criação de personagem ───────────────────
 
 const FRONTIER_INTRO =
@@ -136,15 +126,6 @@ const FRONTIER_QUESTIONS: { key: string; question: string }[] = [
   { key: "q_valor_vida", question: "Sua vida é mais importante que qualquer outra vida?" },
   { key: "q_marco", question: "Qual foi o acontecimento que mais marcou sua história?" },
 ];
-
-function Badge({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {
-  return (
-    <div style={{ padding: "8px 16px", background: "var(--surface)", border: `1px solid ${warn ? "rgba(224,82,76,0.5)" : "var(--border)"}`, borderRadius: "var(--radius-lg)" }}>
-      <p style={{ fontSize: "0.62rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>{label}</p>
-      <p style={{ fontSize: "0.95rem", fontWeight: 700, color: warn ? "#e0524c" : "var(--text)", marginTop: 2 }}>{value}</p>
-    </div>
-  );
-}
 
 function VitalCard({
   label, color, cur, max, temp, onDelta, onTemp, note, warn,
@@ -486,54 +467,30 @@ export function SheetClient({ character }: { character: CharacterProp }) {
         shareCharacterId={character.id}
       />
 
-      <div className="sw-mode-tabs-wrap no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", gap: 6, alignItems: "center" }}>
-        <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right", marginRight: 4 }}>
-          {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
-        </span>
-        {(["editar", "ficha", "jogar", "regras"] as SheetMode[]).map((m) => (
-          <button key={m} onClick={() => setMode(m)} style={{
-            padding: "6px 14px", borderRadius: "var(--radius-lg)",
-            background: mode === m ? ACCENT_DIM : "var(--surface-2)",
-            border: `1px solid ${mode === m ? ACCENT_BORD : "var(--border)"}`,
-            color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
-            fontWeight: mode === m ? 700 : 400, fontSize: "0.82rem", cursor: "pointer",
-            fontFamily: "inherit",
-            boxShadow: mode === m ? `0 0 14px ${ACCENT_DIM}` : "none",
-          }}>
-            {m === "ficha" ? "Ficha" : m === "jogar" ? "Jogar" : m === "editar" ? "Editar" : "Regras"}
-          </button>
-        ))}
-        <ExportJsonButton
-          exportUrl={`/api/starwars/characters/${character.id}/export`}
-          characterName={character.name}
-          systemSlug="starwars"
-          style={{ padding: "6px 14px", borderRadius: "var(--radius-lg)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "0.82rem" }}
-        />
-      </div>
-
       <main id="conteudo" className="sw-main-padding" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 32px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28, flexWrap: "wrap" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "1.2rem", fontWeight: 700, color: ACCENT_LIGHT, flexShrink: 0, overflow: "hidden" }}>
-            {character.portraitUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={character.portraitUrl} alt={character.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : character.name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")}
-          </div>
-          <div>
-            <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.5rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.1 }}>{character.name}</h1>
-            <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", marginTop: 3 }}>
-              {[species?.name, planet?.name, Object.entries(classLevels).map(([id, lvl]) => `${CLASS_BY_ID[id]?.name ?? id} ${lvl}`).join(" / "), `Nível ${sheet.level}`].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-          <button className="sw-levelup-btn" onClick={() => setShowLevelUp(true)} style={{
-            marginLeft: "auto", padding: "10px 18px", borderRadius: "var(--radius-lg)",
-            background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT,
-            fontWeight: 700, fontSize: "0.84rem", fontFamily: "inherit", cursor: "pointer",
-            boxShadow: `0 0 16px ${ACCENT_DIM}`, whiteSpace: "nowrap",
-          }}>
-            ⬆ Subir de Nível
-          </button>
-        </div>
+        <SheetHeader
+          system="starwars"
+          portraitUrl={character.portraitUrl}
+          initials={character.name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")}
+          name={character.name}
+          subtitle={[species?.name, planet?.name, Object.entries(classLevels).map(([id, lvl]) => `${CLASS_BY_ID[id]?.name ?? id} ${lvl}`).join(" / "), `Nível ${sheet.level}`].filter(Boolean).join(" · ")}
+          mode={mode}
+          onMode={(id) => setMode(id as SheetMode)}
+          tabs={[...SHEET_TABS, { id: "regras", label: "Regras" }]}
+          progression={<SheetProgressBtn onClick={() => setShowLevelUp(true)}>⬆ Subir de Nível</SheetProgressBtn>}
+          status={
+            <span style={{ fontSize: "0.74rem", color: saved === "ok" ? "#7dc864" : "var(--text-muted)", minWidth: 60, textAlign: "right" }}>
+              {saved === "saving" ? "Salvando…" : saved === "ok" ? "✓ Salvo" : ""}
+            </span>
+          }
+          actions={
+            <ExportJsonButton
+              exportUrl={`/api/starwars/characters/${character.id}/export`}
+              characterName={character.name}
+              systemSlug="starwars"
+            />
+          }
+        />
 
         {showLevelUp && (
           <LevelUpModal
@@ -595,40 +552,44 @@ function ViewMode({
   skills: Record<string, SkillGrade>; conditions: string[]; equipment: EquipmentItem[];
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        <VitalCard label="Pontos de Vida" color="#e06c6c" cur={pvCur} max={sheet.pvMax} temp={pvTemp} warn={pvCur <= 0} note={pvCur <= 0 ? "Incapacitado!" : undefined} />
-        <VitalCard label="Energia da Força" color={ACCENT_LIGHT} cur={peCur} max={sheet.peMax} temp={peTemp} />
-        <VitalCard label="Pontos de Poder" color={GOLD} cur={ppCur} max={sheet.ppMax} temp={ppTemp} />
-      </div>
+    <SheetShell
+      system="starwars"
+      band={
+        <>
+          <SheetVitals>
+            <VitalCard label="Pontos de Vida" color="#e06c6c" cur={pvCur} max={sheet.pvMax} temp={pvTemp} warn={pvCur <= 0} note={pvCur <= 0 ? "Incapacitado!" : undefined} />
+            <VitalCard label="Energia da Força" color="var(--accent-light)" cur={peCur} max={sheet.peMax} temp={peTemp} />
+            <VitalCard label="Pontos de Poder" color={GOLD} cur={ppCur} max={sheet.ppMax} temp={ppTemp} />
+          </SheetVitals>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        <Badge label="Nível" value={sheet.level} />
-        {Object.entries(classLevels).map(([id, lvl]) => (
-          <Badge key={id} label={CLASS_BY_ID[id]?.name ?? id} value={`Nível ${lvl}`} />
-        ))}
-        {sheet.sabreForm && <Badge label="Forma de Sabre" value={sheet.sabreForm} />}
-        {conditions.length > 0 && <Badge label="Condições" value={conditions.join(", ")} warn />}
-      </div>
-
-      <div className="sw-two-col" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24, alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <Panel title="Atributos">
+          <SheetChips>
+            <SheetChip label="Nível" value={sheet.level} />
+            {Object.entries(classLevels).map(([id, lvl]) => (
+              <SheetChip key={id} label={CLASS_BY_ID[id]?.name ?? id} value={`Nível ${lvl}`} />
+            ))}
+            {sheet.sabreForm && <SheetChip label="Forma de Sabre" value={sheet.sabreForm} />}
+            {conditions.length > 0 && <SheetChip label="Condições" value={conditions.join(", ")} warn />}
+          </SheetChips>
+        </>
+      }
+      left={
+        <>
+          <SheetSection title="Atributos">
             <div className="sw-attr-grid" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 }}>
               {ATTR_KEYS.map((k) => {
                 const pool = attributeDicePool(attrs[k]);
                 return (
                   <div key={k} style={{ textAlign: "center", padding: "12px 6px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
                     <p style={{ fontSize: "0.6rem", color: "var(--text-subtle)", fontWeight: 700, letterSpacing: "0.06em" }}>{ATTR_ABBR[k]}</p>
-                    <p style={{ fontSize: "1.5rem", fontWeight: 800, color: attrs[k] < 0 ? "#e0524c" : ACCENT_LIGHT, fontFamily: "var(--font-cinzel), serif" }}>{attrs[k]}</p>
+                    <p style={{ fontSize: "1.5rem", fontWeight: 800, color: attrs[k] < 0 ? "#e0524c" : "var(--accent-light)", fontFamily: "var(--font-cinzel), serif" }}>{attrs[k]}</p>
                     <p style={{ fontSize: "0.56rem", color: "var(--text-subtle)", marginTop: 2 }}>{pool.dice}d20 {pool.take === "highest" ? "maior" : "menor"}</p>
                   </div>
                 );
               })}
             </div>
-          </Panel>
+          </SheetSection>
 
-          <Panel title="Perícias">
+          <SheetSection title="Perícias">
             {planet && <p style={{ fontSize: "0.74rem", color: GOLD, marginBottom: 10 }}>{planet.naturalAbility.name}: {planet.naturalAbility.description}</p>}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14, fontSize: "0.64rem", color: "var(--text-subtle)" }}>
               {SKILL_GRADE_ORDER.map((g) => (
@@ -643,26 +604,27 @@ function ViewMode({
                 const planetBonus = planetSkillBonus(sheet.planet, sheet.planetSkillChoice, s.id);
                 const total = SKILL_GRADE_BONUS[grade] + planetBonus;
                 return (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: "var(--radius)", background: grade !== "inexperiente" ? ACCENT_DIM : "transparent" }}>
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: "var(--radius)", background: grade !== "inexperiente" ? "var(--accent-dim)" : "transparent" }}>
                     <GradeDot grade={grade} />
                     <span style={{ fontSize: "0.82rem", color: "var(--text)", fontWeight: grade !== "inexperiente" ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{s.name}</span>
-                    <span style={{ fontSize: "0.68rem", color: total ? ACCENT_LIGHT : "var(--text-subtle)", fontWeight: 700, flexShrink: 0 }}>{total >= 0 ? "+" : ""}{total}</span>
+                    <span style={{ fontSize: "0.68rem", color: total ? "var(--accent-light)" : "var(--text-subtle)", fontWeight: 700, flexShrink: 0 }}>{total >= 0 ? "+" : ""}{total}</span>
                   </div>
                 );
               })}
             </div>
-          </Panel>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <Panel title="Habilidades de Classe">
+          </SheetSection>
+        </>
+      }
+      right={
+        <>
+          <SheetSection title="Habilidades de Classe">
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {Object.entries(classLevels).map(([classId, lvl]) => {
                 const abilities = resolveClassAbilities(classId, lvl, classPowers);
                 const milestones = getAvailableMilestones(classId, lvl);
                 return (
                   <div key={classId}>
-                    <p style={{ fontSize: "0.72rem", fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
+                    <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--accent-light)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>
                       {CLASS_BY_ID[classId]?.name ?? classId} · Nível {lvl}
                     </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -677,8 +639,8 @@ function ViewMode({
                         </div>
                       ))}
                       {milestones.map((m) => (
-                        <div key={m.name} style={{ padding: "9px 12px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)" }}>
-                          <p style={{ fontSize: "0.82rem", color: ACCENT_LIGHT }}><strong>Marco {m.level} — {m.name}</strong></p>
+                        <div key={m.name} style={{ padding: "9px 12px", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius)" }}>
+                          <p style={{ fontSize: "0.82rem", color: "var(--accent-light)" }}><strong>Marco {m.level} — {m.name}</strong></p>
                           <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: 2 }}>{m.description}</p>
                           <AbilityStats a={m} />
                         </div>
@@ -688,10 +650,10 @@ function ViewMode({
                 );
               })}
             </div>
-          </Panel>
+          </SheetSection>
 
           {generalPowerIds.length > 0 && (
-            <Panel title="Poderes Gerais">
+            <SheetSection title="Poderes Gerais">
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {generalPowerIds.map((id) => {
                   const p = GENERAL_POWER_BY_ID[id];
@@ -704,15 +666,15 @@ function ViewMode({
                   );
                 })}
               </div>
-            </Panel>
+            </SheetSection>
           )}
 
           {equipment.length > 0 && (
-            <Panel title={`Inventário (${equipment.length})`}>
+            <SheetSection title={`Inventário (${equipment.length})`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {CATEGORY_ORDER.filter((cat) => equipment.some((e) => e.itemId && ITEM_BY_ID[e.itemId]?.category === cat)).map((cat) => (
                   <div key={cat}>
-                    <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{CATEGORY_LABEL[cat]}</p>
+                    <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{CATEGORY_LABEL[cat]}</p>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
                       {equipment.filter((e) => e.itemId && ITEM_BY_ID[e.itemId]?.category === cat).map((e) => (
                         <OwnedItemCard key={e.id} entry={e} />
@@ -722,7 +684,7 @@ function ViewMode({
                 ))}
                 {equipment.some((e) => !e.itemId) && (
                   <div>
-                    <p style={{ fontSize: "0.64rem", fontWeight: 700, color: ACCENT_LIGHT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Itens personalizados</p>
+                    <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Itens personalizados</p>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 8 }}>
                       {equipment.filter((e) => !e.itemId).map((e) => (
                         <OwnedItemCard key={e.id} entry={e} />
@@ -731,22 +693,21 @@ function ViewMode({
                   </div>
                 )}
               </div>
-            </Panel>
+            </SheetSection>
           )}
 
           {(background.history || background.objective || background.organization) && (
-            <Panel title="Descrição">
+            <SheetSection title="Descrição">
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {background.organization && <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Organização: {background.organization}</p>}
                 {background.history && <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>História: {background.history}</p>}
                 {background.objective && <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Objetivo: {background.objective}</p>}
               </div>
-            </Panel>
+            </SheetSection>
           )}
-
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }
 

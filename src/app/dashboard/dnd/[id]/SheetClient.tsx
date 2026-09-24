@@ -22,6 +22,9 @@ import { DndPrintSheet } from "./DndPrintSheet";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import "../dnd-responsive.css";
 import { PlayMode } from "./PlayMode";
+import { SheetHeader } from "@/components/sheet/SheetHeader";
+import { SheetShell, SheetVitals } from "@/components/sheet/SheetShell";
+import { SheetSection, SheetStat } from "@/components/sheet/SheetSection";
 import {
   ABILITIES, ABILITY_SHORT, SKILL_MAP, SAVE_ABILITY, HALF_CASTER_ABILITY, ALIGNMENT_LABELS, CP_VALUE, CURRENCY_LABEL, CURRENCY_COLOR, mod, signed, smallBtn,
   type SheetRow, type SlotState, type DescData,
@@ -210,50 +213,26 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
         </Link>
 
         {/* Header */}
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border-accent)",
-            borderRadius: "var(--radius-xl)",
-            padding: "20px 24px",
-            marginBottom: 20,
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ width: 52, height: 52, borderRadius: "var(--radius-xl)", background: "var(--accent-dim)", border: "1px solid var(--border-accent)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: "var(--accent-light)", letterSpacing: "0.04em" }}>
-              {cls ? cls.id.slice(0, 3).toUpperCase() : "D&D"}
-            </span>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.1rem, 2.5vw, 1.5rem)", fontWeight: 700, color: "var(--text)", lineHeight: 1.1 }}>
-              {characterName}
-            </h1>
-            <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>
-              {[raceName, classDisplay, bg?.name].filter(Boolean).join(" · ")} · Nível {initial.level}
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
-            {initial.classes.length > 0 && (
-              <LevelUpButton
-                characterId={characterId}
-                classes={initial.classes}
-                raceKey={initial.race ?? ""}
-                currentLevel={initial.level}
-                scores={scores}
-                knownSpellNames={spells.map((s) => s.spellName)}
-              />
-            )}
-            <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
-            <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
-            <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>Jogar</ModeBtn>
-            <ExportJsonButton exportUrl={`/api/dnd/characters/${characterId}/export`} characterName={characterName} systemSlug="dnd" />
-          </div>
-        </div>
+        <SheetHeader
+          system="dnd"
+          initials={cls ? cls.id.slice(0, 3).toUpperCase() : "D&D"}
+          portraitUrl={portraitUrl}
+          name={characterName}
+          subtitle={`${[raceName, classDisplay, bg?.name].filter(Boolean).join(" · ")} · Nível ${initial.level}`}
+          mode={mode}
+          onMode={(id) => setMode(id as "editar" | "ficha" | "jogar")}
+          progression={initial.classes.length > 0 && (
+            <LevelUpButton
+              characterId={characterId}
+              classes={initial.classes}
+              raceKey={initial.race ?? ""}
+              currentLevel={initial.level}
+              scores={scores}
+              knownSpellNames={spells.map((s) => s.spellName)}
+            />
+          )}
+          actions={<ExportJsonButton exportUrl={`/api/dnd/characters/${characterId}/export`} characterName={characterName} systemSlug="dnd" />}
+        />
 
         {mode === "editar" ? (
           <EditMode
@@ -377,31 +356,6 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
   );
 }
 
-// ── Mode Button ───────────────────────────────────────────────────────────────
-
-function ModeBtn({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "8px 18px",
-        borderRadius: "var(--radius-lg)",
-        background: active ? "var(--accent-dim)" : "var(--surface-2)",
-        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-        color: active ? "var(--accent-light)" : "var(--text-muted)",
-        fontWeight: active ? 700 : 400,
-        fontSize: "0.84rem",
-        cursor: "pointer",
-        transition: "all 0.15s",
-        fontFamily: "inherit",
-        boxShadow: active ? "0 0 16px var(--accent-glow)" : "none",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
 // ── VIEW MODE ─────────────────────────────────────────────────────────────────
 
 interface ViewProps {
@@ -447,59 +401,22 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
   const hasIdentity = !!portraitUrl || physical.length > 0 || (desc.languages?.length ?? 0) > 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Retrato + aparência física */}
-      {hasIdentity && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
-          {portraitUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={portraitUrl} alt="Retrato" style={{ width: 110, height: 110, objectFit: "cover", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-accent)", flexShrink: 0 }} />
-          )}
-          <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, minHeight: portraitUrl ? 110 : undefined }}>
-            <div>
-              <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.05rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>{characterName}</p>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>
-                {[raceName, cls?.name, bg?.name].filter(Boolean).join(" · ")} · Nível {sheet.level}
-              </p>
-            </div>
-            {physical.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
-                {physical.map(({ l, v }) => (
-                  <div key={l} style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "7px 10px" }}>
-                    <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{l}</p>
-                    <p style={{ fontSize: "0.84rem", color: "var(--text)", marginTop: 2 }}>{v}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {(desc.languages?.length ?? 0) > 0 && (
-              <div>
-                <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Idiomas</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {desc.languages!.map((lang) => (
-                    <span key={lang} style={{ fontSize: "0.72rem", color: "var(--text-muted)", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>{lang}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Core stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 10 }}>
-        <StatBox label="Pontos de Vida" value={`${hpCurrent}${hpTemp > 0 ? `+${hpTemp}` : ""} / ${sheet.hpMax}`} accent />
-        <StatBox label="Classe de Armadura" value={String(sheet.armorClass)} />
-        <StatBox label="Iniciativa" value={signed(sheet.initiative)} />
-        <StatBox label="Velocidade" value={`${sheet.speed} m`} />
-        <StatBox label="Perc. Passiva" value={String(passivePerception)} />
-        <StatBox label="Bônus Prof." value={`+${PROF_BONUS}`} accent />
-      </div>
-
-      <div className="dnd-view-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <SheetShell
+      system="dnd"
+      band={
+        <SheetVitals>
+          <SheetStat label="Pontos de Vida" value={`${hpCurrent}${hpTemp > 0 ? `+${hpTemp}` : ""} / ${sheet.hpMax}`} accent />
+          <SheetStat label="Classe de Armadura" value={String(sheet.armorClass)} />
+          <SheetStat label="Iniciativa" value={signed(sheet.initiative)} />
+          <SheetStat label="Velocidade" value={`${sheet.speed} m`} />
+          <SheetStat label="Perc. Passiva" value={String(passivePerception)} />
+          <SheetStat label="Bônus Prof." value={`+${PROF_BONUS}`} accent />
+        </SheetVitals>
+      }
+      left={
+        <>
           {/* Ability scores */}
-          <ViewSection label="Atributos">
+          <SheetSection title="Atributos">
             <div className="dnd-attr-view-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
               {ABILITIES.map((k) => {
                 const score = scores[k];
@@ -514,31 +431,29 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
                 );
               })}
             </div>
-          </ViewSection>
+          </SheetSection>
 
           {/* Saves */}
-          <ViewSection label="Testes de Resistência">
+          <SheetSection title="Testes de Resistência">
             {Object.entries(SAVE_ABILITY).map(([label, key]) => {
               const prof = proficientSaves.includes(label);
               const bonus = mod(scores[key]) + (prof ? PROF_BONUS : 0);
               return <ViewSaveRow key={key} label={label} bonus={bonus} prof={prof} />;
             })}
-          </ViewSection>
+          </SheetSection>
 
           {/* Skills */}
-          <ViewSection label="Perícias">
+          <SheetSection title="Perícias">
             {Object.entries(SKILL_MAP).map(([skill, abilityKey]) => {
               const prof = proficientSkills.has(skill);
               const bonus = mod(scores[abilityKey]) + (prof ? PROF_BONUS : 0);
               return <ViewSaveRow key={skill} label={`${skill} (${ABILITY_SHORT[abilityKey]})`} bonus={bonus} prof={prof} />;
             })}
-          </ViewSection>
-        </div>
+          </SheetSection>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Traits */}
           {(race || sheet.classes.length > 0 || bg) && (
-            <ViewSection label="Traços & Características">
+            <SheetSection title="Traços & Características">
               {race && <TraitGroup label={`Raça — ${raceName}`} color="#7ec8e3" items={[...(race as { traits: string[] }).traits, ...((subrace as { traits: string[] } | undefined)?.traits ?? [])]} />}
               {sheet.classes.map((ce: { id: string; className: string; level: number }) => {
                 const cl = CLASSES.find((c) => c.id === ce.className);
@@ -563,28 +478,12 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
                 />
               )}
               {bg && <TraitGroup label={`Antecedente — ${bg.name}`} color="#e09c5b" items={[`${bg.feature}: ${bg.featureDesc}`]} />}
-            </ViewSection>
+            </SheetSection>
           )}
-
-          {/* Equipment */}
-          <ViewSection label="Equipamento">
-            {equipment.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {equipment.map((item) => (
-                  <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                    <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{item.itemName}</span>
-                    {item.quantity > 1 && <span style={{ fontSize: "0.72rem", color: "var(--text-subtle)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "1px 6px" }}>×{item.quantity}</span>}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Sem itens registrados.</p>
-            )}
-          </ViewSection>
 
           {/* Spells */}
           {(cantrips.length > 0 || spells1.length > 0) && (
-            <ViewSection label="Magias">
+            <SheetSection title="Magias">
               {cantrips.length > 0 && (
                 <div style={{ marginBottom: 8 }}>
                   <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Truques</p>
@@ -601,11 +500,68 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
                   </div>
                 </div>
               )}
-            </ViewSection>
+            </SheetSection>
+          )}
+        </>
+      }
+      right={
+        <>
+          {/* Retrato + aparência física */}
+          {hasIdentity && (
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center" }}>
+              {portraitUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={portraitUrl} alt="Retrato" style={{ width: 110, height: 110, objectFit: "cover", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-accent)", flexShrink: 0 }} />
+              )}
+              <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, minHeight: portraitUrl ? 110 : undefined }}>
+                <div>
+                  <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.05rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>{characterName}</p>
+                  <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>
+                    {[raceName, cls?.name, bg?.name].filter(Boolean).join(" · ")} · Nível {sheet.level}
+                  </p>
+                </div>
+                {physical.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: 8 }}>
+                    {physical.map(({ l, v }) => (
+                      <div key={l} style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "7px 10px" }}>
+                        <p style={{ fontSize: "0.56rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{l}</p>
+                        <p style={{ fontSize: "0.84rem", color: "var(--text)", marginTop: 2 }}>{v}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(desc.languages?.length ?? 0) > 0 && (
+                  <div>
+                    <p style={{ fontSize: "0.6rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Idiomas</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {desc.languages!.map((lang) => (
+                        <span key={lang} style={{ fontSize: "0.72rem", color: "var(--text-muted)", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>{lang}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
+          {/* Equipment */}
+          <SheetSection title="Equipamento">
+            {equipment.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {equipment.map((item) => (
+                  <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{item.itemName}</span>
+                    {item.quantity > 1 && <span style={{ fontSize: "0.72rem", color: "var(--text-subtle)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xs)", padding: "1px 6px" }}>×{item.quantity}</span>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)", fontStyle: "italic" }}>Sem itens registrados.</p>
+            )}
+          </SheetSection>
+
           {/* Currency */}
-          <ViewSection label="Moedas">
+          <SheetSection title="Moedas">
             <div className="dnd-currency-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
               {(["cp","sp","ep","gp","pp"] as const).map((coin) => {
                 const value = coin === "gp" ? gp : sheet[coin];
@@ -617,29 +573,32 @@ function ViewMode({ characterName, sheet, scores, raceName, race, subrace, cls, 
                 );
               })}
             </div>
-          </ViewSection>
-        </div>
-      </div>
+          </SheetSection>
+        </>
+      }
+      full={
+        <>
+          {/* Personalidade */}
+          {personality.length > 0 && (
+            <SheetSection title="Personalidade">
+              {personality.map(({ l, v }) => (
+                <div key={l} style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 12 }}>
+                  <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{l}</p>
+                  <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{v}</p>
+                </div>
+              ))}
+            </SheetSection>
+          )}
 
-      {/* Personalidade */}
-      {personality.length > 0 && (
-        <ViewSection label="Personalidade">
-          {personality.map(({ l, v }) => (
-            <div key={l} style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 12 }}>
-              <p style={{ fontSize: "0.64rem", fontWeight: 700, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{l}</p>
-              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{v}</p>
-            </div>
-          ))}
-        </ViewSection>
-      )}
-
-      {/* História */}
-      {desc.backstory?.trim() && (
-        <ViewSection label="História do Personagem">
-          <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{desc.backstory}</p>
-        </ViewSection>
-      )}
-    </div>
+          {/* História */}
+          {desc.backstory?.trim() && (
+            <SheetSection title="História do Personagem">
+              <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{desc.backstory}</p>
+            </SheetSection>
+          )}
+        </>
+      }
+    />
   );
 }
 
@@ -1158,24 +1117,6 @@ function EditArea({ label, value, onChange, rows = 2 }: { label: string; value: 
 
 
 
-
-function StatBox({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div style={{ background: accent ? "var(--accent-dim)" : "var(--surface)", border: `1px solid ${accent ? "var(--border-accent)" : "var(--border)"}`, borderRadius: "var(--radius-lg)", padding: "12px 10px", textAlign: "center" }}>
-      <p style={{ fontSize: "0.58rem", fontWeight: 700, color: "var(--text-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</p>
-      <p style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1.15rem", fontWeight: 700, color: accent ? "var(--accent-light)" : "var(--text)" }}>{value}</p>
-    </div>
-  );
-}
-
-function ViewSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-      <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
-      {children}
-    </div>
-  );
-}
 
 function ViewSaveRow({ label, bonus, prof }: { label: string; bonus: number; prof: boolean }) {
   return (

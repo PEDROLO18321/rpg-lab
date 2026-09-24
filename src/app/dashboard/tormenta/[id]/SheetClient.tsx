@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { DeleteCharacterButton } from "@/components/dashboard/DeleteCharacterButton";
+import { SheetHeader, SheetProgressBtn } from "@/components/sheet/SheetHeader";
+import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShell";
+import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
+import { PLAY_THEME } from "@/components/play/theme";
 import { RACE_BY_ID } from "@/lib/tormenta/races";
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
 import { ORIGIN_BY_ID } from "@/lib/tormenta/origins";
@@ -39,6 +43,7 @@ export function SheetClient({ character }: { character: AnyChar }) {
   const cls = sheet.className ? CLASS_BY_ID[sheet.className] : null;
   const origin = sheet.origin ? ORIGIN_BY_ID[sheet.origin] : null;
   const god = sheet.godId ? GOD_BY_ID[sheet.godId] : null;
+  const themeColors = PLAY_THEME.tormenta;
 
   const [mode, setMode] = useState<"ficha" | "jogar" | "editar">("ficha");
   const [portraitUrl, setPortraitUrl] = useState<string | null>(character.portraitUrl ?? null);
@@ -90,36 +95,36 @@ export function SheetClient({ character }: { character: AnyChar }) {
     <div style={{ minHeight: "100vh", background: "transparent" }}>
       <DashboardNav userName={character.user?.name ?? "Jogador"} systemName="Tormenta 20" systemHref="/dashboard/tormenta/jogador" backLabel="Meus Heróis" accentColor="#a01818" shareCharacterId={character.id} />
 
-      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 52, height: 52, borderRadius: "var(--radius-xl)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {portraitUrl
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={portraitUrl} alt={character.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: ACCENT_LIGHT, letterSpacing: "0.04em" }}>{cls ? cls.id.slice(0, 3).toUpperCase() : "T20"}</span>}
-            </div>
-            <div>
-              <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT_LIGHT }}>Tormenta 20</span>
-              <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.4rem, 3vw, 1.9rem)", fontWeight: 700, color: "var(--text)" }}>{character.name}</h1>
-              <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
-                {race?.icon} {race?.name} · {cls?.icon} {cls?.name} (nível {sheet.level}) · {origin?.name}{god ? ` · Devoto de ${god.name}` : ""}
-              </p>
-            </div>
-          </div>
-          <div className="no-print" style={{ display: "flex", gap: 8 }}>
-            {sheet.level < 20 && mode === "ficha" && (
-              <button onClick={() => setLevelingUp(true)}
-                style={{ padding: "8px 16px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius)", color: ACCENT_LIGHT, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>
-                ⬆ Subir de Nível
-              </button>
-            )}
-            <ModeBtn active={mode === "editar"} onClick={() => setMode("editar")}>Editar</ModeBtn>
-            <ModeBtn active={mode === "ficha"} onClick={() => setMode("ficha")}>Ficha</ModeBtn>
-            <ModeBtn active={mode === "jogar"} onClick={() => setMode("jogar")}>Jogar</ModeBtn>
-            <ExportJsonButton exportUrl={`/api/tormenta/characters/${character.id}/export`} characterName={character.name} systemSlug="tormenta" />
-          </div>
-        </div>
+      <main
+        id="conteudo"
+        style={{
+          maxWidth: 1100, margin: "0 auto", padding: "36px 24px 80px",
+          display: "flex", flexDirection: "column", gap: 24,
+          // Projeta o tema do sistema na subárvore inteira da página, não só no
+          // cabeçalho: SheetHeader faz o mesmo só para si — sem isto, o corpo da
+          // ficha (irmão do cabeçalho, não descendente) cairia no dourado padrão
+          // do D&D definido em globals.css.
+          "--accent": themeColors.accent,
+          "--accent-light": themeColors.accentLight,
+          "--accent-dim": themeColors.accentDim,
+          "--border-accent": themeColors.accentBorder,
+          "--accent-glow": themeColors.glow,
+        } as React.CSSProperties}
+      >
+        <SheetHeader
+          system="tormenta"
+          portraitUrl={portraitUrl}
+          initials={cls ? cls.id.slice(0, 3).toUpperCase() : "T20"}
+          name={character.name}
+          subtitle={`${[race?.name, cls?.name, origin?.name].filter(Boolean).join(" · ")} · Nível ${sheet.level}${god ? ` · Devoto de ${god.name}` : ""}`}
+          mode={mode}
+          onMode={(id) => setMode(id as "ficha" | "jogar" | "editar")}
+          progression={sheet.level < 20 && mode === "ficha" ? (
+            <SheetProgressBtn onClick={() => setLevelingUp(true)}>⬆ Subir de Nível</SheetProgressBtn>
+          ) : undefined}
+          status={saving ? <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)" }}>Salvando…</p> : undefined}
+          actions={<ExportJsonButton exportUrl={`/api/tormenta/characters/${character.id}/export`} characterName={character.name} systemSlug="tormenta" />}
+        />
 
         {mode === "editar" ? (
           <EditMode
@@ -148,120 +153,130 @@ export function SheetClient({ character }: { character: AnyChar }) {
           />
         ) : (
         <>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-          <VitalCard label="Pontos de Vida" color={ACCENT_LIGHT} data={pv} onDelta={adjustPv} />
-          <VitalCard label="Pontos de Mana" color={ACCENT_LIGHT} data={pm} onDelta={adjustPm} />
-        </div>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <Chip label="Nível" value={`${sheet.level}`} />
-          <Chip label="XP" value={xpForNext !== null ? `${sheet.xp} / ${xpForNext}` : `${sheet.xp} (máx.)`} />
-          <Chip label="Defesa" value={`${sheet.defense}`} />
-          <Chip label="Deslocamento" value={`${sheet.movement}m`} />
-          <Chip label="Dinheiro" value={`T$ ${money}`} />
-        </div>
-
         {levelingUp && <LevelUpModal character={character} onClose={() => setLevelingUp(false)} />}
 
-        <Section title="Atributos">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))", gap: 10 }}>
-            {ATTR_KEYS.map((k) => (
-              <div key={k} style={{ textAlign: "center", padding: "10px 6px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
-                <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", fontWeight: 700, textTransform: "uppercase" }}>{ATTR_LABEL[k]}</p>
-                <p style={{ fontSize: "1.3rem", fontWeight: 800, color: ACCENT_LIGHT, fontFamily: "var(--font-cinzel), serif" }}>{attrs[k]}</p>
-                <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>{attrMod(attrs[k]) >= 0 ? "+" : ""}{attrMod(attrs[k])}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Perícias">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6 }}>
-            {SKILLS.map((s) => {
-              const trained = !!skillsData[s.id];
-              const mod = skillModifier(sheet.level, attrMod(attrs[s.attr]), trained);
-              return (
-                <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: trained ? ACCENT_DIM : "var(--surface)", border: `1px solid ${trained ? ACCENT_BORD : "var(--border)"}`, borderRadius: "var(--radius)" }}>
-                  <span style={{ fontSize: "0.78rem", color: trained ? ACCENT_LIGHT : "var(--text-muted)", fontWeight: trained ? 700 : 500 }}>{s.name}</span>
-                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text)" }}>{mod >= 0 ? "+" : ""}{mod}</span>
+        <SheetShell
+          system="tormenta"
+          band={
+            <>
+              <SheetVitals>
+                <VitalCard label="Pontos de Vida" color="var(--accent-light)" data={pv} onDelta={adjustPv} />
+                <VitalCard label="Pontos de Mana" color="var(--accent-light)" data={pm} onDelta={adjustPm} />
+              </SheetVitals>
+              <SheetChips>
+                <SheetChip label="Nível" value={`${sheet.level}`} />
+                <SheetChip label="XP" value={xpForNext !== null ? `${sheet.xp} / ${xpForNext}` : `${sheet.xp} (máx.)`} />
+                <SheetChip label="Defesa" value={`${sheet.defense}`} />
+                <SheetChip label="Deslocamento" value={`${sheet.movement}m`} />
+                <SheetChip label="Dinheiro" value={`T$ ${money}`} />
+              </SheetChips>
+            </>
+          }
+          left={
+            <>
+              <SheetSection title="Atributos">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(90px, 1fr))", gap: 10 }}>
+                  {ATTR_KEYS.map((k) => (
+                    <div key={k} style={{ textAlign: "center", padding: "10px 6px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
+                      <p style={{ fontSize: "0.66rem", color: "var(--text-subtle)", fontWeight: 700, textTransform: "uppercase" }}>{ATTR_LABEL[k]}</p>
+                      <p style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--accent-light)", fontFamily: "var(--font-cinzel), serif" }}>{attrs[k]}</p>
+                      <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>{attrMod(attrs[k]) >= 0 ? "+" : ""}{attrMod(attrs[k])}</p>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </Section>
+              </SheetSection>
 
-        {powers.length > 0 && (
-          <Section title="Poderes">
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {powers.slice().sort((a, b) => a.level - b.level).map((p, i) => (
-                <div key={`${p.id}-${i}`} style={{ padding: "8px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                  <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>
-                    {p.name}
-                    {p.attrKey ? ` (${ATTR_LABEL[p.attrKey]} +${p.attrAmount})` : ""}
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontWeight: 400 }}> · nível {p.level}{p.fixed ? " · automático" : ""}</span>
-                  </p>
-                  <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>{p.description}</p>
+              <SheetSection title="Perícias">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6 }}>
+                  {SKILLS.map((s) => {
+                    const trained = !!skillsData[s.id];
+                    const mod = skillModifier(sheet.level, attrMod(attrs[s.attr]), trained);
+                    return (
+                      <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: trained ? "var(--accent-dim)" : "var(--surface)", border: `1px solid ${trained ? "var(--border-accent)" : "var(--border)"}`, borderRadius: "var(--radius)" }}>
+                        <span style={{ fontSize: "0.78rem", color: trained ? "var(--accent-light)" : "var(--text-muted)", fontWeight: trained ? 700 : 500 }}>{s.name}</span>
+                        <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text)" }}>{mod >= 0 ? "+" : ""}{mod}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </Section>
-        )}
+              </SheetSection>
 
-        {spellIds.length > 0 && (
-          <Section title="Magias">
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {spellIds.map((id) => {
-                const sp = SPELLS.find((s) => s.id === id);
-                if (!sp) return null;
-                return (
-                  <div key={id} style={{ padding: "8px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                    <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>{sp.name} <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)", fontWeight: 400 }}>· {sp.school} · {sp.circle}º círculo</span></p>
-                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>{sp.description}</p>
+              {powers.length > 0 && (
+                <SheetSection title="Poderes">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {powers.slice().sort((a, b) => a.level - b.level).map((p, i) => (
+                      <div key={`${p.id}-${i}`} style={{ padding: "8px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                        <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>
+                          {p.name}
+                          {p.attrKey ? ` (${ATTR_LABEL[p.attrKey]} +${p.attrAmount})` : ""}
+                          <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)", fontWeight: 400 }}> · nível {p.level}{p.fixed ? " · automático" : ""}</span>
+                        </p>
+                        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>{p.description}</p>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          </Section>
-        )}
+                </SheetSection>
+              )}
 
-        <Section title="Equipamento">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {weaponIds.map((id) => <Tag key={id}>{WEAPON_BY_ID[id]?.name ?? id}</Tag>)}
-            {equipment.map((e, i) => <Tag key={`${e}-${i}`}>{e}</Tag>)}
-          </div>
-        </Section>
+              {spellIds.length > 0 && (
+                <SheetSection title="Magias">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {spellIds.map((id) => {
+                      const sp = SPELLS.find((s) => s.id === id);
+                      if (!sp) return null;
+                      return (
+                        <div key={id} style={{ padding: "8px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                          <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>{sp.name} <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)", fontWeight: 400 }}>· {sp.school} · {sp.circle}º círculo</span></p>
+                          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>{sp.description}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </SheetSection>
+              )}
+            </>
+          }
+          right={
+            <>
+              <SheetSection title="Equipamento">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {weaponIds.map((id) => <Tag key={id}>{WEAPON_BY_ID[id]?.name ?? id}</Tag>)}
+                  {equipment.map((e, i) => <Tag key={`${e}-${i}`}>{e}</Tag>)}
+                </div>
+              </SheetSection>
 
-        <Section title="Antecedentes">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {(["appearance", "personality", "history", "objective"] as const).map((f) => (
-              <div key={f}>
-                <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
-                  {f === "appearance" ? "Aparência" : f === "personality" ? "Personalidade" : f === "history" ? "História" : "Objetivo"}
-                </p>
+              <SheetSection title="Antecedentes">
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {(["appearance", "personality", "history", "objective"] as const).map((f) => (
+                    <div key={f}>
+                      <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                        {f === "appearance" ? "Aparência" : f === "personality" ? "Personalidade" : f === "history" ? "História" : "Objetivo"}
+                      </p>
+                      <textarea
+                        value={background[f] ?? ""}
+                        onChange={(e) => setBackground((b) => ({ ...b, [f]: e.target.value }))}
+                        onBlur={() => save({ background })}
+                        rows={2}
+                        style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "10px 12px", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </SheetSection>
+
+              <SheetSection title="Notas">
                 <textarea
-                  value={background[f] ?? ""}
-                  onChange={(e) => setBackground((b) => ({ ...b, [f]: e.target.value }))}
-                  onBlur={() => save({ background })}
-                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={() => save({ notes })}
+                  rows={4}
+                  placeholder="Anotações livres de sessão..."
                   style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "10px 12px", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
                 />
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Notas">
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            onBlur={() => save({ notes })}
-            rows={4}
-            placeholder="Anotações livres de sessão..."
-            style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "10px 12px", color: "var(--text)", fontSize: "0.84rem", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
-          />
-        </Section>
-
-        {saving && <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)" }}>Salvando…</p>}
+              </SheetSection>
+            </>
+          }
+        />
 
         <Link href="/dashboard/tormenta/jogador" style={{ fontSize: "0.82rem", color: "var(--text-muted)", textDecoration: "none" }}>← Voltar para Meus Heróis</Link>
         </>
@@ -277,30 +292,6 @@ export function SheetClient({ character }: { character: AnyChar }) {
         />
       </div>
     </div>
-  );
-}
-
-// ── Mode Button ───────────────────────────────────────────────────────────────
-
-function ModeBtn({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "8px 18px",
-        borderRadius: "var(--radius-lg)",
-        background: active ? ACCENT_DIM : "var(--surface-2)",
-        border: `1px solid ${active ? ACCENT_BORD : "var(--border)"}`,
-        color: active ? ACCENT_LIGHT : "var(--text-muted)",
-        fontWeight: active ? 700 : 400,
-        fontSize: "0.84rem",
-        cursor: "pointer",
-        transition: "all 0.15s",
-        fontFamily: "inherit",
-      }}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -511,15 +502,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
       <p style={{ fontSize: "0.7rem", fontWeight: 700, color: ACCENT_LIGHT, letterSpacing: "0.06em", textTransform: "uppercase" }}>{title}</p>
       {children}
-    </div>
-  );
-}
-
-function Chip({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ padding: "8px 14px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-lg)" }}>
-      <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 6 }}>{label}</span>
-      <span style={{ fontSize: "0.84rem", fontWeight: 700, color: ACCENT_LIGHT }}>{value}</span>
     </div>
   );
 }
