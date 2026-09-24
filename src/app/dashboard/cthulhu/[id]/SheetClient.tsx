@@ -10,8 +10,16 @@ import {
   type AttrKey, type CthulhuAttrs, type SkillCheck, type Weapon, type PercentileRoll,
 } from "@/lib/cthulhu/data";
 import { CTHULHU_STATES, CTHULHU_STATE_BY_ID } from "@/lib/cthulhu/states";
-import { DieSvg, rollDie, DICE_SIDES } from "@/components/dice/DieSvg";
-import { RollResultDie } from "@/components/three/DiceRollFx";
+import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
+import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
+import { PlayCard } from "@/components/play/PlayCard";
+import { VitalBar } from "@/components/play/VitalBar";
+import { StatChip } from "@/components/play/StatChip";
+import { RollHistory } from "@/components/play/RollHistory";
+import { DicePanel } from "@/components/play/DicePanel";
+import { ActiveConditionChips } from "@/components/play/ConditionPicker";
+import { PLAY_THEME } from "@/components/play/theme";
+import type { PlayRollEntry, RollTone } from "@/components/play/types";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
 import "../cthulhu-responsive.css";
@@ -91,7 +99,8 @@ export function SheetClient({ character }: Props) {
   const [skillPoints, setSkillPoints] = useState<Record<string, number>>(() => parseJsonField<Record<string, number>>(s.skills, {}));
   const [marked, setMarked] = useState<string[]>(() => parseJsonField<string[]>(s.skillChecks, []));
 
-  const [editMode, setEditMode] = useState(false);
+  const [mode, setMode] = useState<"ficha" | "jogar" | "editar">("ficha");
+  const editMode = mode === "editar";
   const [saving,   setSaving]   = useState(false);
   const [devOpen,  setDevOpen]  = useState(false);
   useEscapeKey(devOpen, () => setDevOpen(false));
@@ -238,9 +247,27 @@ export function SheetClient({ character }: Props) {
   }
   function removeSpell(id: string) { saveSpells(spells.filter((sp) => sp.id !== id)); }
 
-  const [log, setLog] = useState<RollEntry[]>([]);
+  const [log, setLog] = useState<(RollEntry & { id: number })[]>([]);
+  const [fxRoll, setFxRoll] = useState<DiceFxRoll | null>(null);
+  const logId = useRef(0);
+
   function pushLog(entry: RollEntry) {
-    setLog((prev) => [entry, ...prev].slice(0, 12));
+    const e = { ...entry, id: ++logId.current };
+    setLog((prev) => [e, ...prev].slice(0, 12));
+    setFxRoll(toFx(e));
+  }
+
+  /** O dado que o toast mostra: o percentual dos testes, ou a face rolada. */
+  function toFx(e: RollEntry & { id: number }): DiceFxRoll {
+    if (e.kind === "check") {
+      return { id: e.id, label: e.label, dice: 100, total: e.check.roll,
+        isCrit: e.check.level === "critico", isFumble: e.check.level === "desastre" };
+    }
+    if (e.kind === "damage") {
+      const faces = parseInt(e.segments[0]?.expr.split(/[dD]/)[1] ?? "6", 10) || 6;
+      return { id: e.id, label: e.label, dice: faces, total: e.segments.reduce((a, sg) => a + sg.total, 0) };
+    }
+    return { id: e.id, label: e.label, dice: parseInt(e.expr.split(/[dD%]/)[1] ?? "6", 10) || 100, total: e.total };
   }
 
   // Saldo de dados de dezenas extras: positivo é bônus, negativo é penalidade.
@@ -250,20 +277,6 @@ export function SheetClient({ character }: Props) {
   function rollCheck(label: string, target: number) {
     const dice = rollPercentileDice(Math.max(0, diceMod), Math.max(0, -diceMod));
     pushLog({ kind: "check", label, check: resolveCheck(target, dice.result), dice });
-  }
-
-  // ── Rolador livre (d4…d%) ──
-  const [freeDie, setFreeDie] = useState<number>(100);
-  const [freeCount, setFreeCount] = useState(1);
-  const [lastFree, setLastFree] = useState<{ id: number; label: string; dice: number; total: number } | null>(null);
-  const freeId = useRef(0);
-
-  function rollFree() {
-    const rolls = Array.from({ length: freeCount }, () => rollDie(freeDie));
-    const total = rolls.reduce((a, b) => a + b, 0);
-    const expr = `${freeCount}D${freeDie}`;
-    setLastFree({ id: ++freeId.current, label: expr, dice: freeDie, total });
-    pushLog({ kind: "raw", label: expr, total, expr, rolls });
   }
 
   const states = insanity.states ?? [];
@@ -405,7 +418,7 @@ export function SheetClient({ character }: Props) {
     setPvCurrent((c) => Math.min(c, pvMax));
     setSanCurrent((c) => Math.min(c, sanMax));
     setPmCurrent((c) => Math.min(c, pmMax));
-    setEditMode(false);
+    setMode("ficha");
     setWeaponPickerOpen(false);
   }
 
@@ -422,568 +435,12 @@ export function SheetClient({ character }: Props) {
   const sanColor = sanPct > 60 ? ACCENT : sanPct > 30 ? "#c9941f" : "#c03030";
   const pvColor  = pvPct  > 60 ? ACCENT : pvPct  > 30 ? "#c9941f" : "#c03030";
 
-  const bgLabels: Record<string, string> = {
-    personalDescription:  "Descrição Pessoal",
-    ideology:             "Ideologia / Crenças",
-    significantPeople:    "Pessoas Significativas",
-    meaningfulLocations:  "Locais Importantes",
-    treasuredPossessions: "Pertences Queridos",
-    traits:               "Características",
-    backstory:            "História",
-    injuries:             "Ferimentos e Cicatrizes",
-  };
+  // Blocos que a Ficha e o Jogar mostram iguais. São constantes e não
+  // componentes: um componente declarado aqui remontaria a cada render e os
+  // campos de texto perderiam o foco no meio da digitação.
 
-  return (
-    <div style={{ minHeight: "100vh", background: "transparent" }}>
-      <DashboardNav
-        userName={character.user?.name ?? "Investigador"}
-        systemName="Call of Cthulhu"
-        systemHref="/dashboard/cthulhu/jogador"
-        backLabel="Investigadores"
-        accentColor={ACCENT}
-        shareCharacterId={character.id}
-        // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
-      />
-
-      <div className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
-        {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
-        <button
-          onClick={() => { setDevOpen(true); setDevResults(null); }}
-          style={{ ...pillBtn, background: "var(--surface-2)" }}
-          title="Fase de Desenvolvimento"
-        >
-          📈 Desenvolvimento
-        </button>
-        {editMode ? (
-          <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
-            ✓ Salvar
-          </button>
-        ) : (
-          <button onClick={() => setEditMode(true)} style={{ ...pillBtn, background: "var(--surface-2)" }}>
-            ✎ Editar
-          </button>
-        )}
-        <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" style={pillBtn} />
-      </div>
-
-      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 260 }}>
-            <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>
-              Call of Cthulhu 7ª Edição · {eraLabel}
-            </span>
-            {editMode ? (
-              <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
-                {/* Portrait upload */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 90, height: 90, borderRadius: "var(--radius-lg)", border: `1px solid ${ACCENT_BORD}`, background: "var(--surface-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {portrait
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={portrait} alt="Retrato" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textAlign: "center", padding: 6 }}>Sem foto</span>}
-                  </div>
-                  <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: "none" }} />
-                  <button onClick={() => fileRef.current?.click()} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px" }}>Trocar foto</button>
-                  {portrait && <button onClick={() => setPortrait(null)} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px", color: "#e06c6c" }}>Remover</button>}
-                </div>
-                {/* Identity fields */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 220 }}>
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" style={editInput} />
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <select value={occupation} onChange={(e) => setOccupation(e.target.value)} style={{ ...editInput, flex: 1 }}>
-                      <option value="">Sem ocupação</option>
-                      {OCCUPATIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                    </select>
-                    <select value={era} onChange={(e) => setEra(e.target.value as "1920s" | "modern")} style={{ ...editInput, width: 130 }}>
-                      <option value="1920s">Anos 1920</option>
-                      <option value="modern">Moderno</option>
-                    </select>
-                    <input type="number" min={15} max={90} value={age} onChange={(e) => setAge(Math.max(0, parseInt(e.target.value) || 0))} style={{ ...editInput, width: 80 }} />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                {portrait && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={portrait} alt="Retrato" style={{ width: 72, height: 72, borderRadius: "var(--radius-lg)", objectFit: "cover", border: `1px solid ${ACCENT_BORD}`, flexShrink: 0 }} />
-                )}
-                <div>
-                  <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", fontWeight: 700, color: "var(--text)" }}>
-                    {name}
-                  </h1>
-                  <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
-                    {occ?.name ?? occupation ?? "Sem ocupação"} · {age ? `${age} anos` : "Idade desconhecida"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Vitals trackers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
-          <Tracker
-            label="Pontos de Vida"
-            current={pvCurrent} temp={pvTemp} max={pvMax} pct={pvPct} barColor={pvColor}
-            onDelta={(d) => changeVital(d, pvCurrent, setPvCurrent, "pvCurrent", pvTemp, setPvTemp, "pvTemp", pvMax)}
-            onTemp={(d) => changeTemp(d, pvTemp, setPvTemp, "pvTemp")}
-          />
-          <Tracker
-            label="Sanidade"
-            current={sanCurrent} temp={sanTemp} max={sanMax} pct={sanPct} barColor={sanColor}
-            onDelta={(d) => { if (d < 0) sanLost(-d); changeVital(d, sanCurrent, setSanCurrent, "sanCurrent", sanTemp, setSanTemp, "sanTemp", sanMax); }}
-            onTemp={(d) => changeTemp(d, sanTemp, setSanTemp, "sanTemp")}
-            onRoll={() => rollCheck(`Teste de Sanidade (${sanCurrent}%)`, sanCurrent)}
-          />
-          <Tracker
-            label="Pontos de Magia"
-            current={pmCurrent} temp={pmTemp} max={pmMax} pct={pmMax ? Math.max(0, (pmCurrent / pmMax) * 100) : 0} barColor={ACCENT}
-            onDelta={(d) => changeVital(d, pmCurrent, setPmCurrent, "pmCurrent", pmTemp, setPmTemp, "pmTemp", pmMax)}
-            onTemp={(d) => changeTemp(d, pmTemp, setPmTemp, "pmTemp")}
-          />
-          <Tracker
-            label="Sorte"
-            current={luck} max={99} pct={luck} barColor="var(--text-subtle)"
-            onDelta={(d) => adjustLuck(d > 0 ? 5 : -5)}
-            stepLabel="±5"
-            onRoll={() => rollCheck(`Sorte (${luck}%)`, luck)}
-          />
-        </div>
-
-        {/* Mesa: dados de bônus/penalidade, rolador livre e estados */}
-        {!editMode && (
-          <Section title="Mesa">
-            <div className="cth-table-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-              <div>
-                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 8, lineHeight: 1.5 }}>
-                  <b style={{ color: ACCENT_LIGHT }}>Dados de bônus e penalidade.</b> Um dado de dezenas a mais por nível:
-                  o bônus fica com a menor leitura, a penalidade com a maior. Vale para os testes desta ficha até você zerar.
-                </p>
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {[-2, -1, 0, 1, 2].map((v) => {
-                    const ativo = diceMod === v;
-                    const cor = v > 0 ? ACCENT : v < 0 ? "#c03030" : "var(--text-subtle)";
-                    return (
-                      <button
-                        key={v}
-                        onClick={() => setDiceMod(v)}
-                        aria-pressed={ativo}
-                        title={v === 0 ? "Sem dados extras" : v > 0 ? `${v} dado(s) de bônus` : `${-v} dado(s) de penalidade`}
-                        style={{
-                          padding: "6px 14px", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "inherit",
-                          fontSize: "0.78rem", fontWeight: 700,
-                          background: ativo ? `${cor}22` : "var(--surface-2)",
-                          border: `1px solid ${ativo ? cor : "var(--border)"}`,
-                          color: ativo ? cor : "var(--text-muted)",
-                        }}
-                      >
-                        {v === 0 ? "Normal" : v > 0 ? `+${v} bônus` : `${-v} penal.`}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", margin: "16px 0 8px", lineHeight: 1.5 }}>
-                  <b style={{ color: ACCENT_LIGHT }}>Estados.</b> Clique para aplicar ou remover.
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                  {CTHULHU_STATES.map((st) => {
-                    const ativo = states.includes(st.id);
-                    return (
-                      <button
-                        key={st.id}
-                        onClick={() => toggleState(st.id)}
-                        aria-pressed={ativo}
-                        title={st.desc}
-                        style={{
-                          padding: "4px 10px", borderRadius: "var(--radius-xs)", cursor: "pointer", fontFamily: "inherit",
-                          fontSize: "0.72rem", fontWeight: ativo ? 700 : 400,
-                          background: ativo ? "rgba(192,48,48,0.16)" : "var(--surface-2)",
-                          border: `1px solid ${ativo ? "#c03030" : "var(--border)"}`,
-                          color: ativo ? "#e07070" : "var(--text-muted)",
-                        }}
-                      >
-                        {st.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                {states.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
-                    {states.map((id) => {
-                      const st = CTHULHU_STATE_BY_ID[id];
-                      if (!st) return null;
-                      return (
-                        <p key={id} style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
-                          <b style={{ color: "#e07070" }}>{st.name}:</b> {st.desc}
-                        </p>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 8 }}>
-                  <b style={{ color: ACCENT_LIGHT }}>Dados avulsos.</b> Dano, sanidade perdida, tabelas do Guardião.
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginBottom: 10 }}>
-                  {DICE_SIDES.map((d) => (
-                    <button
-                      key={d}
-                      onClick={() => setFreeDie(d)}
-                      aria-label={d === 100 ? "Dado percentual" : `Dado de ${d} faces`}
-                      aria-pressed={freeDie === d}
-                      style={{
-                        background: "none", border: "none", padding: 0, cursor: "pointer",
-                        opacity: freeDie === d ? 1 : 0.4,
-                        transform: freeDie === d ? "scale(1.15)" : "scale(1)",
-                        transition: "opacity 0.15s, transform 0.15s",
-                      }}
-                    >
-                      <DieSvg sides={d} active={freeDie === d} size={38} accent={ACCENT} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} />
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-                  <RollResultDie
-                    sides={freeDie}
-                    size={96}
-                    roll={lastFree && lastFree.dice === freeDie ? { ...lastFree, isCrit: false, isFumble: false } : null}
-                    color={ACCENT}
-                    edgeColor={ACCENT_LIGHT}
-                    emissive={ACCENT}
-                    fallback={<DieSvg sides={freeDie} active size={96} accent={ACCENT} accentLight={ACCENT_LIGHT} accentDim={ACCENT_DIM} result={lastFree && lastFree.dice === freeDie ? lastFree.total : null} />}
-                  />
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.74rem", color: "var(--text-muted)" }}>
-                    Qtd
-                    <select
-                      value={freeCount}
-                      onChange={(e) => setFreeCount(parseInt(e.target.value))}
-                      style={{ padding: "5px 8px", borderRadius: "var(--radius)", background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "0.8rem", fontFamily: "inherit" }}
-                    >
-                      {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>×{n}</option>)}
-                    </select>
-                  </label>
-                  <button
-                    onClick={rollFree}
-                    style={{
-                      padding: "8px 20px", borderRadius: "var(--radius-lg)", cursor: "pointer", fontFamily: "var(--font-cinzel), serif",
-                      background: ACCENT_DIM, border: `1px solid ${ACCENT}`, color: ACCENT_LIGHT,
-                      fontSize: "0.84rem", fontWeight: 700, letterSpacing: "0.06em",
-                    }}
-                  >
-                    ROLAR {freeCount}D{freeDie}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Section>
-        )}
-
-        <div className="cth-view-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          {/* Attributes */}
-          <Section title="Atributos">
-            {ATTR_KEYS.map((k) => {
-              const v = attrs[k];
-              if (editMode) {
-                return (
-                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 6px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                    <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
-                    <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
-                    <input type="number" min={0} max={99} value={v} onChange={(e) => setAttr(k, parseInt(e.target.value))} style={{ ...editInput, width: 70, textAlign: "center" }} />
-                  </div>
-                );
-              }
-              return (
-                <button
-                  key={k}
-                  onClick={() => rollCheck(`${ATTR_LABELS[k]} (${v}%)`, v)}
-                  title={`Rolar teste de ${ATTR_LABELS[k]}`}
-                  style={{
-                    width: "100%", textAlign: "left", cursor: "pointer", background: "transparent",
-                    display: "flex", alignItems: "center", gap: 10, padding: "8px 6px",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)", borderTop: "none", borderLeft: "none", borderRight: "none",
-                    borderRadius: 4,
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = ACCENT_DIM)}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
-                  <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
-                  <span style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "var(--font-cinzel), serif", color: "var(--text)", minWidth: 32, textAlign: "right" }}>{v}</span>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 40, textAlign: "right" }}>½ {half(v)}</span>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 36, textAlign: "right" }}>⅕ {fifth(v)}</span>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)" }}>🎲</span>
-                </button>
-              );
-            })}
-          </Section>
-
-          {/* Derived stats */}
-          <Section title="Dados Secundários">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Dano Extra</span>
-              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcDamageBonus(attrsFull)}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Corpo</span>
-              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcCorpo(attrsFull)}</span>
-            </div>
-            <EditableStat label="MOV"        value={mov}    editMode={editMode} onChange={(n) => setMov(Math.max(0, n))} />
-            <EditableStat label="PV Máximo"  value={pvMax}  editMode={editMode} onChange={(n) => setPvMax(Math.max(1, n))} />
-            <EditableStat label="SAN Máximo" value={sanMax} editMode={editMode} onChange={(n) => setSanMax(Math.max(0, Math.min(99, n)))} />
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>PM Máximo</span>
-              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{pmMax}</span>
-            </div>
-          </Section>
-        </div>
-
-        {/* Skills */}
-        <Section title="Perícias">
-          <div style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 10, lineHeight: 1.5 }}>
-            {editMode
-              ? "Modo edição: ajuste o valor total de cada perícia."
-              : <>Clique para rolar. Marque <b style={{ color: ACCENT_LIGHT }}>◼</b> a perícia ao ter sucesso — na Fase de Desenvolvimento elas podem subir 1D10. {marked.length > 0 && <span style={{ color: ACCENT_LIGHT }}>({marked.length} marcada{marked.length > 1 ? "s" : ""})</span>}</>}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 4 }}>
-            {allSkills.map((sk) => {
-              const isMarked = marked.includes(sk.id);
-              if (editMode) {
-                return (
-                  <div key={sk.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px" }}>
-                    <span style={{ flex: 1, fontSize: "0.78rem", color: "var(--text-muted)" }}>{sk.name}</span>
-                    <input
-                      type="number" min={0} max={99} value={sk.total}
-                      onChange={(e) => setSkillTotal(sk.id, sk.base, parseInt(e.target.value))}
-                      style={{ ...editInput, width: 64, textAlign: "center" }}
-                    />
-                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>base {sk.base}</span>
-                  </div>
-                );
-              }
-              return (
-                <div
-                  key={sk.id}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6, padding: "5px 8px",
-                    background: sk.added > 0 ? ACCENT_DIM : "transparent",
-                    border: `1px solid ${isMarked ? ACCENT_BORD : sk.added > 0 ? "rgba(125,156,62,0.15)" : "transparent"}`,
-                    borderRadius: "var(--radius-xs)",
-                  }}
-                >
-                  <button
-                    onClick={() => toggleMark(sk.id)}
-                    title={isMarked ? "Desmarcar" : "Marcar como usada com sucesso"}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.78rem", color: isMarked ? ACCENT_LIGHT : "var(--text-subtle)", padding: "0 2px" }}
-                  >
-                    {isMarked ? "◼" : "◻"}
-                  </button>
-                  <button
-                    onClick={() => rollCheck(`${sk.name} (${sk.total}%)`, sk.total)}
-                    title={`Rolar teste de ${sk.name}`}
-                    style={{ flex: 1, textAlign: "left", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}
-                  >
-                    <span style={{ flex: 1, fontSize: "0.78rem", color: sk.added > 0 ? "var(--text)" : "var(--text-muted)" }}>{sk.name}</span>
-                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: sk.added > 0 ? ACCENT_LIGHT : "var(--text-subtle)" }}>{sk.total}%</span>
-                    <span style={{ fontSize: "0.67rem", color: "var(--text-subtle)", minWidth: 30, textAlign: "right" }}>½ {half(sk.total)}</span>
-                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>🎲</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* Weapons */}
-        {(equipped.length > 0 || editMode) && (
-          <Section title="Armas">
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {equipped.map((w) => {
-                const skillTot = getSkillBase(SKILLS.find((sk) => sk.id === w.skillId)!, attrs.edu, attrs.des) + (skillPoints[w.skillId] ?? 0);
-                return (
-                  <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text)" }}>{w.name}</div>
-                      <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
-                        {w.skillName} {skillTot}% · dano {w.damage}{w.addDB ? "+DX" : ""}{w.halfDB ? "+½DX" : ""} · {w.range}
-                      </div>
-                    </div>
-                    {editMode ? (
-                      <button onClick={() => toggleSheetWeapon(w.id)} style={{ ...pillBtn, color: "#e06c6c", borderColor: "rgba(220,60,60,0.3)", background: "rgba(220,60,60,0.08)" }}>
-                        × Remover
-                      </button>
-                    ) : (
-                      <>
-                        <button onClick={() => rollCheck(`Ataque · ${w.name} (${skillTot}%)`, skillTot)} style={pillBtn}>
-                          🎯 Atacar
-                        </button>
-                        <button onClick={() => rollDamage(w)} style={{ ...pillBtn, color: "#e0b94e", borderColor: "rgba(224,185,78,0.4)" }}>
-                          🎲 Dano
-                        </button>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-              {editMode && (
-                <div style={{ marginTop: 8 }}>
-                  <button
-                    onClick={() => setWeaponPickerOpen((o) => !o)}
-                    style={{ ...pillBtn, color: ACCENT_LIGHT, borderColor: ACCENT_BORD, background: ACCENT_DIM, padding: "7px 16px" }}
-                  >
-                    {weaponPickerOpen ? "Fechar lista" : "+ Adicionar arma"}
-                  </button>
-                  {weaponPickerOpen && (
-                    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 14 }}>
-                      {(["corpo", "arremesso", "pistola", "rifle", "espingarda"] as const).map((cat) => {
-                        const list = WEAPONS.filter((w) => w.category === cat && !weaponIds.includes(w.id));
-                        if (!list.length) return null;
-                        const catLabel: Record<string, string> = { corpo: "Corpo a Corpo", arremesso: "Arremesso", pistola: "Pistolas", rifle: "Rifles", espingarda: "Espingardas" };
-                        return (
-                          <div key={cat}>
-                            <div style={{ fontSize: "0.68rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>{catLabel[cat]}</div>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 5 }}>
-                              {list.map((w) => (
-                                <button
-                                  key={w.id}
-                                  onClick={() => toggleSheetWeapon(w.id)}
-                                  style={{ textAlign: "left", padding: "7px 10px", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "var(--radius)", cursor: "pointer" }}
-                                >
-                                  <div style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--text)" }}>{w.name}</div>
-                                  <div style={{ fontSize: "0.66rem", color: "var(--text-subtle)", marginTop: 1 }}>
-                                    {w.damage}{w.addDB ? "+DX" : ""}{w.halfDB ? "+½DX" : ""} · {w.range}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </Section>
-        )}
-
-        {/* Equipment / notes */}
-        {(equipmentText.trim() || editMode) && (
-          <Section title="Equipamento e Posses">
-            {editMode ? (
-              <textarea
-                value={equipmentText}
-                onChange={(e) => setEquipmentText(e.target.value)}
-                rows={5}
-                placeholder={"Lanterna elétrica\nKit de primeiros socorros\nCâmera fotográfica\n..."}
-                style={{ ...editInput, width: "100%", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }}
-              />
-            ) : (
-              <pre style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.7, margin: 0, fontFamily: "inherit", whiteSpace: "pre-wrap" }}>
-                {equipmentText.trim()}
-              </pre>
-            )}
-          </Section>
-        )}
-
-        {/* Insanidade */}
-        <Section title="Insanidade">
-          {(() => {
-            const threshold = Math.floor(sanMax / 5);
-            const statusColor = insanity.status === "normal" ? ACCENT : insanity.status === "temp_insane" ? "#fbbf24" : "#f87171";
-            const statusLabel = insanity.status === "normal" ? "Normal" : insanity.status === "temp_insane" ? "Temporariamente Insano" : "Indefinidamente Insano";
-            return (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {/* Status + session loss */}
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 14, alignItems: "center" }}>
-                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: statusColor, background: `${statusColor}22`, border: `1px solid ${statusColor}44`, borderRadius: "var(--radius-xs)", padding: "4px 12px" }}>
-                    {statusLabel}
-                  </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Perda sessão:</span>
-                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: insanity.sessionLoss >= threshold ? "#f87171" : "var(--text)" }}>{insanity.sessionLoss}</span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>/ {threshold} (SAN/5)</span>
-                    {insanity.sessionLoss >= threshold && <span style={{ fontSize: "0.68rem", color: "#f87171" }}>— LIMITE</span>}
-                  </div>
-                  <button onClick={() => setInsanity({ sessionLoss: 0, status: "normal" })} title="Resetar para nova sessão" style={{ ...pillBtn, fontSize: "0.7rem" }}>↺ Nova Sessão</button>
-                </div>
-                {/* Manual loss input */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Lançar perda manual:</span>
-                  {[1, 2, 3, 5, 8].map((n) => (
-                    <button key={n} onClick={() => sanLost(n)} style={{ ...pillBtn, fontSize: "0.72rem", padding: "3px 10px" }}>−{n} SAN</button>
-                  ))}
-                </div>
-                {/* Status override */}
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {(["normal", "temp_insane", "indef_insane"] as const).map((s) => {
-                    const c = s === "normal" ? ACCENT : s === "temp_insane" ? "#fbbf24" : "#f87171";
-                    const l = s === "normal" ? "Normal" : s === "temp_insane" ? "Temp. Insano" : "Indef. Insano";
-                    return (
-                      <button key={s} onClick={() => setInsanity({ status: s })} style={{ padding: "5px 12px", borderRadius: "var(--radius)", border: `1px solid ${insanity.status === s ? c : "var(--border)"}`, background: insanity.status === s ? `${c}22` : "transparent", color: insanity.status === s ? c : "var(--text-muted)", cursor: "pointer", fontSize: "0.76rem", fontWeight: 700 }}>
-                        {l}
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Phobias */}
-                <div>
-                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Fobias</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                    {insanity.phobias.map((p) => (
-                      <span key={p} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.28)", borderRadius: "var(--radius-xs)", fontSize: "0.75rem", color: "#fca5a5" }}>
-                        {p}
-                        <button onClick={() => removeTag("phobias", p)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.8rem", padding: 0 }}>×</button>
-                      </span>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <select value="" onChange={(e) => addTag("phobias", e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                      <option value="">Escolher fobia...</option>
-                      {PHOBIAS_LIST.filter((p) => !insanity.phobias.includes(p)).map((p) => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                    <input value={phobiaInput} onChange={(e) => setPhobiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("phobias", phobiaInput); setPhobiaInput(""); } }} placeholder="Fobia personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", width: 180 }} />
-                    <button onClick={() => { addTag("phobias", phobiaInput); setPhobiaInput(""); }} style={{ ...pillBtn }}>+</button>
-                  </div>
-                </div>
-                {/* Manias */}
-                <div>
-                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Manias</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                    {insanity.manias.map((m) => (
-                      <span key={m} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.28)", borderRadius: "var(--radius-xs)", fontSize: "0.75rem", color: "#fde68a" }}>
-                        {m}
-                        <button onClick={() => removeTag("manias", m)} style={{ background: "transparent", border: "none", color: "#fbbf24", cursor: "pointer", fontSize: "0.8rem", padding: 0 }}>×</button>
-                      </span>
-                    ))}
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <select value="" onChange={(e) => addTag("manias", e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                      <option value="">Escolher mania...</option>
-                      {MANIAS_LIST.filter((m) => !insanity.manias.includes(m)).map((m) => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <input value={maniaInput} onChange={(e) => setManiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("manias", maniaInput); setManiaInput(""); } }} placeholder="Mania personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", width: 180 }} />
-                    <button onClick={() => { addTag("manias", maniaInput); setManiaInput(""); }} style={{ ...pillBtn }}>+</button>
-                  </div>
-                </div>
-                {/* Notes */}
-                <div>
-                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Notas de Insanidade</div>
-                  <textarea value={insanity.notes} onChange={(e) => setInsanity({ notes: e.target.value })} placeholder="Episódios, alucinações, traumas..." style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", lineHeight: 1.6, resize: "vertical", minHeight: 70, boxSizing: "border-box", fontFamily: "inherit" }} />
-                </div>
-              </div>
-            );
-          })()}
-        </Section>
-
-        {/* Feitiços */}
-        <Section title="Feitiços Conhecidos">
+  const blocoFeiticos = (
+    <>
           <div style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 12, lineHeight: 1.5 }}>
             Feitiços aprendidos durante o jogo (de tomos, cultistas, entidades). Cada conjuração consome PM e pode custar Sanidade.
           </div>
@@ -1092,6 +549,699 @@ export function SheetClient({ character }: Props) {
               <button onClick={() => setSpellOpen("manual")} style={{ ...pillBtn, padding: "7px 16px" }}>+ Personalizado</button>
             </div>
           )}
+    </>
+  );
+
+  const blocoInsanidade = (
+    <>
+          {(() => {
+            const threshold = Math.floor(sanMax / 5);
+            const statusColor = insanity.status === "normal" ? ACCENT : insanity.status === "temp_insane" ? "#fbbf24" : "#f87171";
+            const statusLabel = insanity.status === "normal" ? "Normal" : insanity.status === "temp_insane" ? "Temporariamente Insano" : "Indefinidamente Insano";
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Status + session loss */}
+                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 14, alignItems: "center" }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: statusColor, background: `${statusColor}22`, border: `1px solid ${statusColor}44`, borderRadius: "var(--radius-xs)", padding: "4px 12px" }}>
+                    {statusLabel}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Perda sessão:</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: insanity.sessionLoss >= threshold ? "#f87171" : "var(--text)" }}>{insanity.sessionLoss}</span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>/ {threshold} (SAN/5)</span>
+                    {insanity.sessionLoss >= threshold && <span style={{ fontSize: "0.68rem", color: "#f87171" }}>— LIMITE</span>}
+                  </div>
+                  <button onClick={() => setInsanity({ sessionLoss: 0, status: "normal" })} title="Resetar para nova sessão" style={{ ...pillBtn, fontSize: "0.7rem" }}>↺ Nova Sessão</button>
+                </div>
+                {/* Manual loss input */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Lançar perda manual:</span>
+                  {[1, 2, 3, 5, 8].map((n) => (
+                    <button key={n} onClick={() => sanLost(n)} style={{ ...pillBtn, fontSize: "0.72rem", padding: "3px 10px" }}>−{n} SAN</button>
+                  ))}
+                </div>
+                {/* Status override */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {(["normal", "temp_insane", "indef_insane"] as const).map((s) => {
+                    const c = s === "normal" ? ACCENT : s === "temp_insane" ? "#fbbf24" : "#f87171";
+                    const l = s === "normal" ? "Normal" : s === "temp_insane" ? "Temp. Insano" : "Indef. Insano";
+                    return (
+                      <button key={s} onClick={() => setInsanity({ status: s })} style={{ padding: "5px 12px", borderRadius: "var(--radius)", border: `1px solid ${insanity.status === s ? c : "var(--border)"}`, background: insanity.status === s ? `${c}22` : "transparent", color: insanity.status === s ? c : "var(--text-muted)", cursor: "pointer", fontSize: "0.76rem", fontWeight: 700 }}>
+                        {l}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Phobias */}
+                <div>
+                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Fobias</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                    {insanity.phobias.map((p) => (
+                      <span key={p} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.28)", borderRadius: "var(--radius-xs)", fontSize: "0.75rem", color: "#fca5a5" }}>
+                        {p}
+                        <button onClick={() => removeTag("phobias", p)} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: "0.8rem", padding: 0 }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <select value="" onChange={(e) => addTag("phobias", e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                      <option value="">Escolher fobia...</option>
+                      {PHOBIAS_LIST.filter((p) => !insanity.phobias.includes(p)).map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <input value={phobiaInput} onChange={(e) => setPhobiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("phobias", phobiaInput); setPhobiaInput(""); } }} placeholder="Fobia personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", width: 180 }} />
+                    <button onClick={() => { addTag("phobias", phobiaInput); setPhobiaInput(""); }} style={{ ...pillBtn }}>+</button>
+                  </div>
+                </div>
+                {/* Manias */}
+                <div>
+                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Manias</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                    {insanity.manias.map((m) => (
+                      <span key={m} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.28)", borderRadius: "var(--radius-xs)", fontSize: "0.75rem", color: "#fde68a" }}>
+                        {m}
+                        <button onClick={() => removeTag("manias", m)} style={{ background: "transparent", border: "none", color: "#fbbf24", cursor: "pointer", fontSize: "0.8rem", padding: 0 }}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <select value="" onChange={(e) => addTag("manias", e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                      <option value="">Escolher mania...</option>
+                      {MANIAS_LIST.filter((m) => !insanity.manias.includes(m)).map((m) => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <input value={maniaInput} onChange={(e) => setManiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("manias", maniaInput); setManiaInput(""); } }} placeholder="Mania personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", width: 180 }} />
+                    <button onClick={() => { addTag("manias", maniaInput); setManiaInput(""); }} style={{ ...pillBtn }}>+</button>
+                  </div>
+                </div>
+                {/* Notes */}
+                <div>
+                  <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Notas de Insanidade</div>
+                  <textarea value={insanity.notes} onChange={(e) => setInsanity({ notes: e.target.value })} placeholder="Episódios, alucinações, traumas..." style={{ width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.84rem", lineHeight: 1.6, resize: "vertical", minHeight: 70, boxSizing: "border-box", fontFamily: "inherit" }} />
+                </div>
+              </div>
+            );
+          })()}
+    </>
+  );
+
+  const blocoEquipamento = (
+    <>
+            {editMode ? (
+              <textarea
+                value={equipmentText}
+                onChange={(e) => setEquipmentText(e.target.value)}
+                rows={5}
+                placeholder={"Lanterna elétrica\nKit de primeiros socorros\nCâmera fotográfica\n..."}
+                style={{ ...editInput, width: "100%", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }}
+              />
+            ) : (
+              <pre style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.7, margin: 0, fontFamily: "inherit", whiteSpace: "pre-wrap" }}>
+                {equipmentText.trim()}
+              </pre>
+            )}
+    </>
+  );
+
+  const blocoArmas = (
+    <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {equipped.map((w) => {
+                const skillTot = getSkillBase(SKILLS.find((sk) => sk.id === w.skillId)!, attrs.edu, attrs.des) + (skillPoints[w.skillId] ?? 0);
+                return (
+                  <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text)" }}>{w.name}</div>
+                      <div style={{ fontSize: "0.68rem", color: "var(--text-subtle)" }}>
+                        {w.skillName} {skillTot}% · dano {w.damage}{w.addDB ? "+DX" : ""}{w.halfDB ? "+½DX" : ""} · {w.range}
+                      </div>
+                    </div>
+                    {editMode ? (
+                      <button onClick={() => toggleSheetWeapon(w.id)} style={{ ...pillBtn, color: "#e06c6c", borderColor: "rgba(220,60,60,0.3)", background: "rgba(220,60,60,0.08)" }}>
+                        × Remover
+                      </button>
+                    ) : (
+                      <>
+                        <button onClick={() => rollCheck(`Ataque · ${w.name} (${skillTot}%)`, skillTot)} style={pillBtn}>
+                          🎯 Atacar
+                        </button>
+                        <button onClick={() => rollDamage(w)} style={{ ...pillBtn, color: "#e0b94e", borderColor: "rgba(224,185,78,0.4)" }}>
+                          🎲 Dano
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+              {editMode && (
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    onClick={() => setWeaponPickerOpen((o) => !o)}
+                    style={{ ...pillBtn, color: ACCENT_LIGHT, borderColor: ACCENT_BORD, background: ACCENT_DIM, padding: "7px 16px" }}
+                  >
+                    {weaponPickerOpen ? "Fechar lista" : "+ Adicionar arma"}
+                  </button>
+                  {weaponPickerOpen && (
+                    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 14 }}>
+                      {(["corpo", "arremesso", "pistola", "rifle", "espingarda"] as const).map((cat) => {
+                        const list = WEAPONS.filter((w) => w.category === cat && !weaponIds.includes(w.id));
+                        if (!list.length) return null;
+                        const catLabel: Record<string, string> = { corpo: "Corpo a Corpo", arremesso: "Arremesso", pistola: "Pistolas", rifle: "Rifles", espingarda: "Espingardas" };
+                        return (
+                          <div key={cat}>
+                            <div style={{ fontSize: "0.68rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 5 }}>{catLabel[cat]}</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 5 }}>
+                              {list.map((w) => (
+                                <button
+                                  key={w.id}
+                                  onClick={() => toggleSheetWeapon(w.id)}
+                                  style={{ textAlign: "left", padding: "7px 10px", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "var(--radius)", cursor: "pointer" }}
+                                >
+                                  <div style={{ fontSize: "0.8rem", fontWeight: 500, color: "var(--text)" }}>{w.name}</div>
+                                  <div style={{ fontSize: "0.66rem", color: "var(--text-subtle)", marginTop: 1 }}>
+                                    {w.damage}{w.addDB ? "+DX" : ""}{w.halfDB ? "+½DX" : ""} · {w.range}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+    </>
+  );
+
+  const blocoPericias = (
+    <>
+          <div style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 10, lineHeight: 1.5 }}>
+            {editMode
+              ? "Modo edição: ajuste o valor total de cada perícia."
+              : <>Clique para rolar. Marque <b style={{ color: ACCENT_LIGHT }}>◼</b> a perícia ao ter sucesso — na Fase de Desenvolvimento elas podem subir 1D10. {marked.length > 0 && <span style={{ color: ACCENT_LIGHT }}>({marked.length} marcada{marked.length > 1 ? "s" : ""})</span>}</>}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 4 }}>
+            {allSkills.map((sk) => {
+              const isMarked = marked.includes(sk.id);
+              if (editMode) {
+                return (
+                  <div key={sk.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px" }}>
+                    <span style={{ flex: 1, fontSize: "0.78rem", color: "var(--text-muted)" }}>{sk.name}</span>
+                    <input
+                      type="number" min={0} max={99} value={sk.total}
+                      onChange={(e) => setSkillTotal(sk.id, sk.base, parseInt(e.target.value))}
+                      style={{ ...editInput, width: 64, textAlign: "center" }}
+                    />
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>base {sk.base}</span>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={sk.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6, padding: "5px 8px",
+                    background: sk.added > 0 ? ACCENT_DIM : "transparent",
+                    border: `1px solid ${isMarked ? ACCENT_BORD : sk.added > 0 ? "rgba(125,156,62,0.15)" : "transparent"}`,
+                    borderRadius: "var(--radius-xs)",
+                  }}
+                >
+                  <button
+                    onClick={() => toggleMark(sk.id)}
+                    title={isMarked ? "Desmarcar" : "Marcar como usada com sucesso"}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.78rem", color: isMarked ? ACCENT_LIGHT : "var(--text-subtle)", padding: "0 2px" }}
+                  >
+                    {isMarked ? "◼" : "◻"}
+                  </button>
+                  <button
+                    onClick={() => rollCheck(`${sk.name} (${sk.total}%)`, sk.total)}
+                    title={`Rolar teste de ${sk.name}`}
+                    style={{ flex: 1, textAlign: "left", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}
+                  >
+                    <span style={{ flex: 1, fontSize: "0.78rem", color: sk.added > 0 ? "var(--text)" : "var(--text-muted)" }}>{sk.name}</span>
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: sk.added > 0 ? ACCENT_LIGHT : "var(--text-subtle)" }}>{sk.total}%</span>
+                    <span style={{ fontSize: "0.67rem", color: "var(--text-subtle)", minWidth: 30, textAlign: "right" }}>½ {half(sk.total)}</span>
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>🎲</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+    </>
+  );
+
+  const blocoAtributos = (
+    <>
+            {ATTR_KEYS.map((k) => {
+              const v = attrs[k];
+              if (editMode) {
+                return (
+                  <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 6px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
+                    <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
+                    <input type="number" min={0} max={99} value={v} onChange={(e) => setAttr(k, parseInt(e.target.value))} style={{ ...editInput, width: 70, textAlign: "center" }} />
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={k}
+                  onClick={() => rollCheck(`${ATTR_LABELS[k]} (${v}%)`, v)}
+                  title={`Rolar teste de ${ATTR_LABELS[k]}`}
+                  style={{
+                    width: "100%", textAlign: "left", cursor: "pointer", background: "transparent",
+                    display: "flex", alignItems: "center", gap: 10, padding: "8px 6px",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)", borderTop: "none", borderLeft: "none", borderRight: "none",
+                    borderRadius: 4,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = ACCENT_DIM)}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
+                  <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
+                  <span style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "var(--font-cinzel), serif", color: "var(--text)", minWidth: 32, textAlign: "right" }}>{v}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 40, textAlign: "right" }}>½ {half(v)}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 36, textAlign: "right" }}>⅕ {fifth(v)}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)" }}>🎲</span>
+                </button>
+              );
+            })}
+    </>
+  );
+
+  const blocoEstados = (
+    <>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", margin: "16px 0 8px", lineHeight: 1.5 }}>
+                  <b style={{ color: ACCENT_LIGHT }}>Estados.</b> Clique para aplicar ou remover.
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {CTHULHU_STATES.map((st) => {
+                    const ativo = states.includes(st.id);
+                    return (
+                      <button
+                        key={st.id}
+                        onClick={() => toggleState(st.id)}
+                        aria-pressed={ativo}
+                        title={st.desc}
+                        style={{
+                          padding: "4px 10px", borderRadius: "var(--radius-xs)", cursor: "pointer", fontFamily: "inherit",
+                          fontSize: "0.72rem", fontWeight: ativo ? 700 : 400,
+                          background: ativo ? "rgba(192,48,48,0.16)" : "var(--surface-2)",
+                          border: `1px solid ${ativo ? "#c03030" : "var(--border)"}`,
+                          color: ativo ? "#e07070" : "var(--text-muted)",
+                        }}
+                      >
+                        {st.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {states.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                    {states.map((id) => {
+                      const st = CTHULHU_STATE_BY_ID[id];
+                      if (!st) return null;
+                      return (
+                        <p key={id} style={{ fontSize: "0.7rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
+                          <b style={{ color: "#e07070" }}>{st.name}:</b> {st.desc}
+                        </p>
+                      );
+                    })}
+                  </div>
+                )}
+    </>
+  );
+
+  const blocoDadosExtras = (
+    <>
+                <p style={{ fontSize: "0.72rem", color: "var(--text-subtle)", marginBottom: 8, lineHeight: 1.5 }}>
+                  <b style={{ color: ACCENT_LIGHT }}>Dados de bônus e penalidade.</b> Um dado de dezenas a mais por nível:
+                  o bônus fica com a menor leitura, a penalidade com a maior. Vale para os testes desta ficha até você zerar.
+                </p>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {[-2, -1, 0, 1, 2].map((v) => {
+                    const ativo = diceMod === v;
+                    const cor = v > 0 ? ACCENT : v < 0 ? "#c03030" : "var(--text-subtle)";
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setDiceMod(v)}
+                        aria-pressed={ativo}
+                        title={v === 0 ? "Sem dados extras" : v > 0 ? `${v} dado(s) de bônus` : `${-v} dado(s) de penalidade`}
+                        style={{
+                          padding: "6px 14px", borderRadius: "var(--radius)", cursor: "pointer", fontFamily: "inherit",
+                          fontSize: "0.78rem", fontWeight: 700,
+                          background: ativo ? `${cor}22` : "var(--surface-2)",
+                          border: `1px solid ${ativo ? cor : "var(--border)"}`,
+                          color: ativo ? cor : "var(--text-muted)",
+                        }}
+                      >
+                        {v === 0 ? "Normal" : v > 0 ? `+${v} bônus` : `${-v} penal.`}
+                      </button>
+                    );
+                  })}
+                </div>
+    </>
+  );
+
+  const painelDados = (
+    <DicePanel
+      theme={PLAY_THEME.cthulhu}
+      features={{ qty: true }}
+      defaultSides={100}
+      onRoll={(r) => pushLog({ kind: "raw", label: r.label, total: r.total, expr: r.label, rolls: r.rolls })}
+    />
+  );
+
+  /** Adaptador do log do Cthulhu para o histórico comum: preserva o nível de
+   *  sucesso e as leituras dos dados de bônus, que são a mecânica da casa. */
+  const historico: PlayRollEntry[] = log.map((e) => {
+    if (e.kind === "check") {
+      const c = e.check;
+      const leituras = e.dice && e.dice.readings.length > 1 ? ` [${e.dice.readings.join(", ")}]` : "";
+      return {
+        id: e.id, label: e.label, total: c.roll,
+        detail: `${CHECK_LABELS[c.level]}${leituras}`,
+        tone: (c.level === "critico" ? "crit" : c.level === "desastre" ? "fumble" : c.success ? "success" : "fail") as RollTone,
+        badge: c.success ? "✓" : "✗",
+      };
+    }
+    if (e.kind === "damage") {
+      return {
+        id: e.id, label: e.label,
+        total: e.segments.reduce((a, sg) => a + sg.total, 0),
+        detail: e.segments.map((sg) => `${sg.label ? sg.label + " " : ""}${sg.total} (${sg.expr})`).join(" · "),
+      };
+    }
+    return { id: e.id, label: e.label, total: e.total, detail: `${e.expr} → [${e.rolls.join(", ")}]` };
+  });
+
+  const bgLabels: Record<string, string> = {
+    personalDescription:  "Descrição Pessoal",
+    ideology:             "Ideologia / Crenças",
+    significantPeople:    "Pessoas Significativas",
+    meaningfulLocations:  "Locais Importantes",
+    treasuredPossessions: "Pertences Queridos",
+    traits:               "Características",
+    backstory:            "História",
+    injuries:             "Ferimentos e Cicatrizes",
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "transparent" }}>
+      <DashboardNav
+        userName={character.user?.name ?? "Investigador"}
+        systemName="Call of Cthulhu"
+        systemHref="/dashboard/cthulhu/jogador"
+        backLabel="Investigadores"
+        accentColor={ACCENT}
+        shareCharacterId={character.id}
+        // onExportPdf={() => window.print()} — export em PDF desativado do visual por ora
+      />
+
+      <div className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "14px 24px 0", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10 }}>
+        {saving && <span style={{ fontSize: "0.74rem", color: ACCENT_LIGHT }}>Salvando…</span>}
+        <button
+          onClick={() => { setDevOpen(true); setDevResults(null); }}
+          style={{ ...pillBtn, background: "var(--surface-2)" }}
+          title="Fase de Desenvolvimento"
+        >
+          📈 Desenvolvimento
+        </button>
+        {!editMode && (
+          <div style={{ display: "flex", gap: 3, background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-full)", padding: 3 }}>
+            {(["ficha", "jogar"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                aria-pressed={mode === m}
+                style={{
+                  padding: "5px 16px", borderRadius: "var(--radius-full)", cursor: "pointer", fontFamily: "inherit",
+                  fontSize: "0.76rem", fontWeight: 700, border: "none",
+                  background: mode === m ? ACCENT_DIM : "transparent",
+                  color: mode === m ? ACCENT_LIGHT : "var(--text-muted)",
+                }}
+              >
+                {m === "ficha" ? "Ficha" : "Jogar"}
+              </button>
+            ))}
+          </div>
+        )}
+        {editMode ? (
+          <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
+            ✓ Salvar
+          </button>
+        ) : (
+          <button onClick={() => setMode("editar")} style={{ ...pillBtn, background: "var(--surface-2)" }}>
+            ✎ Editar
+          </button>
+        )}
+        <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" style={pillBtn} />
+      </div>
+
+      <main id="conteudo" style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 24px 80px", display: "flex", flexDirection: "column", gap: 24 }}>
+        {mode === "jogar" ? (
+          <PlayShell
+            system="cthulhu"
+            band={
+              <>
+                <PlayVitals>
+                  <VitalBar
+                    label="Pontos de Vida" color={pvColor} cur={pvCurrent} max={pvMax} temp={pvTemp}
+                    onDelta={(d) => changeVital(d, pvCurrent, setPvCurrent, "pvCurrent", pvTemp, setPvTemp, "pvTemp", pvMax)}
+                    onTemp={(t) => changeTemp(t - pvTemp, pvTemp, setPvTemp, "pvTemp")}
+                    note={pvCurrent === 0 ? "Inconsciente" : undefined}
+                    warn={pvCurrent === 0}
+                  />
+                  <VitalBar
+                    label="Sanidade" color={sanColor} cur={sanCurrent} max={sanMax} temp={sanTemp}
+                    onDelta={(d) => { if (d < 0) sanLost(-d); changeVital(d, sanCurrent, setSanCurrent, "sanCurrent", sanTemp, setSanTemp, "sanTemp", sanMax); }}
+                    onTemp={(t) => changeTemp(t - sanTemp, sanTemp, setSanTemp, "sanTemp")}
+                    onRoll={() => rollCheck(`Teste de Sanidade (${sanCurrent}%)`, sanCurrent)}
+                  />
+                  <VitalBar
+                    label="Pontos de Magia" color={ACCENT} cur={pmCurrent} max={pmMax} temp={pmTemp}
+                    onDelta={(d) => changeVital(d, pmCurrent, setPmCurrent, "pmCurrent", pmTemp, setPmTemp, "pmTemp", pmMax)}
+                    onTemp={(t) => changeTemp(t - pmTemp, pmTemp, setPmTemp, "pmTemp")}
+                  />
+                  <VitalBar
+                    label="Sorte" color="var(--text-subtle)" cur={luck} max={99} bigStep={5}
+                    onDelta={adjustLuck}
+                    onRoll={() => rollCheck(`Sorte (${luck}%)`, luck)}
+                  />
+                </PlayVitals>
+
+                <PlayChips>
+                  <StatChip label="MOV" value={mov} />
+                  <StatChip label="Dano Extra" value={calcDamageBonus(attrsFull)} />
+                  <StatChip label="Corpo" value={calcCorpo(attrsFull)} />
+                  <StatChip label="Era" value={eraLabel} />
+                  <StatChip label="Perda sessão" value={`${insanity.sessionLoss}/${Math.floor(sanMax / 5)}`} warn={insanity.sessionLoss >= Math.floor(sanMax / 5)} title="Sanidade perdida nesta sessão · limite SAN/5" />
+                </PlayChips>
+
+                {(pvCurrent === 0 || insanity.status !== "normal") && (
+                  <PlayAlert
+                    title={pvCurrent === 0 ? "💀 Inconsciente — sem Pontos de Vida" : insanity.status === "temp_insane" ? "🌀 Temporariamente Insano" : "🌀 Indefinidamente Insano"}
+                    tone={insanity.status === "temp_insane" && pvCurrent > 0 ? "warn" : "danger"}
+                  >
+                    <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                      {pvCurrent === 0
+                        ? "Investigador caído. Primeiros Socorros estabilizam; sem socorro, o Guardião pede teste de CON a cada rodada."
+                        : "Enquanto durar a insanidade, o Guardião conduz as reações do investigador. Fobias e manias abaixo."}
+                    </p>
+                  </PlayAlert>
+                )}
+
+                <ActiveConditionChips
+                  all={CTHULHU_STATES.map((st) => ({ id: st.id, name: st.name, desc: st.desc }))}
+                  active={states}
+                  onRemove={toggleState}
+                />
+              </>
+            }
+            left={
+              <>
+                <PlayCard title="Atributos">{blocoAtributos}</PlayCard>
+                <PlayCard title="Perícias">{blocoPericias}</PlayCard>
+                {equipped.length > 0 && <PlayCard title="Armas">{blocoArmas}</PlayCard>}
+                <PlayCard title="Feitiços Conhecidos" collapsible defaultOpen={spells.length > 0}>{blocoFeiticos}</PlayCard>
+                {equipmentText.trim() && <PlayCard title="Equipamento e Posses" collapsible>{blocoEquipamento}</PlayCard>}
+              </>
+            }
+            right={
+              <>
+                <PlayCard title="Rolagem de Dados" accent>
+                  {blocoDadosExtras}
+                  <div style={{ marginTop: 14 }}>{painelDados}</div>
+                </PlayCard>
+
+                <PlayCard title="Histórico">
+                  <RollHistory log={historico} onClear={() => setLog([])} />
+                </PlayCard>
+
+                <PlayCard title="Estados">{blocoEstados}</PlayCard>
+
+                <PlayCard title="Insanidade" collapsible defaultOpen={insanity.status !== "normal"}>
+                  {blocoInsanidade}
+                </PlayCard>
+              </>
+            }
+          />
+        ) : (
+        <>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <span className="section-label" style={{ display: "block", marginBottom: 6, color: ACCENT }}>
+              Call of Cthulhu 7ª Edição · {eraLabel}
+            </span>
+            {editMode ? (
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                {/* Portrait upload */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 90, height: 90, borderRadius: "var(--radius-lg)", border: `1px solid ${ACCENT_BORD}`, background: "var(--surface-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {portrait
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={portrait} alt="Retrato" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)", textAlign: "center", padding: 6 }}>Sem foto</span>}
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: "none" }} />
+                  <button onClick={() => fileRef.current?.click()} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px" }}>Trocar foto</button>
+                  {portrait && <button onClick={() => setPortrait(null)} style={{ ...pillBtn, fontSize: "0.68rem", padding: "3px 10px", color: "#e06c6c" }}>Remover</button>}
+                </div>
+                {/* Identity fields */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, minWidth: 220 }}>
+                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" style={editInput} />
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <select value={occupation} onChange={(e) => setOccupation(e.target.value)} style={{ ...editInput, flex: 1 }}>
+                      <option value="">Sem ocupação</option>
+                      {OCCUPATIONS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                    </select>
+                    <select value={era} onChange={(e) => setEra(e.target.value as "1920s" | "modern")} style={{ ...editInput, width: 130 }}>
+                      <option value="1920s">Anos 1920</option>
+                      <option value="modern">Moderno</option>
+                    </select>
+                    <input type="number" min={15} max={90} value={age} onChange={(e) => setAge(Math.max(0, parseInt(e.target.value) || 0))} style={{ ...editInput, width: 80 }} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                {portrait && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={portrait} alt="Retrato" style={{ width: 72, height: 72, borderRadius: "var(--radius-lg)", objectFit: "cover", border: `1px solid ${ACCENT_BORD}`, flexShrink: 0 }} />
+                )}
+                <div>
+                  <h1 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "clamp(1.6rem, 4vw, 2.2rem)", fontWeight: 700, color: "var(--text)" }}>
+                    {name}
+                  </h1>
+                  <p style={{ fontSize: "0.86rem", color: "var(--text-muted)", marginTop: 4 }}>
+                    {occ?.name ?? occupation ?? "Sem ocupação"} · {age ? `${age} anos` : "Idade desconhecida"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Vitals trackers */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
+          <Tracker
+            label="Pontos de Vida"
+            current={pvCurrent} temp={pvTemp} max={pvMax} pct={pvPct} barColor={pvColor}
+            onDelta={(d) => changeVital(d, pvCurrent, setPvCurrent, "pvCurrent", pvTemp, setPvTemp, "pvTemp", pvMax)}
+            onTemp={(d) => changeTemp(d, pvTemp, setPvTemp, "pvTemp")}
+          />
+          <Tracker
+            label="Sanidade"
+            current={sanCurrent} temp={sanTemp} max={sanMax} pct={sanPct} barColor={sanColor}
+            onDelta={(d) => { if (d < 0) sanLost(-d); changeVital(d, sanCurrent, setSanCurrent, "sanCurrent", sanTemp, setSanTemp, "sanTemp", sanMax); }}
+            onTemp={(d) => changeTemp(d, sanTemp, setSanTemp, "sanTemp")}
+            onRoll={() => rollCheck(`Teste de Sanidade (${sanCurrent}%)`, sanCurrent)}
+          />
+          <Tracker
+            label="Pontos de Magia"
+            current={pmCurrent} temp={pmTemp} max={pmMax} pct={pmMax ? Math.max(0, (pmCurrent / pmMax) * 100) : 0} barColor={ACCENT}
+            onDelta={(d) => changeVital(d, pmCurrent, setPmCurrent, "pmCurrent", pmTemp, setPmTemp, "pmTemp", pmMax)}
+            onTemp={(d) => changeTemp(d, pmTemp, setPmTemp, "pmTemp")}
+          />
+          <Tracker
+            label="Sorte"
+            current={luck} max={99} pct={luck} barColor="var(--text-subtle)"
+            onDelta={(d) => adjustLuck(d > 0 ? 5 : -5)}
+            stepLabel="±5"
+            onRoll={() => rollCheck(`Sorte (${luck}%)`, luck)}
+          />
+        </div>
+
+        {/* Mesa: dados de bônus/penalidade, rolador livre e estados */}
+        {mode === "ficha" && (
+          <Section title="Mesa">
+            <div className="cth-table-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div>
+                {blocoDadosExtras}
+
+                {blocoEstados}
+              </div>
+
+              <div>{painelDados}</div>
+            </div>
+          </Section>
+        )}
+
+        <div className="cth-view-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* Attributes */}
+          <Section title="Atributos">
+            {blocoAtributos}
+          </Section>
+
+          {/* Derived stats */}
+          <Section title="Dados Secundários">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Dano Extra</span>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcDamageBonus(attrsFull)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Corpo</span>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{calcCorpo(attrsFull)}</span>
+            </div>
+            <EditableStat label="MOV"        value={mov}    editMode={editMode} onChange={(n) => setMov(Math.max(0, n))} />
+            <EditableStat label="PV Máximo"  value={pvMax}  editMode={editMode} onChange={(n) => setPvMax(Math.max(1, n))} />
+            <EditableStat label="SAN Máximo" value={sanMax} editMode={editMode} onChange={(n) => setSanMax(Math.max(0, Math.min(99, n)))} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>PM Máximo</span>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: ACCENT_LIGHT }}>{pmMax}</span>
+            </div>
+          </Section>
+        </div>
+
+        {/* Skills */}
+        <Section title="Perícias">
+            {blocoPericias}
+        </Section>
+
+        {/* Weapons */}
+        {(equipped.length > 0 || editMode) && (
+          <Section title="Armas">
+            {blocoArmas}
+          </Section>
+        )}
+
+        {/* Equipment / notes */}
+        {(equipmentText.trim() || editMode) && (
+          <Section title="Equipamento e Posses">
+            {blocoEquipamento}
+          </Section>
+        )}
+
+        {/* Insanidade */}
+        <Section title="Insanidade">
+            {blocoInsanidade}
+        </Section>
+
+        {/* Feitiços */}
+        <Section title="Feitiços Conhecidos">
+            {blocoFeiticos}
         </Section>
 
         {/* Background */}
@@ -1124,6 +1274,8 @@ export function SheetClient({ character }: Props) {
               </div>
             )}
           </Section>
+        )}
+        </>
         )}
       </main>
 
@@ -1187,7 +1339,10 @@ export function SheetClient({ character }: Props) {
         </div>
       )}
 
-      <RollPanel log={log} onClear={() => setLog([])} />
+      {mode !== "jogar" && <RollPanel log={log} onClear={() => setLog([])} />}
+      {mode === "jogar" && (
+        <RollToast roll={fxRoll} color={PLAY_THEME.cthulhu.accent} edgeColor={PLAY_THEME.cthulhu.accentLight} emissive={PLAY_THEME.cthulhu.dieEmissive} />
+      )}
     </div>
   );
 }
