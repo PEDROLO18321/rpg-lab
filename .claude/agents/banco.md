@@ -54,7 +54,7 @@ rtk proxy "npx prisma generate"
 npx tsx prisma/seed.ts
 ```
 
-São 21 migrations. Migration é imutável depois de aplicada em produção: se
+São 22 migrations. Migration é imutável depois de aplicada em produção: se
 errou, corrija com uma nova, nunca editando a antiga.
 
 **O `build` não roda `migrate deploy`, e isso é de propósito.** O Neon dorme, e
