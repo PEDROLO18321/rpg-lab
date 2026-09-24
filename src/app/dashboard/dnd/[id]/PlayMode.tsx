@@ -14,7 +14,7 @@ import { ALL_PHB_ITEMS, PICKER_GROUPS, WEAPONS, type PickerGroup } from "@/lib/d
 import { proficiencyBonus } from "@/lib/dnd/leveling";
 import { activateOnKey } from "@/lib/a11y";
 import type { AbilityKey } from "@/lib/dnd/races";
-import type { SpellcastingConfig } from "@/lib/dnd/spells";
+import type { SpellcastingConfig } from "@/lib/dnd/spellcasting";
 import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
 import { RollToast } from "@/components/three/DiceRollFx";
 import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";

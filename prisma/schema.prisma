@@ -97,6 +97,12 @@ model Character {
   ordemSheet         OrdemSheet?
   starWarsSheet      StarWarsSheet?
   campaignCharacters CampaignCharacter[]
+
+  // A listagem de personagens filtra por dono e ordena por atualização; este
+  // índice cobre as duas coisas numa varredura só. O Postgres não cria índice de
+  // chave estrangeira sozinho, então sem isto a consulta é varredura completa.
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([systemId])
 }
 
 // ─── D&D 5e ──────────────────────────────────────────────────────────────────
@@ -156,6 +162,8 @@ model DndClass {
   level     Int
 
   sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId])
 }
 
 model DndSkill {
@@ -184,6 +192,8 @@ model DndSpell {
   range       String?
 
   sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId])
 }
 
 model DndEquipment {
@@ -196,6 +206,8 @@ model DndEquipment {
   description String?
 
   sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId])
 }
 
 model DndFeature {
@@ -206,6 +218,8 @@ model DndFeature {
   description String?
 
   sheet DndSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@index([sheetId])
 }
 
 // ─── TORMENTA 20 ─────────────────────────────────────────────────────────────

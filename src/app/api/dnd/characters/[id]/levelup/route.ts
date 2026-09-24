@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CLASSES } from "@/lib/dnd/classes";
-import { SPELLCASTING } from "@/lib/dnd/spells";
+import { SPELLCASTING } from "@/lib/dnd/spellcasting";
 import {
   MAX_LEVEL,
   XP_THRESHOLDS,

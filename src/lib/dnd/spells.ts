@@ -10,25 +10,6 @@ export interface Spell {
   classes: string[];
 }
 
-export interface SpellcastingConfig {
-  cantripsKnown: number;
-  spellsKnown: number;
-  spellSlots1st: number;
-  ability: string;
-  type: "known" | "prepare";
-}
-
-// Classes that are spellcasters at level 1 (Ranger gets spells at level 2, not included)
-export const SPELLCASTING: Record<string, SpellcastingConfig> = {
-  bardo:      { cantripsKnown: 2, spellsKnown: 4, spellSlots1st: 2, ability: "Carisma",      type: "known"   },
-  clerigo:    { cantripsKnown: 3, spellsKnown: 4, spellSlots1st: 2, ability: "Sabedoria",    type: "prepare" },
-  druida:     { cantripsKnown: 2, spellsKnown: 4, spellSlots1st: 2, ability: "Sabedoria",    type: "prepare" },
-  feiticeiro: { cantripsKnown: 4, spellsKnown: 2, spellSlots1st: 2, ability: "Carisma",      type: "known"   },
-  mago:       { cantripsKnown: 3, spellsKnown: 6, spellSlots1st: 2, ability: "Inteligência", type: "known"   },
-  bruxo:      { cantripsKnown: 2, spellsKnown: 2, spellSlots1st: 1, ability: "Carisma",      type: "known"   },
-  // Paladino: conjuração começa no nível 2, não no nível 1 (PHB p.84)
-};
-
 export const SPELLS: Spell[] = [
   // ─────────────────────────────────────────────────────────────────────────
   // CANTRIPS (nível 0)

@@ -16,24 +16,18 @@ export default async function CthulhuJogadorPage() {
 
   const userId = session.user.id;
 
-  const [system, characters] = await Promise.all([
-    prisma.system.findUnique({ where: { slug: "cthulhu" } }),
-    prisma.character.findMany({
-      where: { userId, system: { slug: "cthulhu" } },
-      include: { cthulhuSheet: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ]);
-
-  if (!system) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          Sistema Call of Cthulhu não encontrado. Execute <code>npm run seed</code>.
-        </p>
-      </div>
-    );
-  }
+  const characters = await prisma.character.findMany({
+    where: { userId, system: { slug: "cthulhu" } },
+    // `select` em vez de `include`: a ficha guarda listas inteiras em coluna Json
+    // (perícias, rituais, armas, equipamento, anotações) e nada disso aparece no
+    // cartão. Sem isto, o payload da lista carregava a ficha completa de cada
+    // personagem só para mostrar ocupação, era, idade e sanidade.
+    select: {
+      id: true, name: true, portraitUrl: true,
+      cthulhuSheet: { select: { occupation: true, era: true, age: true, sanCurrent: true, sanMax: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>

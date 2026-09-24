@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
@@ -16,8 +18,13 @@ import { POOL_CLASS_IDS } from "@/lib/starwars/leveling";
 import { GENERAL_POWER_BY_ID } from "@/lib/starwars/powers/generalPowers";
 import { ITEMS, ITEM_BY_ID, CATEGORY_LABEL, CATEGORY_ORDER, type ItemCategory, type StarWarsItem } from "@/lib/starwars/items";
 import { damageLevelMultiplier, baseDamageValue, scaledDamage } from "@/lib/starwars/damage";
-import { LevelUpModal } from "./LevelUpModal";
-import { RulesManual } from "./RulesManual";
+// Carregados sob demanda. Todos só aparecem depois de uma ação do usuário — abrir
+// o grimório, subir de nível, imprimir, ler o manual —, e cada um arrasta consigo
+// uma fatia grande de dados de regra. Estáticos, esse peso entrava no bundle
+// inicial da ficha mesmo para quem só queria conferir os PV. O padrão é o mesmo do
+// fundo 3D em components/three/ImmersiveBackground.tsx.
+const LevelUpModal = dynamic(() => import("./LevelUpModal").then((m) => m.LevelUpModal), { ssr: false, loading: () => null });
+const RulesManual = dynamic(() => import("./RulesManual").then((m) => m.RulesManual), { ssr: false, loading: () => null });
 import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
 import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
 import { PlayCard } from "@/components/play/PlayCard";

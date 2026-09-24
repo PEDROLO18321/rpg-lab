@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
 import Link from "next/link";
@@ -8,17 +9,22 @@ import { useRouter } from "next/navigation";
 import { RACES, ABILITY_LABELS } from "@/lib/dnd/races";
 import { CLASSES } from "@/lib/dnd/classes";
 import { BACKGROUNDS } from "@/lib/dnd/backgrounds";
-import { SPELLCASTING } from "@/lib/dnd/spells";
-import type { SpellcastingConfig } from "@/lib/dnd/spells";
+import { SPELLCASTING } from "@/lib/dnd/spellcasting";
+import type { SpellcastingConfig } from "@/lib/dnd/spellcasting";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { DeleteCharacterButton } from "@/components/dashboard/DeleteCharacterButton";
 import type { AbilityKey } from "@/lib/dnd/races";
 import { WEAPONS, ALL_PHB_ITEMS, PICKER_GROUPS } from "@/lib/dnd/items";
 import type { PickerGroup } from "@/lib/dnd/items";
 import { proficiencyBonus, getMaxSlots, getMulticlassSlots } from "@/lib/dnd/leveling";
-import { LevelUpButton } from "@/components/dashboard/LevelUpDialog";
-import { SpellbookPanel } from "@/components/dashboard/SpellbookPanel";
-import { DndPrintSheet } from "./DndPrintSheet";
+// Carregados sob demanda. Todos só aparecem depois de uma ação do usuário — abrir
+// o grimório, subir de nível, imprimir, ler o manual —, e cada um arrasta consigo
+// uma fatia grande de dados de regra. Estáticos, esse peso entrava no bundle
+// inicial da ficha mesmo para quem só queria conferir os PV. O padrão é o mesmo do
+// fundo 3D em components/three/ImmersiveBackground.tsx.
+const LevelUpButton = dynamic(() => import("@/components/dashboard/LevelUpDialog").then((m) => m.LevelUpButton), { ssr: false, loading: () => null });
+const SpellbookPanel = dynamic(() => import("@/components/dashboard/SpellbookPanel").then((m) => m.SpellbookPanel), { ssr: false, loading: () => null });
+const DndPrintSheet = dynamic(() => import("./DndPrintSheet").then((m) => m.DndPrintSheet), { ssr: false, loading: () => null });
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import "../dnd-responsive.css";
 import { PlayMode } from "./PlayMode";

@@ -19,24 +19,18 @@ export default async function StarWarsJogadorPage() {
 
   const userId = session.user.id;
 
-  const [system, characters] = await Promise.all([
-    prisma.system.findUnique({ where: { slug: "starwars" } }),
-    prisma.character.findMany({
-      where: { userId, system: { slug: "starwars" } },
-      include: { starWarsSheet: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ]);
-
-  if (!system) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          Sistema Star Wars não encontrado. Execute <code>npm run seed</code>.
-        </p>
-      </div>
-    );
-  }
+  const characters = await prisma.character.findMany({
+    where: { userId, system: { slug: "starwars" } },
+    // `select` em vez de `include`: a ficha guarda listas inteiras em coluna Json
+    // (perícias, rituais, armas, equipamento, anotações) e nada disso aparece no
+    // cartão. Sem isto, o payload da lista carregava a ficha completa de cada
+    // personagem só para mostrar espécie, classe, nível e PV.
+    select: {
+      id: true, name: true, portraitUrl: true,
+      starWarsSheet: { select: { species: true, classes: true, level: true, pvCurrent: true, pvMax: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>

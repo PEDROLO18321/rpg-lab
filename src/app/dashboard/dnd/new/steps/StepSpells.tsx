@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SPELLCASTING, getSpellsForClass, SCHOOL_COLORS } from "@/lib/dnd/spells";
+import { getSpellsForClass, SCHOOL_COLORS } from "@/lib/dnd/spells";
+import { SPELLCASTING } from "@/lib/dnd/spellcasting";
 import type { Spell } from "@/lib/dnd/spells";
 import { CLASSES } from "@/lib/dnd/classes";
 import type { WizardData } from "../CharacterWizard";

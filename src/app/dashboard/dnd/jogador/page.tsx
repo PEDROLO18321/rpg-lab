@@ -12,28 +12,23 @@ export default async function DndJogadorPage() {
 
   const userId = session.user.id;
 
-  const [system, characters] = await Promise.all([
-    prisma.system.findUnique({ where: { slug: "dnd" } }),
-    prisma.character.findMany({
-      where: { userId, system: { slug: "dnd" } },
-      include: {
-        dndSheet: {
-          include: { classes: { orderBy: { level: "desc" } } },
+  const characters = await prisma.character.findMany({
+    where: { userId, system: { slug: "dnd" } },
+    // `select` em vez de `include`: a ficha guarda listas inteiras em coluna Json
+    // (perícias, rituais, armas, equipamento, anotações) e nada disso aparece no
+    // cartão. Sem isto, o payload da lista carregava a ficha completa de cada
+    // personagem só para mostrar raça, classe e nível.
+    select: {
+      id: true, name: true, portraitUrl: true,
+      dndSheet: {
+        select: {
+          race: true, level: true,
+          classes: { select: { className: true, level: true }, orderBy: { level: "desc" } },
         },
       },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ]);
-
-  if (!system) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          Sistema D&D 5e não encontrado. Execute <code>npm run seed</code> no terminal.
-        </p>
-      </div>
-    );
-  }
+    },
+    orderBy: { updatedAt: "desc" },
+  });
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>

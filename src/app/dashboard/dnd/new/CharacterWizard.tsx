@@ -15,7 +15,7 @@ import { StepDesc } from "./steps/StepDesc";
 import { StepEquipment } from "./steps/StepEquipment";
 import { StepSpells } from "./steps/StepSpells";
 import { StepReview } from "./steps/StepReview";
-import { SPELLCASTING } from "@/lib/dnd/spells";
+import { SPELLCASTING } from "@/lib/dnd/spellcasting";
 import "../dnd-responsive.css";
 
 const STEPS = [

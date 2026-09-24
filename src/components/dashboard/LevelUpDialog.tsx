@@ -12,7 +12,8 @@ import {
 } from "@/lib/dnd/leveling";
 import { useEscapeKey } from "@/lib/useEscapeKey";
 import type { LevelFeature } from "@/lib/dnd/leveling";
-import { SPELLS, SCHOOL_COLORS, spellClassKey, SPELLCASTING } from "@/lib/dnd/spells";
+import { SPELLS, SCHOOL_COLORS, spellClassKey } from "@/lib/dnd/spells";
+import { SPELLCASTING } from "@/lib/dnd/spellcasting";
 import { CLASSES } from "@/lib/dnd/classes";
 import { ABILITY_LABELS } from "@/lib/dnd/races";
 import type { AbilityKey } from "@/lib/dnd/races";

@@ -15,4 +15,7 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClientSingleton
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Guardado sempre, inclusive em produção. A leitura acima é incondicional, então
+// sem esta linha cada reavaliação do módulo em produção criava um PrismaClient e um
+// pool de conexões novos — desperdício que o Neon sente no plano grátis.
+globalForPrisma.prisma = prisma;

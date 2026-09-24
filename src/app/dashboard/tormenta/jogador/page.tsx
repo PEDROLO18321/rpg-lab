@@ -19,24 +19,18 @@ export default async function TormentaJogadorPage() {
 
   const userId = session.user.id;
 
-  const [system, characters] = await Promise.all([
-    prisma.system.findUnique({ where: { slug: "tormenta20" } }),
-    prisma.character.findMany({
-      where: { userId, system: { slug: "tormenta20" } },
-      include: { tormentaSheet: true },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ]);
-
-  if (!system) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-          Sistema Tormenta 20 não encontrado. Execute <code>npm run seed</code>.
-        </p>
-      </div>
-    );
-  }
+  const characters = await prisma.character.findMany({
+    where: { userId, system: { slug: "tormenta20" } },
+    // `select` em vez de `include`: a ficha guarda listas inteiras em coluna Json
+    // (perícias, rituais, armas, equipamento, anotações) e nada disso aparece no
+    // cartão. Sem isto, o payload da lista carregava a ficha completa de cada
+    // personagem só para mostrar raça, classe, nível e PV.
+    select: {
+      id: true, name: true, portraitUrl: true,
+      tormentaSheet: { select: { race: true, className: true, level: true, pvCurrent: true, pvMax: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
 
   return (
     <div style={{ minHeight: "100vh", background: "transparent" }}>

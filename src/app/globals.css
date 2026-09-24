@@ -353,3 +353,19 @@ button:disabled { cursor: not-allowed; }
   .dashboard-system-card { flex-direction: column !important; }
   .dashboard-system-card-img { width: 100% !important; height: 140px !important; }
 }
+
+/* ── Esqueleto de carregamento (dashboard/loading.tsx) ───────────────────────
+   Pulso discreto de opacidade. Respeita prefers-reduced-motion: quem pediu
+   menos movimento vê o bloco parado, que ainda comunica "carregando". */
+.skeleton-pulse {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.9; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-pulse { animation: none; opacity: 0.6; }
+}
