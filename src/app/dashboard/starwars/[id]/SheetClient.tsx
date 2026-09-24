@@ -40,6 +40,7 @@ import { useEscapeKey } from "@/lib/useEscapeKey";
 import { SheetHeader, SheetProgressBtn, SHEET_TABS } from "@/components/sheet/SheetHeader";
 import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShell";
 import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
+import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import "../starwars-responsive.css";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
@@ -1436,18 +1437,7 @@ function EditMode({ characterId, characterName, portraitUrl: initialPortrait, sh
         <EditText label="Aliados, mentores, rivais, família, dívidas — quem marca a jornada do seu personagem." value={background.connections ?? ""} onChange={(v) => setBackgroundField("connections", v)} textarea />
       </EditSection>
 
-      {error && <p style={{ fontSize: "0.8rem", color: "#e0524c" }}>{error}</p>}
-
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, alignItems: "center" }}>
-        {saved && <span style={{ fontSize: "0.78rem", color: "#7dc864" }}>✓ Salvo</span>}
-        <button onClick={save} disabled={saving} style={{
-          padding: "10px 22px", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT,
-          fontWeight: 700, fontSize: "0.84rem", fontFamily: "inherit", cursor: saving ? "wait" : "pointer",
-          borderRadius: "var(--radius-lg)", boxShadow: `0 0 16px ${ACCENT_DIM}`,
-        }}>
-          {saving ? "Salvando…" : "Salvar Alterações"}
-        </button>
-      </div>
+      <SheetSaveBar onSave={save} saving={saving} saved={saved} error={error} />
     </div>
   );
 }

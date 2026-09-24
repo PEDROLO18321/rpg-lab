@@ -15,6 +15,7 @@ import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
 import { SheetHeader, SheetProgressBtn } from "@/components/sheet/SheetHeader";
 import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShell";
 import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
+import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import { PlayShell, PlayVitals, PlayChips, PlayAlert } from "@/components/play/PlayShell";
 import { PlayCard } from "@/components/play/PlayCard";
 import { VitalBar } from "@/components/play/VitalBar";
@@ -1353,15 +1354,7 @@ function EditMode({ character, sheet, onSaved }: EditModeProps) {
         </div>
       </EditSection>
 
-      {/* Save bar */}
-      <div style={{ position: "sticky", bottom: 0, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "var(--surface)", border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", boxShadow: "0 -4px 24px rgba(0,0,0,0.25)" }}>
-        <button onClick={save} disabled={saving}
-          style={{ padding: "10px 24px", borderRadius: "var(--radius-lg)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, color: ACCENT_LIGHT, fontWeight: 700, fontSize: "0.9rem", cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit", boxShadow: "0 0 16px rgba(255,255,255,0.1)", opacity: saving ? 0.6 : 1 }}>
-          {saving ? "Salvando…" : "💾 Salvar alterações"}
-        </button>
-        {saved  && <span style={{ fontSize: "0.82rem", color: "#5fbf7f", fontWeight: 700 }}>✓ Salvo</span>}
-        {error  && <span style={{ fontSize: "0.82rem", color: "#ff6b6b" }}>{error}</span>}
-      </div>
+      <SheetSaveBar onSave={save} saving={saving} saved={saved} error={error} />
     </div>
   );
 }

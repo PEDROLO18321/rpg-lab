@@ -29,6 +29,7 @@ import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import "../dnd-responsive.css";
 import { PlayMode } from "./PlayMode";
 import { SheetHeader } from "@/components/sheet/SheetHeader";
+import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import { SheetShell, SheetVitals } from "@/components/sheet/SheetShell";
 import { SheetSection, SheetStat } from "@/components/sheet/SheetSection";
 import {
@@ -986,23 +987,7 @@ function EditMode({
         </EditSection>
       )}
 
-      {/* Save bar */}
-      <div style={{ position: "sticky", bottom: 0, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "var(--surface)", border: "1px solid var(--border-accent)", borderRadius: "var(--radius-xl)", boxShadow: "0 -4px 24px rgba(0,0,0,0.25)" }}>
-        <button
-          onClick={save}
-          disabled={saving}
-          style={{
-            padding: "10px 24px", borderRadius: "var(--radius-lg)", background: "var(--accent-dim)",
-            border: "1px solid var(--accent)", color: "var(--accent-light)", fontWeight: 700,
-            fontSize: "0.9rem", cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit",
-            boxShadow: "0 0 16px var(--accent-glow)", opacity: saving ? 0.6 : 1,
-          }}
-        >
-          {saving ? "Salvando…" : "💾 Salvar alterações"}
-        </button>
-        {saved && <span style={{ fontSize: "0.82rem", color: "#5fbf7f", fontWeight: 700 }}>✓ Salvo</span>}
-        {error && <span style={{ fontSize: "0.82rem", color: "#ff6b6b" }}>{error}</span>}
-      </div>
+      <SheetSaveBar onSave={save} saving={saving} saved={saved} error={error} />
 
       {/* Item Picker Modal */}
       {showItemPicker && (

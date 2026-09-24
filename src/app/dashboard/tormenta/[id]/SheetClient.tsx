@@ -8,6 +8,7 @@ import { DeleteCharacterButton } from "@/components/dashboard/DeleteCharacterBut
 import { SheetHeader, SheetProgressBtn } from "@/components/sheet/SheetHeader";
 import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShell";
 import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
+import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import { PLAY_THEME } from "@/components/play/theme";
 import { RACE_BY_ID } from "@/lib/tormenta/races";
 import { CLASS_BY_ID } from "@/lib/tormenta/classes";
@@ -23,7 +24,6 @@ import { PlayMode } from "./PlayMode";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { parseJsonField } from "@/lib/characterTransfer";
 
-const ACCENT       = "#a01818";
 const ACCENT_LIGHT = "#d56c6c";
 const ACCENT_DIM   = "rgba(160,24,24,0.12)";
 const ACCENT_BORD  = "rgba(160,24,24,0.32)";
@@ -434,15 +434,7 @@ function EditMode({ characterId, characterName, sheet, portraitUrl, setPortraitU
         </div>
       </Section>
 
-      {error && <p style={{ fontSize: "0.8rem", color: "#ff6b6b" }}>{error}</p>}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button onClick={saveAll} disabled={saving}
-          style={{ padding: "10px 24px", background: `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)`, border: "none", borderRadius: "var(--radius-lg)", color: "#fff", fontWeight: 700, fontSize: "0.88rem", cursor: saving ? "wait" : "pointer" }}>
-          {saving ? "Salvando…" : "Salvar alterações"}
-        </button>
-        {saved && <span style={{ fontSize: "0.78rem", color: "#5fbf7f" }}>✓ Salvo</span>}
-      </div>
+      <SheetSaveBar onSave={saveAll} saving={saving} saved={saved} error={error} />
     </div>
   );
 }

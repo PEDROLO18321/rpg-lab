@@ -1,0 +1,28 @@
+# Normalização de fim de linha.
+#
+# Este repositório é editado no Windows (core.autocrlf=true) e construído no
+# Linux (Vercel). Sem um arquivo como este, o git converte CRLF/LF sozinho e o
+# conteúdo do arquivo no disco deixa de bater com o que foi gravado — foi
+# assim que o checksum de uma migration passou a divergir do banco e o
+# `prisma migrate dev` chegou a pedir para resetar o banco de desenvolvimento.
+#
+# `text=auto eol=lf` guarda tudo em LF no repositório e entrega LF no disco.
+
+* text=auto eol=lf
+
+# Arquivos em que uma conversão silenciosa quebra alguma coisa de verdade:
+# o Prisma confere o sha256 do .sql contra o que gravou ao aplicar.
+*.sql   text eol=lf
+*.prisma text eol=lf
+*.sh    text eol=lf
+
+# Binários: nunca converter.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary

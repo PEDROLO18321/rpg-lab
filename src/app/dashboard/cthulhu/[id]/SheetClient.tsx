@@ -22,6 +22,7 @@ import { PLAY_THEME } from "@/components/play/theme";
 import { SheetHeader, SheetProgressBtn } from "@/components/sheet/SheetHeader";
 import { SheetShell, SheetVitals } from "@/components/sheet/SheetShell";
 import { SheetSection } from "@/components/sheet/SheetSection";
+import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import type { PlayRollEntry, RollTone } from "@/components/play/types";
 import { parseJsonField } from "@/lib/characterTransfer";
 import { useEscapeKey } from "@/lib/useEscapeKey";
@@ -105,6 +106,7 @@ export function SheetClient({ character }: Props) {
   const [mode, setMode] = useState<"ficha" | "jogar" | "editar">("ficha");
   const editMode = mode === "editar";
   const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
   const [devOpen,  setDevOpen]  = useState(false);
   useEscapeKey(devOpen, () => setDevOpen(false));
   const [devResults, setDevResults] = useState<DevResult[] | null>(null);
@@ -402,8 +404,8 @@ export function SheetClient({ character }: Props) {
   }
 
   // ── Save edits ──
-  function saveEdits() {
-    patchSheet({
+  async function saveEdits() {
+    await patchSheet({
       name,
       occupation: occupation || null,
       age,
@@ -421,8 +423,11 @@ export function SheetClient({ character }: Props) {
     setPvCurrent((c) => Math.min(c, pvMax));
     setSanCurrent((c) => Math.min(c, sanMax));
     setPmCurrent((c) => Math.min(c, pmMax));
-    setMode("ficha");
     setWeaponPickerOpen(false);
+    // Fica no Editar e confirma, como os outros quatro: sair sozinho da aba
+    // deixava o usuário sem saber se gravou, e obrigava a voltar para conferir.
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   function setAttr(k: AttrKey, v: number) {
@@ -979,14 +984,7 @@ export function SheetClient({ character }: Props) {
           }
           status={saving ? <span style={{ fontSize: "0.74rem", color: "var(--accent-light)" }}>Salvando…</span> : null}
           actions={
-            <>
-              {editMode && (
-                <button onClick={saveEdits} style={{ ...pillBtn, background: ACCENT, color: "#06090f", border: "none" }}>
-                  ✓ Salvar
-                </button>
-              )}
-              <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" />
-            </>
+            <ExportJsonButton exportUrl={`/api/cthulhu/characters/${character.id}/export`} characterName={character.name} systemSlug="cthulhu" />
           }
         />
       </div>
@@ -1250,6 +1248,18 @@ export function SheetClient({ character }: Props) {
             ) : null
           }
         />
+
+        {/* Barra de salvar, a mesma dos outros quatro sistemas. Aqui ela só
+            aparece no Editar porque a Ficha do Cthulhu grava sozinha a cada
+            alteração de vital — não há nada pendente para confirmar. */}
+        {editMode && (
+          <SheetSaveBar
+            onSave={saveEdits}
+            saving={saving}
+            saved={saved}
+            hint="Os valores atuais são recortados ao novo máximo"
+          />
+        )}
         </>
         )}
       </main>
