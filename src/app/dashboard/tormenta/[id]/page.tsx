@@ -15,7 +15,7 @@ export default async function TormentaSheetPage({
 
   const character = await prisma.character.findUnique({
     where: { id },
-    include: { tormentaSheet: true, system: true },
+    include: { tormentaSheet: true, system: true, user: { select: { name: true } } },
   });
 
   if (!character || !character.tormentaSheet) notFound();

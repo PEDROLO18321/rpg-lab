@@ -15,7 +15,7 @@ export default async function StarWarsSheetPage({
 
   const character = await prisma.character.findUnique({
     where: { id },
-    include: { starWarsSheet: true, system: true, user: true },
+    include: { starWarsSheet: true, system: true, user: { select: { name: true } } },
   });
 
   if (!character || !character.starWarsSheet) notFound();
