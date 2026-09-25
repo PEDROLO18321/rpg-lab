@@ -260,7 +260,9 @@ body {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-/* 120ms delay: partículas aparecem primeiro. `both` mantém opacity:0 durante o delay. */
+/* 160ms de atraso: as partículas do fundo aparecem primeiro. `both` mantém
+   opacity:0 durante esse tempo — ou seja, são 160ms de tela vazia antes do fade
+   começar, e isso só acontece ao entrar no dashboard vindo de fora. */
 /* Sem transform: não cria containing block — fixed/sticky não se deslocam. */
 .page-enter { animation: page-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) 160ms both; }
 
@@ -354,18 +356,38 @@ button:disabled { cursor: not-allowed; }
   .dashboard-system-card-img { width: 100% !important; height: 140px !important; }
 }
 
-/* ── Esqueleto de carregamento (dashboard/loading.tsx) ───────────────────────
-   Pulso discreto de opacidade. Respeita prefers-reduced-motion: quem pediu
-   menos movimento vê o bloco parado, que ainda comunica "carregando". */
-.skeleton-pulse {
-  animation: skeleton-pulse 1.4s ease-in-out infinite;
+/* ── Sinal de navegação em curso (components/dashboard/LinkPending.tsx) ──────
+   Barrinha no topo do cartão clicado. O elemento existe sempre, invisível: o
+   atraso de 120ms na animação é o que impede a piscada — navegação
+   pré-carregada termina antes disso e nada chega a aparecer. */
+.link-pending {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-@keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.45; }
-  50%      { opacity: 0.9; }
+.link-pending.is-pending {
+  animation: link-pending 0.9s ease-in-out 120ms infinite;
 }
 
+@keyframes link-pending {
+  0%   { opacity: 0;   visibility: visible; transform: translateX(-30%); }
+  50%  { opacity: 0.9; visibility: visible; transform: translateX(0); }
+  100% { opacity: 0;   visibility: visible; transform: translateX(30%); }
+}
+
+/* Quem pediu menos movimento vê a barra parada, que ainda comunica o estado. */
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-pulse { animation: none; opacity: 0.6; }
+  .link-pending.is-pending {
+    animation: none;
+    opacity: 0.8;
+    visibility: visible;
+  }
 }

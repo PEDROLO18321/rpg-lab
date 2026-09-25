@@ -5,7 +5,9 @@
 // aqui é a escolha correta, não um descuido.
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LinkPending } from "./LinkPending";
 import { useEffect, useRef, useState } from "react";
 
 const ACCENT_LIGHT = "#69a8e0";
@@ -44,6 +46,8 @@ export function StarWarsCharacterCard({ id, name, species, className, level, pvC
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [menuOpen]);
 
+  // O cartão inteiro já é um link; isto serve só ao item "Visualizar" do menu,
+  // que é um botão e não pode virar âncora dentro de outra âncora.
   function openSheet() { router.push(`/dashboard/starwars/${id}`); }
 
   async function duplicate() {
@@ -69,10 +73,6 @@ export function StarWarsCharacterCard({ id, name, species, className, level, pvC
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={openSheet}
-      role="link"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter") openSheet(); }}
       style={{
         position: "relative", zIndex: menuOpen ? 20 : hovered ? 2 : 1,
         background: "linear-gradient(180deg, rgba(18,26,40,0.9) 0%, rgba(10,14,22,0.95) 100%)",
@@ -85,6 +85,16 @@ export function StarWarsCharacterCard({ id, name, species, className, level, pvC
         display: "flex", flexDirection: "column", gap: 14,
       }}
     >
+      {/* O link cobre o cartão todo, atrás do conteúdo — é ele que dá o
+          prefetch, o foco por teclado e o menu de contexto do navegador. */}
+      <Link
+        href={`/dashboard/starwars/${id}`}
+        aria-label={`Abrir a ficha de ${name}`}
+        style={{ position: "absolute", inset: 0, zIndex: 1, borderRadius: 8 }}
+      >
+        <LinkPending />
+      </Link>
+
       <div ref={menuRef} style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }} role="presentation" onClick={(e) => e.stopPropagation()}>
         <button
           aria-label="Opções do personagem"

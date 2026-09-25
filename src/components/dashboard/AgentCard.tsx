@@ -5,7 +5,9 @@
 // aqui é a escolha correta, não um descuido.
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LinkPending } from "./LinkPending";
 import { useEffect, useRef, useState } from "react";
 
 const ACCENT      = "#ffffff";
@@ -64,6 +66,8 @@ export function AgentCard({ id, name, className, origin, nex, sanCurrent, sanMax
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [menuOpen]);
 
+  // O cartão inteiro já é um link; isto serve só ao item "Visualizar" do menu,
+  // que é um botão e não pode virar âncora dentro de outra âncora.
   function openSheet() {
     router.push(`/dashboard/ordem/${id}`);
   }
@@ -101,10 +105,6 @@ export function AgentCard({ id, name, className, origin, nex, sanCurrent, sanMax
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={openSheet}
-      role="link"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter") openSheet(); }}
       style={{
         position: "relative",
         zIndex: menuOpen ? 20 : hovered ? 2 : 1,
@@ -123,6 +123,16 @@ export function AgentCard({ id, name, className, origin, nex, sanCurrent, sanMax
         gap: 14,
       }}
     >
+      {/* O link cobre o cartão todo, atrás do conteúdo — é ele que dá o
+          prefetch, o foco por teclado e o menu de contexto do navegador. */}
+      <Link
+        href={`/dashboard/ordem/${id}`}
+        aria-label={`Abrir a ficha de ${name}`}
+        style={{ position: "absolute", inset: 0, zIndex: 1, borderRadius: "var(--radius-xl)" }}
+      >
+        <LinkPending />
+      </Link>
+
       {/* 3-dot menu */}
       <div
         ref={menuRef}
