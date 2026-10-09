@@ -575,6 +575,11 @@ contraste, não fluxo percebido.
 
 283 testes em 13 arquivos, sem banco e sem servidor (`npm test`).
 
+> O número é o que o Vitest executa e reporta. No código estão escritos **241
+> blocos** `it`/`test`; três deles são `it.each`, que o Vitest expande em um
+> teste por linha da tabela. As duas contagens estão certas, por caminhos
+> diferentes — quem reconferir com `grep` vai achar 241.
+
 | Arquivo | Cobre |
 |---|---|
 | `dnd-leveling.test.ts` | Proficiência, PV por nível, XP, ASI com teto, espaços de magia |

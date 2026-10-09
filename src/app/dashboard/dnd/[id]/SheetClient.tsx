@@ -27,7 +27,10 @@ const SpellbookPanel = dynamic(() => import("@/components/dashboard/SpellbookPan
 const DndPrintSheet = dynamic(() => import("./DndPrintSheet").then((m) => m.DndPrintSheet), { ssr: false, loading: () => null });
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import "../dnd-responsive.css";
-import { PlayMode } from "./PlayMode";
+// Dinâmico: o modo Jogar só existe depois que o usuário troca de aba, e leva
+// junto o catálogo de magias, itens e condições. Estático, esse peso entrava no
+// bundle inicial de quem só queria olhar a ficha.
+const PlayMode = dynamic(() => import("./PlayMode").then((m) => m.PlayMode), { ssr: false, loading: () => null });
 import { SheetHeader } from "@/components/sheet/SheetHeader";
 import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import { SheetShell, SheetVitals } from "@/components/sheet/SheetShell";

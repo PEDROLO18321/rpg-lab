@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,17 +12,16 @@ import { SheetShell, SheetVitals, SheetChips } from "@/components/sheet/SheetShe
 import { SheetSection, SheetChip } from "@/components/sheet/SheetSection";
 import { SheetSaveBar } from "@/components/sheet/SheetSaveBar";
 import { PLAY_THEME } from "@/components/play/theme";
-import { RACE_BY_ID } from "@/lib/tormenta/races";
-import { CLASS_BY_ID } from "@/lib/tormenta/classes";
-import { ORIGIN_BY_ID } from "@/lib/tormenta/origins";
-import { GOD_BY_ID } from "@/lib/tormenta/gods";
 import { WEAPON_BY_ID } from "@/lib/tormenta/items";
-import { SPELLS } from "@/lib/tormenta/spells";
 import { ATTR_KEYS, ATTR_LABEL, attrMod, SKILLS, skillModifier } from "@/lib/tormenta/data";
 import { XP_THRESHOLDS, MAX_LEVEL, type ChosenPower } from "@/lib/tormenta/leveling";
 import { deathThreshold } from "@/lib/tormenta/play";
-import { LevelUpModal } from "./LevelUpModal";
-import { PlayMode } from "./PlayMode";
+// Dinâmico: só abre por clique, e arrasta o catálogo de magias junto.
+const LevelUpModal = dynamic(() => import("./LevelUpModal").then((m) => m.LevelUpModal), { ssr: false, loading: () => null });
+// Dinâmico: o modo Jogar só existe depois que o usuário troca de aba, e leva
+// junto o catálogo de magias, itens e condições. Estático, esse peso entrava no
+// bundle inicial de quem só queria olhar a ficha.
+const PlayMode = dynamic(() => import("./PlayMode").then((m) => m.PlayMode), { ssr: false, loading: () => null });
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { parseJsonField } from "@/lib/characterTransfer";
 
@@ -37,12 +38,18 @@ function parse<T>(raw: unknown, fallback: T): T {
 
 interface Background { appearance?: string; personality?: string; history?: string; objective?: string }
 
-export function SheetClient({ character }: { character: AnyChar }) {
+/** Nomes já resolvidos no servidor — ver page.tsx. */
+export interface SheetLabels {
+  race: string | null;
+  className: string | null;
+  origin: string | null;
+  god: string | null;
+  initials: string;
+  spells: { id: string; name: string; school: string; circle: number; description: string }[];
+}
+
+export function SheetClient({ character, labels }: { character: AnyChar; labels: SheetLabels }) {
   const sheet = character.tormentaSheet;
-  const race = sheet.race ? RACE_BY_ID[sheet.race] : null;
-  const cls = sheet.className ? CLASS_BY_ID[sheet.className] : null;
-  const origin = sheet.origin ? ORIGIN_BY_ID[sheet.origin] : null;
-  const god = sheet.godId ? GOD_BY_ID[sheet.godId] : null;
   const themeColors = PLAY_THEME.tormenta;
 
   const [mode, setMode] = useState<"ficha" | "jogar" | "editar">("ficha");
@@ -114,9 +121,9 @@ export function SheetClient({ character }: { character: AnyChar }) {
         <SheetHeader
           system="tormenta"
           portraitUrl={portraitUrl}
-          initials={cls ? cls.id.slice(0, 3).toUpperCase() : "T20"}
+          initials={labels.initials}
           name={character.name}
-          subtitle={`${[race?.name, cls?.name, origin?.name].filter(Boolean).join(" · ")} · Nível ${sheet.level}${god ? ` · Devoto de ${god.name}` : ""}`}
+          subtitle={`${[labels.race, labels.className, labels.origin].filter(Boolean).join(" · ")} · Nível ${sheet.level}${labels.god ? ` · Devoto de ${labels.god}` : ""}`}
           mode={mode}
           onMode={(id) => setMode(id as "ficha" | "jogar" | "editar")}
           progression={sheet.level < 20 && mode === "ficha" ? (
@@ -218,14 +225,12 @@ export function SheetClient({ character }: { character: AnyChar }) {
                 </SheetSection>
               )}
 
-              {spellIds.length > 0 && (
+              {labels.spells.length > 0 && (
                 <SheetSection title="Magias">
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {spellIds.map((id) => {
-                      const sp = SPELLS.find((s) => s.id === id);
-                      if (!sp) return null;
+                    {labels.spells.map((sp) => {
                       return (
-                        <div key={id} style={{ padding: "8px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
+                        <div key={sp.id} style={{ padding: "8px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
                           <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text)" }}>{sp.name} <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)", fontWeight: 400 }}>· {sp.school} · {sp.circle}º círculo</span></p>
                           <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 2 }}>{sp.description}</p>
                         </div>
