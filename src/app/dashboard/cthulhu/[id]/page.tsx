@@ -13,13 +13,12 @@ export default async function CthulhuSheetPage({
 
   const { id } = await params;
 
-  const character = await prisma.character.findUnique({
-    where: { id },
-    include: { cthulhuSheet: true, system: true, user: { select: { name: true } } },
+  const character = await prisma.character.findFirst({
+    where: { id, userId: session.user.id },
+    include: { cthulhuSheet: true, user: { select: { name: true } } },
   });
 
   if (!character || !character.cthulhuSheet) notFound();
-  if (character.userId !== session.user.id) redirect("/dashboard/cthulhu");
 
   return <SheetClient character={character as never} />;
 }

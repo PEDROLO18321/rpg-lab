@@ -19,13 +19,12 @@ export default async function TormentaSheetPage({
 
   const { id } = await params;
 
-  const character = await prisma.character.findUnique({
-    where: { id },
-    include: { tormentaSheet: true, system: true, user: { select: { name: true } } },
+  const character = await prisma.character.findFirst({
+    where: { id, userId: session.user.id },
+    include: { tormentaSheet: true, user: { select: { name: true } } },
   });
 
   if (!character || !character.tormentaSheet) notFound();
-  if (character.userId !== session.user.id) redirect("/dashboard/tormenta");
 
   // Raça, classe, origem, divindade e magias são resolvidas aqui, no servidor.
   // A tela só precisa do nome de cada uma, e importá-las no cliente levava

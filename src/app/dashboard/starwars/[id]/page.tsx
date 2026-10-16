@@ -13,13 +13,12 @@ export default async function StarWarsSheetPage({
 
   const { id } = await params;
 
-  const character = await prisma.character.findUnique({
-    where: { id },
-    include: { starWarsSheet: true, system: true, user: { select: { name: true } } },
+  const character = await prisma.character.findFirst({
+    where: { id, userId: session.user.id },
+    include: { starWarsSheet: true, user: { select: { name: true } } },
   });
 
   if (!character || !character.starWarsSheet) notFound();
-  if (character.userId !== session.user.id) redirect("/dashboard/starwars");
 
   return <SheetClient character={character as never} />;
 }

@@ -13,13 +13,12 @@ export default async function OrdemSheetPage({
 
   const { id } = await params;
 
-  const character = await prisma.character.findUnique({
-    where: { id },
-    include: { ordemSheet: true, system: true, user: { select: { name: true } } },
+  const character = await prisma.character.findFirst({
+    where: { id, userId: session.user.id },
+    include: { ordemSheet: true, user: { select: { name: true } } },
   });
 
   if (!character || !character.ordemSheet) notFound();
-  if (character.userId !== session.user.id) redirect("/dashboard/ordem");
 
   return <SheetClient character={character as never} />;
 }

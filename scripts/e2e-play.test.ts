@@ -67,6 +67,8 @@ class Sessao {
 }
 
 const jogador = new Sessao();
+/** Segundo usuário: prova que a ficha alheia não se distingue de uma inexistente. */
+const estranho = new Sessao();
 const fichas: Partial<Record<Sistema, string>> = {};
 
 async function systemId(slug: string) {
@@ -156,6 +158,15 @@ beforeAll(async () => {
 
   const userId = await jogador.login(email, SENHA);
   for (const s of SISTEMAS) fichas[s] = await criaFicha(s, userId);
+
+  const outroEmail = `estranho.${MARCA}@example.com`;
+  const res2 = await estranho.fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: "Estranho Play", email: outroEmail, password: SENHA }),
+  });
+  expect([200, 201]).toContain(res2.status);
+  await estranho.login(outroEmail, SENHA);
 }, 120_000);
 
 afterAll(async () => {
@@ -295,5 +306,57 @@ describe("cthulhu: o modo Editar grava campo a campo depois do rename editMode�
     const res = await jogador.fetch(`/dashboard/cthulhu/${fichas.cthulhu}`);
     expect(res.status).toBe(200);
     expect(await res.text()).toContain(`Editado ${MARCA}`);
+  });
+});
+
+describe("o PATCH recusa o que está fora da faixa", () => {
+  // A importação de ficha sempre validou faixa e tamanho; o PATCH — o caminho
+  // que o usuário usa toda vez que edita — só conferia `Number.isFinite`.
+  // Estes testes provam o outro lado do que os casos acima já cobrem: lá o
+  // valor legítimo passa, aqui o abusivo é barrado.
+
+  it("dnd: nível 999999 é recusado com 400", async () => {
+    const st = await jogador.patch(`/api/dnd/characters/${fichas.dnd}/sheet`, { level: 999999 });
+    expect(st).toBe(400);
+  });
+
+  it("ordem: NEX 500 é recusado — a escala vai só até 99", async () => {
+    const st = await jogador.patch(`/api/ordem/characters/${fichas.ordem}`, { nex: 500 });
+    expect(st).toBe(400);
+  });
+
+  it("cthulhu: atributo 9999 é recusado — são percentuais", async () => {
+    const st = await jogador.patch(`/api/cthulhu/characters/${fichas.cthulhu}`, { atribFor: 9999 });
+    expect(st).toBe(400);
+  });
+
+  it("tormenta: retrato gigante é recusado, não gravado", async () => {
+    const gigante = `data:image/png;base64,${"A".repeat(500_000)}`;
+    const st = await jogador.patch(`/api/tormenta/characters/${fichas.tormenta}`, { portraitUrl: gigante });
+    expect(st).toBe(400);
+  });
+
+  it("starwars: campo Json acima do teto devolve 400, não 500", async () => {
+    // `toJsonFieldOrNull` lança; sem o try/catch da rota isso virava 500 com
+    // stack no log, em vez da mensagem que o usuário precisa ler.
+    const enorme = Array.from({ length: 40_000 }, (_, i) => `item-${i}`);
+    const st = await jogador.patch(`/api/starwars/characters/${fichas.starwars}`, { equipment: enorme });
+    expect(st).toBe(400);
+  });
+
+  it("o valor recusado não chegou ao banco", async () => {
+    const ficha = await prisma.dndSheet.findUnique({ where: { id: fichas.dnd! } });
+    expect(ficha!.level).toBeLessThanOrEqual(20);
+  });
+});
+
+describe("a ficha de outro dono não revela que existe", () => {
+  // Antes a página fazia findUnique por id e redirect quando o dono não batia,
+  // o que confirmava ao visitante que aquele personagem existe. Agora os dois
+  // casos — inexistente e alheia — são indistinguíveis.
+  it("id inexistente e ficha alheia devolvem a mesma resposta", async () => {
+    const inexistente = await jogador.fetch("/dashboard/dnd/clw000000000000000000000");
+    const alheia = await estranho.fetch(`/dashboard/dnd/${fichas.dnd}`);
+    expect(alheia.status).toBe(inexistente.status);
   });
 });
