@@ -105,6 +105,10 @@ export function AgentCard({ id, name, className, origin, nex, sanCurrent, sanMax
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      // Foco também acende o cartão: o botão de opções fica com opacity 0 fora
+      // do hover, e quem navega por teclado o alcançaria invisível.
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false); }}
       style={{
         position: "relative",
         zIndex: menuOpen ? 20 : hovered ? 2 : 1,

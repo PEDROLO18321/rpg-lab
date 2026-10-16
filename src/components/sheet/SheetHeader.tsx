@@ -127,11 +127,11 @@ export function SheetHeader({
 }
 
 /**
- * Aba do cabeçalho. Exportada porque o estilo do botão ativo é o contrato
- * visual da padronização — quem precisar de um botão irmão usa este, não
- * escreve outro parecido.
+ * Aba do cabeçalho. Interna ao módulo: quem precisa de um botão no cabeçalho
+ * usa `SheetProgressBtn` ou passa o seu em `actions`. Não é exportada porque
+ * ninguém fora daqui a consome — abstração sem consumidor é peso morto.
  */
-export function SheetTabBtn({
+function SheetTabBtn({
   active, onClick, children, title,
 }: {
   active: boolean;

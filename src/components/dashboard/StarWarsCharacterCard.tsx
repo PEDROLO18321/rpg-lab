@@ -73,6 +73,10 @@ export function StarWarsCharacterCard({ id, name, species, className, level, pvC
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      // Foco também acende o cartão: o botão de opções fica com opacity 0 fora
+      // do hover, e quem navega por teclado o alcançaria invisível.
+      onFocusCapture={() => setHovered(true)}
+      onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setHovered(false); }}
       style={{
         position: "relative", zIndex: menuOpen ? 20 : hovered ? 2 : 1,
         background: "linear-gradient(180deg, rgba(18,26,40,0.9) 0%, rgba(10,14,22,0.95) 100%)",
