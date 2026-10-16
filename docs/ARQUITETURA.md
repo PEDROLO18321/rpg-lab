@@ -51,6 +51,7 @@ recusa um item malformado.
 src/app/dashboard/<sistema>/    UI  — assistente, ficha, área do Mestre
 src/app/api/                    HTTP — autenticação, validação, persistência
 src/components/play/            UI  — moldura comum das cinco áreas de Jogar
+src/components/sheet/           UI  — moldura comum das cinco Fichas
 src/lib/<sistema>/              REGRAS — dados e funções puras, sem I/O
 src/lib/campaign/               INFRA compartilhada da área do Mestre
 src/lib/party/                  VÍNCULO ficha→campanha e visão do Mestre
@@ -77,6 +78,20 @@ divisão é sempre a mesma — **à esquerda o que o personagem faz** (atributos
 perícias, ações, recursos, inventário), **à direita a mesa** (dados, histórico,
 condições, descanso, dinheiro, referência).
 
+As cinco **Fichas** compartilham `src/components/sheet/`, pelo mesmo princípio e
+com a mesma grade: `SheetHeader` (identidade à esquerda, ações à direita, sempre
+na ordem progressão → `SHEET_TABS` "Editar · Ficha · Jogar" → exportar),
+`SheetShell` (faixa em largura cheia + duas colunas `1.4fr / 1fr`),
+`SheetSection`, `SheetStat`, `SheetChip` e `SheetSaveBar`.
+
+Antes disso eram cinco cabeçalhos escritos cinco vezes, em dois dialetos — D&D e
+Tormenta com tudo num card só, Ordem, Star Wars e Cthulhu com uma barra de abas
+solta acima do nome —, e quatro primitivos de cartão fazendo a mesma coisa
+(`ViewSection`, `Section`, `Panel` duplicado byte a byte entre dois sistemas, e
+um `Section` com faixa de cabeçalho só no Cthulhu). O Cthulhu era o único sem aba
+Editar: tinha um interruptor solto que virava "Salvar". **Ficha e Jogar usam a
+mesma grade de propósito**, para que alternar entre as abas não reposicione nada.
+
 A cor de cada sistema é híbrida por necessidade. `PlayShell` sobrescreve
 `--accent`, `--accent-light`, `--accent-dim`, `--border-accent` e
 `--accent-glow` na própria subárvore, então qualquer estilo inline lê a cor
@@ -84,6 +99,11 @@ certa sem prop nem contexto. Mas `Dice3D` repassa a cor direto ao material do
 three.js, e `new THREE.Color("var(--accent)")` não funciona — por isso
 `PLAY_THEME` existe **em TypeScript como fonte de verdade**, e é o literal que
 vai para `RollResultDie`, `RollToast` e `DieSvg`.
+
+`SheetHeader` e `SheetShell` projetam as mesmas variáveis, e **os dois
+precisam** projetar: eles são irmãos na árvore, não pai e filho, e variável de
+CSS não atravessa para irmão. Sem isso o corpo da Ficha cairia no dourado
+global — o Star Wars sairia dourado em vez de azul.
 
 Cada sistema escreve um adaptador curto do seu tipo de rolagem para
 `PlayRollEntry`. É o que deixa os níveis de sucesso do Cthulhu e o "maior/pior"
@@ -176,7 +196,29 @@ toJsonFieldOrNull(v, maxBytes)     // escrita com teto de tamanho
 > para essa mudança de tipo, o que **apagaria todos os dados**. A migration foi
 > escrita à mão com cast `USING`.
 
-### 3.4 Campanhas: configuração como dado
+### 3.4 Índices
+
+O Postgres não cria índice de chave estrangeira sozinho, e o schema passou muito
+tempo com dois índices em mil linhas. A migration
+`20260924170000_add_character_indexes` acrescentou seis:
+
+```prisma
+@@index([userId, updatedAt(sort: Desc)])   // Character — listagem do jogador
+@@index([systemId])                        // Character — FK sem índice
+@@index([sheetId])                         // DndClass, DndSpell, DndEquipment, DndFeature
+```
+
+O composto de `Character` cobre o filtro e a ordenação da listagem numa varredura
+só. `DndSkill` ficou de fora porque o `@@unique([sheetId, skillName])` já dá um
+índice com `sheetId` no prefixo.
+
+**Honestidade sobre o ganho:** com o volume atual o planner continua escolhendo
+varredura sequencial — ler uma página de heap é mais barato que índice + heap. Os
+índices entraram por **escalabilidade**, validáveis com carga sintética, e **não
+eram a causa** da lentidão que motivou a investigação; essa era a ausência de
+fronteira de Suspense e de prefetch na navegação (§9).
+
+### 3.5 Campanhas: configuração como dado
 
 A área do Mestre tem a mesma mecânica nos cinco sistemas (listar, criar, editar,
 gerenciar sub-recursos) e varia só na configuração. Essa variação vive em
@@ -416,7 +458,13 @@ categoria.
 ### 5.5 Star Wars: Além da Fronteira (autoral)
 
 Sistema **de autoria própria**, criado para este trabalho. Regras completas em
-[`StarWars-Teste/`](../StarWars-Teste/) (18 documentos).
+[`StarWars-Teste/`](../StarWars-Teste/): **18 documentos numerados** (`00` a
+`17`) mais **18 fichas de classe** em `Classes/`, uma por classe implementada.
+O que era material de processo — desenho antigo de progressão, estudo de
+alternativa e um arquivo *derivado* do código — foi separado em
+[`rascunho/`](../StarWars-Teste/rascunho/), com um aviso dizendo que não é
+especificação. A distinção importa: um documento gerado a partir do código não
+pode ser usado para justificar o código.
 
 Conteúdo: 35 espécies, 18 classes, 28 planetas, 26 perícias, 50 poderes gerais,
 129 criaturas no bestiário.
@@ -435,9 +483,21 @@ Mecânicas próprias implementadas:
 - **Classes de Profecia** desbloqueáveis por senha, como conteúdo secreto que o
   Mestre libera
 
+**Teto de nível, e por que ele é alto.** `MAX_LEVEL` é **2000**, com
+`CLASS_LEVEL_CAP` de **40** por classe ([leveling.ts:11](../src/lib/starwars/leveling.ts)).
+Os dois números existem juntos de propósito: cada classe satura em 40, e a
+progressão além disso só continua por níveis **bônus** — o sentinela
+`BONUS_LEVEL_ID`, que conta para o nível total e para a evolução geral, mas não
+pertence a classe nenhuma e por isso não concede PV, PE nem habilidade de
+arquétipo. É o que permite campanhas muito longas sem que multiclassear vire a
+única forma de continuar subindo, e sem inflar o poder de arquétipo junto.
+
 Por ser autoral, aqui não há questão de fidelidade — a implementação **é** a
 especificação. O risco correspondente é o oposto: não existe fonte externa para
-conferir o balanceamento.
+conferir o balanceamento. O rascunho separado diverge do código em pontos de
+progressão (fala em 23 classes e desbloqueio no nível 30; o implementado são 18
+classes e o esquema de nível bônus acima) — e é por isso que está marcado como
+rascunho. **O código é a fonte**; aquilo é registro de processo.
 
 ---
 
@@ -511,7 +571,25 @@ A lista diz *quais* campos entram; o teto por campo (`LIMITS`, o mesmo da
 importação de ficha) diz *quanto* cabe em cada um — sem ele, a whitelist aceita
 um NPC com 5 MB de nome. Campo acima do teto devolve 400.
 
-**3. Toda leitura confere dono.** `character.userId !== session.user.id → 403`.
+Isso vale nos **dois** caminhos de escrita, e por um tempo valeu só em um. A
+importação de ficha sempre validou faixa e tamanho; o `PATCH` — que é o caminho
+usado toda vez que alguém edita — só conferia `Number.isFinite`, e portanto
+aceitava `level: 999999`, `pvMax: 1e9` e um `portraitUrl` de qualquer tamanho (o
+redimensionamento para 400px é feito no navegador, e nada no servidor o exigia).
+As guardas vivem hoje em [`sheetPatch.ts`](../src/lib/sheetPatch.ts), e a faixa
+de cada campo sai da regra do próprio sistema: NEX de 5 a 99 na Ordem,
+percentuais até 99 no Cthulhu, `MAX_LEVEL` importado de cada `leveling.ts`.
+Vital **atual** aceita negativo, porque o personagem pode estar morrendo; máximo,
+não. Fora da faixa **recusa** em vez de grampear calado: grampear grava um valor
+que o usuário não pediu e ele só descobre depois.
+
+**3. Toda leitura confere dono, sem revelar o que existe.** Nas rotas de API,
+**404 antes de 403** — responder 403 para um id inexistente contaria ao visitante
+que aquele personagem existe. As páginas de ficha faziam o oposto por descuido:
+buscavam por id e redirecionavam quando o dono não batia, o que distinguia
+"alheia" de "inexistente". Hoje filtram por dono na própria consulta
+(`findFirst({ where: { id, userId } })`) e devolvem 404 nos dois casos.
+
 A única exceção é deliberada e estreita: a ficha compartilhada por link, lida
 pelo Mestre em modo somente leitura, sob as guardas da seção 6.
 
@@ -544,11 +622,23 @@ diálogos montados **depois** de um clique explícito, onde levar o foco ao
 primeiro campo é o que a WCAG 2.4.3 (Ordem de Foco) pede.
 
 **Cor — teste.** Lint lê markup e não enxerga cor, então o contraste é verificado
-por cálculo em `tests/contraste.test.ts` (seção 9).
+por cálculo em `tests/contraste.test.ts` (seção 10).
+
+**Foco visível (WCAG 2.4.7).** Os cartões de personagem mostram o botão de
+opções só no hover (`opacity: 0` fora dele). Como `hovered` vinha apenas de
+`onMouseEnter`, quem chegava no botão com Tab o encontrava **focado e
+invisível** — falha que nem o `jsx-a11y` (lê markup) nem o teste de contraste
+(lê cor) detectam. O cartão passou a acender também no foco, com
+`onFocusCapture`/`onBlurCapture`, para que o foco de qualquer filho conte.
 
 **Teclado.** Controles clicáveis viraram `<button>`, com uma exceção estrutural:
 cabeçalhos de painel que já contêm botões dentro — botão dentro de botão é markup
-inválido. Nesses casos o padrão é `role="button"` + `tabIndex={0}` + o handler de
+inválido. Os cartões de personagem **deixaram** esse padrão: eram
+`<div role="link">` com `router.push` e passaram a ser uma âncora esticada
+(`position:absolute; inset:0`) sob o conteúdo, com o menu de opções acima dela.
+Link simulado por `role` não dá prefetch, nem "abrir em nova aba", nem o
+comportamento de teclado que o navegador já traz de graça.
+Nesses outros casos o padrão continua sendo `role="button"` + `tabIndex={0}` + o handler de
 [`a11y.ts`](../src/lib/a11y.ts), que dá ao teclado o que o mouse já tinha
 (WCAG 2.1.1):
 
@@ -571,7 +661,53 @@ contraste, não fluxo percebido.
 
 ---
 
-## 9. Testes
+## 9. Desempenho
+
+A investigação começou por uma queixa concreta: abrir a lista de personagens e
+abrir uma ficha demoravam, e o clique não dava sinal nenhum. **O diagnóstico foi
+medido antes de qualquer otimização**, e o resultado contrariou a primeira
+hipótese — não era consulta lenta.
+
+**O que de fato causava.** Não existia nenhuma fronteira de Suspense no projeto,
+e os cartões de personagem não eram links: eram `<div role="link">` com
+`router.push`. Sem âncora, o Next não faz prefetch, então nada era buscado
+enquanto o cartão estava na tela; todo o trabalho começava no clique.
+
+**O que não resolveu, e por quê fica registrado.** A primeira tentativa foi um
+`loading.tsx` em `/dashboard`. Deu feedback imediato e criou um problema pior: a
+documentação do Next avisa que uma fronteira alta na árvore faz a página inteira
+cair para um esqueleto em vez de fazer streaming granular — e aquele cobria dez
+rotas, inclusive três síncronas que não tocam o banco. O esqueleto não batia com
+a tela real e o salto de volta incomodava mais que a espera. Foi removido.
+
+**O que resolveu.** Os cartões viraram âncora esticada sobre o cartão. O prefetch
+passa a acontecer sozinho e, quando a rota já foi pré-carregada, o estado de
+pendência é pulado — não há nada para piscar. O sinal de espera virou uma barra
+fina no cartão clicado, com 120ms de atraso: navegação rápida termina antes e não
+mostra nada.
+
+**Peso no cliente.** As listas pediam a ficha completa de cada personagem —
+perícias, rituais, armas, anotações, tudo em coluna `Json` — para desenhar um
+cartão de seis campos; passaram a usar `select`. Na ficha, o modo Jogar, os
+modais e os painéis de catálogo carregam sob demanda, e o Tormenta resolve os
+nomes de raça, classe, origem, divindade e magias **no servidor**, passando
+strings prontas em vez de levar ~86 KB de catálogo ao navegador.
+
+> **Decisão registrada:** cogitou-se mover os catálogos de regra para o banco.
+> Medido, pioraria: 1 consulta por ficha viraria 3 a 13 contra um Neon com
+> *scale-to-zero*, os 122 pontos de busca síncrona virariam assíncronos, e 231
+> dos 238 blocos de teste passariam a exigir Postgres com seed — ou duplos de
+> catálogo, e aí o teste deixa de verificar a regra real. A decisão de §1,
+> "regras são dados tipados", permanece.
+
+**Limite da medição:** o build desta versão do Next não imprime o tamanho por
+rota, então o ganho de bundle está argumentado por leitura de import e pelo
+manifesto de módulos sob demanda, não por bytes. Medir FCP/LCP exige navegador e
+não está coberto pelos testes automáticos.
+
+---
+
+## 10. Testes
 
 283 testes em 13 arquivos, sem banco e sem servidor (`npm test`).
 
@@ -629,6 +765,15 @@ Dois casos fogem desse molde de propósito:
   `editMode: boolean` virou `mode` de três valores. Mesma exigência de
   infraestrutura, mesma configuração separada.
 
+  Cobre também os dois lados de cada guarda de escrita, que é o que distingue
+  "a guarda existe" de "a guarda funciona": o valor legítimo **passa** (os casos
+  de persistência acima) e o abusivo é **recusado com 400** — nível 999999 no
+  D&D, NEX 500 na Ordem, atributo 9999 no Cthulhu, retrato de 500 KB no
+  Tormenta, campo `Json` acima do teto no Star Wars —, mais a asserção de que o
+  valor recusado não chegou ao banco. E que a ficha de outro dono devolve
+  **exatamente a mesma resposta** que um id inexistente, para que a página não
+  revele quais personagens existem.
+
 ```bash
 npm test                                    # 283 testes de regra, sem infraestrutura
 
@@ -645,7 +790,7 @@ da Ordem continuam dependendo de olho humano.
 
 ---
 
-## 10. Limitações conhecidas
+## 11. Limitações conhecidas
 
 Registradas de propósito — são o roteiro de continuidade, não omissões
 esquecidas.
@@ -659,11 +804,11 @@ esquecidas.
 | **Export em PDF do visual desativado** | Só o layout estruturado de D&D exporta (`DndPrintSheet.tsx`). |
 | **Responsividade por sobrescrita** | Cada sistema tem sua folha `*-responsive.css`, e todas vencem o estilo inline com `!important` dentro de `@media (max-width: 640px)`. Funciona, mas é sintoma dos estilos inline: o layout mobile é correção, não projeto. |
 | **Estilos inline** | cerca de 6 mil objetos `style={{…}}` (`grep -ro "style={{" --include=*.tsx src/ | wc -l`); Tailwind está instalado e praticamente não é usado. |
-| **Componentes monolíticos** | O modo Jogar do D&D saiu para `dnd/[id]/PlayMode.tsx`, mas `HomeClient.tsx` e os `SheetClient` de Ordem, Star Wars e Cthulhu seguem passando de mil linhas. |
+| **Componentes monolíticos** | A moldura foi unificada em `components/play/` e `components/sheet/`, mas o conteúdo não: `HomeClient.tsx` e os `SheetClient` de Ordem (1631), Star Wars (1471) e Cthulhu (1508) seguem passando de mil linhas. O que saiu desses arquivos foi o esqueleto repetido; as listas de perícia, inventário e poderes continuam onde estavam, porque os cinco formatos de dados são genuinamente diferentes. |
 
 ---
 
-## 11. Stack e execução
+## 12. Stack e execução
 
 | Camada | Tecnologia |
 |---|---|
@@ -675,6 +820,8 @@ esquecidas.
 | Testes | Vitest 4 |
 | Acessibilidade | ESLint 9 + `eslint-plugin-jsx-a11y` (conjunto recomendado) |
 | Produção | Vercel + Neon Postgres |
+| Licença do código | MIT ([LICENSE](../LICENSE)) |
+| Conteúdo de regra | atribuição por sistema em [ATTRIBUTION.md](../ATTRIBUTION.md) |
 
 ```bash
 npm install

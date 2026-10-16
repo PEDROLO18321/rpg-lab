@@ -109,5 +109,6 @@ Abra [http://localhost:3000](http://localhost:3000).
 | `npm run start` | Roda o build de produção |
 | `npm run lint` | ESLint |
 | `npm run seed` | Cadastra os cinco sistemas no banco (o catálogo de regras vive em `src/lib/`, não no banco) |
+| `npx prisma generate` | Regera o cliente do Prisma — necessário sempre que `prisma/schema.prisma` mudar |
 | `npm test` | Roda a suíte de testes (Vitest) |
 | `npm run test:watch` | Testes em modo observador |
