@@ -53,3 +53,10 @@ next-env.d.ts
 
 # Relatório do ESLint usado pelo codemod de acessibilidade (gerado sob demanda)
 /eslint-a11y.json
+.ids.json
+.sessao.json
+.resultado.json
+
+# Playwright: resultado de execução, não fonte
+test-results/
+playwright-report/

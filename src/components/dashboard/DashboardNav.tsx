@@ -71,6 +71,10 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
               gap: 5,
               transition: "color 0.15s",
               flexShrink: 0,
+              // 24px é o alvo mínimo do nível AA (WCAG 2.5.8). O link tinha
+              // 21–22px de altura — medido pelo teste de responsividade, não
+              // estimado: `<a> 137×22 "← Meus Personagens"`.
+              minHeight: 24,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}

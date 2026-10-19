@@ -218,7 +218,9 @@ export function SheetClient({ characterId, characterName, sheet: initial, notes,
       />
 
       <main id="conteudo" className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 80px" }}>
-        <Link href="/dashboard/dnd/jogador" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-block", marginBottom: 20 }}>
+        {/* `inline-flex` com altura mínima: como `inline-block` a âncora ficava
+            com 21px de altura, abaixo do alvo mínimo de 24px do nível AA. */}
+        <Link href="/dashboard/dnd/jogador" style={{ fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none", display: "inline-flex", alignItems: "center", minHeight: 24, marginBottom: 20 }}>
           ← Meus Personagens
         </Link>
 

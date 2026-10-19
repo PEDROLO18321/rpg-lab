@@ -57,4 +57,13 @@
   .cth-scenario-form-grid { grid-template-columns: 1fr !important; }
   .cth-artefacts-form-grid { grid-template-columns: 1fr !important; }
   .cth-dice-mod-grid { grid-template-columns: 1fr !important; }
+
+  /* Linha de atributo rolável (Ficha). A soma das colunas de largura mínima —
+     valor, metade e quinto — mais o ícone de dado passa do contêiner em 320px,
+     e o item transborda à direita. Em tela estreita o dado some (a linha toda
+     já é clicável) e as colunas derivadas encolhem; o valor principal fica. */
+  .cth-attr-roll-row { gap: 6px !important; }
+  .cth-attr-roll-row > span:nth-child(4),
+  .cth-attr-roll-row > span:nth-child(5) { min-width: 0 !important; }
+  .cth-attr-roll-row > span:last-child { display: none !important; }
 }

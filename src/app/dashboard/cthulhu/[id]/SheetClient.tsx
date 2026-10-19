@@ -569,7 +569,7 @@ export function SheetClient({ character }: Props) {
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {/* Status + session loss */}
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 14, alignItems: "center" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: "0.72rem", fontWeight: 700, color: statusColor, background: `${statusColor}22`, border: `1px solid ${statusColor}44`, borderRadius: "var(--radius-xs)", padding: "4px 12px" }}>
                     {statusLabel}
                   </span>
@@ -582,7 +582,7 @@ export function SheetClient({ character }: Props) {
                   <button onClick={() => setInsanity({ sessionLoss: 0, status: "normal" })} title="Resetar para nova sessão" style={{ ...pillBtn, fontSize: "0.7rem" }}>↺ Nova Sessão</button>
                 </div>
                 {/* Manual loss input */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Lançar perda manual:</span>
                   {[1, 2, 3, 5, 8].map((n) => (
                     <button key={n} onClick={() => sanLost(n)} style={{ ...pillBtn, fontSize: "0.72rem", padding: "3px 10px" }}>−{n} SAN</button>
@@ -611,12 +611,12 @@ export function SheetClient({ character }: Props) {
                       </span>
                     ))}
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <select value="" onChange={(e) => addTag("phobias", e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <select value="" onChange={(e) => addTag("phobias", e.target.value)} style={{ flex: "1 1 140px", minWidth: 0, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
                       <option value="">Escolher fobia...</option>
                       {PHOBIAS_LIST.filter((p) => !insanity.phobias.includes(p)).map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
-                    <input value={phobiaInput} onChange={(e) => setPhobiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("phobias", phobiaInput); setPhobiaInput(""); } }} placeholder="Fobia personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", width: 180 }} />
+                    <input value={phobiaInput} onChange={(e) => setPhobiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("phobias", phobiaInput); setPhobiaInput(""); } }} placeholder="Fobia personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", flex: "1 1 140px", minWidth: 0 }} />
                     <button onClick={() => { addTag("phobias", phobiaInput); setPhobiaInput(""); }} style={{ ...pillBtn }}>+</button>
                   </div>
                 </div>
@@ -631,12 +631,12 @@ export function SheetClient({ character }: Props) {
                       </span>
                     ))}
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <select value="" onChange={(e) => addTag("manias", e.target.value)} style={{ flex: 1, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <select value="" onChange={(e) => addTag("manias", e.target.value)} style={{ flex: "1 1 140px", minWidth: 0, padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text-muted)", fontSize: "0.82rem" }}>
                       <option value="">Escolher mania...</option>
                       {MANIAS_LIST.filter((m) => !insanity.manias.includes(m)).map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
-                    <input value={maniaInput} onChange={(e) => setManiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("manias", maniaInput); setManiaInput(""); } }} placeholder="Mania personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", width: 180 }} />
+                    <input value={maniaInput} onChange={(e) => setManiaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { addTag("manias", maniaInput); setManiaInput(""); } }} placeholder="Mania personalizada..." style={{ padding: "7px 10px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.82rem", flex: "1 1 140px", minWidth: 0 }} />
                     <button onClick={() => { addTag("manias", maniaInput); setManiaInput(""); }} style={{ ...pillBtn }}>+</button>
                   </div>
                 </div>
@@ -748,7 +748,7 @@ export function SheetClient({ character }: Props) {
               ? "Modo edição: ajuste o valor total de cada perícia."
               : <>Clique para rolar. Marque <b style={{ color: ACCENT_LIGHT }}>◼</b> a perícia ao ter sucesso — na Fase de Desenvolvimento elas podem subir 1D10. {marked.length > 0 && <span style={{ color: ACCENT_LIGHT }}>({marked.length} marcada{marked.length > 1 ? "s" : ""})</span>}</>}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 4 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 4 }}>
             {allSkills.map((sk) => {
               const isMarked = marked.includes(sk.id);
               if (editMode) {
@@ -786,7 +786,7 @@ export function SheetClient({ character }: Props) {
                     title={`Rolar teste de ${sk.name}`}
                     style={{ flex: 1, textAlign: "left", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}
                   >
-                    <span style={{ flex: 1, fontSize: "0.78rem", color: sk.added > 0 ? "var(--text)" : "var(--text-muted)" }}>{sk.name}</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.78rem", color: sk.added > 0 ? "var(--text)" : "var(--text-muted)" }}>{sk.name}</span>
                     <span style={{ fontSize: "0.78rem", fontWeight: 700, color: sk.added > 0 ? ACCENT_LIGHT : "var(--text-subtle)" }}>{sk.total}%</span>
                     <span style={{ fontSize: "0.67rem", color: "var(--text-subtle)", minWidth: 30, textAlign: "right" }}>½ {half(sk.total)}</span>
                     <span style={{ fontSize: "0.62rem", color: "var(--text-subtle)" }}>🎲</span>
@@ -806,7 +806,7 @@ export function SheetClient({ character }: Props) {
                 return (
                   <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 6px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                     <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
-                    <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
                     <input type="number" min={0} max={99} value={v} onChange={(e) => setAttr(k, parseInt(e.target.value))} style={{ ...editInput, width: 70, textAlign: "center" }} />
                   </div>
                 );
@@ -814,6 +814,7 @@ export function SheetClient({ character }: Props) {
               return (
                 <button
                   key={k}
+                  className="cth-attr-roll-row"
                   onClick={() => rollCheck(`${ATTR_LABELS[k]} (${v}%)`, v)}
                   title={`Rolar teste de ${ATTR_LABELS[k]}`}
                   style={{
@@ -826,11 +827,11 @@ export function SheetClient({ character }: Props) {
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <span style={{ width: 40, fontSize: "0.74rem", fontWeight: 700, color: ACCENT_LIGHT }}>{ATTR_ABBR[k]}</span>
-                  <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
+                  <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.8rem", color: "var(--text-muted)" }}>{ATTR_LABELS[k]}</span>
                   <span style={{ fontSize: "1.1rem", fontWeight: 800, fontFamily: "var(--font-cinzel), serif", color: "var(--text)", minWidth: 32, textAlign: "right" }}>{v}</span>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 40, textAlign: "right" }}>½ {half(v)}</span>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 36, textAlign: "right" }}>⅕ {fifth(v)}</span>
-                  <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)" }}>🎲</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 28, textAlign: "right" }}>½ {half(v)}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", minWidth: 26, textAlign: "right" }}>⅕ {fifth(v)}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-subtle)", flexShrink: 0 }}>🎲</span>
                 </button>
               );
             })}
@@ -1219,7 +1220,7 @@ export function SheetClient({ character }: Props) {
             (Object.keys(background).length > 0 || editMode) ? (
               <SheetSection title="Antecedentes">
             {editMode ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 14 }}>
                 {Object.keys(bgLabels).map((k) => (
                   <label key={k} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     <span style={{ fontSize: "0.68rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em" }}>{bgLabels[k]}</span>
@@ -1233,7 +1234,7 @@ export function SheetClient({ character }: Props) {
                 ))}
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", gap: 16 }}>
                 {Object.entries(background).filter(([, v]) => v).map(([k, v]) => (
                   <div key={k}>
                     <div style={{ fontSize: "0.7rem", fontWeight: 700, color: ACCENT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
