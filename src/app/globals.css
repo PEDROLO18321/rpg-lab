@@ -373,10 +373,18 @@ button:disabled { cursor: not-allowed; }
      enquanto o desktop via tudo; dois usuários viam imagens diferentes do
      mesmo cartão. Quadrado em todo lugar acaba com essa divergência. */
   .dashboard-system-card-img {
-    width: 100% !important;
+    /* Quadrado centralizado, não sangrando até a borda: em largura cheia a
+       arte ficava com 327px de altura num telefone de 375 — um cartão por
+       tela. Contida e centrada, ela respira dentro do cartão e três cabem na
+       mesma rolagem, sem perder nada da ilustração. */
+    width: min(100%, 240px) !important;
     height: auto !important;
     aspect-ratio: 1 / 1 !important;
+    margin: 16px auto 4px !important;
+    border-radius: var(--radius-lg) !important;
+    overflow: hidden !important;
   }
+
 }
 
 /* ── Sinal de navegação em curso (components/dashboard/LinkPending.tsx) ──────

@@ -244,7 +244,7 @@ export default function SystemSelectPage() {
                   // de ter `vw` na string, e é a troca certa — nitidez onde a
                   // tela é pequena e a imagem é grande, banda sobrando onde a
                   // conexão costuma ser melhor.
-                  sizes="(max-width: 640px) 100vw, 256px"
+                  sizes="(max-width: 640px) 240px, 256px"
                 />
 
                 {/* gradient overlay */}
@@ -287,10 +287,16 @@ export default function SystemSelectPage() {
                   </div>
                 )}
 
-                {/* badge over image */}
-                <div style={{ position: "absolute", top: 8, left: 8 }}>
-                  <span className={sys.badgeCls} style={{ fontSize: "0.6rem", padding: "3px 8px" }}>{sys.badgeLabel}</span>
-                </div>
+              </div>
+
+              {/* O selo é ancorado no CARTÃO, não na moldura da imagem. Dentro
+                  dela ele era cortado pelo `overflow: hidden` quando a moldura
+                  encolheu e centralizou no celular — e, como a imagem é `fill`
+                  (absoluta), ela o cobria por completo se ele saísse do
+                  posicionamento absoluto. No cartão, o canto é o mesmo em
+                  qualquer largura. */}
+              <div style={{ position: "absolute", top: 8, left: 8, zIndex: 2 }}>
+                <span className={sys.badgeCls} style={{ fontSize: "0.6rem", padding: "3px 8px" }}>{sys.badgeLabel}</span>
               </div>
 
               {/* Content */}
