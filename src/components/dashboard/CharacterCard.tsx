@@ -126,6 +126,7 @@ export function CharacterCard({ id, name, race, className, level, portraitUrl }:
       >
         <button
           aria-label="Opções do personagem"
+          className="card-menu-btn"
           onClick={() => { setMenuOpen((o) => !o); setConfirmDelete(false); }}
           style={{
             width: 30,

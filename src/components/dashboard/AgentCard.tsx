@@ -146,6 +146,7 @@ export function AgentCard({ id, name, className, origin, nex, sanCurrent, sanMax
       >
         <button
           aria-label="Opções do agente"
+          className="card-menu-btn"
           onClick={() => { setMenuOpen((o) => !o); setConfirmDelete(false); }}
           style={{
             width: 30,

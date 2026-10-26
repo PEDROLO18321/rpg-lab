@@ -338,7 +338,21 @@ button:disabled { cursor: not-allowed; }
 
 /* ── Dashboard: breadcrumb do nav compartilhado (bug real, não só mobile —
    o span do nome não encolhia, então o ellipsis nunca disparava) ────────── */
-.dashboard-nav-crumb { min-width: 0; flex: 1 1 auto; }
+.dashboard-nav-crumb { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A barra tem três blocos e o da direita é `flexShrink: 0` com 227px fixos, que
+   não devolve um pixel. Em 375px faltam 45px, e o déficit inteiro cai no
+   breadcrumb: o nome do sistema fica com largura ZERO (medido) e o link de
+   voltar é cortado. Reduzir o padding economizava 20px contra 45 de falta.
+
+   Abaixo de 640px o nome do sistema sai de cena junto com a barra "/" que o
+   separa: a seta e o destino já dizem para onde se volta, e uma "/" apontando
+   para um nome invisível é pior que nada. */
+@media (max-width: 640px) {
+  .dashboard-nav-crumb,
+  .dashboard-nav-sep { display: none !important; }
+}
+
 @media (max-width: 480px) {
   .dashboard-nav-bar { padding: 0 14px !important; gap: 8px !important; }
 }
@@ -353,7 +367,16 @@ button:disabled { cursor: not-allowed; }
 
   /* dashboard/page.tsx (Laboratório) — card de sistema empilha em vez de espremer */
   .dashboard-system-card { flex-direction: column !important; }
-  .dashboard-system-card-img { width: 100% !important; height: 140px !important; }
+  /* A arte dos sistemas é quadrada (1080×1080 e 1254×1254). Uma faixa de
+     320×140 recortava 56% dela — o celular via uma tira central e o desktop via
+     a ilustração inteira. `aspect-ratio` de 2/1 com o recorte preso ao topo
+     preserva o assunto e mantém o enquadramento previsível. */
+  .dashboard-system-card-img {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 2 / 1 !important;
+  }
+  .dashboard-system-card-img img { object-position: center top !important; }
 }
 
 /* ── Sinal de navegação em curso (components/dashboard/LinkPending.tsx) ──────
@@ -389,5 +412,42 @@ button:disabled { cursor: not-allowed; }
     animation: none;
     opacity: 0.8;
     visibility: visible;
+  }
+}
+
+/* ── Ponteiro grosso: toque não tem hover ───────────────────────────────────
+   O botão de opções dos cartões de personagem vive em `opacity: 0` até o mouse
+   entrar. Em celular e tablet isso nunca acontece: o controle existe, é
+   focável e funciona, mas não há pista nenhuma de que Visualizar, Duplicar e
+   Excluir estão ali — o usuário teria de acertar às cegas um alvo de 30px no
+   canto do cartão, e esse toque cego abre o menu quando ele queria abrir a
+   ficha.
+
+   `pointer: coarse` é a pergunta certa, não a largura da tela: o que decide é
+   o aparelho não ter ponteiro fino, não ser estreito. */
+@media (pointer: coarse) {
+  .card-menu-btn {
+    opacity: 1 !important;
+    /* Alvo confortável para o dedo: 30px passa no mínimo AA (24px), mas o
+       recomendado é 44. Aumenta só onde se toca. */
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+/* ── Ação destrutiva flutuante ──────────────────────────────────────────────
+   Em ponteiro grosso ela sai do flutuante: `position: fixed` está fora do
+   fluxo, então nenhum `padding-bottom` no fim do documento abre espaço no meio
+   da rolagem, que é justamente onde o botão cobria o conteúdo. Deixar de ser
+   fixo é o único conserto possível — e também o correto, porque excluir
+   personagem não é ação de acesso rápido. */
+@media (pointer: coarse) {
+  .acao-destrutiva {
+    position: static !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin: 32px auto 48px !important;
+    padding: 0 20px !important;
+    max-width: 420px !important;
   }
 }

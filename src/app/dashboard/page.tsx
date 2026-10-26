@@ -228,7 +228,23 @@ export default function SystemSelectPage() {
                   alt={sys.name}
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes="128px"
+                  // A moldura é 128px no desktop, mas a regra de 640px a estica
+                  // para a largura da tela — e o navegador escolhe o arquivo
+                  // pelo valor declarado aqui, não pelo que o CSS fará depois.
+                  // Com `128px` fixo ele servia 128w para desenhar 320px: 0,40×,
+                  // borrado. Agora cada faixa declara a sua largura. O `256px`
+                  // do desktop não é a largura CSS (128) e sim o dobro: ao ver
+                  // unidade `vw` em qualquer trecho do `sizes`, o Next descarta
+                  // do `srcset` tudo abaixo de 256w, então pedir 128 aqui faria
+                  // o navegador cair no primeiro candidato disponível — 640w,
+                  // cinco vezes o necessário.
+                  //
+                  // Resta um excesso medido de 2,5× no desktop: a caixa é de
+                  // 128px e o menor candidato do srcset virou 640w. É o preço
+                  // de ter `vw` na string, e é a troca certa — nitidez onde a
+                  // tela é pequena e a imagem é grande, banda sobrando onde a
+                  // conexão costuma ser melhor.
+                  sizes="(max-width: 640px) 100vw, 256px"
                 />
 
                 {/* gradient overlay */}

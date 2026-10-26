@@ -100,6 +100,7 @@ export function TormentaCharacterCard({ id, name, race, className, level, pvCurr
       <div ref={menuRef} style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }} role="presentation" onClick={(e) => e.stopPropagation()}>
         <button
           aria-label="Opções do personagem"
+          className="card-menu-btn"
           onClick={() => { setMenuOpen((o) => !o); setConfirmDelete(false); }}
           style={{
             width: 30, height: 30, borderRadius: "50%",

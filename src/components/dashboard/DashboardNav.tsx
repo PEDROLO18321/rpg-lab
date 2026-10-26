@@ -70,7 +70,14 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
               alignItems: "center",
               gap: 5,
               transition: "color 0.15s",
-              flexShrink: 0,
+              // Sem `flexShrink: 0` o link encolhe e o ellipsis dispara, em vez
+              // de o pai (que tem `overflow: hidden`) cortá-lo no meio da
+              // palavra. `minWidth: 0` é o que destrava o encolhimento num item
+              // de flex — o padrão `min-width: auto` o prende ao conteúdo.
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
               // 24px é o alvo mínimo do nível AA (WCAG 2.5.8). O link tinha
               // 21–22px de altura — medido pelo teste de responsividade, não
               // estimado: `<a> 137×22 "← Meus Personagens"`.
@@ -81,7 +88,7 @@ export function DashboardNav({ userName, systemName, systemHref, backLabel, acce
           >
             ← {backLabel ?? "Sistemas"}
           </Link>
-          <span style={{ color: "var(--text-subtle)", fontSize: "0.8rem", flexShrink: 0 }}>/</span>
+          <span className="dashboard-nav-sep" style={{ color: "var(--text-subtle)", fontSize: "0.8rem", flexShrink: 0 }}>/</span>
           <span
             className="dashboard-nav-crumb"
             style={{

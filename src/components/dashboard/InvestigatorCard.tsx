@@ -140,6 +140,7 @@ export function InvestigatorCard({ id, name, occupation, era, age, sanCurrent, s
       >
         <button
           aria-label="Opções do investigador"
+          className="card-menu-btn"
           onClick={() => { setMenuOpen((o) => !o); setConfirmDelete(false); }}
           style={{
             width: 30,

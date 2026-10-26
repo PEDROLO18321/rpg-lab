@@ -288,7 +288,13 @@ export function SheetClient({ character, labels }: { character: AnyChar; labels:
         )}
       </main>
 
-      <div style={{ position: "fixed", bottom: 28, right: 28, zIndex: 40 }}>
+      {/* Excluir é destrutivo e raro; flutuando fixo ele cobria a ficha o tempo
+          todo da rolagem — a medição pegou "Perc. Passiva" debaixo dele em
+          375px e "Velocidade" em 320px, variando conforme onde o usuário
+          parou. Em tela de toque ele desce para o fim do conteúdo, onde uma
+          ação de exclusão pertence. No desktop segue flutuando, onde há
+          margem de sobra e ele não cobre nada. */}
+      <div className="acao-destrutiva" style={{ position: "fixed", bottom: 28, right: 28, zIndex: 40 }}>
         <DeleteCharacterButton
           characterId={character.id}
           characterName={character.name}
