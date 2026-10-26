@@ -36,7 +36,11 @@ import Image, { type StaticImageData } from "next/image";
 interface Props {
   src: StaticImageData | string;
   alt: string;
-  /** Proporção da moldura: `"16/9"`, `"1"`, `"4/3"`. */
+  /**
+   * Proporção da moldura. O padrão é quadrado porque toda a arte do projeto é
+   * 1/1 (1080×1080 e 1254×1254) — moldura quadrada sobre arte quadrada recorta
+   * zero, e a imagem fica idêntica em qualquer largura de janela.
+   */
   proporcao?: string;
   /**
    * Larguras por faixa de tela, no formato do atributo `sizes`. O padrão
@@ -56,7 +60,7 @@ interface Props {
 }
 
 export function Figura({
-  src, alt, proporcao = "16 / 9",
+  src, alt, proporcao = "1 / 1",
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
   posicao = "center", prioridade, filtro, children, className, style,
 }: Props) {

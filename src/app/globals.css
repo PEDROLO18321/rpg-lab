@@ -367,16 +367,16 @@ button:disabled { cursor: not-allowed; }
 
   /* dashboard/page.tsx (Laboratório) — card de sistema empilha em vez de espremer */
   .dashboard-system-card { flex-direction: column !important; }
-  /* A arte dos sistemas é quadrada (1080×1080 e 1254×1254). Uma faixa de
-     320×140 recortava 56% dela — o celular via uma tira central e o desktop via
-     a ilustração inteira. `aspect-ratio` de 2/1 com o recorte preso ao topo
-     preserva o assunto e mantém o enquadramento previsível. */
+  /* A arte dos sistemas é quadrada (1080×1080 e 1254×1254), então a moldura
+     também é — e aí o recorte é zero: a ilustração inteira aparece, idêntica em
+     qualquer largura. Antes a faixa de 320×140 descartava 56% dela no celular,
+     enquanto o desktop via tudo; dois usuários viam imagens diferentes do
+     mesmo cartão. Quadrado em todo lugar acaba com essa divergência. */
   .dashboard-system-card-img {
     width: 100% !important;
     height: auto !important;
-    aspect-ratio: 2 / 1 !important;
+    aspect-ratio: 1 / 1 !important;
   }
-  .dashboard-system-card-img img { object-position: center top !important; }
 }
 
 /* ── Sinal de navegação em curso (components/dashboard/LinkPending.tsx) ──────

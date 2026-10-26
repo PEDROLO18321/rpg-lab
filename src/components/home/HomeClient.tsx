@@ -432,8 +432,12 @@ function SystemsShowcase() {
               onMouseLeave={(e) => { const el=e.currentTarget; el.style.borderColor="var(--border)"; el.style.transform="translateY(0)"; el.style.boxShadow="none"; }}
             >
               {/* Image */}
-              <div style={{ position:"relative", width:"100%", height:200, borderRadius:"var(--radius-xl) var(--radius-xl) 0 0", overflow:"hidden" }}>
-                <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover", objectPosition:"center top", filter: s.available ? "none" : "grayscale(40%) brightness(0.7)" }} sizes="280px" />
+              {/* Quadrado, não altura fixa: a arte é 1/1, então a moldura quadrada mostra
+                  a ilustração inteira. Com `height: 200` sobre largura fluida, a
+                  fração visível ia de 64% a 84% conforme a janela — redimensionar
+                  o navegador revelava e escondia faixa de imagem. */}
+              <div style={{ position:"relative", width:"100%", aspectRatio:"1 / 1", borderRadius:"var(--radius-xl) var(--radius-xl) 0 0", overflow:"hidden" }}>
+                <Image src={s.image} alt={s.name} fill style={{ objectFit:"cover", objectPosition:"center top", filter: s.available ? "none" : "grayscale(40%) brightness(0.7)" }} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px" />
                 <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(7,9,15,0.05) 0%, rgba(7,9,15,0.65) 100%)" }} />
                 <div style={{ position:"absolute", bottom:10, left:12 }}>
                   <span style={{ fontSize:"0.6rem", fontWeight:700, color: s.available ? "#4ade80" : "var(--text-subtle)", letterSpacing:"0.08em", textTransform:"uppercase", background:"rgba(7,9,15,0.7)", padding:"3px 8px", borderRadius:"var(--radius-full)", border:`1px solid ${s.available ? "#4ade8033" : "var(--border)"}` }}>
