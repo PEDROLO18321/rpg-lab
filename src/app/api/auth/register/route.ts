@@ -1,9 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { registraTentativa, identificaOrigem } from "@/lib/rateLimit";
+
+/**
+ * Vinte contas por hora e por origem.
+ *
+ * O número é folgado de propósito. Limitar por IP pune rede compartilhada: numa
+ * sala de aula ou num laboratório da universidade — que é o público deste
+ * trabalho — todos saem pelo mesmo endereço, e um teto apertado trancaria a
+ * turma inteira depois do quinto aluno. Vinte continua impedindo criação em
+ * massa automatizada, que é o abuso real, sem transformar NAT em bloqueio.
+ *
+ * Descoberto na prática: o teto de cinco quebrou a própria suíte ponta a ponta,
+ * que cria alguns usuários por execução a partir de um endereço só.
+ */
+const LIMITE = { max: 20, janelaSeg: 3600 };
 
 export async function POST(req: NextRequest) {
   try {
+    const porta = registraTentativa(`cadastro:${identificaOrigem(req)}`, LIMITE);
+    if (!porta.permitido) {
+      return NextResponse.json(
+        { error: "Muitas contas criadas deste endereço. Tente novamente mais tarde." },
+        { status: 429, headers: { "Retry-After": String(porta.esperaSeg) } },
+      );
+    }
+
     const { name, email, password } = await req.json();
 
     if (!name?.trim() || !email?.trim() || !password) {

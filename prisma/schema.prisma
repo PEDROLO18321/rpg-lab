@@ -84,7 +84,15 @@ model Character {
   portraitUrl String?
   notes       String?
   isPublic    Boolean  @default(false) // compartilhamento ligado pelo jogador
-  shareToken  String   @unique @default(cuid()) // link da ficha; regerar invalida o anterior
+  // `uuid(4)` e não `cuid()`: o token é a única porta de leitura sem
+  // autenticação do app, e um cuid não é criptograficamente aleatório. Tokens
+  // reais do banco mostram a estrutura — `cmvpiubn7|0001|gkd8|8gxu8g5u`: tempo,
+  // contador sequencial e impressão da máquina são iguais entre fichas criadas
+  // no mesmo servidor, e só os últimos 8 caracteres variam. São ~41 bits de
+  // aleatoriedade contra os 122 de um UUID v4. Quem regera o link já recebia
+  // `randomUUID()`; só o valor inicial estava fraco — e é o que quase todo
+  // mundo usa, porque ninguém regera.
+  shareToken  String   @unique @default(uuid(4)) // link da ficha; regerar invalida o anterior
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
