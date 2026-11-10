@@ -1,9 +1,9 @@
 "use client";
 
-import { COMPLETE_PACKAGE_GEAR_EB, STATS, getRole, getSkillDef } from "@/lib/cyberpunk/data";
+import { STATS, getRole, getSkillDef } from "@/lib/cyberpunk/data";
 import { validateCompletePackage } from "@/lib/cyberpunk/creation";
 import { CP, SectionTitle } from "../../ui";
-import { derived, equipmentCost, finalSkills, resolveEquipment, languageKey, type WizardData } from "../wizardModel";
+import { derived, equipmentBudget, equipmentCost, finalSkills, resolveEquipment, languageKey, type WizardData } from "../wizardModel";
 
 function skillLabel(key: string): string {
   const def = getSkillDef(key);
@@ -21,8 +21,8 @@ export function reviewProblems(data: WizardData): string[] {
     const free = data.lifepath.language ? languageKey(data.lifepath.language) : undefined;
     const check = validateCompletePackage({ stats: data.stats, skills: finalSkills(data), freeLanguageKey: free });
     if (!check.complete) out.push(...check.errors, ...(check.valid ? [`Gaste todos os pontos (atributos: ${check.statPointsLeft}, perícias: ${check.skillPointsLeft}).`] : []));
-    if (equipmentCost(data) > COMPLETE_PACKAGE_GEAR_EB) out.push("O equipamento passa do orçamento de 2550 eb.");
   }
+  if (equipmentCost(data) > equipmentBudget(data)) out.push(`O equipamento passa do orçamento de ${equipmentBudget(data)} eb.`);
   return out;
 }
 

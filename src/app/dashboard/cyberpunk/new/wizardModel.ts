@@ -22,8 +22,12 @@ export interface WizardData {
   stats: Stats | null;
   /** Método 2: o d10 de cada coluna (índice = STAT_KEYS), para a tabela mostrar a linha sorteada. */
   edgeRolls: (number | null)[];
+  /** Método 2: o livro manda rolar uma vez só; depois de rolado, os valores travam. */
+  edgeLocked: boolean;
   /** Método 1: linha escolhida (0..9). */
   streetratRow: number | null;
+  /** Método 1: o d10 já foi usado. Escolher a linha na tabela segue livre; o botão de rolar não. */
+  streetratRolled: boolean;
   /** Só o Pacote Completo: perícias distribuídas à mão. */
   skills: Record<string, number>;
   /** Especialidades digitadas nas perícias que pedem escolha (instrumento, ciência). */
@@ -42,10 +46,18 @@ export interface WizardData {
 
 export const INITIAL: WizardData = {
   name: "", role: "solo", method: "streetrat", stats: null,
-  edgeRolls: Array(10).fill(null), streetratRow: null,
+  edgeRolls: Array(10).fill(null), edgeLocked: false, streetratRow: null, streetratRolled: false,
   skills: {}, choices: {}, lifepath: {}, kitSel: {},
   weapons: [], gear: [], armorHead: "", armorBody: "", shield: false, cyberware: [], appearance: "",
 };
+
+/**
+ * Zera tudo que o sorteio de atributos produziu, travas incluídas. Só trocar de
+ * método ou de papel chama isto: é a única forma de rolar de novo.
+ */
+export const ROLL_RESET = {
+  edgeRolls: INITIAL.edgeRolls, edgeLocked: false, streetratRow: null, streetratRolled: false,
+} satisfies Partial<WizardData>;
 
 /** Pacote Completo: as 13 básicas já nascem em 2 (idioma e conhecimento local com a especialidade padrão). */
 export function defaultCompleteSkills(): Record<string, number> {
@@ -125,17 +137,32 @@ export function resolveEquipment(d: WizardData): ResolvedEquipment {
   return r;
 }
 
-/** Custo em eb do que o jogador comprou (no Pacote Completo; nos kits o equipamento é grátis). */
+/** Só o kit do papel, sem o que o jogador acrescentou (vazio no Pacote Completo). */
+export function resolveKitOnly(d: WizardData): ResolvedEquipment {
+  return resolveEquipment({ ...d, weapons: [], gear: [], armorHead: "", armorBody: "", shield: false, cyberware: [] });
+}
+
+/**
+ * Dinheiro para gastar no equipamento. Pacote Completo: 2.550 eb (livro p.104).
+ * Streetrat e Edgerunner: 500 eb além do kit, gastar ou guardar (livro p.98).
+ */
+export function equipmentBudget(d: WizardData): number {
+  return d.method === "complete" ? COMPLETE_PACKAGE_GEAR_EB : STARTING_EUROBUCKS_STREETRAT;
+}
+
+/**
+ * Custo em eb do que o jogador escolheu por conta própria. O kit do papel é
+ * grátis, então só entram os campos `weapons`/`gear`/… (o escudo some da conta
+ * se o kit já o entrega).
+ */
 export function equipmentCost(d: WizardData): number {
-  if (d.method !== "complete") return 0;
-  const r = resolveEquipment(d);
   let sum = 0;
-  for (const k of r.weapons) sum += WEAPONS_MAP[k]?.cost ?? 0;
-  for (const g of r.gear) sum += (GEAR_MAP[g.key]?.cost ?? 0) * g.qty;
-  if (r.armorHead) sum += ARMORS_MAP[r.armorHead]?.cost ?? 0;
-  if (r.armorBody) sum += ARMORS_MAP[r.armorBody]?.cost ?? 0;
-  if (r.shield) sum += BULLETPROOF_SHIELD.cost;
-  for (const k of r.cyberware) sum += CYBERWARE_MAP[k]?.cost ?? 0;
+  for (const k of d.weapons) sum += WEAPONS_MAP[k]?.cost ?? 0;
+  for (const g of d.gear) sum += (GEAR_MAP[g.key]?.cost ?? 0) * g.qty;
+  if (d.armorHead) sum += ARMORS_MAP[d.armorHead]?.cost ?? 0;
+  if (d.armorBody) sum += ARMORS_MAP[d.armorBody]?.cost ?? 0;
+  if (d.shield && !resolveKitOnly(d).shield) sum += BULLETPROOF_SHIELD.cost;
+  for (const k of d.cyberware) sum += CYBERWARE_MAP[k]?.cost ?? 0;
   return sum;
 }
 
@@ -167,9 +194,7 @@ export function buildPayload(d: WizardData) {
   const cyberware = eq.cyberware.map((k) => CYBERWARE_MAP[k]).filter(Boolean).map((c) => cyberwareToSheetItem(c, id()));
 
   const lp = d.lifepath;
-  const eurobucks = d.method === "complete"
-    ? Math.max(0, COMPLETE_PACKAGE_GEAR_EB - equipmentCost(d))
-    : STARTING_EUROBUCKS_STREETRAT;
+  const eurobucks = Math.max(0, equipmentBudget(d) - equipmentCost(d));
 
   return {
     name: d.name.trim(),

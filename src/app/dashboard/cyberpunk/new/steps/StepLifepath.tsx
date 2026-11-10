@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import {
   AFFECTATIONS, CHILDHOOD_ENVIRONMENTS, CLOTHING_STYLES, CULTURAL_ORIGINS, FAMILY_BACKGROUNDS, FAMILY_CRISES,
   FEELINGS_ABOUT_PEOPLE, HAIRSTYLES, LIFE_GOALS, PERSONALITIES, VALUED_PERSON, VALUED_POSSESSION, VALUES,
-  rollLifepath, type Lifepath,
+  customRelation, describeEnemy, rollEnemy, rollFriend, rollLifepath, rollLove, type Lifepath, type LifepathEnemy,
 } from "@/lib/cyberpunk/lifepath";
+import { rollD } from "@/lib/cyberpunk/rules";
 import { Field } from "@/components/ui/Field";
-import { CP, PrimaryButton, SectionTitle, areaStyle, inputStyle, labelStyle, pillBtn } from "../../ui";
+import { CP, PrimaryButton, SectionTitle, areaStyle, dangerBtn, inputStyle, labelStyle, pillBtn } from "../../ui";
 import type { WizardData } from "../wizardModel";
 
 interface Props {
@@ -38,7 +40,7 @@ export function StepLifepath({ data, onChange }: Props) {
   const origin = CULTURAL_ORIGINS.find((o) => o.region === lp.origin);
 
   function rollOne(key: TextKey, table: readonly string[]) {
-    set({ [key]: table[Math.floor(Math.random() * table.length)] } as Partial<Lifepath>);
+    set({ [key]: table[rollD(10) - 1] } as Partial<Lifepath>);
   }
 
   function rollOrigin() {
@@ -46,16 +48,21 @@ export function StepLifepath({ data, onChange }: Props) {
     set({ origin: o.region, language: o.languages[Math.floor(Math.random() * o.languages.length)] });
   }
 
-  function rollRelations(key: "friends" | "enemies" | "loves") {
+  // "Lista" repete o livro: d10 − 7 define a quantidade e cada item é rolado.
+  function rollList(key: "friends" | "enemies" | "loves") {
     const fresh = rollLifepath();
     set({ [key]: fresh[key] } as Partial<Lifepath>);
   }
+
+  const friends = lp.friends ?? [];
+  const enemies = lp.enemies ?? [];
+  const loves = lp.loves ?? [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <SectionTitle
         eyebrow="Passo 4" title="Caminho de vida"
-        desc="Role nas tabelas ou escolha o que combina com o personagem. Nada aqui altera números, exceto o idioma da origem, que dá nível 4 grátis."
+        desc="Em cada item você pode rolar, escolher uma opção da tabela ou escrever o seu. A origem cultural só aceita rolar ou escolher, porque o idioma dela dá nível 4 grátis. Nada aqui altera números além disso."
       />
 
       <div><PrimaryButton onClick={() => onChange({ lifepath: rollLifepath() })}>🎲 Rolar tudo</PrimaryButton></div>
@@ -84,23 +91,36 @@ export function StepLifepath({ data, onChange }: Props) {
         </div>
 
         {FIELDS.map((f) => (
-          <div key={f.key}>
-            <span style={labelStyle}>{f.label}</span>
-            <div style={{ display: "flex", gap: 6 }}>
-              <select aria-label={f.label} value={lp[f.key] ?? ""} onChange={(e) => set({ [f.key]: e.target.value } as Partial<Lifepath>)} style={inputStyle}>
-                <option value="">—</option>
-                {Array.from(new Set(f.table)).map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-              <button type="button" onClick={() => rollOne(f.key, f.table)} aria-label={`Sortear ${f.label}`} style={pillBtn}>🎲</button>
-            </div>
-          </div>
+          <LifeField
+            key={f.key} label={f.label} table={f.table} value={lp[f.key] ?? ""}
+            onChange={(v) => set({ [f.key]: v } as Partial<Lifepath>)}
+            onRoll={() => rollOne(f.key, f.table)}
+          />
         ))}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 14 }}>
-        <Relations title="Amigos" items={lp.friends ?? []} onRoll={() => rollRelations("friends")} />
-        <Relations title="Inimigos" items={(lp.enemies ?? []).map((e) => `${e.who} — ${e.cause}. Ameaça: ${e.threat}. Se for vingar: ${e.revenge}`)} onRoll={() => rollRelations("enemies")} />
-        <Relations title="Amores trágicos" items={lp.loves ?? []} onRoll={() => rollRelations("loves")} />
+        <Relations
+          title="Amigos" items={friends}
+          onRollList={() => rollList("friends")}
+          onRollOne={() => set({ friends: [...friends, rollFriend()] })}
+          onAddCustom={(n, d) => set({ friends: [...friends, customRelation(n, d)] })}
+          onRemove={(i) => set({ friends: friends.filter((_, j) => j !== i) })}
+        />
+        <Relations
+          title="Inimigos" items={enemies.map(describeEnemy)}
+          onRollList={() => rollList("enemies")}
+          onRollOne={() => set({ enemies: [...enemies, rollEnemy()] })}
+          onAddCustom={(n, d) => set({ enemies: [...enemies, { who: n.trim() || "Sem nome", cause: d.trim(), threat: "", revenge: "", custom: true } satisfies LifepathEnemy] })}
+          onRemove={(i) => set({ enemies: enemies.filter((_, j) => j !== i) })}
+        />
+        <Relations
+          title="Amores trágicos" items={loves}
+          onRollList={() => rollList("loves")}
+          onRollOne={() => set({ loves: [...loves, rollLove()] })}
+          onAddCustom={(n, d) => set({ loves: [...loves, customRelation(n, d)] })}
+          onRemove={(i) => set({ loves: loves.filter((_, j) => j !== i) })}
+        />
       </div>
 
       <div>
@@ -112,16 +132,78 @@ export function StepLifepath({ data, onChange }: Props) {
   );
 }
 
-function Relations({ title, items, onRoll }: { title: string; items: string[]; onRoll: () => void }) {
+/** Um campo do caminho de vida: escolher na tabela, rolar ou escrever o próprio texto. */
+function LifeField({ label, table, value, onChange, onRoll }: {
+  label: string; table: readonly string[]; value: string; onChange: (v: string) => void; onRoll: () => void;
+}) {
+  const options = Array.from(new Set(table));
+  const inTable = options.includes(value);
   return (
-    <div style={{ padding: 12, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 }}>
-        <span style={{ fontSize: "0.72rem", fontWeight: 800, color: CP.accentLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>{title}</span>
-        <button type="button" onClick={onRoll} aria-label={`Sortear ${title}`} style={pillBtn}>🎲</button>
+    <div style={{ minWidth: 0 }}>
+      <span style={labelStyle}>{label}</span>
+      <div style={{ display: "flex", gap: 6 }}>
+        <select aria-label={label} value={inTable ? value : ""} onChange={(e) => onChange(e.target.value)} style={inputStyle}>
+          <option value="">{value && !inTable ? "— texto próprio —" : "—"}</option>
+          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <button type="button" onClick={onRoll} aria-label={`Sortear ${label}`} style={pillBtn}>🎲</button>
       </div>
+      <input
+        aria-label={`${label}: escrever o meu`} placeholder="Escrever o meu…" maxLength={120}
+        value={inTable ? "" : value} onChange={(e) => onChange(e.target.value)}
+        style={{ ...inputStyle, marginTop: 6 }}
+      />
+    </div>
+  );
+}
+
+/** Lista de amigos, inimigos ou amores: sortear, escrever à mão e remover. */
+function Relations({ title, items, onRollList, onRollOne, onAddCustom, onRemove }: {
+  title: string; items: string[];
+  onRollList: () => void; onRollOne: () => void;
+  onAddCustom: (name: string, description: string) => void; onRemove: (i: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [desc, setDesc] = useState("");
+  const canAdd = name.trim().length > 0 || desc.trim().length > 0;
+
+  return (
+    <div style={{ padding: 12, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: CP.accentLight, textTransform: "uppercase", letterSpacing: "0.06em" }}>{title}</span>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button type="button" onClick={onRollList} aria-label={`Sortear lista de ${title}`} title="d10 − 7 define quantos; sorteia cada um" style={pillBtn}>🎲 Lista</button>
+        <button type="button" onClick={onRollOne} aria-label={`Sortear mais um em ${title}`} style={pillBtn}>🎲 +1</button>
+        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} style={pillBtn}>✎ Escrever o meu</button>
+      </div>
+
+      {open && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <input aria-label={`${title}: nome`} placeholder="Nome" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
+          <input aria-label={`${title}: descrição`} placeholder="Descrição" maxLength={200} value={desc} onChange={(e) => setDesc(e.target.value)} style={inputStyle} />
+          <div>
+            <PrimaryButton
+              disabled={!canAdd} style={{ padding: "6px 16px", minHeight: 32 }}
+              onClick={() => { onAddCustom(name, desc); setName(""); setDesc(""); }}
+            >
+              Adicionar
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
+
       {items.length === 0
-        ? <p style={{ fontSize: "0.76rem", color: CP.textSubtle }}>Nenhum (o d10 − 7 deu zero).</p>
-        : <ul style={{ margin: 0, paddingLeft: 16, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{items.map((t, i) => <li key={i}>{t}</li>)}</ul>}
+        ? <p style={{ fontSize: "0.76rem", color: CP.textSubtle }}>Nenhum por enquanto.</p>
+        : (
+          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+            {items.map((t, i) => (
+              <li key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{t}</span>
+                <button type="button" onClick={() => onRemove(i)} aria-label={`Remover ${t}`} style={{ ...dangerBtn, minHeight: 28, padding: "0 10px" }}>×</button>
+              </li>
+            ))}
+          </ul>
+        )}
     </div>
   );
 }

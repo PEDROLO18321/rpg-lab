@@ -137,7 +137,34 @@ export const LIFE_GOALS = [
 
 // ─── Rolagem ────────────────────────────────────────────────────────────────
 
-export interface LifepathEnemy { who: string; cause: string; threat: string; revenge: string }
+/**
+ * Inimigo sorteado traz as quatro colunas. Inimigo escrito à mão (`custom`)
+ * usa só `who` (nome) e `cause` (descrição); ameaça e vingança ficam vazias.
+ * O campo é opcional para que fichas antigas continuem válidas.
+ */
+export interface LifepathEnemy { who: string; cause: string; threat: string; revenge: string; custom?: boolean }
+
+/** Uma linha de texto para a ficha e para o assistente, sorteado ou escrito à mão. */
+export function describeEnemy(e: LifepathEnemy): string {
+  if (e.custom || (!e.threat && !e.revenge)) return e.cause ? `${e.who} — ${e.cause}` : e.who;
+  return `${e.who} — ${e.cause}. Ameaça: ${e.threat}. Se for vingar: ${e.revenge}`;
+}
+
+/** Amigo ou amor escrito à mão: "Nome — descrição" (a lista guarda texto puro). */
+export function customRelation(name: string, description: string): string {
+  const n = name.trim();
+  const d = description.trim();
+  return n && d ? `${n} — ${d}` : n || d;
+}
+
+export function rollFriend(rng: Rng = Math.random): string { return pickRoll(FRIEND_KINDS, rng); }
+export function rollLove(rng: Rng = Math.random): string { return pickRoll(TRAGIC_LOVES, rng); }
+export function rollEnemy(rng: Rng = Math.random): LifepathEnemy {
+  return {
+    who: pickRoll(ENEMY_WHO, rng), cause: pickRoll(ENEMY_CAUSE, rng),
+    threat: pickRoll(ENEMY_THREAT, rng), revenge: pickRoll(REVENGE_RESPONSES, rng),
+  };
+}
 
 export interface Lifepath {
   origin: string;
@@ -186,14 +213,9 @@ export function rollLifepath(rng: Rng = Math.random): Lifepath {
     family: pickRoll(FAMILY_BACKGROUNDS, rng),
     childhood: pickRoll(CHILDHOOD_ENVIRONMENTS, rng),
     crisis: pickRoll(FAMILY_CRISES, rng),
-    friends: Array.from({ length: rollRelationshipCount(rng) }, () => pickRoll(FRIEND_KINDS, rng)),
-    enemies: Array.from({ length: rollRelationshipCount(rng) }, () => ({
-      who: pickRoll(ENEMY_WHO, rng),
-      cause: pickRoll(ENEMY_CAUSE, rng),
-      threat: pickRoll(ENEMY_THREAT, rng),
-      revenge: pickRoll(REVENGE_RESPONSES, rng),
-    })),
-    loves: Array.from({ length: rollRelationshipCount(rng) }, () => pickRoll(TRAGIC_LOVES, rng)),
+    friends: Array.from({ length: rollRelationshipCount(rng) }, () => rollFriend(rng)),
+    enemies: Array.from({ length: rollRelationshipCount(rng) }, () => rollEnemy(rng)),
+    loves: Array.from({ length: rollRelationshipCount(rng) }, () => rollLove(rng)),
     goal: pickRoll(LIFE_GOALS, rng),
   };
 }

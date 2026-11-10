@@ -43,6 +43,32 @@ const PRIVADAS = [
   { nome: "criar-ordem", url: "/dashboard/ordem/new" },
 ];
 
+
+/**
+ * Leva o assistente de Cyberpunk até o passo de Equipamento (Streetrat, papel
+ * Solo: nenhuma perícia a escolher). Não grava nada: só navega e rola o d10.
+ */
+async function ateEquipamento(page: Page) {
+  await page.goto("/dashboard/cyberpunk/new");
+  await page.getByRole("button", { name: /Deixe-me Criar/ }).click();
+  await page.getByPlaceholder("Ex.: Ravi Okafor").fill("Teste Responsivo");
+  const proximo = page.getByRole("button", { name: /Próximo/ });
+  await proximo.click();
+  await page.getByRole("button", { name: /Rolar 1d10/ }).click();
+  await proximo.click();
+  await proximo.click();
+  await proximo.click();
+  await expect(page.getByRole("tab", { name: "Armas" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+}
+
+/** Abre a ficha de Cyberpunk na aba Editar (a última). */
+async function abaEditar(page: Page, id: string) {
+  await page.goto(`/dashboard/cyberpunk/${id}`);
+  await page.getByRole("button", { name: "Editar", exact: true }).first().click();
+  await expect(page.getByRole("group", { name: "Grau do papel" })).toBeVisible();
+}
+
 /** Ids criados pelo setup global, lidos do arquivo que ele grava. */
 let ids: Record<string, string> = {};
 
@@ -142,6 +168,24 @@ for (const L of LARGURAS) {
       });
     }
 
+    test("criar-cyberpunk, passo Equipamento (loja e carrinho): nada vaza da tela", async ({ page }) => {
+      await ateEquipamento(page);
+      // Abre as duas abas mais largas: a de armadura (dois espaços) e a de ciberware.
+      for (const aba of ["Armadura", "Ciberware"]) {
+        await page.getByRole("tab", { name: aba }).click();
+        const v = await vazamentos(page);
+        expect(v.fora, `elementos fora da viewport na aba ${aba}:\n${relato(v)}`).toEqual([]);
+        expect(v.scrollW, `rolagem horizontal na aba ${aba}`).toBeLessThanOrEqual(v.limite + 1);
+      }
+    });
+
+    test("ficha-cyberpunk, aba Editar: nada vaza da tela", async ({ page }) => {
+      await abaEditar(page, ids.cyberpunk);
+      const v = await vazamentos(page);
+      expect(v.fora, `elementos fora da viewport na aba Editar:\n${relato(v)}`).toEqual([]);
+      expect(v.scrollW, "rolagem horizontal na aba Editar").toBeLessThanOrEqual(v.limite + 1);
+    });
+
     for (const rota of PRIVADAS) {
       test(`${rota.nome}: nada vaza da tela`, async ({ page }) => {
         const url = rota.url.replace(/:(\w+)/, (_, s) => ids[s]);
@@ -183,6 +227,24 @@ for (const L of LARGURAS.filter((l) => l.largura <= 768)) {
     test("ficha de Cyberpunk: todo alvo tem ao menos 24×24", async ({ page }) => {
       await page.goto(`/dashboard/cyberpunk/${ids.cyberpunk}`);
       await page.waitForLoadState("networkidle");
+      const pequenos = await alvosPequenos(page);
+      expect(
+        pequenos,
+        `alvos abaixo de ${TOQUE_MIN}px:\n${pequenos.map((p) => `  <${p.tag}> ${p.w}×${p.h} — "${p.rotulo}"`).join("\n")}`,
+      ).toEqual([]);
+    });
+
+    test("Cyberpunk, passo Equipamento: todo alvo tem ao menos 24×24", async ({ page }) => {
+      await ateEquipamento(page);
+      const pequenos = await alvosPequenos(page);
+      expect(
+        pequenos,
+        `alvos abaixo de ${TOQUE_MIN}px:\n${pequenos.map((p) => `  <${p.tag}> ${p.w}×${p.h} — "${p.rotulo}"`).join("\n")}`,
+      ).toEqual([]);
+    });
+
+    test("ficha de Cyberpunk, aba Editar: todo alvo tem ao menos 24×24", async ({ page }) => {
+      await abaEditar(page, ids.cyberpunk);
       const pequenos = await alvosPequenos(page);
       expect(
         pequenos,

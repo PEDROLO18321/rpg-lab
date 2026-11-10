@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { ExportJsonButton } from "@/components/dashboard/ExportJsonButton";
 import { RollToast, type DiceFxRoll } from "@/components/three/DiceRollFx";
@@ -22,6 +22,7 @@ import { NetrunningTab } from "./tabs/NetrunningTab";
 import { GearTab } from "./tabs/GearTab";
 import { LifepathTab } from "./tabs/LifepathTab";
 import { NotesTab } from "./tabs/NotesTab";
+import { EditTab } from "./tabs/EditTab";
 
 interface Props {
   character: {
@@ -40,6 +41,7 @@ const BASE_TABS: SheetTab[] = [
   { id: "equipamento", label: "Equipamento" },
   { id: "lifepath", label: "Lifepath" },
   { id: "notas", label: "Notas" },
+  { id: "editar", label: "Editar" },
 ];
 
 function initialState(c: Props["character"]): SheetState {
@@ -81,13 +83,11 @@ export function SheetClient({ character }: Props) {
   const tabs = isNetrunner ? BASE_TABS : BASE_TABS.filter((t) => t.id !== "netrunning");
   const activeTab = tabs.some((t) => t.id === tab) ? tab : "ficha";
 
-  const patch = useCallback((p: Partial<SheetState>) => {
-    setSh((prev) => ({ ...prev, ...p }));
-    setSave({ state: "saving" });
+  const send = useCallback((p: Partial<SheetState>, keepalive = false) => {
     queue.current = queue.current.then(async () => {
       try {
         const res = await fetch(`/api/cyberpunk/characters/${character.id}`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p),
+          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p), keepalive,
         });
         if (!res.ok) {
           const j = await res.json().catch(() => ({}));
@@ -99,6 +99,46 @@ export function SheetClient({ character }: Props) {
       }
     });
   }, [character.id]);
+
+  // Patches com `debounce` (segurar o botão do Stepper dispara dezenas por
+  // segundo) acumulam aqui e saem juntos quando o usuário para.
+  const pending = useRef<Partial<SheetState>>({});
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flush = useCallback((keepalive = false) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    if (Object.keys(pending.current).length === 0) return;
+    const p = pending.current;
+    pending.current = {};
+    send(p, keepalive);
+  }, [send]);
+
+  const patch = useCallback((p: Partial<SheetState>, opts?: { debounce?: boolean }) => {
+    setSh((prev) => ({ ...prev, ...p }));
+    setSave({ state: "saving" });
+    if (opts?.debounce) {
+      pending.current = { ...pending.current, ...p };
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => flush(), 450);
+      return;
+    }
+    // O que estava esperando sai junto e perde para o mais novo: sem isso, o
+    // envio atrasado sobrescreveria esta gravação com o valor antigo.
+    const merged = { ...pending.current, ...p };
+    pending.current = {};
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    send(merged);
+  }, [send, flush]);
+
+  // Fechar a aba no meio da espera de 450 ms não pode perder o último passo.
+  useEffect(() => {
+    const onHide = () => flush(true);
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onHide);
+    return () => { window.removeEventListener("pagehide", onHide); document.removeEventListener("visibilitychange", onHide); flush(); };
+  }, [flush]);
 
   const push = useCallback((e: Omit<RollEntry, "id">) => {
     const entry: RollEntry = { ...e, id: ++logId.current };
@@ -189,6 +229,7 @@ export function SheetClient({ character }: Props) {
         {activeTab === "equipamento" && <GearTab {...tabProps} />}
         {activeTab === "lifepath" && <LifepathTab {...tabProps} />}
         {activeTab === "notas" && <NotesTab {...tabProps} />}
+        {activeTab === "editar" && <EditTab {...tabProps} />}
       </main>
 
       <RollToast roll={fx} color={PLAY_THEME.cyberpunk.accent} edgeColor={PLAY_THEME.cyberpunk.accentLight} emissive={PLAY_THEME.cyberpunk.dieEmissive} />

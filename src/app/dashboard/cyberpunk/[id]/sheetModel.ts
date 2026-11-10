@@ -43,7 +43,11 @@ export interface SheetState extends Stats {
   notes: string;
 }
 
-export type Patch = (p: Partial<SheetState>) => void;
+/**
+ * Grava local na hora e no servidor em seguida. Com `debounce`, vários patches
+ * seguidos (segurar um botão do Stepper) viram uma requisição só.
+ */
+export type Patch = (p: Partial<SheetState>, opts?: { debounce?: boolean }) => void;
 
 /** Entrada do histórico: o tipo comum mais o dado que o toast 3D desenha. */
 export type RollEntry = PlayRollEntry & { sides: number };

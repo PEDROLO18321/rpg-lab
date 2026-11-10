@@ -3,7 +3,7 @@
 import { ROLES, type RoleKey } from "@/lib/cyberpunk/data";
 import { Field } from "@/components/ui/Field";
 import { CP, SectionTitle, SelectCard, inputStyle, labelStyle } from "../../ui";
-import type { WizardData } from "../wizardModel";
+import { ROLL_RESET, type WizardData } from "../wizardModel";
 
 interface Props {
   data: WizardData;
@@ -33,7 +33,7 @@ export function StepRole({ data, onChange }: Props) {
           <SelectCard
             key={r.key} label={r.name} sublabel={r.abilityName}
             selected={data.role === r.key}
-            onClick={() => onChange({ role: r.key as RoleKey, skills: data.method === "complete" ? data.skills : {}, choices: {}, kitSel: {}, streetratRow: null, stats: data.method === "complete" ? data.stats : null })}
+            onClick={() => onChange({ role: r.key as RoleKey, skills: data.method === "complete" ? data.skills : {}, choices: {}, kitSel: {}, ...ROLL_RESET, stats: data.method === "complete" ? data.stats : null })}
           >
             <span style={{ fontSize: "0.74rem", color: CP.textMuted, lineHeight: 1.5 }}>{r.abilityShort}</span>
           </SelectCard>

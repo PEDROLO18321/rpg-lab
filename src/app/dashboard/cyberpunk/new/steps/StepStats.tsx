@@ -5,7 +5,7 @@ import {
 } from "@/lib/cyberpunk/data";
 import { hpMax, humanityMax, rollD, seriousThreshold } from "@/lib/cyberpunk/rules";
 import { CP, GhostButton, PrimaryButton, SectionTitle, SelectCard, pillBtn } from "../../ui";
-import { INITIAL, defaultCompleteSkills, type Method, type WizardData } from "../wizardModel";
+import { ROLL_RESET, defaultCompleteSkills, type Method, type WizardData } from "../wizardModel";
 
 interface Props {
   data: WizardData;
@@ -32,7 +32,7 @@ export function StepStats({ data, onChange }: Props) {
     // tabela com pontos distribuídos não tem regra no livro.
     onChange({
       method: m, stats: m === "complete" ? { ...BASE_COMPLETE } : null,
-      edgeRolls: INITIAL.edgeRolls, streetratRow: null,
+      ...ROLL_RESET,
       skills: m === "complete" ? defaultCompleteSkills() : {},
     });
   }
@@ -41,14 +41,20 @@ export function StepStats({ data, onChange }: Props) {
     onChange({ streetratRow: i, stats: statsFromRow(table[i]) });
   }
 
-  function rollEdge(col: number | "all") {
-    const rolls = [...data.edgeRolls];
-    if (col === "all") STAT_KEYS.forEach((_, c) => { rolls[c] = rollD(10); });
-    else rolls[col] = rollD(10);
-    const complete = rolls.every((r) => r !== null);
+  function rollRow() {
+    if (data.streetratRolled) return;
+    const i = rollD(10) - 1;
+    onChange({ streetratRolled: true, streetratRow: i, stats: statsFromRow(table[i]) });
+  }
+
+  // Um clique rola o d10 de cada atributo de uma vez e trava: o livro (p.77)
+  // manda rolar uma única vez por atributo.
+  function rollEdge() {
+    if (data.edgeLocked) return;
+    const rolls = STAT_KEYS.map(() => rollD(10));
     onChange({
-      edgeRolls: rolls,
-      stats: complete ? statsFromRow(STAT_KEYS.map((_, c) => table[(rolls[c] as number) - 1][c])) : null,
+      edgeRolls: rolls, edgeLocked: true,
+      stats: statsFromRow(STAT_KEYS.map((_, c) => table[rolls[c] - 1][c])),
     });
   }
 
@@ -78,8 +84,10 @@ export function StepStats({ data, onChange }: Props) {
       {data.method === "streetrat" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <PrimaryButton onClick={() => pickRow(rollD(10) - 1)}>🎲 Rolar 1d10</PrimaryButton>
-            <span style={{ fontSize: "0.78rem", color: CP.textMuted }}>ou toque numa linha da tabela.</span>
+            <PrimaryButton onClick={rollRow} disabled={data.streetratRolled}>{data.streetratRolled ? "Rolado" : "🎲 Rolar 1d10"}</PrimaryButton>
+            <span style={{ fontSize: "0.78rem", color: CP.textMuted }}>
+              {data.streetratRolled ? "O d10 já foi usado. Para sortear de novo, troque de método ou de papel; a tabela segue clicável." : "ou toque numa linha da tabela."}
+            </span>
           </div>
           <StatTable
             rows={table.map((r, i) => ({ label: String(i + 1), values: r, active: data.streetratRow === i, onPick: () => pickRow(i) }))}
@@ -90,8 +98,10 @@ export function StepStats({ data, onChange }: Props) {
       {data.method === "edgerunner" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <PrimaryButton onClick={() => rollEdge("all")}>🎲 Rolar todos</PrimaryButton>
-            <span style={{ fontSize: "0.78rem", color: CP.textMuted }}>Cada atributo usa o próprio d10; rerole um só se quiser.</span>
+            <PrimaryButton onClick={rollEdge} disabled={data.edgeLocked}>{data.edgeLocked ? "Rolado" : "🎲 Rolar todos"}</PrimaryButton>
+            <span style={{ fontSize: "0.78rem", color: CP.textMuted }}>
+              {data.edgeLocked ? "Valores travados: o livro manda rolar uma vez só. Para sortear de novo, troque de método ou de papel." : "Cada atributo usa o próprio d10, uma única vez."}
+            </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(150px, 100%), 1fr))", gap: 8 }}>
             {STATS.map((s, c) => {
@@ -102,7 +112,6 @@ export function StepStats({ data, onChange }: Props) {
                   <span style={{ flex: 1, fontSize: "0.8rem", color: "var(--text)" }}>
                     {r === null ? "—" : <>d10 <b>{r}</b> → <b style={{ color: CP.accentLight }}>{table[r - 1][c]}</b></>}
                   </span>
-                  <button type="button" onClick={() => rollEdge(c)} aria-label={`Rolar ${s.name}`} style={pillBtn}>🎲</button>
                 </div>
               );
             })}
@@ -150,8 +159,8 @@ export function StepStats({ data, onChange }: Props) {
         </div>
       )}
 
-      {data.method !== "complete" && stats && (
-        <div><GhostButton onClick={() => onChange({ stats: null, streetratRow: null, edgeRolls: INITIAL.edgeRolls })}>Limpar atributos</GhostButton></div>
+      {data.method === "streetrat" && stats && (
+        <div><GhostButton onClick={() => onChange({ stats: null, streetratRow: null })}>Limpar escolha</GhostButton></div>
       )}
     </div>
   );

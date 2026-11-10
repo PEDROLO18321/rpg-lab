@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { rollLifepath, type Lifepath } from "@/lib/cyberpunk/lifepath";
+import { describeEnemy, rollLifepath, type Lifepath } from "@/lib/cyberpunk/lifepath";
 import { SheetShell } from "@/components/sheet/SheetShell";
 import { SheetSection } from "@/components/sheet/SheetSection";
 import { Field } from "@/components/ui/Field";
@@ -78,7 +78,7 @@ export function LifepathTab({ sh, patch }: TabProps) {
     <>
       <SheetSection title="Relações">
         {list("Amigos", lp.friends ?? [])}
-        {list("Inimigos", (lp.enemies ?? []).map((e) => `${e.who} — ${e.cause}. Ameaça: ${e.threat}. Se for vingar: ${e.revenge}`))}
+        {list("Inimigos", (lp.enemies ?? []).map(describeEnemy))}
         {list("Amores trágicos", lp.loves ?? [])}
       </SheetSection>
 

@@ -19,3 +19,16 @@
   .cp-npc-attr-grid { grid-template-columns: repeat(5, 1fr) !important; }
   .cp-bestiary-grid { grid-template-columns: repeat(5, 1fr) !important; }
 }
+
+/* Loja do assistente (passo Equipamento): carrinho passa para baixo do catálogo
+   e o saldo aparece no topo, já que o carrinho sticky some da vista. */
+@media (max-width: 760px) {
+  .cp-shop-grid { grid-template-columns: 1fr !important; }
+  .cp-shop-mobilebar { display: block !important; }
+  .cp-shop-cart { position: static !important; max-height: none !important; overflow: visible !important; }
+}
+
+/* Cabeça e Corpo lado a lado até onde o select ainda cabe. */
+@media (max-width: 480px) {
+  .cp-armor-slots { grid-template-columns: 1fr !important; }
+}
