@@ -112,7 +112,9 @@ export function SheetHeader({
         <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: 4 }}>{subtitle}</p>
       </div>
 
-      <div className="sheet-header-actions" style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center", flexWrap: "wrap" }}>
+      {/* `maxWidth` porque `flexShrink: 0` mantém a largura do conteúdo: sem
+          teto, oito abas passam de 768px e o `flexWrap` nunca chega a agir. */}
+      <div className="sheet-header-actions" style={{ display: "flex", gap: 8, flexShrink: 0, maxWidth: "100%", alignItems: "center", flexWrap: "wrap" }}>
         {progression}
         {tabs.map((tab) => (
           <SheetTabBtn key={tab.id} active={mode === tab.id} onClick={() => onMode(tab.id)}>

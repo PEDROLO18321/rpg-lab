@@ -266,6 +266,64 @@ const SYSTEMS: Record<string, SystemData> = {
       ],
     },
   },
+  cyberpunk: {
+    name: "Cyberpunk RED",
+    tagline: "Edgerunners, ciberware e a Era do Vermelho em Night City",
+    orbColor: "rgba(168,85,247,0.22)",
+    accentColor: "#a855f7",
+    ctaHref: "/dashboard/cyberpunk",
+    lore: "Neon, chuva ácida e corporações que valem mais que países. Em Night City, 2045, quem vive de bicos precisa de coragem, de contatos e de um pouco de ferro implantado — e o preço é a própria humanidade.",
+    wiki: {
+      intro:
+        "Cyberpunk RED é um RPG de ficção científica sombria criado por Mike Pondsmith e publicado pela R. Talsorian Games. Ele se passa depois da Quarta Guerra Corporativa, num mundo que tenta se reerguer dos escombros: a rede global foi destruída, o governo é frágil e as megacorporações voltaram a mandar. Os jogadores interpretam Edgerunners, mercenários e aventureiros que tocam trabalhos arriscados nas ruas de Night City.",
+      quickFacts: [
+        { label: "Criado por",     value: "Mike Pondsmith" },
+        { label: "Publicado por",  value: "R. Talsorian Games" },
+        { label: "Série iniciada", value: "1988 (Cyberpunk 2013)" },
+        { label: "Esta edição",    value: "Cyberpunk RED (2020)" },
+        { label: "Ambientação",    value: "Night City, 2045 — a Era do Vermelho" },
+        { label: "Gênero",         value: "Ficção científica sombria / ação" },
+        { label: "Dado principal", value: "d10 (explode no 10, implode no 1)" },
+        { label: "Jogadores",      value: "3 a 5 + Mestre" },
+      ],
+      sections: [
+        {
+          title: "O que é um RPG de mesa?",
+          body:
+            "Num RPG de mesa, cada jogador controla um personagem e uma pessoa, o Mestre, narra o mundo, interpreta os coadjuvantes e arbitra as regras. Em Cyberpunk RED o grupo é uma equipe de Edgerunners: gente que aceita contratos que ninguém mais quer, de resgates a roubos de dados, e tenta sair vivo e com o pagamento.\n\nNão existe vencedor. A graça está em construir uma história de ação, estilo e consequências — junto com os amigos.",
+          highlight:
+            "\"Em Night City, estilo é tudo — mas é a sua reputação que mantém você vivo.\"",
+        },
+        {
+          title: "O Universo: Night City, 2045",
+          body:
+            "A Quarta Guerra Corporativa deixou cicatrizes: a antiga rede global foi derrubada, e o que restou dela é perigoso e isolado. Night City foi reconstruída entre bairros ricos e blocos de concreto onde a lei quase não chega. As corporações ainda controlam o dinheiro, a segurança e a informação; as gangues controlam as esquinas.\n\nÉ nesse cenário que a Era do Vermelho começa — uma época de recomeço frágil, onde cada comunidade luta para se manter de pé e cada trabalho pode mudar o equilíbrio de poder.",
+        },
+        {
+          title: "Os Papéis",
+          body:
+            "Cada personagem escolhe um papel, que define o que ele faz melhor e lhe dá uma habilidade exclusiva:\n\n• Roqueiro — artista que move multidões\n• Solo — especialista em combate e segurança\n• Netrunner — invasor da NET\n• Técnico — conserta, melhora e inventa\n• Médico — salva vidas nas ruas\n• Mídia — jornalista e formador de opinião\n• Executivo — peça de uma corporação\n• Policial — a lei, para o bem ou para o mal\n• Fixer — o intermediário que arranja de tudo\n• Nômade — família, estrada e veículos",
+        },
+        {
+          title: "Temática: Humanidade e Preço do Chrome",
+          body:
+            "Ciberware dá força, velocidade e vantagens, mas cada implante consome Humanidade. Quanto menor ela fica, menos Empatia o personagem tem; no limite, ele perde o controle e vira um ciberpsicopata. O jogo propõe a pergunta central do gênero: até onde vale trocar o que você é por poder?\n\nOutros temas recorrentes: ganância corporativa, lealdade entre a equipe, liberdade contra controle e o custo de viver no limite.",
+          highlight:
+            "Cada upgrade tem um preço, e ele nunca é só em eurodólares.",
+        },
+        {
+          title: "Como Funciona: Mecânicas",
+          body:
+            "O teste básico soma um Atributo, o nível da Perícia e 1d10, e o total precisa superar uma Dificuldade (DV) definida pelo Mestre. Um 10 natural permite rolar de novo e somar; um 1 natural manda rolar de novo e subtrair.\n\n• Pontos de Vida — calculados a partir de Corpo e Vontade\n• Armadura — reduz o dano por local (cabeça e corpo) e vai se desgastando\n• Ferimentos — abaixo da metade do HP há penalidades; a zero, o personagem tem uma Salvaguarda contra a Morte\n• Ferimentos Críticos — dois seis nos dados de dano abrem uma tabela de lesões graves\n• Humanidade — cai com o ciberware e define a Empatia atual\n• Netrunning — a NET é um mapa de andares com defesas, programas e Black ICE",
+        },
+        {
+          title: "Por que jogar Cyberpunk RED?",
+          body:
+            "O sistema é rápido e letal, com combates tensos em que quem acerta primeiro costuma vencer, e recompensa planejamento, estilo e trabalho em equipe. Ele serve bem tanto para quem curte ação e tiroteios quanto para quem prefere intriga, investigação e drama pessoal.\n\nO RPG Lab cuida das contas — HP, armadura por local, perda de Humanidade, rolagens com d10 que explode e implode — para você se concentrar na história.",
+        },
+      ],
+    },
+  },
 };
 
 /* ─── Page ───────────────────────────────────────────────── */

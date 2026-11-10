@@ -36,6 +36,12 @@ async function main() {
     create: { slug: "starwars", name: "Star Wars: Além da Fronteira", version: "1.0", active: true },
   });
 
+  await prisma.system.upsert({
+    where:  { slug: "cyberpunk" },
+    update: { active: true },
+    create: { slug: "cyberpunk", name: "Cyberpunk RED", version: "RED", active: true },
+  });
+
   console.log("Sistemas inseridos com sucesso.");
 }
 

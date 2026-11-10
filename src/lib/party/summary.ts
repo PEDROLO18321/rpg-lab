@@ -1,5 +1,5 @@
 // ─── Ficha de jogador na visão do mestre (somente leitura) ───────────────────
-// O mestre vê fichas de cinco sistemas na mesma aba. Em vez de renderizar cinco
+// O mestre vê fichas de seis sistemas na mesma aba. Em vez de renderizar seis
 // fichas completas, cada sistema é reduzido aqui a uma forma comum — vitais,
 // atributos, estatísticas, perícias — e a UI é uma só. Nada aqui escreve.
 import { parseJsonField } from "@/lib/characterTransfer";
@@ -19,6 +19,9 @@ import { ORIGIN_BY_ID as T20_ORIGIN } from "@/lib/tormenta/origins";
 import {
   ATTR_LABELS as COC_LABEL, SKILLS as COC_SKILLS, OCCUPATIONS as COC_OCC,
 } from "@/lib/cthulhu/data";
+
+import { STATS as CP_STATS, getRole as cpRole, getSkillDef as cpSkill, skillBaseKey } from "@/lib/cyberpunk/data";
+import { woundState } from "@/lib/cyberpunk/rules";
 
 import {
   ATTR_KEYS as ORD_KEYS, ATTR_LABEL as ORD_LABEL, SKILL_BY_ID as ORD_SKILL,
@@ -307,6 +310,50 @@ function fromStarWars(s: Row): SystemPart {
   };
 }
 
+// ── Cyberpunk RED ────────────────────────────────────────────────────────────
+
+const CP_WOUND = { ok: "Ileso", leve: "Levemente ferido", grave: "Gravemente ferido", mortal: "Mortalmente ferido" } as const;
+
+function fromCyberpunk(s: Row): SystemPart {
+  const attrs: PartyAttr[] = CP_STATS.map((st) => ({ label: st.short, value: Number(s[st.key]) || 0 }));
+
+  // Só o que passa do básico interessa ao mestre: básicas começam em 2 para todos.
+  const levels = parseJsonField<Record<string, number>>(s.skills, {});
+  const skills: PartySkill[] = Object.entries(levels)
+    .flatMap(([key, lvl]) => {
+      const def = cpSkill(key);
+      if (!def || !(lvl > (def.basic ? 2 : 0))) return [];
+      const spec = key.includes(":") ? key.slice(skillBaseKey(key).length + 1) : null;
+      const base = (Number(s[def.stat]) || 0) + lvl;
+      return [{ name: spec ? `${def.name} (${spec})` : def.name, detail: `Nv ${lvl} · base ${base}` }];
+    });
+
+  const armor = parseJsonField<Row>(s.armor, {});
+  const injuries = parseJsonField<Row[]>(s.criticalInjuries, []);
+  const wound = woundState(Number(s.hpCurrent) || 0, Number(s.hpMax) || 0);
+
+  return {
+    subtitle: line(cpRole(s.role)?.name ?? s.role, `Grau ${s.roleRank}`),
+    vitals: [
+      vital("PV", s.hpCurrent, s.hpMax),
+      vital("Humanidade", s.humanity, s.humanityMax),
+    ],
+    attrs,
+    stats: [
+      { label: "PA cabeça", value: String(Number(armor.head?.sp) || 0) },
+      { label: "PA corpo", value: String(Number(armor.body?.sp) || 0) },
+      { label: "Sorte", value: `${s.luckCurrent}/${s.luck}` },
+      { label: "Eurodólares", value: `${s.eurobucks} eb` },
+      { label: "Estado", value: CP_WOUND[wound.state] },
+    ],
+    skills,
+    conditions: Array.isArray(injuries)
+      ? injuries.map((i) => (typeof i?.name === "string" ? i.name : null)).filter((n): n is string => !!n)
+      : [],
+    notes: s.notes ?? null,
+  };
+}
+
 // ── Despacho ─────────────────────────────────────────────────────────────────
 
 interface Builder {
@@ -326,6 +373,7 @@ const BUILDERS: Record<SystemKey, Builder> = {
   cthulhu: { relation: "cthulhuSheet", build: fromCthulhu },
   ordem: { relation: "ordemSheet", build: fromOrdem },
   starwars: { relation: "starWarsSheet", build: fromStarWars },
+  cyberpunk: { relation: "cyberpunkSheet", build: fromCyberpunk },
 };
 
 /** `include` do Character que traz a ficha daquele sistema e o dono. */

@@ -19,7 +19,7 @@ const cinzel = Cinzel({
 export const metadata: Metadata = {
   title: "RPG Lab — Laboratório de Fichas",
   description:
-    "Laboratório digital de fichas de personagem para múltiplos sistemas de RPG. D&D 5e, Call of Cthulhu, Tormenta 20 e muito mais.",
+    "Laboratório digital de fichas de personagem para múltiplos sistemas de RPG. D&D 5e, Call of Cthulhu, Tormenta 20, Cyberpunk RED e muito mais.",
 };
 
 export default function RootLayout({

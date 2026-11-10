@@ -19,7 +19,7 @@ const MARCA = "e2e-party";
 const JOGADOR = { name: "Jogador E2E", email: `jogador.${MARCA}@example.com`, password: SENHA };
 const MESTRE = { name: "Mestre E2E", email: `mestre.${MARCA}@example.com`, password: SENHA };
 
-const SISTEMAS = ["dnd", "tormenta", "cthulhu", "ordem", "starwars"] as const;
+const SISTEMAS = ["dnd", "tormenta", "cthulhu", "ordem", "starwars", "cyberpunk"] as const;
 
 /** Sessão HTTP: guarda os cookies entre as chamadas, como um navegador. */
 class Sessao {
@@ -154,6 +154,18 @@ async function criaFicha(system: SystemKey, userId: string): Promise<string> {
           agi: 3, int: 1, forca: 2, vig: 2, pre: 1, sen: 1,
           pvMax: 30, pvCurrent: 30, peMax: 4, peCurrent: 4, ppMax: 2, ppCurrent: 1,
           skills: { atletismo: "treinado" },
+        },
+      },
+    },
+    cyberpunk: {
+      cyberpunkSheet: {
+        create: {
+          role: "solo", roleRank: 4, creationMethod: "streetrat",
+          int: 5, ref: 8, dex: 7, tech: 3, cool: 6, will: 6, luck: 5, move: 6, body: 7, emp: 4,
+          luckCurrent: 3, hpMax: 45, hpCurrent: 30, humanityMax: 40, humanity: 32,
+          armor: { head: { name: "Capacete", sp: 11, spMax: 11, penalty: 0 }, body: { name: "Colete", sp: 11, spMax: 11, penalty: 0 } },
+          skills: { athletics: 4, perception: 2 },
+          criticalInjuries: [{ id: "c1", key: "brokenRibs", name: "Costelas quebradas", location: "body", effect: "" }],
         },
       },
     },
@@ -304,6 +316,7 @@ describe("4 · a ficha aparece na aba do mestre, legível e completa", () => {
     cthulhu: { vitais: ["PV", "Sanidade"], trechoNoSubtitulo: "Antiquário", pericia: "Avaliação" },
     ordem: { vitais: ["PV", "PE", "Sanidade"], trechoNoSubtitulo: "Ocultista", pericia: "Ocultismo" },
     starwars: { vitais: ["PV", "PE", "PP"], trechoNoSubtitulo: "Cathar", pericia: "Atletismo" },
+    cyberpunk: { vitais: ["PV", "Humanidade"], trechoNoSubtitulo: "Solo", pericia: "Atletismo" },
   };
 
   for (const s of SISTEMAS) {
@@ -326,6 +339,16 @@ describe("4 · a ficha aparece na aba do mestre, legível e completa", () => {
   it("D&D: PV atual, máximo e temporário vêm certos", async () => {
     const { body } = await mestre.json(`/api/campaigns/dnd/${campanhas.dnd}/party`);
     expect(body.party[0].vitals[0]).toEqual({ label: "PV", current: 22, max: 28, temp: 4 });
+  });
+
+  it("Cyberpunk: PA, ferimento crítico e Humanidade chegam ao mestre", async () => {
+    const { body } = await mestre.json(`/api/campaigns/cyberpunk/${campanhas.cyberpunk}/party`);
+    const ficha = body.party[0];
+    expect(ficha.vitals[1]).toEqual({ label: "Humanidade", current: 32, max: 40, temp: 0 });
+    expect(ficha.stats.find((x: any) => x.label === "PA corpo").value).toBe("11");
+    expect(ficha.conditions).toContain("Costelas quebradas");
+    // Percepção é básica e está no nível 2 de todo mundo: não vale mostrar.
+    expect(ficha.skills.map((k: any) => k.name)).not.toContain("Percepção");
   });
 
   it("Ordem: a condição ativa chega ao mestre", async () => {

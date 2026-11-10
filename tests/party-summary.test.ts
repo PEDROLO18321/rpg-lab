@@ -225,7 +225,7 @@ describe("normalizador — casos de borda", () => {
 
 describe("include do Prisma por sistema", () => {
   it("sempre traz o dono da ficha", () => {
-    for (const s of ["dnd", "tormenta", "cthulhu", "ordem", "starwars"] as const) {
+    for (const s of ["dnd", "tormenta", "cthulhu", "ordem", "starwars", "cyberpunk"] as const) {
       expect(partyInclude(s).user).toBeDefined();
     }
   });

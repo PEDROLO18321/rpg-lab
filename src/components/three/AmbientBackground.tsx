@@ -5,7 +5,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PerfTier } from "./usePerformanceTier";
 
-export type ParticleSystem = "dnd" | "tormenta" | "cthulhu" | "ordem" | "starwars" | null;
+export type ParticleSystem = "dnd" | "tormenta" | "cthulhu" | "ordem" | "starwars" | "cyberpunk" | null;
 
 const SYSTEM_PALETTE: Record<NonNullable<ParticleSystem>, string[]> = {
   dnd:      ["#e8b84b", "#c9941f", "#f5d07a"],
@@ -13,6 +13,7 @@ const SYSTEM_PALETTE: Record<NonNullable<ParticleSystem>, string[]> = {
   cthulhu:  ["#7d9c3e", "#4a5828", "#a3b86c"],
   ordem:    ["#ffffff", "#f2f5fb", "#e4eaf6"],
   starwars: ["#e0524c", "#ff6b6b", "#5d9ed6", "#8fc4f5"],
+  cyberpunk: ["#a855f7", "#7c3aed", "#e879f9"],
 };
 
 // Páginas genéricas: partículas multicor (fantasia)

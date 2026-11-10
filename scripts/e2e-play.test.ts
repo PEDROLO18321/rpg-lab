@@ -15,8 +15,8 @@ const BASE = "http://localhost:3100";
 const SENHA = "senha-de-teste-123";
 const MARCA = "e2e-play";
 
-type Sistema = "dnd" | "tormenta" | "cthulhu" | "ordem" | "starwars";
-const SISTEMAS: Sistema[] = ["dnd", "tormenta", "cthulhu", "ordem", "starwars"];
+type Sistema = "dnd" | "tormenta" | "cthulhu" | "ordem" | "starwars" | "cyberpunk";
+const SISTEMAS: Sistema[] = ["dnd", "tormenta", "cthulhu", "ordem", "starwars", "cyberpunk"];
 
 /** A rota usa a chave do sistema; o banco usa o slug, e os dois divergem
  *  (`tormenta` na URL, `tormenta20` no banco). O registro é a fonte. */
@@ -133,6 +133,18 @@ async function criaFicha(sistema: Sistema, userId: string) {
           agi: 3, int: 1, forca: 2, vig: 2, pre: 1, sen: 1,
           pvMax: 30, pvCurrent: 30, peMax: 4, peCurrent: 4, ppMax: 2, ppCurrent: 1,
           skills: { atletismo: "treinado" },
+        },
+      },
+    },
+    cyberpunk: {
+      cyberpunkSheet: {
+        create: {
+          role: "solo", roleRank: 4, creationMethod: "streetrat",
+          int: 5, ref: 8, dex: 7, tech: 3, cool: 6, will: 6, luck: 5, move: 6, body: 7, emp: 4,
+          luckCurrent: 3, hpMax: 45, hpCurrent: 30, humanityMax: 40, humanity: 32,
+          armor: { head: { name: "Capacete", sp: 11, spMax: 11, penalty: 0 }, body: { name: "Colete", sp: 11, spMax: 11, penalty: 0 } },
+          skills: { athletics: 4, perception: 2 },
+          criticalInjuries: [{ id: "c1", key: "brokenRibs", name: "Costelas quebradas", location: "body", effect: "" }],
         },
       },
     },
@@ -268,6 +280,99 @@ describe("o que a área de Jogar altera sobrevive ao recarregar", () => {
   });
 });
 
+describe("cyberpunk: o que a área de Jogar e o modo Editar gravam", () => {
+  it("PV, Humanidade, Sorte, penalidade de morte, ferimentos e armadura sobrevivem ao recarregar", async () => {
+    const id = fichas.cyberpunk!;
+    const armor = { head: { name: "Capacete", sp: 7, spMax: 11, penalty: 0 }, body: { name: "Colete", sp: 9, spMax: 11, penalty: 0 } };
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, {
+      hpCurrent: 0, humanity: -12, luckCurrent: 1, deathSavePenalty: 2,
+      eurobucks: 1234, improvementPoints: 40, armor,
+      criticalInjuries: [{ id: "c2", key: "x", name: "Olho perdido", location: "head", effect: "" }],
+      skills: { athletics: 6, "language:streetslang": 4 },
+    })).toBe(200);
+
+    const s = await prisma.cyberpunkSheet.findUnique({ where: { id } });
+    expect(s).toMatchObject({
+      hpCurrent: 0, humanity: -12, luckCurrent: 1, deathSavePenalty: 2,
+      eurobucks: 1234, improvementPoints: 40,
+    });
+    expect(s!.armor).toEqual(armor);
+    expect(s!.skills).toEqual({ athletics: 6, "language:streetslang": 4 });
+    expect((s!.criticalInjuries as { name: string }[])[0].name).toBe("Olho perdido");
+  });
+
+  it("nome e atributos editados são gravados e a página renderiza com o nome novo", async () => {
+    const id = fichas.cyberpunk!;
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, {
+      name: `Editado ${MARCA}`, role: "netrunner", roleRank: 6, body: 9, will: 8,
+    })).toBe(200);
+    const s = await prisma.cyberpunkSheet.findUnique({
+      where: { id }, include: { character: { select: { name: true } } },
+    });
+    expect(s!.character.name).toBe(`Editado ${MARCA}`);
+    expect(s).toMatchObject({ role: "netrunner", roleRank: 6, body: 9, will: 8 });
+
+    const res = await jogador.fetch(`/dashboard/cyberpunk/${id}`);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain(`Editado ${MARCA}`);
+  });
+
+  it("a criação recalcula HP e Humanidade pelas fórmulas, ignorando o corpo", async () => {
+    const res = await jogador.fetch("/api/cyberpunk/characters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `Novo ${MARCA}`, role: "tech", body: 6, will: 5, emp: 7,
+        hpMax: 9999, humanityMax: 9999, humanity: 9999,
+        cyberware: [{ id: "i1", key: "x", name: "Implante", category: "x", humanityLoss: 7, cost: 100, notes: "" }],
+      }),
+    });
+    expect(res.status).toBe(201);
+    const { id } = await res.json();
+    const s = await prisma.cyberpunkSheet.findUnique({ where: { id } });
+    // 10 + 5 x ceil((6+5)/2) = 40; Humanidade = EMP 7 x 10 menos HL 7.
+    expect(s).toMatchObject({ hpMax: 40, hpCurrent: 40, humanityMax: 70, humanity: 63, role: "tech" });
+  });
+
+  it("o pacote completo que gasta pontos demais é recusado com 400", async () => {
+    const res = await jogador.fetch("/api/cyberpunk/characters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `Pacote ${MARCA}`, creationMethod: "complete",
+        int: 8, ref: 8, dex: 8, tech: 8, cool: 8, will: 8, luck: 8, move: 8, body: 8, emp: 8,
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("export e import fecham o ciclo; importar atributo absurdo é recusado", async () => {
+    const exp = await jogador.fetch(`/api/cyberpunk/characters/${fichas.cyberpunk}/export`);
+    expect(exp.status).toBe(200);
+    const envelope = await exp.json();
+    expect(envelope.format).toBe("rpglab.cyberpunk.v1");
+
+    const post = (payload: unknown) => jogador.fetch("/api/cyberpunk/characters/import", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload }),
+    });
+    expect((await post(envelope)).status).toBe(201);
+    const ruim = { ...envelope, sheet: { ...envelope.sheet, body: 9999 } };
+    expect((await post(ruim)).status).toBe(400);
+  });
+
+  it("duplicar copia a ficha, e a de outro dono responde como inexistente", async () => {
+    const ok = await jogador.fetch(`/api/cyberpunk/characters/${fichas.cyberpunk}/duplicate`, { method: "POST" });
+    expect(ok.status).toBe(200);
+    const { id } = await ok.json();
+    const copia = await prisma.cyberpunkSheet.findUnique({ where: { id } });
+    expect(copia!.role).toBe("netrunner");
+
+    const alheia = await estranho.fetch(`/api/cyberpunk/characters/${fichas.cyberpunk}/export`);
+    const inexistente = await estranho.fetch("/api/cyberpunk/characters/clw000000000000000000000/export");
+    expect(alheia.status).toBe(inexistente.status);
+  });
+});
+
 describe("cthulhu: o modo Editar grava campo a campo depois do rename editMode→mode", () => {
   it("salva identidade, atributos, máximos, perícias, armas, equipamento e antecedentes", async () => {
     const id = fichas.cthulhu!;
@@ -328,6 +433,28 @@ describe("o PATCH recusa o que está fora da faixa", () => {
   it("cthulhu: atributo 9999 é recusado — são percentuais", async () => {
     const st = await jogador.patch(`/api/cthulhu/characters/${fichas.cthulhu}`, { atribFor: 9999 });
     expect(st).toBe(400);
+  });
+
+  it("cyberpunk: atributo 9999 e valores fora da faixa são recusados", async () => {
+    const id = fichas.cyberpunk;
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { body: 9999 })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { humanity: -101 })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { hpCurrent: -1 })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { reputation: 11 })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { skills: { athletics: 11 } })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { skills: { inventada: 3 } })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { role: "bardo" })).toBe(400);
+    expect(await jogador.patch(`/api/cyberpunk/characters/${id}`, { weapons: "abc" })).toBe(400);
+  });
+
+  it("cyberpunk: campo Json acima do teto devolve 400, não 500", async () => {
+    const enorme = Array.from({ length: 40_000 }, (_, i) => ({ id: `item-${i}` }));
+    expect(await jogador.patch(`/api/cyberpunk/characters/${fichas.cyberpunk}`, { gear: enorme })).toBe(400);
+  });
+
+  it("cyberpunk: ficha de outro dono dá 403 no PATCH e id inexistente dá 404", async () => {
+    expect(await estranho.patch(`/api/cyberpunk/characters/${fichas.cyberpunk}`, { eurobucks: 1 })).toBe(403);
+    expect(await estranho.patch("/api/cyberpunk/characters/clw000000000000000000000", { eurobucks: 1 })).toBe(404);
   });
 
   it("tormenta: retrato gigante é recusado, não gravado", async () => {

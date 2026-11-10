@@ -7,7 +7,7 @@
 // não funciona. Então este objeto é a fonte de verdade, e o PlayShell projeta
 // os mesmos valores como custom properties para o CSS inline consumir.
 
-export type PlaySystem = "dnd" | "tormenta" | "ordem" | "starwars" | "cthulhu";
+export type PlaySystem = "dnd" | "tormenta" | "ordem" | "starwars" | "cthulhu" | "cyberpunk";
 
 export interface PlayTheme {
   /** Cor principal: bordas ativas, botões de ação. */
@@ -77,5 +77,16 @@ export const PLAY_THEME: Record<PlaySystem, PlayTheme> = {
     glow: "rgba(125,156,62,0.25)",
     dieEmissive: "#1a2010",
     temp: "#4fc3f7",
+  },
+  // Roxo neon de Night City. A variante clara (#c084fc) é a que carrega texto
+  // sobre fundo escuro; o #a855f7 puro fica para borda e botão.
+  cyberpunk: {
+    accent: "#a855f7",
+    accentLight: "#c084fc",
+    accentDim: "rgba(168,85,247,0.14)",
+    accentBorder: "rgba(168,85,247,0.34)",
+    glow: "rgba(168,85,247,0.28)",
+    dieEmissive: "#1e1033",
+    temp: "#e879f9",
   },
 };

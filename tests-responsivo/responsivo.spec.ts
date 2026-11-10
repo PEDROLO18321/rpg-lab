@@ -33,6 +33,10 @@ const PRIVADAS = [
   { nome: "ficha-ordem", url: "/dashboard/ordem/:ordem" },
   { nome: "ficha-cthulhu", url: "/dashboard/cthulhu/:cthulhu" },
   { nome: "ficha-starwars", url: "/dashboard/starwars/:starwars" },
+  { nome: "lista-cyberpunk", url: "/dashboard/cyberpunk/jogador" },
+  { nome: "ficha-cyberpunk", url: "/dashboard/cyberpunk/:cyberpunk" },
+  { nome: "mestre-cyberpunk", url: "/dashboard/cyberpunk/mestre" },
+  { nome: "criar-cyberpunk", url: "/dashboard/cyberpunk/new" },
   { nome: "mestre-dnd", url: "/dashboard/dnd/mestre" },
   { nome: "mestre-ordem", url: "/dashboard/ordem/mestre" },
   { nome: "criar-dnd", url: "/dashboard/dnd/new" },
@@ -158,6 +162,26 @@ for (const L of LARGURAS.filter((l) => l.largura <= 768)) {
 
     test("lista de personagens: todo alvo tem ao menos 24×24", async ({ page }) => {
       await page.goto("/dashboard/dnd/jogador");
+      await page.waitForLoadState("networkidle");
+      const pequenos = await alvosPequenos(page);
+      expect(
+        pequenos,
+        `alvos abaixo de ${TOQUE_MIN}px:\n${pequenos.map((p) => `  <${p.tag}> ${p.w}×${p.h} — "${p.rotulo}"`).join("\n")}`,
+      ).toEqual([]);
+    });
+
+    test("lista de Cyberpunk: todo alvo tem ao menos 24×24", async ({ page }) => {
+      await page.goto("/dashboard/cyberpunk/jogador");
+      await page.waitForLoadState("networkidle");
+      const pequenos = await alvosPequenos(page);
+      expect(
+        pequenos,
+        `alvos abaixo de ${TOQUE_MIN}px:\n${pequenos.map((p) => `  <${p.tag}> ${p.w}×${p.h} — "${p.rotulo}"`).join("\n")}`,
+      ).toEqual([]);
+    });
+
+    test("ficha de Cyberpunk: todo alvo tem ao menos 24×24", async ({ page }) => {
+      await page.goto(`/dashboard/cyberpunk/${ids.cyberpunk}`);
       await page.waitForLoadState("networkidle");
       const pequenos = await alvosPequenos(page);
       expect(

@@ -1,0 +1,118 @@
+"use client";
+
+import { useState } from "react";
+import type { CyberpunkApi } from "@/lib/cyberpunk/useCyberpunkCampaign";
+import type { CyberpunkStory, CyberpunkGameSession } from "@/lib/cyberpunk/cyberpunkCampaignClient";
+import { CP } from "../../../ui";
+import { Field } from "@/components/ui/Field";
+import "../../../cyberpunk-responsive.css";
+
+const ACCENT = CP.accent;
+const ACCENT_LIGHT = CP.accentLight;
+const ACCENT_DIM = CP.accentDim;
+const ACCENT_BORD = CP.accentBord;
+
+const EMPTY_STORY: CyberpunkStory = { objective: "", purpose: "", generalHistory: "", currentArc: "", mainVillain: "" };
+
+const labelStyle: React.CSSProperties = { fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4, display: "block" };
+const areaStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", lineHeight: 1.6, resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" };
+const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius)", color: "var(--text)", fontSize: "0.86rem", boxSizing: "border-box", fontFamily: "inherit" };
+
+export function CampaignStory({ api }: { api: CyberpunkApi }) {
+  const story = api.campaign.story ?? EMPTY_STORY;
+  const sessions = api.campaign.sessions;
+  const [draft, setDraft] = useState<CyberpunkStory>(story);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const setField = (p: Partial<CyberpunkStory>) => setDraft((d) => ({ ...d, ...p }));
+  const commit = (p: Partial<CyberpunkStory>) => api.patch({ story: p });
+
+  async function addSession() {
+    const number = sessions.length + 1;
+    const s = await api.addChild<CyberpunkGameSession>("sessions", { number, name: `Sessão ${number}` });
+    setExpandedId(s.id);
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <section style={{ background: CP.panel, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xl)", padding: "24px 28px", boxShadow: `0 0 24px ${CP.glow}, inset 0 1px 0 rgba(255,255,255,0.03)` }}>
+        <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: ACCENT_LIGHT }}>📖</span> História da Campanha
+        </h2>
+        <div className="cp-story-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div>
+            <Field label="Objetivo Principal" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.objective} onChange={(e) => setField({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que o grupo deve alcançar?" /></Field>
+          </div>
+          <div>
+            <Field label="Propósito / Tema" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 72 }} value={draft.purpose} onChange={(e) => setField({ purpose: e.target.value })} onBlur={(e) => commit({ purpose: e.target.value })} placeholder="Sobrevivência, vingança, ambição, lealdade..." /></Field>
+          </div>
+          <div>
+            <Field label="Vilão / Ameaça Principal" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.mainVillain} onChange={(e) => setField({ mainVillain: e.target.value })} onBlur={(e) => commit({ mainVillain: e.target.value })} placeholder="Quem ou o que ameaça? Objetivos, recursos..." /></Field>
+          </div>
+          <div>
+            <Field label="Arco Atual" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={draft.currentArc} onChange={(e) => setField({ currentArc: e.target.value })} onBlur={(e) => commit({ currentArc: e.target.value })} placeholder="O que está acontecendo agora?" /></Field>
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <Field label="História Geral / Lore" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 120 }} value={draft.generalHistory} onChange={(e) => setField({ generalHistory: e.target.value })} onBlur={(e) => commit({ generalHistory: e.target.value })} placeholder="Contexto de Night City, eventos passados, corporações, gangues, segredos..." /></Field>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontFamily: "var(--font-cinzel), serif", fontSize: "1rem", fontWeight: 700, color: "var(--text)", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ color: ACCENT_LIGHT }}>🗓</span> Sessões
+            {sessions.length > 0 && <span style={{ fontSize: "0.72rem", fontWeight: 700, color: ACCENT_LIGHT, background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, borderRadius: "var(--radius-xs)", padding: "2px 8px" }}>{sessions.length}</span>}
+          </h2>
+          <button onClick={addSession} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", background: `linear-gradient(135deg, ${ACCENT_LIGHT} 0%, ${ACCENT} 100%)`, color: "#06090f", border: "none", borderRadius: "var(--radius)", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer" }}>+ Nova Sessão</button>
+        </div>
+
+        {sessions.length === 0 ? (
+          <div style={{ padding: "48px 24px", textAlign: "center", background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: "var(--radius-xl)" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Nenhuma sessão ainda. Clique em <strong>+ Nova Sessão</strong>.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {sessions.map((s) => {
+              const isOpen = expandedId === s.id;
+              return (
+                <div key={s.id} style={{ background: CP.panel, border: `1px solid ${isOpen ? ACCENT_BORD : CP.panelBorder}`, borderRadius: "var(--radius-xl)", overflow: "hidden", transition: "border-color 0.2s" }}>
+                  <button onClick={() => setExpandedId(isOpen ? null : s.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+                    <span style={{ width: 32, height: 32, borderRadius: "var(--radius)", background: ACCENT_DIM, border: `1px solid ${ACCENT_BORD}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-cinzel), serif", fontSize: "0.72rem", fontWeight: 900, color: ACCENT_LIGHT, flexShrink: 0 }}>{s.number}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name || `Sessão ${s.number}`}</p>
+                      {s.objective && <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.objective}</p>}
+                    </div>
+                    {s.sessionDate && <span style={{ fontSize: "0.72rem", color: "var(--text-subtle)", flexShrink: 0 }}>{s.sessionDate}</span>}
+                    <span style={{ color: "var(--text-subtle)", fontSize: "0.82rem", flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.22s" }}>▾</span>
+                  </button>
+                  {isOpen && <SessionEditor api={api} session={s} />}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function SessionEditor({ api, session }: { api: CyberpunkApi; session: CyberpunkGameSession }) {
+  const [s, setS] = useState(session);
+  const set = (p: Partial<CyberpunkGameSession>) => setS((c) => ({ ...c, ...p }));
+  const commit = (p: Partial<CyberpunkGameSession>) => api.editChild("sessions", session.id, p);
+  return (
+    <div style={{ padding: "0 20px 20px", borderTop: "1px solid var(--border)", paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="cp-session-editor-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div><Field label="Nome da Sessão" style={labelStyle}><input style={inputStyle} value={s.name} onChange={(e) => set({ name: e.target.value })} onBlur={(e) => commit({ name: e.target.value })} /></Field></div>
+        <div><Field label="Data da Sessão" style={labelStyle}><input type="date" style={inputStyle} value={s.sessionDate} onChange={(e) => set({ sessionDate: e.target.value })} onBlur={(e) => commit({ sessionDate: e.target.value })} /></Field></div>
+      </div>
+      <div><Field label="Objetivo da Sessão" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 60 }} value={s.objective} onChange={(e) => set({ objective: e.target.value })} onBlur={(e) => commit({ objective: e.target.value })} placeholder="O que os jogadores devem alcançar?" /></Field></div>
+      <div><Field label="Roteiro / O que vai acontecer" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 90 }} value={s.events} onChange={(e) => set({ events: e.target.value })} onBlur={(e) => commit({ events: e.target.value })} placeholder="Encontros, NPCs, locais, eventos planejados..." /></Field></div>
+      <div><Field label="Resumo (após a sessão)" style={labelStyle}><textarea style={{ ...areaStyle, minHeight: 80 }} value={s.summary} onChange={(e) => set({ summary: e.target.value })} onBlur={(e) => commit({ summary: e.target.value })} placeholder="O que aconteceu? Decisões importantes..." /></Field></div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button onClick={() => api.removeChild("sessions", session.id)} style={{ padding: "7px 16px", background: "rgba(220,60,60,0.1)", border: "1px solid rgba(220,60,60,0.3)", borderRadius: "var(--radius)", color: "#e06c6c", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>Excluir Sessão</button>
+      </div>
+    </div>
+  );
+}

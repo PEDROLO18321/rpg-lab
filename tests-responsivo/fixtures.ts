@@ -17,8 +17,8 @@ const MARCA = "pw-responsivo";
 const EMAIL = `${MARCA}@example.com`;
 const ARQUIVO = "tests-responsivo/.ids.json";
 
-type Sistema = "dnd" | "tormenta" | "cthulhu" | "ordem" | "starwars";
-const SISTEMAS: Sistema[] = ["dnd", "tormenta", "cthulhu", "ordem", "starwars"];
+type Sistema = "dnd" | "tormenta" | "cthulhu" | "ordem" | "starwars" | "cyberpunk";
+const SISTEMAS: Sistema[] = ["dnd", "tormenta", "cthulhu", "ordem", "starwars", "cyberpunk"];
 
 async function systemId(slug: string) {
   const s = await prisma.system.findUnique({ where: { slug }, select: { id: true } });
@@ -85,6 +85,34 @@ async function criaFicha(sistema: Sistema, userId: string) {
           agi: 3, int: 1, forca: 2, vig: 2, pre: 1, sen: 1,
           pvMax: 30, pvCurrent: 30, peMax: 4, peCurrent: 4, ppMax: 2, ppCurrent: 1,
           skills: { atletismo: "treinado" },
+        },
+      },
+    },
+    // Netrunner com armas, armadura e ciberware preenchidos: é o caso que mais
+    // empilha conteúdo (aba Netrunning, listas de itens, nomes longos).
+    cyberpunk: {
+      cyberpunkSheet: {
+        create: {
+          role: "netrunner", roleRank: 4, creationMethod: "streetrat",
+          int: 7, ref: 6, dex: 6, tech: 7, cool: 6, will: 5, luck: 7, move: 6, body: 5, emp: 6,
+          luckCurrent: 5, hpMax: 40, hpCurrent: 28, humanityMax: 60, humanity: 47,
+          eurobucks: 1200,
+          skills: { perception: 4, handgun: 6, cryptography: 6, librarySearch: 6, "language:streetslang": 2 },
+          armor: {
+            head: { name: "Armadura Leve", sp: 11, spMax: 11, penalty: 0 },
+            body: { name: "Armadura Leve", sp: 9, spMax: 11, penalty: 0 },
+          },
+          weapons: [
+            { id: "w1", name: "Pistola Muito Pesada", skill: "handgun", damage: "4d6", rof: 1, mag: 8, ammo: 6, hands: 1, concealable: false, quality: "standard", notes: "" },
+          ],
+          cyberware: [
+            { id: "c1", key: "neuralLink", name: "Neural Link", category: "neuralware", humanityLoss: 7, cost: 500, notes: "" },
+            { id: "c2", key: "interfacePlugs", name: "Plugues de Interface", category: "neuralware", humanityLoss: 7, cost: 500, notes: "" },
+          ],
+          gear: [{ id: "g1", name: "Ciberdeck", qty: 1, cost: 500, notes: "" }],
+          criticalInjuries: [],
+          lifepath: { origin: "Norte-americana", personality: "Teimoso", goal: "Sobreviver" },
+          background: {},
         },
       },
     },

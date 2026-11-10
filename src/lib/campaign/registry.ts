@@ -1,10 +1,10 @@
 // ─── Registro de campanhas por sistema ───────────────────────────────────────
 // A *mecânica* da área do Mestre (listar, criar, editar, sub-recursos) é a mesma
-// nos cinco sistemas; o que muda é a configuração: nomes de relação no Prisma,
+// nos seis sistemas; o que muda é a configuração: nomes de relação no Prisma,
 // quais sub-recursos existem e quais campos cada um aceita. Essa variação é
 // dado, não código — fica toda aqui, e as rotas/cliente são genéricos.
 
-export type SystemKey = "dnd" | "tormenta" | "ordem" | "cthulhu" | "starwars";
+export type SystemKey = "dnd" | "tormenta" | "ordem" | "cthulhu" | "starwars" | "cyberpunk";
 
 export interface ResourceConfig {
   /** Delegate do PrismaClient, ex.: prisma.dndNpc. */
@@ -189,6 +189,35 @@ export const CAMPAIGNS: Record<SystemKey, CampaignConfig> = {
       },
       clues: { delegate: "starWarsClue", relation: "starWarsClues", orderBy: BY_CREATED, fields: CLUE_FIELDS },
       clocks: { delegate: "starWarsClock", relation: "starWarsClocks", orderBy: BY_CREATED, fields: CLOCK_FIELDS },
+    },
+  },
+
+  cyberpunk: {
+    slug: "cyberpunk",
+    label: "Cyberpunk RED",
+    storyRelation: "cyberpunkStory",
+    storyFields: ["objective", "purpose", "generalHistory", "currentArc", "mainVillain"],
+    counts: ["npcs", "combatants", "sessions"],
+    resources: {
+      npcs: {
+        delegate: "cyberpunkNpc", relation: "cyberpunkNpcs", orderBy: BY_CREATED,
+        fields: ["name", "role", "threat", "trait", "appearance", "notes",
+          "hp", "hpMax", "spHead", "spBody",
+          "int", "ref", "dex", "tech", "cool", "will", "luck", "move", "body", "emp",
+          "skills", "weapons", "cyberware"],
+      },
+      combatants: {
+        delegate: "cyberpunkCombatant", relation: "cyberpunkCombatants", orderBy: BY_ORDER,
+        fields: ["characterId", "name", "initiative", "hp", "maxHp", "spHead", "spBody",
+          "conditions", "isPlayer", "order", "deathSavePenalty"],
+      },
+      sessions: { delegate: "cyberpunkGameSession", relation: "cyberpunkSessions", orderBy: BY_NUMBER, fields: SESSION_FIELDS },
+      items: {
+        delegate: "cyberpunkCampaignItem", relation: "cyberpunkItems",
+        fields: ["name", "description", "type", "rarity", "sessionId"],
+      },
+      clues: { delegate: "cyberpunkClue", relation: "cyberpunkClues", orderBy: BY_CREATED, fields: CLUE_FIELDS },
+      clocks: { delegate: "cyberpunkClock", relation: "cyberpunkClocks", orderBy: BY_CREATED, fields: CLOCK_FIELDS },
     },
   },
 };

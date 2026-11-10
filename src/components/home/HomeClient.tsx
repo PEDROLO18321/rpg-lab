@@ -10,6 +10,7 @@ import dndImg      from "@/assets/systems/D&D.webp";
 import cthulhuImg  from "@/assets/systems/CallofCthulhu.webp";
 import ordemImg    from "@/assets/systems/OrdemParanormal.webp";
 import tormentaImg from "@/assets/systems/Tormenta.webp";
+import cyberpunkImg from "@/assets/systems/Cyberpunk.webp";
 
 // Fora do componente: a aleatoriedade roda em handlers de evento, não no
 // render — mantém o componente puro para o React Compiler.
@@ -72,7 +73,7 @@ const FEATURES = [
   { title:"Compartilhamento",       desc:"Gere um link único para sua ficha e compartilhe com o mestre ou grupo na hora."                               },
   { title:"Salvo na Nuvem",         desc:"Seus dados sincronizados e seguros. Acesse de qualquer dispositivo sem perder nada."                          },
   { title:"Modo de Jogo",           desc:"Fichas interativas com rolagem de dados, controle de recursos e rastreamento de status em tempo real."         },
-  { title:"Multi-sistema",          desc:"D&D 5e, Call of Cthulhu, Ordem Paranormal e Tormenta 20 — todos disponíveis agora."                     },
+  { title:"Multi-sistema",          desc:"D&D 5e, Call of Cthulhu, Ordem Paranormal, Tormenta 20 e Cyberpunk RED — todos disponíveis agora."                     },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -285,7 +286,7 @@ function PublicContent({ classText, classVisible }: { classText: string; classVi
   return (
     <>
       <div className="anim-fade-up" style={{ animationDelay:"0.05s", display:"inline-flex", alignItems:"center", gap:8, padding:"6px 16px", background:"var(--accent-dim)", border:"1px solid var(--border-accent)", borderRadius:"var(--radius-full)", alignSelf:"flex-start", marginBottom:28 }}>
-        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>4 sistemas de RPG · D&amp;D · Cthulhu · Ordem · Tormenta</span>
+        <span style={{ fontSize:"0.72rem", fontWeight:700, color:"var(--accent-light)", letterSpacing:"0.06em" }}>5 sistemas de RPG · D&amp;D · Cthulhu · Ordem · Tormenta · Cyberpunk</span>
       </div>
 
       <h1 className="anim-fade-up" style={{ animationDelay:"0.12s", fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(2.4rem,4.8vw,4rem)", fontWeight:700, lineHeight:1.08, letterSpacing:"-0.01em", color:"var(--text)", marginBottom:20 }}>
@@ -408,6 +409,7 @@ const SHOWCASE_SYSTEMS = [
   { id:"cthulhu",  name:"Call of Cthulhu",   label:"CoC 7ª Ed.",        image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"ordem",    name:"Ordem Paranormal",   label:"OP RPG",            image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
   { id:"tormenta", name:"Tormenta 20",        label:"T20",               image:tormentaImg, color:"#a01818", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
+  { id:"cyberpunk", name:"Cyberpunk RED",     label:"Night City 2045",   image:cyberpunkImg, color:"#a855f7", dot:"#4ade80", statusLabel:"Disponível",         available:true  },
 ];
 
 function SystemsShowcase() {
@@ -529,6 +531,7 @@ const STRIP_SYSTEMS = [
   { id:"cthulhu",  name:"Call of Cthulhu",  image:cthulhuImg,  color:"#6b7a3a", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"ordem",    name:"Ordem Paranormal", image:ordemImg,    color:"#b0b8c8", dot:"#4ade80", statusLabel:"Disponível"         },
   { id:"tormenta", name:"Tormenta 20",      image:tormentaImg, color:"#a01818", dot:"#4ade80", statusLabel:"Disponível"         },
+  { id:"cyberpunk", name:"Cyberpunk RED",    image:cyberpunkImg, color:"#a855f7", dot:"#4ade80", statusLabel:"Disponível"         },
 ];
 
 function StatsStrip() {
@@ -618,6 +621,7 @@ function SystemsSection() {
     { id:"cthulhu",  name:"Call of Cthulhu",     status:"Disponível", statusColor:"#4ade80" },
     { id:"ordem",    name:"Ordem Paranormal",    status:"Disponível", statusColor:"#4ade80" },
     { id:"tormenta", name:"Tormenta 20",         status:"Disponível", statusColor:"#4ade80" },
+    { id:"cyberpunk", name:"Cyberpunk RED",      status:"Disponível", statusColor:"#4ade80" },
   ];
   return (
     <section id="systems" style={{ padding:"48px 28px 20px" }}>
@@ -626,7 +630,7 @@ function SystemsSection() {
           <p className="section-label" style={{ marginBottom:12 }}>Sistemas</p>
           <h2 style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"clamp(1.5rem,2.8vw,2.2rem)", fontWeight:700, color:"var(--text)" }}>Multi-sistema</h2>
           <p style={{ fontSize:"0.9rem", color:"var(--text-muted)", marginTop:12, maxWidth:440, margin:"12px auto 0" }}>
-            4 sistemas prontos pra jogar. Clique em qualquer um pra conhecer o universo e as mecânicas.
+            5 sistemas prontos pra jogar. Clique em qualquer um pra conhecer o universo e as mecânicas.
           </p>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(190px, 1fr))", gap:16 }}>
@@ -652,7 +656,7 @@ function SystemsSection() {
 
 const HOW_IT_WORKS = [
   { num:"01", icon:"🧙", title:"Crie sua conta",   desc:"Cadastro gratuito em segundos. Sem cartão de crédito." },
-  { num:"02", icon:"📖", title:"Escolha o sistema", desc:"4 sistemas disponíveis — D&D, Cthulhu, Ordem ou Tormenta." },
+  { num:"02", icon:"📖", title:"Escolha o sistema", desc:"5 sistemas disponíveis — D&D, Cthulhu, Ordem, Tormenta ou Cyberpunk." },
   { num:"03", icon:"📋", title:"Monte sua ficha",   desc:"Preencha os dados do personagem. As mecânicas são calculadas sozinhas." },
   { num:"04", icon:"🔗", title:"Jogue e compartilhe", desc:"Role dados, acompanhe recursos e compartilhe a ficha com seu grupo." },
 ];
@@ -977,7 +981,7 @@ function SiteFooter({ isAuthed }: { isAuthed: boolean }) {
     <footer style={{ borderTop:"1px solid var(--border)", padding:"36px 28px" }}>
       <div style={{ maxWidth:1160, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16 }}>
         <span style={{ fontFamily:"var(--font-cinzel), serif", fontSize:"0.82rem", fontWeight:700, color:"var(--text-muted)", letterSpacing:"0.06em" }}>RPG Lab</span>
-        <p style={{ fontSize:"0.74rem", color:"var(--text-subtle)" }}>Laboratório de fichas de RPG · D&amp;D 5e · Call of Cthulhu · {new Date().getFullYear()}</p>
+        <p style={{ fontSize:"0.74rem", color:"var(--text-subtle)" }}>Laboratório de fichas de RPG · D&amp;D 5e · Call of Cthulhu · Cyberpunk RED · {new Date().getFullYear()}</p>
         {!isAuthed && (
           <div style={{ display:"flex", gap:20 }}>
             <Link href="/login"    style={{ fontSize:"0.76rem", color:"var(--text-subtle)", textDecoration:"none" }}>Entrar</Link>

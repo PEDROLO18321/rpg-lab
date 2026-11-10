@@ -10,6 +10,7 @@ import tormentaImg      from "@/assets/systems/Tormenta.webp";
 import cthulhuImg       from "@/assets/systems/CallofCthulhu.webp";
 import ordemImg         from "@/assets/systems/OrdemParanormal.webp";
 import starWarsImg      from "@/assets/systems/StarWars.webp";
+import cyberpunkImg     from "@/assets/systems/Cyberpunk.webp";
 
 const SYSTEMS = [
   {
@@ -84,6 +85,21 @@ const SYSTEMS = [
     accentColor: "#3b82c4",
     accentGlow: "rgba(59,130,196,0.2)",
     borderAccent: "rgba(59,130,196,0.38)",
+    badgeCls: "badge badge-available",
+    badgeLabel: "Disponível",
+  },
+  {
+    id: "cyberpunk",
+    name: "Cyberpunk RED",
+    edition: "Night City, 2045",
+    description:
+      "Edgerunners vivendo no limite em Night City. Ciberware que custa Humanidade, netrunning, tiroteios letais e a Era do Vermelho.",
+    image: cyberpunkImg,
+    status: "available" as const,
+    href: "/dashboard/cyberpunk",
+    accentColor: "#a855f7",
+    accentGlow: "rgba(168,85,247,0.22)",
+    borderAccent: "rgba(168,85,247,0.4)",
     badgeCls: "badge badge-available",
     badgeLabel: "Disponível",
   },

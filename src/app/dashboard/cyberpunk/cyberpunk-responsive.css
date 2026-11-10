@@ -1,0 +1,21 @@
+/* Cyberpunk RED — responsivo mobile.
+   Estilo inline fixo no app: as classes abaixo levam !important só para vencer
+   o inline em telas pequenas. Nada afeta o desktop. Mesmo arranjo dos outros
+   sistemas: uma folha por sistema, importada pelos componentes que a usam. */
+
+@media (max-width: 640px) {
+  /* CharacterWizard — cabeçalho fixo */
+  .cp-wizard-header-inner { height: auto !important; flex-wrap: wrap !important; padding: 10px 14px !important; row-gap: 6px !important; }
+  .cp-wizard-header-title { order: 3; width: 100%; text-align: center; font-size: 0.7rem !important; }
+  .cp-wizard-footer { padding: 12px 14px !important; }
+
+  /* Mestre — formulários e grades */
+  .cp-story-grid { grid-template-columns: 1fr !important; }
+  .cp-session-editor-grid { grid-template-columns: 1fr !important; }
+  .cp-clue-grid { grid-template-columns: 1fr !important; }
+  .cp-item-form-grid { grid-template-columns: 1fr !important; }
+  .cp-init-add-grid { grid-template-columns: 1fr 1fr !important; }
+  .cp-npc-form-row { grid-template-columns: 1fr !important; }
+  .cp-npc-attr-grid { grid-template-columns: repeat(5, 1fr) !important; }
+  .cp-bestiary-grid { grid-template-columns: repeat(5, 1fr) !important; }
+}

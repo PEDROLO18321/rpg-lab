@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getSystemId } from "@/lib/campaign/ownership";
 
-export type SystemSlug = "dnd" | "tormenta20" | "ordem" | "cthulhu" | "starwars";
+export type SystemSlug = "dnd" | "tormenta20" | "ordem" | "cthulhu" | "starwars" | "cyberpunk";
 
 export type AuthedContext =
   | { ok: true; userId: string; systemId: string }

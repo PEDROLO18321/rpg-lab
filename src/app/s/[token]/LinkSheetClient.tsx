@@ -21,6 +21,7 @@ const MASTER_HOME: Record<string, string> = {
   cthulhu: "/dashboard/cthulhu/mestre",
   ordem: "/dashboard/ordem/mestre",
   starwars: "/dashboard/starwars/mestre",
+  cyberpunk: "/dashboard/cyberpunk/mestre",
 };
 
 /** Rota da campanha aberta, que difere de nome entre os sistemas. */
@@ -30,6 +31,7 @@ const CAMPAIGN_PATH: Record<string, string> = {
   cthulhu: "/dashboard/cthulhu/mestre/cenario",
   ordem: "/dashboard/ordem/mestre/operacao",
   starwars: "/dashboard/starwars/mestre/campanha",
+  cyberpunk: "/dashboard/cyberpunk/mestre/campanha",
 };
 
 const card: React.CSSProperties = {

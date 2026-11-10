@@ -104,6 +104,7 @@ model Character {
   cthulhuSheet       CthulhuSheet?
   ordemSheet         OrdemSheet?
   starWarsSheet      StarWarsSheet?
+  cyberpunkSheet     CyberpunkSheet?
   campaignCharacters CampaignCharacter[]
 
   // A listagem de personagens filtra por dono e ordena por atualização; este
@@ -414,6 +415,54 @@ model StarWarsSheet {
   notes        String?
 }
 
+// ─── CYBERPUNK RED ───────────────────────────────────────────────────────────
+// Listas (perícias, armas, cyberware...) ficam em Json, como Cthulhu/Ordem/Star Wars:
+// evolui rápido, mas não é consultável por SQL.
+
+model CyberpunkSheet {
+  id        String    @id
+  character Character @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  role           String @default("solo") // rockerboy|solo|netrunner|tech|medtech|media|exec|lawman|fixer|nomad
+  roleRank       Int    @default(4) // 1..10
+  creationMethod String @default("streetrat") // streetrat|edgerunner|complete
+
+  // 10 STATs (2–8 na criação)
+  int  Int @default(5)
+  ref  Int @default(5)
+  dex  Int @default(5)
+  tech Int @default(5)
+  cool Int @default(5)
+  will Int @default(5)
+  luck Int @default(5)
+  move Int @default(5)
+  body Int @default(5)
+  emp  Int @default(5)
+
+  luckCurrent Int @default(5) // Sorte gasta na sessão; recarrega ao fim dela
+
+  // Derivados (guardados porque o jogador ajusta manualmente em jogo)
+  hpMax            Int @default(35) // 10 + 5 × ceil((BODY + WILL) / 2)
+  hpCurrent        Int @default(35)
+  humanityMax      Int @default(50) // EMP × 10 menos perda permanente
+  humanity         Int @default(50) // atual; EMP efetivo = floor(humanity / 10)
+  deathSavePenalty Int @default(0) // penalidade cumulativa dos testes de morte
+
+  improvementPoints Int @default(0)
+  eurobucks         Int @default(0)
+  reputation        Int @default(0)
+
+  skills           Json    @default("{}") // JSON: Record<skillKey, 0..10> (especializadas: "language:x", "martialArts:x"...)
+  armor            Json    @default("{}") // JSON: { head, body, shield? } cada um { name, sp, spMax, penalty }
+  weapons          Json    @default("[]") // JSON: weapon list
+  cyberware        Json    @default("[]") // JSON: cyberware list
+  gear             Json    @default("[]") // JSON: item list
+  criticalInjuries Json    @default("[]") // JSON: { id, key, name, location, effect }[]
+  lifepath         Json    @default("{}") // JSON: roteiro de vida
+  background       Json    @default("{}") // JSON: { appearance, history, notes }
+  notes            String?
+}
+
 // ─── CAMPANHAS (preparado, sem área mestre ativa) ─────────────────────────────
 
 model Campaign {
@@ -477,6 +526,14 @@ model Campaign {
   starWarsItems      StarWarsCampaignItem[]
   starWarsClues      StarWarsClue[]
   starWarsClocks     StarWarsClock[]
+
+  cyberpunkStory      CyberpunkStory?
+  cyberpunkNpcs       CyberpunkNpc[]
+  cyberpunkCombatants CyberpunkCombatant[]
+  cyberpunkSessions   CyberpunkGameSession[]
+  cyberpunkItems      CyberpunkCampaignItem[]
+  cyberpunkClues      CyberpunkClue[]
+  cyberpunkClocks     CyberpunkClock[]
 }
 
 // ─── MESTRE D&D 5e ────────────────────────────────────────────────────────────
@@ -1059,6 +1116,121 @@ model StarWarsClue {
 }
 
 model StarWarsClock {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String   @default("")
+  segments   Int      @default(4)
+  filled     Int      @default(0)
+  kind       String   @default("ameaca") // ameaca|missao|neutro
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+// ─── MESTRE CYBERPUNK RED ─────────────────────────────────────────────────────
+
+model CyberpunkStory {
+  id             String @id @default(cuid())
+  campaignId     String @unique
+  objective      String @default("")
+  purpose        String @default("")
+  generalHistory String @default("")
+  currentArc     String @default("")
+  mainVillain    String @default("")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CyberpunkNpc {
+  id         String   @id @default(cuid())
+  campaignId String
+  name       String
+  role       String   @default("")
+  threat     String   @default("mook") // mook|lieutenant|miniboss|boss
+  trait      String   @default("")
+  appearance String   @default("")
+  notes      String   @default("")
+  hp         Int?
+  hpMax      Int?
+  spHead     Int      @default(0)
+  spBody     Int      @default(0)
+  int        Int?
+  ref        Int?
+  dex        Int?
+  tech       Int?
+  cool       Int?
+  will       Int?
+  luck       Int?
+  move       Int?
+  body       Int?
+  emp        Int?
+  skills     Json     @default("{}") // JSON Record<skillKey, nível>
+  weapons    Json     @default("[]") // JSON weapon list
+  cyberware  Json     @default("[]") // JSON cyberware list
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CyberpunkCombatant {
+  id               String  @id @default(cuid())
+  campaignId       String
+  characterId      String?
+  name             String
+  initiative       Int     @default(0)
+  hp               Int?
+  maxHp            Int?
+  spHead           Int     @default(0)
+  spBody           Int     @default(0)
+  conditions       Json    @default("[]") // JSON string[]
+  isPlayer         Boolean @default(false)
+  order            Int     @default(0)
+  deathSavePenalty Int     @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CyberpunkGameSession {
+  id          String   @id @default(cuid())
+  campaignId  String
+  number      Int      @default(1)
+  name        String   @default("")
+  objective   String   @default("")
+  events      String   @default("")
+  summary     String   @default("")
+  sessionDate String   @default("")
+  createdAt   DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CyberpunkCampaignItem {
+  id          String  @id @default(cuid())
+  campaignId  String
+  name        String
+  description String  @default("")
+  type        String  @default("misc") // arma|armadura|cyberware|equipamento|misc
+  rarity      String  @default("comum")
+  sessionId   String?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CyberpunkClue {
+  id         String   @id @default(cuid())
+  campaignId String
+  title      String   @default("")
+  content    String   @default("")
+  source     String   @default("")
+  discovered Boolean  @default(false)
+  sessionId  String?
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+}
+
+model CyberpunkClock {
   id         String   @id @default(cuid())
   campaignId String
   name       String   @default("")
